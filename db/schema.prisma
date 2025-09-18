@@ -2,7 +2,7 @@
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
@@ -12,6 +12,12 @@ generator client {
 
 // --------------------------------------
 
+enum UserRole {
+  RESEARCHER
+  PARTICIPANT
+  ADMIN
+}
+
 model User {
   id             Int      @id @default(autoincrement())
   createdAt      DateTime @default(now())
@@ -19,10 +25,14 @@ model User {
   name           String?
   email          String   @unique
   hashedPassword String?
-  role           String   @default("USER")
+  role           UserRole
 
   tokens   Token[]
   sessions Session[]
+
+  // Relations
+  studies        StudyResearcher[] // researcher memberships
+  participations ParticipantStudy[] // participant memberships
 }
 
 model Session {
@@ -40,14 +50,17 @@ model Session {
   userId Int?
 }
 
+enum TokenType {
+  RESET_PASSWORD
+  CONFIRM_EMAIL
+}
+
 model Token {
-  id          Int      @id @default(autoincrement())
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id          Int       @id @default(autoincrement())
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
   hashedToken String
-  type        String
-  // See note below about TokenType enum
-  // type        TokenType
+  type        TokenType
   expiresAt   DateTime
   sentTo      String
 
@@ -57,9 +70,49 @@ model Token {
   @@unique([hashedToken, type])
 }
 
-// NOTE: It's highly recommended to use an enum for the token type
-//       but enums only work in Postgres.
-//       See: https://blitzjs.com/docs/database-overview#switch-to-postgre-sql
-// enum TokenType {
-//   RESET_PASSWORD
-// }
+model Study {
+  id          Int      @id @default(autoincrement())
+  title       String
+  description String?
+  createdAt   DateTime @default(now())
+
+  // Relations
+  researchers    StudyResearcher[]
+  participations ParticipantStudy[]
+}
+
+enum ResearcherRole {
+  PI
+  COLLABORATOR
+  VIEWER
+}
+
+model StudyResearcher {
+  id      Int @id @default(autoincrement())
+  studyId Int
+  userId  Int
+
+  study Study @relation(fields: [studyId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  role      ResearcherRole @default(PI)
+  createdAt DateTime       @default(now())
+
+  @@unique([studyId, userId])
+}
+
+model ParticipantStudy {
+  id            Int @id @default(autoincrement())
+  participantId Int
+  studyId       Int
+
+  // Pseudonym (uuid4) used for all exports
+  pseudonym String @default(uuid())
+
+  participant User  @relation(fields: [participantId], references: [id], onDelete: Cascade)
+  study       Study @relation(fields: [studyId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@unique([participantId, studyId]) // one enrollment per study
+}

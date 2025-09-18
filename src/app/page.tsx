@@ -28,7 +28,7 @@ export default async function Home() {
               </div>
 
               <h1>Your database & authentication is ready. Try it by signing up.</h1>
-
+              <p className="text-3xl text-red-500">Hello Tailwind</p>
               {/* Auth */}
 
               <div className={styles.buttonContainer}>

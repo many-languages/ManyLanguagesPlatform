@@ -30,6 +30,8 @@ model User {
   tokens   Token[]
   sessions Session[]
 
+  gravatar String?
+
   // Relations
   studies        StudyResearcher[] // researcher memberships
   participations ParticipantStudy[] // participant memberships

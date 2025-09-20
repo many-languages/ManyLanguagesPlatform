@@ -14,7 +14,7 @@ export function ResetPasswordForm() {
 
   return (
     <div>
-      <h1>Set a New Password</h1>
+      <h1 className="mb-4 font-black text-xl">Set a New Password</h1>
 
       {isSuccess ? (
         <div>

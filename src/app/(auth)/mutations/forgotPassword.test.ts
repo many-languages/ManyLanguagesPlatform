@@ -1,5 +1,5 @@
 import { vi, describe, it, beforeEach } from "vitest"
-import db from "db"
+import db, { UserRole } from "db"
 import { hash256 } from "@blitzjs/auth"
 import forgotPassword from "./forgotPassword"
 import previewEmail from "preview-email"
@@ -30,6 +30,7 @@ describe("forgotPassword mutation", () => {
     const user = await db.user.create({
       data: {
         email: "user@example.com",
+        role: UserRole.PARTICIPANT,
         tokens: {
           // Create old token to ensure it's deleted
           create: {

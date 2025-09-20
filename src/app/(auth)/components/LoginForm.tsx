@@ -20,7 +20,7 @@ export const LoginForm = (props: LoginFormProps) => {
   const next = useSearchParams()?.get("next")
   return (
     <>
-      <h1>Login</h1>
+      <h1 className="mb-4 font-black text-xl">Login</h1>
 
       <Form
         submitText="Login"
@@ -33,7 +33,7 @@ export const LoginForm = (props: LoginFormProps) => {
             if (next) {
               router.push(next as Route)
             } else {
-              router.push("/")
+              router.push("/dashboard")
             }
           } catch (error: any) {
             if (error instanceof AuthenticationError) {

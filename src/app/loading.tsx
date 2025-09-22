@@ -1,4 +1,7 @@
 export default function Loading() {
-  // Or a custom loading skeleton component
-  return "Loading..."
+  return (
+    <div className="flex items-center justify-center min-h-screen">
+      <span className="loading loading-spinner loading-lg text-secondary"></span>
+    </div>
+  )
 }

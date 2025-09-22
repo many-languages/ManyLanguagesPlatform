@@ -1,21 +1,18 @@
 import { forwardRef, PropsWithoutRef } from "react"
 import { useField, useFormikContext, ErrorMessage } from "formik"
 
-export interface LabeledTextFieldProps
-  extends PropsWithoutRef<React.JSX.IntrinsicElements["input"]> {
+export interface DateFieldProps extends PropsWithoutRef<React.JSX.IntrinsicElements["input"]> {
   /** Field name. */
   name: string
   /** Field label. */
   label: string
-  /** Field type. Doesn't include radio buttons and checkboxes */
-  type?: "text" | "password" | "email" | "number"
   outerProps?: PropsWithoutRef<React.JSX.IntrinsicElements["div"]>
   withBackground?: boolean
 }
 
-export const LabeledTextField = forwardRef<HTMLInputElement, LabeledTextFieldProps>(
+export const DateField = forwardRef<HTMLInputElement, DateFieldProps>(
   ({ name, label, withBackground = true, outerProps, ...props }, ref) => {
-    const [input] = useField(name)
+    const [field] = useField(name)
     const { isSubmitting } = useFormikContext()
 
     return (
@@ -26,11 +23,13 @@ export const LabeledTextField = forwardRef<HTMLInputElement, LabeledTextFieldPro
         {...outerProps}
       >
         <label className="fieldset-legend">{label}</label>
+
         <input
-          {...input}
-          disabled={isSubmitting}
+          {...field}
           {...props}
+          type="date"
           ref={ref}
+          disabled={isSubmitting}
           className="input input-bordered"
         />
 
@@ -42,6 +41,6 @@ export const LabeledTextField = forwardRef<HTMLInputElement, LabeledTextFieldPro
   }
 )
 
-LabeledTextField.displayName = "LabeledTextField"
+DateField.displayName = "DateField"
 
-export default LabeledTextField
+export default DateField

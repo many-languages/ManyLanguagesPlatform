@@ -74,11 +74,26 @@ model Token {
   @@unique([hashedToken, type])
 }
 
+enum StudyStatus {
+  OPEN
+  CLOSED
+}
+
 model Study {
+  // Basic information
   id          Int      @id @default(autoincrement())
-  title       String
-  description String?
   createdAt   DateTime @default(now())
+  title       String
+  description String
+
+  // Study configuration
+  status            StudyStatus @default(OPEN) // Whether study is open for datacollection (can be set manually)
+  startDate         DateTime // Expected startDate of data collection, study opens at startDate automatically
+  endDate           DateTime // Expected endDate of data collection, study closes at endDate automatically 
+  sampleSize        Int // Number of participants to be collected
+  payment           String // Description of payment method
+  ethicalPermission String // URL/link to ethical approval
+  length            String // e.g. "30 minutes", stored as text
 
   // Relations
   researchers    StudyResearcher[]

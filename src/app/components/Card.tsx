@@ -1,0 +1,41 @@
+import { ReactNode } from "react"
+import clsx from "clsx"
+// import { v4 as uuidv4 } from "uuid"
+// import TooltipWrapper from "./TooltipWrapper"
+
+interface CardProps {
+  title: string
+  children?: ReactNode
+  tooltipContent?: string
+  actions?: ReactNode
+  className?: string
+}
+
+const Card = ({ title, children, actions, className }: CardProps) => {
+  // Generate a unique ID if tooltipContent is provided
+  //   const tooltipId = tooltipContent ? uuidv4() : undefined
+
+  return (
+    <div className={clsx("card bg-base-100 base-content mt-2 shadow-sm", className)}>
+      <div className="card-body">
+        <div
+          className="card-title"
+          // data-tooltip-id={tooltipId}
+        >
+          {title}
+        </div>
+        {/* {tooltipContent && (
+          <TooltipWrapper
+            id={tooltipId}
+            content={tooltipContent}
+            className="z-[1099] ourtooltips"
+          />
+        )} */}
+        {children}
+        {actions && <div className="card-actions justify-end">{actions}</div>}
+      </div>
+    </div>
+  )
+}
+
+export default Card

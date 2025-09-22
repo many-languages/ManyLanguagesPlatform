@@ -16,7 +16,9 @@ const Card = ({ title, children, actions, className }: CardProps) => {
   //   const tooltipId = tooltipContent ? uuidv4() : undefined
 
   return (
-    <div className={clsx("card bg-base-100 base-content mt-2 shadow-sm", className)}>
+    <div
+      className={clsx("card bg-base-200 base-content border-base-300 mt-2 shadow-sm", className)}
+    >
       <div className="card-body">
         <div
           className="card-title"

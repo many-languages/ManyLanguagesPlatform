@@ -54,12 +54,9 @@ const Navbar = () => {
               <Gravatar email={gravatar_email} style={{ borderRadius: "50%" }} default="retro" />
             </div>
           </label>
-          <ul
-            tabIndex={0}
-            className="menu menu-sm dropdown-content mt-3 z-[1] p-2 shadow bg-base-300 rounded-box w-52"
-          >
+          <ul className="menu menu-sm dropdown-content mt-3 z-[1] p-2 shadow bg-base-300 rounded-box w-52">
             <li>
-              <Link className="justify-between text-red-500" key="Profile" href="/profile">
+              <Link className="justify-between" key="Profile" href="/profile">
                 Profile
               </Link>
             </li>

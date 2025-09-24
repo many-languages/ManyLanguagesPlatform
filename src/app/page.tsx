@@ -3,8 +3,8 @@ import Link from "next/link"
 export default async function Home() {
   return (
     <div className="flex flex-col min-h-screen w-full">
-      <main className="flex flex-col flex-1 items-center justify-center gap-8">
-        <h1 className="font-black text-6xl">ManyLanguagesPlatform</h1>
+      <main className="container mx-auto flex flex-col flex-1 items-center justify-center gap-8 p-4">
+        <h1 className="font-black text-6xl text-center">ManyLanguagesPlatform</h1>
 
         <div className="flex flex-row gap-4">
           <Link href="/signup" className="btn">

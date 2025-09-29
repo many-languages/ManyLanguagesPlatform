@@ -1,4 +1,5 @@
 "use client"
+
 import { AuthenticationError, PromiseReturnType } from "blitz"
 import Link from "next/link"
 import { LabeledTextField } from "src/app/components/LabeledTextField"
@@ -20,7 +21,7 @@ export const LoginForm = (props: LoginFormProps) => {
   const next = useSearchParams()?.get("next")
   return (
     <>
-      <h1 className="mb-4 font-black text-xl">Login</h1>
+      <h1 className="font-black text-xl">Login</h1>
 
       <Form
         submitText="Login"
@@ -54,7 +55,7 @@ export const LoginForm = (props: LoginFormProps) => {
         </div>
       </Form>
 
-      <div style={{ marginTop: "1rem" }}>
+      <div>
         Or <Link href="/signup">Sign Up</Link>
       </div>
     </>

@@ -12,6 +12,7 @@ export interface FormProps<S extends z.ZodType<any, any>>
   initialValues?: FormikProps<z.infer<S>>["initialValues"]
   cancelText?: string
   onCancel?: () => void
+  title?: string
 }
 
 interface OnSubmitResult {
@@ -22,6 +23,7 @@ interface OnSubmitResult {
 export const FORM_ERROR = "FORM_ERROR"
 
 export function Form<S extends z.ZodType<any, any>>({
+  title,
   children,
   submitText,
   schema,
@@ -46,32 +48,35 @@ export function Form<S extends z.ZodType<any, any>>({
     >
       {({ handleSubmit, isSubmitting }) => (
         <form onSubmit={handleSubmit} className="form" {...props}>
-          {children}
+          <fieldset className="fieldset bg-base-200 border-base-300 rounded-box w-full border p-4">
+            {title && <legend className="fieldset-legend">{title}</legend>}
+            <div className="flex flex-col gap-6">{children}</div>
 
-          {formError && (
-            <div role="alert" className="text-error mt-2">
-              {formError}
+            {formError && (
+              <div role="alert" className="text-error mt-2">
+                {formError}
+              </div>
+            )}
+
+            <div className="form-actions flex gap-2 mt-4">
+              {submitText && (
+                <button type="submit" className="btn btn-primary" disabled={isSubmitting}>
+                  {submitText}
+                </button>
+              )}
+
+              {cancelText && (
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={() => onCancel?.()}
+                  disabled={isSubmitting}
+                >
+                  {cancelText}
+                </button>
+              )}
             </div>
-          )}
-
-          <div className="form-actions flex gap-2 mt-4">
-            {submitText && (
-              <button type="submit" className="btn btn-primary" disabled={isSubmitting}>
-                {submitText}
-              </button>
-            )}
-
-            {cancelText && (
-              <button
-                type="button"
-                className="btn btn-secondary"
-                onClick={() => onCancel?.()}
-                disabled={isSubmitting}
-              >
-                {cancelText}
-              </button>
-            )}
-          </div>
+          </fieldset>
         </form>
       )}
     </Formik>

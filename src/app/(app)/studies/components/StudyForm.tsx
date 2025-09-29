@@ -23,7 +23,7 @@ export default function StudyForm({
   onSubmit,
 }: StudyFormProps) {
   return (
-    <div>
+    <>
       <h1 className="text-2xl font-bold mb-4">{formTitle}</h1>
 
       <Form
@@ -45,50 +45,34 @@ export default function StudyForm({
         }
         onSubmit={onSubmit}
       >
-        <LabeledTextField
-          name="title"
-          label="Title"
-          placeholder="Study title"
-          type="text"
-          withBackground={false}
-        />
+        <LabeledTextField name="title" label="Title" placeholder="Study title" type="text" />
         <LabeledTextField
           name="description"
           label="Description"
           placeholder="Short description"
           type="text"
-          withBackground={false}
         />
-        <DateField name="startDate" label="Start Date" withBackground={false} />
-        <DateField name="endDate" label="End Date" withBackground={false} />
-        <LabeledTextField
-          name="sampleSize"
-          label="Sample Size"
-          placeholder="100"
-          type="number"
-          withBackground={false}
-        />
+        <DateField name="startDate" label="Start Date" />
+        <DateField name="endDate" label="End Date" />
+        <LabeledTextField name="sampleSize" label="Sample Size" placeholder="100" type="number" />
         <LabeledTextField
           name="payment"
           label="Payment"
           placeholder="e.g., $10 voucher"
           type="text"
-          withBackground={false}
         />
         <LabeledTextField
           name="ethicalPermission"
           label="Ethical Permission"
           placeholder="https://example.com/approval"
-          withBackground={false}
         />
         <LabeledTextField
           name="length"
           label="Expected Duration"
           placeholder="30 minutes"
           type="text"
-          withBackground={false}
         />
       </Form>
-    </div>
+    </>
   )
 }

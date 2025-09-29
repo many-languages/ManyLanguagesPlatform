@@ -23,8 +23,8 @@ export const SignupForm = (props: SignupFormProps) => {
   const router = useRouter()
 
   return (
-    <div>
-      <h1 className="mb-4 font-black text-xl">Create an Account</h1>
+    <>
+      <h1 className="font-black text-xl">Create an Account</h1>
 
       <Form
         submitText="Create Account"
@@ -56,9 +56,9 @@ export const SignupForm = (props: SignupFormProps) => {
         />
       </Form>
 
-      <div style={{ marginTop: "1rem" }}>
+      <div>
         Or <Link href="/login">Login</Link>
       </div>
-    </div>
+    </>
   )
 }

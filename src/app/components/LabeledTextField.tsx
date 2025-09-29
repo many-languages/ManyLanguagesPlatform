@@ -10,22 +10,16 @@ export interface LabeledTextFieldProps
   /** Field type. Doesn't include radio buttons and checkboxes */
   type?: "text" | "password" | "email" | "number"
   outerProps?: PropsWithoutRef<React.JSX.IntrinsicElements["div"]>
-  withBackground?: boolean
 }
 
 export const LabeledTextField = forwardRef<HTMLInputElement, LabeledTextFieldProps>(
-  ({ name, label, withBackground = true, outerProps, ...props }, ref) => {
+  ({ name, label, outerProps, ...props }, ref) => {
     const [input] = useField(name)
     const { isSubmitting } = useFormikContext()
 
     return (
-      <div
-        className={`fieldset border-base-300 rounded-box border p-4 ${
-          withBackground ? "bg-base-200" : ""
-        }`}
-        {...outerProps}
-      >
-        <label className="fieldset-legend">{label}</label>
+      <div className="flex flex-col gap-1" {...outerProps}>
+        <label className="label">{label}</label>
         <input
           {...input}
           disabled={isSubmitting}
@@ -35,7 +29,7 @@ export const LabeledTextField = forwardRef<HTMLInputElement, LabeledTextFieldPro
         />
 
         <ErrorMessage name={name}>
-          {(msg) => <span className="text-error text-sm mt-1">{msg}</span>}
+          {(msg) => <span className="text-error text-sm">{msg}</span>}
         </ErrorMessage>
       </div>
     )

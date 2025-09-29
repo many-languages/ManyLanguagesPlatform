@@ -15,7 +15,6 @@ export interface LabeledSelectFieldProps
   outerProps?: PropsWithoutRef<React.JSX.IntrinsicElements["div"]>
   multiple?: boolean
   disableFirstOption?: boolean
-  withBackground?: boolean
 }
 
 export const LabeledSelectField = forwardRef<HTMLSelectElement, LabeledSelectFieldProps>(
@@ -31,7 +30,6 @@ export const LabeledSelectField = forwardRef<HTMLSelectElement, LabeledSelectFie
       multiple,
       disableFirstOption = true,
       type = "number",
-      withBackground = true,
       ...props
     },
     ref
@@ -49,13 +47,8 @@ export const LabeledSelectField = forwardRef<HTMLSelectElement, LabeledSelectFie
     const firstOptionText = disableFirstOption ? "Please select an option" : "Select none"
 
     return (
-      <div
-        className={`fieldset border-base-300 rounded-box border p-4 ${
-          withBackground ? "bg-base-200" : ""
-        }`}
-        {...outerProps}
-      >
-        <label className="fieldset-legend">{label}</label>
+      <div className="flex flex-col gap-1" {...outerProps}>
+        <label className="label">{label}</label>
         <select
           {...field}
           disabled={isSubmitting}
@@ -76,7 +69,7 @@ export const LabeledSelectField = forwardRef<HTMLSelectElement, LabeledSelectFie
         {description && <span className="label">{description}</span>}
 
         <ErrorMessage name={name}>
-          {(msg) => <span className="text-error text-sm mt-1">{msg}</span>}
+          {(msg) => <span className="text-error text-sm">{msg}</span>}
         </ErrorMessage>
       </div>
     )

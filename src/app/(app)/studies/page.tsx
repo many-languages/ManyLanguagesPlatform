@@ -1,25 +1,25 @@
-"use client"
 import StudyList from "./components/StudyList"
-import { usePaginatedQuery } from "@blitzjs/rpc"
-import getStudies from "./queries/getStudies"
+import { getStudies } from "./queries/getStudies"
 import Link from "next/link"
 import PaginationControls from "../../components/PaginationControls"
-import { useSearchParams } from "next/navigation"
-import { useCurrentUser } from "../../users/hooks/useCurrentUser"
+import { Suspense } from "react"
+import { getBlitzContext } from "../../blitz-server"
+import { redirect } from "next/navigation"
+import PaginationControlsSkeleton from "../../components/PaginationControlsSkeleton"
+import StudyListSkeleton from "./components/StudyListSkeleton"
 
 const ITEMS_PER_PAGE = 10
 
-export default function StudiesPage() {
-  const currentUser = useCurrentUser()
-  const searchParams = useSearchParams()
-  const page = Number(searchParams.get("page") || 0)
+export const metadata = {
+  title: "My Studies",
+}
 
-  // Get all ongoing studies
-  const [result] = usePaginatedQuery(getStudies, {
+async function StudiesContent({ page, userId }: { page: number; userId: number }) {
+  const result = await getStudies({
     where: {
       OR: [
-        { researchers: { some: { userId: currentUser?.id } } },
-        { participations: { some: { participantId: currentUser?.id } } },
+        { researchers: { some: { userId } } },
+        { participations: { some: { participantId: userId } } },
       ],
     },
     orderBy: { createdAt: "desc" },
@@ -27,18 +27,32 @@ export default function StudiesPage() {
     take: ITEMS_PER_PAGE,
   })
 
-  if (!result) return <div>Loading…</div>
-
   const { studies, hasMore } = result
+
+  return (
+    <>
+      <Suspense fallback={<StudyListSkeleton />}>
+        <StudyList studies={studies} />
+      </Suspense>
+      <Suspense fallback={<PaginationControlsSkeleton />}>
+        <PaginationControls page={page} hasMore={hasMore} />
+      </Suspense>
+      <Link className="btn btn-primary mt-2" href={"/studies/new"}>
+        Create Study
+      </Link>
+    </>
+  )
+}
+
+export default async function StudiesPage({ searchParams }: { searchParams: { page?: string } }) {
+  const page = Number(searchParams.page || 0)
+  const { session } = await getBlitzContext()
+  if (!session.userId) redirect("/login")
 
   return (
     <main>
       <h1 className="text-3xl flex justify-center mb-2">My studies</h1>
-      <StudyList studies={studies} />
-      <PaginationControls page={page} hasMore={hasMore} />
-      <Link className="btn btn-primary mt-2" href={"/studies/new"}>
-        Create Study
-      </Link>
+      <StudiesContent page={page} userId={session.userId} />
     </main>
   )
 }

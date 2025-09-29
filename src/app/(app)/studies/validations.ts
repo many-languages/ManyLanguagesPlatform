@@ -1,5 +1,8 @@
 import { z } from "zod"
 
+export const StudyId = z.object({ id: z.number().int().positive() })
+export type StudyIdInput = z.infer<typeof StudyId>
+
 export const CreateStudy = z.object({
   title: z.string().min(1, "Title is required"),
   description: z.string().min(1, "Description is required"),
@@ -12,7 +15,7 @@ export const CreateStudy = z.object({
 })
 
 export const UpdateStudy = z.object({
-  id: z.number(),
+  id: StudyId,
   title: z.string().min(1, "Title is required"),
   description: z.string().optional(),
   startDate: z.string(),
@@ -25,5 +28,11 @@ export const UpdateStudy = z.object({
 })
 
 export const DeleteStudy = z.object({
-  id: z.number().int().positive(),
+  id: StudyId,
 })
+
+export const GetStudies = z.object({
+  skip: z.number().min(0).default(0),
+  take: z.number().min(1).max(100).default(100),
+})
+export type GetStudiesInput = z.infer<typeof GetStudies>

@@ -1,5 +1,3 @@
-"use client"
-
 import { Study } from "db"
 import CollapseCard from "@/src/app/components/CollapseCard"
 import Link from "next/link"
@@ -12,7 +10,6 @@ export default function StudyItem({ study }: StudyItemProps) {
   return (
     <CollapseCard
       title={study.title}
-      tooltipContent=""
       className="mb-4"
       actions={
         <>

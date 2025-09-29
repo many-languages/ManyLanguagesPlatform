@@ -1,5 +1,3 @@
-"use client"
-
 import { Study } from "db"
 import StudyItem from "./StudyItem"
 

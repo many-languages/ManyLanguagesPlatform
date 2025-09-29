@@ -1,7 +1,11 @@
+"use client"
+
 import { ReactNode } from "react"
 import clsx from "clsx"
 import { v4 as uuidv4 } from "uuid"
-import { Tooltip } from "react-tooltip"
+import dynamic from "next/dynamic"
+
+const Tooltip = dynamic(() => import("react-tooltip").then((mod) => mod.Tooltip))
 
 interface CollapseCardProps {
   title: string
@@ -22,9 +26,17 @@ const CollapseCard = ({
   const tooltipId = tooltipContent ? uuidv4() : undefined
 
   return (
-    <div className={clsx("collapse collapse-arrow bg-base-300 overflow-visible", className)}>
+    <div
+      className={clsx(
+        "collapse collapse-arrow bg-base-300 overflow-hidden transition-all duration-300 ease-in-out",
+        className
+      )}
+    >
       <input type="checkbox" data-tooltip-id={tooltipId} className="peer" />
-      <div className="collapse-title text-xl font-medium bg-primary text-primary-content peer-checked:bg-secondary peer-checked:text-secondary-content">
+      <div
+        className="collapse-title text-xl font-medium bg-primary 
+      text-primary-content peer-checked:bg-secondary peer-checked:text-secondary-content"
+      >
         <div className="card-title">{title}</div>
         {tooltipContent && (
           <Tooltip id={tooltipId} place="top">

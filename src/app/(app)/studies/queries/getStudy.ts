@@ -1,7 +1,7 @@
 import db from "db"
 import { NotFoundError } from "blitz"
 import { cache } from "react"
-import { StudyId, StudyIdInput } from "../validations"
+import { Id, IdInput } from "../validations"
 import { resolver } from "@blitzjs/rpc"
 import { getBlitzContext } from "@/src/app/blitz-server"
 
@@ -19,7 +19,7 @@ export async function findStudyById(id: number) {
 }
 
 // Server-side helper for RSCs
-export const getStudy = cache(async ({ id }: StudyIdInput) => {
+export const getStudy = cache(async (id: IdInput) => {
   const ctx = await getBlitzContext()
   if (!ctx.session.userId) throw new Error("Not authenticated")
   return findStudyById(id)
@@ -27,9 +27,9 @@ export const getStudy = cache(async ({ id }: StudyIdInput) => {
 
 // Blitz RPC for client usage with useQuery
 export default resolver.pipe(
-  resolver.zod(StudyId),
+  resolver.zod(Id),
   resolver.authorize(), // enforce session
-  async ({ id }) => {
+  async (id) => {
     return findStudyById(id)
   }
 )

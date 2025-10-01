@@ -1,0 +1,55 @@
+version: "3.9"
+
+services:
+  jatos-db:
+    image: postgres:15
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - jatos-db-data:/var/lib/postgresql/data
+
+  jatos:
+    image: jatos/jatos:latest
+    depends_on:
+      - jatos-db
+    restart: unless-stopped
+    environment:
+      JATOS_DB_URL: jdbc:postgresql://jatos-db:5432/${POSTGRES_DB}
+      JATOS_DB_USERNAME: ${POSTGRES_USER}
+      JATOS_DB_PASSWORD: ${POSTGRES_PASSWORD}
+      JATOS_HTTP_BIND_ADDRESS: 0.0.0.0
+      JATOS_HTTP_PORT: 9000
+    volumes:
+      - jatos-study-data:/opt/jatos/study_assets_root
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.jatos.rule=Host(`${JATOS_DOMAIN}`)"
+      - "traefik.http.routers.jatos.entrypoints=websecure"
+      - "traefik.http.routers.jatos.tls.certresolver=myresolver"
+      - "traefik.http.services.jatos.loadbalancer.server.port=9000"
+
+  traefik:
+    image: traefik:v2.11
+    restart: unless-stopped
+    command:
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+      - "--certificatesresolvers.myresolver.acme.tlschallenge=true"
+      - "--certificatesresolvers.myresolver.acme.email=${LETSENCRYPT_EMAIL}"
+      - "--certificatesresolvers.myresolver.acme.storage=/letsencrypt/acme.json"
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+      - "letsencrypt:/letsencrypt"
+
+volumes:
+  jatos-db-data:
+  jatos-study-data:
+  letsencrypt:

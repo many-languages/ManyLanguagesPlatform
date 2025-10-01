@@ -1,8 +1,10 @@
 import db, { Prisma } from "db"
 import { cache } from "react"
-import { GetStudies, GetStudiesInput } from "../validations"
 import { resolver } from "@blitzjs/rpc"
 import { getBlitzContext } from "@/src/app/blitz-server"
+
+interface GetStudiesInput
+  extends Pick<Prisma.StudyFindManyArgs, "where" | "orderBy" | "skip" | "take" | "include"> {}
 
 // Shared DB helper
 async function findStudies(
@@ -20,27 +22,17 @@ async function findStudies(
 }
 
 // Server helper (RSC use)
-export const getStudies = cache(
-  async (
-    args: GetStudiesInput &
-      Pick<Prisma.StudyFindManyArgs, "where" | "orderBy" | "skip" | "take" | "include">
-  ) => {
-    const { session } = await getBlitzContext()
-    if (!session.userId) throw new Error("Not authenticated")
+export const getStudies = cache(async (args: GetStudiesInput) => {
+  const { session } = await getBlitzContext()
+  if (!session.userId) throw new Error("Not authenticated")
 
-    return findStudies(args)
-  }
-)
+  return findStudies(args)
+})
 
 // Blitz RPC (client-side use)
 export default resolver.pipe(
-  resolver.zod(GetStudies), // runtime guard for skip/take
   resolver.authorize(),
-  async ({
-    skip,
-    take,
-    ...rest
-  }: GetStudiesInput & Omit<Prisma.StudyFindManyArgs, "skip" | "take">) => {
+  async ({ skip, take, ...rest }: GetStudiesInput) => {
     return findStudies({ skip, take, ...rest })
   }
 )

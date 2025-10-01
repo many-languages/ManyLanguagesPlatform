@@ -6,6 +6,8 @@ import getStudy from "../../queries/getStudy"
 import updateStudy from "../../mutations/updateStudy"
 import StudyForm from "../../components/StudyForm"
 import { FORM_ERROR } from "src/app/components/Form"
+import StudyFormSkeleton from "../../components/StudyFormSkeleton"
+import toast from "react-hot-toast"
 
 export default function EditStudy({ params }: { params: { studyId: string } }) {
   const router = useRouter()
@@ -13,10 +15,17 @@ export default function EditStudy({ params }: { params: { studyId: string } }) {
   const [updateStudyMutation] = useMutation(updateStudy)
 
   // Fetch the study to edit
-  const [study] = useQuery(getStudy, { id: studyId })
+  const [study, { isLoading, error }] = useQuery(getStudy, { id: studyId })
+
+  if (isLoading) return <StudyFormSkeleton />
+  if (error) {
+    toast.error("Could not load study")
+    return <StudyFormSkeleton />
+  }
 
   if (!study) {
-    return <div className="flex justify-center items-center">Loading...</div>
+    toast.error("Study not found")
+    return <StudyFormSkeleton />
   }
 
   return (
@@ -36,7 +45,11 @@ export default function EditStudy({ params }: { params: { studyId: string } }) {
         }}
         onSubmit={async (values) => {
           try {
-            await updateStudyMutation({ id: studyId, ...values })
+            await toast.promise(updateStudyMutation({ id: studyId, ...values }), {
+              loading: "Updating study...",
+              success: "Study updated successfully!",
+              error: "Failed to update study",
+            })
             router.push(`/studies/${studyId}`)
           } catch (error: any) {
             console.error(error)

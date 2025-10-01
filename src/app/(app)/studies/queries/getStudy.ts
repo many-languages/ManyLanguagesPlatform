@@ -1,7 +1,7 @@
 import db from "db"
 import { NotFoundError } from "blitz"
 import { cache } from "react"
-import { Id, IdInput } from "../validations"
+import { GetStudy, IdInput } from "../validations"
 import { resolver } from "@blitzjs/rpc"
 import { getBlitzContext } from "@/src/app/blitz-server"
 
@@ -9,27 +9,39 @@ import { getBlitzContext } from "@/src/app/blitz-server"
 export async function findStudyById(id: number) {
   const study = await db.study.findUnique({
     where: { id },
-    // include: {
-    //   researchers: { include: { user: true } },
-    //   participations: { include: { participant: true } },
-    // },
+    include: {
+      researchers: {
+        select: { userId: true, role: true },
+      },
+      participations: {
+        select: { userId: true },
+      },
+    },
   })
+
   if (!study) throw new NotFoundError()
+
   return study
 }
 
+// Export the return type of the helper function
+export type StudyWithRelations = Awaited<ReturnType<typeof findStudyById>>
+
 // Server-side helper for RSCs
-export const getStudy = cache(async (id: IdInput) => {
-  const ctx = await getBlitzContext()
-  if (!ctx.session.userId) throw new Error("Not authenticated")
+export const getStudyRsc = cache(async (id: IdInput) => {
+  const { session } = await getBlitzContext()
+  if (!session.userId) throw new Error("Not authenticated")
+
   return findStudyById(id)
 })
 
 // Blitz RPC for client usage with useQuery
-export default resolver.pipe(
-  resolver.zod(Id),
+const getStudy = resolver.pipe(
+  resolver.zod(GetStudy),
   resolver.authorize(), // enforce session
-  async (id) => {
+  async ({ id }) => {
     return findStudyById(id)
   }
 )
+
+export default getStudy

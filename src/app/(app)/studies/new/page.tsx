@@ -5,6 +5,7 @@ import StudyForm from "../components/StudyForm"
 import { FORM_ERROR } from "@/src/app/components/Form"
 import { useMutation } from "@blitzjs/rpc"
 import createStudy from "../mutations/createStudy"
+import toast from "react-hot-toast"
 
 export default function NewStudy() {
   const router = useRouter()
@@ -16,12 +17,18 @@ export default function NewStudy() {
       submitText="Create study"
       onSubmit={async (values) => {
         try {
-          await createStudyMutation(values)
+          await toast.promise(createStudyMutation(values), {
+            loading: "Creating study...",
+            success: "Study created successfully!",
+            error: "Failed to create study",
+          })
           router.push("/studies")
         } catch (error: any) {
+          if (error.name === "ZodError") {
+            return error.formErrors.fieldErrors
+          }
           return {
-            [FORM_ERROR]:
-              "Sorry, we had an unexpected error. Please try again. - " + error.toString(),
+            [FORM_ERROR]: "Sorry, unexpected error: " + error.toString(),
           }
         }
       }}

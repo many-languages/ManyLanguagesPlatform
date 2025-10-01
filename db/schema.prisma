@@ -121,17 +121,16 @@ model StudyResearcher {
 }
 
 model ParticipantStudy {
-  id            Int @id @default(autoincrement())
-  participantId Int
-  studyId       Int
+  id      Int @id @default(autoincrement())
+  userId  Int
+  studyId Int
 
-  // Pseudonym (uuid4) used for all exports
   pseudonym String @default(uuid())
 
-  participant User  @relation(fields: [participantId], references: [id], onDelete: Cascade)
-  study       Study @relation(fields: [studyId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  study Study @relation(fields: [studyId], references: [id], onDelete: Cascade)
 
   createdAt DateTime @default(now())
 
-  @@unique([participantId, studyId]) // one enrollment per study
+  @@unique([userId, studyId])
 }

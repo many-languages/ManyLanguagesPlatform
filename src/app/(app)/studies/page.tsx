@@ -17,10 +17,7 @@ export const metadata = {
 async function StudiesContent({ page, userId }: { page: number; userId: number }) {
   const result = await getStudies({
     where: {
-      OR: [
-        { researchers: { some: { userId } } },
-        { participations: { some: { participantId: userId } } },
-      ],
+      OR: [{ researchers: { some: { userId } } }, { participations: { some: { userId: userId } } }],
     },
     orderBy: { createdAt: "desc" },
     skip: ITEMS_PER_PAGE * page,
@@ -45,7 +42,9 @@ async function StudiesContent({ page, userId }: { page: number; userId: number }
 }
 
 export default async function StudiesPage({ searchParams }: { searchParams: { page?: string } }) {
-  const page = Number(searchParams.page || 0)
+  const params = await searchParams
+  const page = Number(params.page || 0)
+
   const { session } = await getBlitzContext()
   if (!session.userId) redirect("/login")
 

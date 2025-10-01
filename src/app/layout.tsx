@@ -7,7 +7,11 @@ const inter = Inter({ subsets: ["latin"] })
 export const metadata = {
   title: { default: "ManyLanguagesPlatform", template: "%s – Blitz" },
   description: "Online research platform for linguistics studies.",
-  viewport: "width=device-width, initial-scale=1",
+}
+
+export const viewport = {
+  width: "device-width",
+  initialScale: 1,
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

@@ -1,10 +1,10 @@
 import { Form } from "src/app/components/Form"
 import { LabeledTextField } from "src/app/components/LabeledTextField"
 import DateField from "src/app/components/DateField"
-import { CreateStudy } from "../validations"
+import { StudyFormSchema } from "../validations"
 import { z } from "zod"
 
-type StudyFormValues = z.infer<typeof CreateStudy>
+type StudyFormValues = z.infer<typeof StudyFormSchema>
 
 type StudyFormProps = {
   formTitle: string
@@ -30,7 +30,7 @@ export default function StudyForm({
         submitText={submitText}
         cancelText="Cancel"
         onCancel={onCancel}
-        schema={CreateStudy}
+        schema={StudyFormSchema}
         initialValues={
           initialValues ?? {
             title: "",

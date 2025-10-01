@@ -1,0 +1,17 @@
+version: "3.9"
+
+services:
+  jatos:
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.jatos.rule=Host(`${JATOS_DOMAIN}`)"
+      - "traefik.http.routers.jatos.entrypoints=web"
+      - "traefik.http.services.jatos.loadbalancer.server.port=9000"
+
+  traefik:
+    command:
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"

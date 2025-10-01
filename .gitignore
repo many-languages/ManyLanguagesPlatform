@@ -40,3 +40,7 @@ next-env.d.ts
 
 # env file
 .env
+
+# env files in jatos deployment
+deploy/jatos/.env
+deploy/jatos/.env.local

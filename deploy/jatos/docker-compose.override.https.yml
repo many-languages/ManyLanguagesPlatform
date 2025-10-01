@@ -1,0 +1,22 @@
+version: "3.9"
+
+services:
+  jatos:
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.jatos.rule=Host(`${JATOS_DOMAIN}`)"
+      - "traefik.http.routers.jatos.entrypoints=websecure"
+      - "traefik.http.routers.jatos.tls=true"
+      - "traefik.http.services.jatos.loadbalancer.server.port=9000"
+
+  traefik:
+    command:
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+      - "--tls.stores.default.defaultCertificate.certFile=/certs/jatos.localhost.pem"
+      - "--tls.stores.default.defaultCertificate.keyFile=/certs/jatos.localhost-key.pem"
+    volumes:
+      - "./certs:/certs:ro"
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"

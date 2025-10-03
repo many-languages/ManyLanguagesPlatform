@@ -3,6 +3,7 @@ import { LabeledTextField } from "src/app/components/LabeledTextField"
 import DateField from "src/app/components/DateField"
 import { StudyFormSchema } from "../validations"
 import { z } from "zod"
+import FileUploadField from "@/src/app/components/FileUploadField"
 
 type StudyFormValues = z.infer<typeof StudyFormSchema>
 
@@ -72,6 +73,8 @@ export default function StudyForm({
           placeholder="30 minutes"
           type="text"
         />
+        <FileUploadField name="studyFile" label="Upload Study (.jzip)" />
+        <p className="text-xs opacity-70">Only .jzip exports from JATOS are accepted.</p>
       </Form>
     </>
   )

@@ -1,5 +1,3 @@
-version: "3.9"
-
 services:
   jatos:
     labels:
@@ -15,8 +13,12 @@ services:
       - "--providers.docker.exposedbydefault=false"
       - "--entrypoints.web.address=:80"
       - "--entrypoints.websecure.address=:443"
-      - "--tls.stores.default.defaultCertificate.certFile=/certs/jatos.localhost.pem"
-      - "--tls.stores.default.defaultCertificate.keyFile=/certs/jatos.localhost-key.pem"
+      - "--providers.file.directory=/etc/traefik/dynamic"
+      - "--providers.file.watch=true"
+    ports:
+      - "80:80"
+      - "443:443"
     volumes:
       - "./certs:/certs:ro"
+      - "./dynamic:/etc/traefik/dynamic:ro"
       - "/var/run/docker.sock:/var/run/docker.sock:ro"

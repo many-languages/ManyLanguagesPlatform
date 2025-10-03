@@ -1,34 +1,33 @@
-version: "3.9"
-
 services:
   jatos-db:
-    image: postgres:15
+    image: mysql:8.0
     restart: unless-stopped
     environment:
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: ${POSTGRES_DB}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
     volumes:
-      - jatos-db-data:/var/lib/postgresql/data
+      - jatos-db-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -ujatos -pdevpass || exit 1"]
+      interval: 5s
+      retries: 10
+      timeout: 5s
 
   jatos:
     image: jatos/jatos:latest
     depends_on:
-      - jatos-db
+      jatos-db:
+        condition: service_healthy
     restart: unless-stopped
-    environment:
-      JATOS_DB_URL: jdbc:postgresql://jatos-db:5432/${POSTGRES_DB}
-      JATOS_DB_USERNAME: ${POSTGRES_USER}
-      JATOS_DB_PASSWORD: ${POSTGRES_PASSWORD}
-      JATOS_HTTP_BIND_ADDRESS: 0.0.0.0
-      JATOS_HTTP_PORT: 9000
     volumes:
+      - ./jatos.conf:/opt/jatos/conf/jatos.conf:ro
       - jatos-study-data:/opt/jatos/study_assets_root
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.jatos.rule=Host(`${JATOS_DOMAIN}`)"
       - "traefik.http.routers.jatos.entrypoints=websecure"
-      - "traefik.http.routers.jatos.tls.certresolver=myresolver"
       - "traefik.http.services.jatos.loadbalancer.server.port=9000"
 
   traefik:
@@ -39,17 +38,12 @@ services:
       - "--providers.docker.exposedbydefault=false"
       - "--entrypoints.web.address=:80"
       - "--entrypoints.websecure.address=:443"
-      - "--certificatesresolvers.myresolver.acme.tlschallenge=true"
-      - "--certificatesresolvers.myresolver.acme.email=${LETSENCRYPT_EMAIL}"
-      - "--certificatesresolvers.myresolver.acme.storage=/letsencrypt/acme.json"
     ports:
       - "80:80"
       - "443:443"
     volumes:
       - "/var/run/docker.sock:/var/run/docker.sock:ro"
-      - "letsencrypt:/letsencrypt"
 
 volumes:
   jatos-db-data:
   jatos-study-data:
-  letsencrypt:

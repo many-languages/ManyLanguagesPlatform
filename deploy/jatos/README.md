@@ -26,17 +26,33 @@ JATOS will be available at:
 You can run JATOS locally in two ways: plain HTTP or HTTPS with mkcert.
 
 ### Plain HTTP (simplest)
-__1.__ Copy `.env.example` → `.env.local`
+__1.__ Copy `.env.example` → `.env`
 ```env
+# MYSQL
+MYSQL_ROOT_PASSWORD=rootpass
+MYSQL_DATABASE=jatos
+MYSQL_USER=jatos
+MYSQL_PASSWORD=devpass
+
+# Traefik host
 JATOS_DOMAIN=jatos.localhost
 ```
 
-__2.__ Run:
+__2.__ Add user to the `docker` group:
+```bash
+sudo groupadd docker       
+sudo usermod -aG docker $USER
+newgrp docker
+```
+
+__3.__ Run:
 ```bash
 make dev-http
 ```
 
-__3.__ Access JATOS at: [http://jatos.localhost]
+__4.__ Access JATOS at: [http://jatos.localhost]
+
+__5.__ On first login use `admin` as password and username as well.
 
 ### Local HTTPS with mkcert
 
@@ -61,18 +77,28 @@ mkcert -key-file ./certs/jatos.localhost-key.pem -cert-file ./certs/jatos.localh
 ```
 `
 _(Alternatively, run `make certs` which will auto-generate them using scripts/gen-certs.sh.)_
+_`make dev-https` also generates the cerst automatically._
 
-__3.__ Update your .env.local:
+__3.__ Add use to the `docker` group:
+```bash
+sudo groupadd docker       
+sudo usermod -aG docker $USER
+newgrp docker
+```
+
+__4.__ Update your .env.local:
 ```env
 JATOS_DOMAIN=jatos.localhost
 ```
 
-__4.__ Run:
+__5.__ Run:
 ```bash
 make dev-https
 ```
 
-__5.__ Access JATOS at: [http://jatos.localhost]
+__6.__ Access JATOS at: [http://jatos.localhost]
+
+__7.__ On first login use `admin` as password and username as well.
 
 ## 📦 Data persistence
 

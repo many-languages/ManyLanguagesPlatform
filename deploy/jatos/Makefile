@@ -1,6 +1,4 @@
-# Default env files
-ENV_FILE=.env
-ENV_FILE_LOCAL=.env.local
+.PHONY: certs dev-https dev-http prod stop logs clean
 
 # Base compose file
 COMPOSE=docker compose -f docker-compose.yml
@@ -16,16 +14,18 @@ help:
 	@echo "  make clean        Remove containers and volumes"
 
 dev-http:
-	$(COMPOSE) -f docker-compose.override.http.yml --env-file $(ENV_FILE_LOCAL) up -d
+	$(COMPOSE) -f docker-compose.override.http.yml up -d
 
 dev-https: certs
-	$(COMPOSE) -f docker-compose.override.https.yml --env-file $(ENV_FILE_LOCAL) up -d
+	$(COMPOSE) -f docker-compose.override.https.yml up -d
 
-certs:
-	@./scripts/gen-certs.sh
+certs: certs/jatos.localhost.pem certs/jatos.localhost-key.pem
+
+certs/jatos.localhost.pem certs/jatos.localhost-key.pem:
+	./scripts/gen-certs.sh
 
 prod:
-	$(COMPOSE) --env-file $(ENV_FILE) up -d
+	$(COMPOSE) up -d
 
 stop:
 	$(COMPOSE) down

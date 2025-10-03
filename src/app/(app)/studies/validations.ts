@@ -16,11 +16,22 @@ export const StudyFormSchema = z.object({
   payment: z.string().min(1, "Payment description is required"),
   ethicalPermission: z.string().url("Must be a valid URL"),
   length: z.string().min(1, "Study length is required"),
+  studyFile: z
+    .any()
+    .refine((file) => file == null || file instanceof File, {
+      message: "Must be a file",
+    })
+    .optional(),
 })
 
 export const CreateStudy = StudyFormSchema.extend({
   startDate: StudyFormSchema.shape.startDate.transform((s) => new Date(s)),
   endDate: StudyFormSchema.shape.endDate.transform((s) => new Date(s)),
+
+  // JATOS integration fields (added by importStudy before createStudy)
+  jatosStudyId: z.number().optional(),
+  jatosUUID: z.string().optional(),
+  jatosFileName: z.string().optional(),
 })
 
 export type CreateStudyInput = z.infer<typeof CreateStudy>

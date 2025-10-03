@@ -2,7 +2,10 @@ import { Study } from "db"
 import StudyItem from "./StudyItem"
 
 interface StudyListProps {
-  studies: Pick<Study, "id" | "title" | "description" | "sampleSize" | "length" | "endDate">[]
+  studies: Pick<
+    Study,
+    "id" | "title" | "description" | "sampleSize" | "length" | "endDate" | "jatosStudyUUID"
+  >[]
 }
 
 export default function StudyList({ studies }: StudyListProps) {

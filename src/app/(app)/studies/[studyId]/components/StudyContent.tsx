@@ -6,6 +6,7 @@ import Link from "next/link"
 import { formatDate } from "@/src/app/utils/formatDate"
 import getUserStudyMembership from "../../queries/getUserStudyMembership"
 import { StudyWithRelations } from "../../queries/getStudy"
+import ArchiveStudy from "../../components/ArchiveStudy"
 
 interface StudyContentProps {
   study: StudyWithRelations
@@ -24,8 +25,9 @@ export default function StudyContent({ study }: StudyContentProps) {
           membership.kind === "RESEARCHER" && (
             <div className="card-actions justify-end mt-4">
               <Link className="btn btn-primary" href={`/studies/${study.id}/edit`}>
-                Update Study
+                Update
               </Link>
+              <ArchiveStudy studyId={study.id} />
             </div>
           )
         }

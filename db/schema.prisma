@@ -37,6 +37,7 @@ model User {
   // Relations
   studies        StudyResearcher[] // researcher memberships
   participations ParticipantStudy[] // participant memberships
+  Study          Study[]
 }
 
 model Session {
@@ -100,9 +101,17 @@ model Study {
   jatosStudyUUID String @unique // optional, JATOS also has UUIDs 
   jatosFileName  String // original uploaded filename
 
+  // Archival
+  archived     Boolean   @default(false)
+  archivedAt   DateTime?
+  archivedById Int?
+  archivedBy   User?     @relation(fields: [archivedById], references: [id])
+
   // Relations
   researchers    StudyResearcher[]
   participations ParticipantStudy[]
+
+  @@index([archived, createdAt])
 }
 
 enum ResearcherRole {

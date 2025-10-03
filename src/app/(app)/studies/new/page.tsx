@@ -26,7 +26,11 @@ export default function NewStudy() {
             async (r) => {
               const data = await r.json()
               if (!r.ok) throw new Error(data?.error || "Import failed")
-              return data as { jatosStudyId: number; jatosUUID?: string; jatosFileName: string }
+              return data as {
+                jatosStudyId: number
+                jatosStudyUUID: string
+                jatosFileName: string
+              }
             }
           )
 
@@ -35,7 +39,7 @@ export default function NewStudy() {
           await createStudyMutation({
             ...rest,
             jatosStudyId: jatos.jatosStudyId,
-            jatosStudyUUID: jatos.jatosUUID,
+            jatosStudyUUID: jatos.jatosStudyUUID,
             jatosFileName: jatos.jatosFileName,
           })
 

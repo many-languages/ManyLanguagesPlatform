@@ -28,9 +28,9 @@ export const CreateStudy = StudyFormSchema.omit({ studyFile: true }).extend({
   startDate: StudyFormSchema.shape.startDate.transform((s) => new Date(s)),
   endDate: StudyFormSchema.shape.endDate.transform((s) => new Date(s)),
   // JATOS integration fields (added by importStudy before createStudy)
-  jatosStudyId: z.number().optional(),
-  jatosStudyUUID: z.string().optional(),
-  jatosFileName: z.string().optional(),
+  jatosStudyId: z.number(),
+  jatosStudyUUID: z.string(),
+  jatosFileName: z.string(),
 })
 
 export type CreateStudyInput = z.infer<typeof CreateStudy>

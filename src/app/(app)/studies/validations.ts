@@ -18,19 +18,18 @@ export const StudyFormSchema = z.object({
   length: z.string().min(1, "Study length is required"),
   studyFile: z
     .any()
-    .refine((file) => file == null || file instanceof File, {
+    .refine((f) => f == null || (typeof File !== "undefined" && f instanceof File), {
       message: "Must be a file",
     })
     .optional(),
 })
 
-export const CreateStudy = StudyFormSchema.extend({
+export const CreateStudy = StudyFormSchema.omit({ studyFile: true }).extend({
   startDate: StudyFormSchema.shape.startDate.transform((s) => new Date(s)),
   endDate: StudyFormSchema.shape.endDate.transform((s) => new Date(s)),
-
   // JATOS integration fields (added by importStudy before createStudy)
   jatosStudyId: z.number().optional(),
-  jatosUUID: z.string().optional(),
+  jatosStudyUUID: z.string().optional(),
   jatosFileName: z.string().optional(),
 })
 

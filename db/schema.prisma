@@ -96,9 +96,9 @@ model Study {
   length            String // e.g. "30 minutes", stored as text
 
   // JATOS integration
-  jatosStudyId   Int? // ID returned from JATOS after import
-  jatosStudyUUID String? // optional, JATOS also has UUIDs
-  jatosFileName  String? // original uploaded filename
+  jatosStudyId   Int // ID returned from JATOS after import
+  jatosStudyUUID String @unique // optional, JATOS also has UUIDs 
+  jatosFileName  String // original uploaded filename
 
   // Relations
   researchers    StudyResearcher[]

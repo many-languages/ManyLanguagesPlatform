@@ -3,7 +3,10 @@ import CollapseCard from "@/src/app/components/CollapseCard"
 import Link from "next/link"
 
 interface StudyItemProps {
-  study: Pick<Study, "id" | "title" | "description" | "sampleSize" | "length" | "endDate">
+  study: Pick<
+    Study,
+    "id" | "title" | "description" | "sampleSize" | "length" | "endDate" | "jatosStudyUUID"
+  >
 }
 
 export default function StudyItem({ study }: StudyItemProps) {
@@ -38,6 +41,13 @@ export default function StudyItem({ study }: StudyItemProps) {
           <span className="font-semibold">End date:</span>{" "}
           {new Date(study.endDate).toLocaleDateString()}
         </p>
+
+        {/* JatosStudyUUID */}
+        {/* {study.jatosStudyUUID && ( */}
+        <p className="text-sm text-base-content/80">
+          {study.jatosStudyUUID ? study.jatosStudyUUID : "shitfuck"}
+        </p>
+        {/* )} */}
       </div>
     </CollapseCard>
   )

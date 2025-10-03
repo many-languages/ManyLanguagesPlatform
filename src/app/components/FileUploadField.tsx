@@ -29,7 +29,7 @@ export const FileUploadField = forwardRef<HTMLInputElement, FileUploadFieldProps
           accept={accept}
           ref={ref}
           disabled={isSubmitting}
-          className="file-input file-input-bordered w-full"
+          className="file-input file-input-bordered"
           onChange={(event) => {
             const file = event.currentTarget.files?.[0] ?? null
             helpers.setValue(file) // store File object in Formik state

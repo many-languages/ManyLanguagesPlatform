@@ -16,6 +16,7 @@ export const metadata = {
 async function ExploreContent({ page, userId }: { page: number; userId: number }) {
   const result = await getStudies({
     where: {
+      archived: false,
       status: "OPEN",
       NOT: {
         OR: [{ researchers: { some: { userId } } }, { participations: { some: { userId } } }],

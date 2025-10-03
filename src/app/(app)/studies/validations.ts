@@ -50,6 +50,6 @@ export const UpdateStudy = z.object({
 
 export type UpdateStudyInput = z.infer<typeof UpdateStudy>
 
-export const DeleteStudy = z.object({
-  id: Id,
-})
+export const ArchiveStudy = z.object({ id: z.number().int().positive() })
+
+export const UnarchiveStudy = z.object({ id: z.number().int().positive() })

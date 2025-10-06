@@ -2,6 +2,7 @@ import { Study } from "db"
 import CollapseCard from "@/src/app/components/CollapseCard"
 import Link from "next/link"
 import { ArchiveBoxIcon } from "@heroicons/react/24/outline"
+import JoinStudyButton from "./JoinStudyButton"
 
 interface StudyItemProps {
   study: Pick<
@@ -15,9 +16,10 @@ interface StudyItemProps {
     | "jatosStudyUUID"
     | "archived"
   >
+  showJoinButton?: boolean
 }
 
-export default function StudyItem({ study }: StudyItemProps) {
+export default function StudyItem({ study, showJoinButton }: StudyItemProps) {
   return (
     <CollapseCard
       title={
@@ -33,6 +35,7 @@ export default function StudyItem({ study }: StudyItemProps) {
           <Link className="btn btn-primary" href={`/studies/${study.id}`}>
             Open
           </Link>
+          {showJoinButton && <JoinStudyButton studyId={study.id} />}
         </>
       }
     >

@@ -50,7 +50,7 @@ async function StudiesContent({
         Create Study
       </Link>
       <Suspense fallback={<StudyListSkeleton />}>
-        <StudyList studies={studies} />
+        <StudyList studies={studies} showJoinButton={false} />
       </Suspense>
       <Suspense fallback={<PaginationControlsSkeleton />}>
         <PaginationControls

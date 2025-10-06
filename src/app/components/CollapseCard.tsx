@@ -8,7 +8,7 @@ import dynamic from "next/dynamic"
 const Tooltip = dynamic(() => import("react-tooltip").then((mod) => mod.Tooltip))
 
 interface CollapseCardProps {
-  title: string
+  title: ReactNode
   children?: ReactNode
   tooltipContent?: string
   actions?: ReactNode

@@ -5,6 +5,7 @@ import { ArchiveBoxIcon } from "@heroicons/react/24/outline"
 import StudyInformationCard from "./StudyInformationCard"
 import StudyComponentButton from "./studyComponent/StudyComponentButton"
 import JatosInformationCard from "./JatosInformationCard"
+import GenerateLinkButton from "./GenerateLinkButton"
 
 interface StudyContentProps {
   study: StudyWithRelations
@@ -28,6 +29,12 @@ export default function StudyContent({ study }: StudyContentProps) {
       <StudyInformationCard study={study} />
       <JatosInformationCard jatosStudyUUID={study.jatosStudyUUID} />
       <StudyComponentButton study={study} />
+      {/* <GenerateLinkButton
+        participantId={participant.id}
+        pseudonym={participant.pseudonym}
+        jatosBatchId={study.jatosBatchId!}
+        studyCode={study.jatosStudyUUID!}
+      /> */}
     </main>
   )
 }

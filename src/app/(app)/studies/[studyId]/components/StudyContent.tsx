@@ -6,7 +6,7 @@ import Link from "next/link"
 import { formatDate } from "@/src/app/utils/formatDate"
 import getUserStudyMembership from "../../queries/getUserStudyMembership"
 import { StudyWithRelations } from "../../queries/getStudy"
-import ArchiveStudy from "../../components/ArchiveStudy"
+import ArchiveStudyButton from "../../components/ArchiveStudyButton"
 
 interface StudyContentProps {
   study: StudyWithRelations
@@ -27,7 +27,7 @@ export default function StudyContent({ study }: StudyContentProps) {
               <Link className="btn btn-primary" href={`/studies/${study.id}/edit`}>
                 Update
               </Link>
-              <ArchiveStudy studyId={study.id} />
+              <ArchiveStudyButton studyId={study.id} isArchived={study.archived} />
             </div>
           )
         }

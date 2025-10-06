@@ -53,3 +53,13 @@ export type UpdateStudyInput = z.infer<typeof UpdateStudy>
 export const ArchiveStudy = z.object({ id: z.number().int().positive() })
 
 export const UnarchiveStudy = z.object({ id: z.number().int().positive() })
+
+export const StudyComponentFormSchema = z.object({
+  htmlFilePath: z.string().min(1, "Please select an HTML file"),
+})
+
+export const UpdateStudyComponent = z.object({
+  id: z.number(),
+  jatosComponentId: z.number(),
+  jatosComponentUUID: z.string().optional(),
+})

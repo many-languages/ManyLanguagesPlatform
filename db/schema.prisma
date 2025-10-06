@@ -97,9 +97,12 @@ model Study {
   length            String // e.g. "30 minutes", stored as text
 
   // JATOS integration
-  jatosStudyId   Int // ID returned from JATOS after import
-  jatosStudyUUID String @unique // optional, JATOS also has UUIDs 
-  jatosFileName  String // original uploaded filename
+  jatosStudyId       Int // ID returned from JATOS after import
+  jatosStudyUUID     String  @unique // optional, JATOS also has UUIDs 
+  jatosFileName      String // original uploaded filename
+  // JATOS component fields
+  jatosComponentId   Int?
+  jatosComponentUUID String?
 
   // Archival
   archived     Boolean   @default(false)
@@ -139,7 +142,8 @@ model ParticipantStudy {
   userId  Int
   studyId Int
 
-  pseudonym String @default(uuid())
+  pseudonym  String  @default(uuid())
+  jatosToken String? // optional, assigned after link creation
 
   user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
   study Study @relation(fields: [studyId], references: [id], onDelete: Cascade)

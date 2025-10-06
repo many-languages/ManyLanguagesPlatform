@@ -22,7 +22,7 @@ export default function NewStudy() {
           // 1) Upload to JATOS via BFF
           const fd = new FormData()
           fd.append("studyFile", file, file.name)
-          const jatos = await fetch("/api/jatos/import", { method: "POST", body: fd }).then(
+          const jatosStudy = await fetch("/api/jatos/import", { method: "POST", body: fd }).then(
             async (r) => {
               const data = await r.json()
               if (!r.ok) throw new Error(data?.error || "Import failed")
@@ -38,9 +38,9 @@ export default function NewStudy() {
           const { studyFile, ...rest } = values as any
           await createStudyMutation({
             ...rest,
-            jatosStudyId: jatos.jatosStudyId,
-            jatosStudyUUID: jatos.jatosStudyUUID,
-            jatosFileName: jatos.jatosFileName,
+            jatosStudyId: jatosStudy.jatosStudyId,
+            jatosStudyUUID: jatosStudy.jatosStudyUUID,
+            jatosFileName: jatosStudy.jatosFileName,
           })
 
           router.push("/studies")

@@ -61,7 +61,7 @@ export const LabeledSelectField = forwardRef<HTMLSelectElement, LabeledSelectFie
             {firstOptionText}
           </option>
           {options?.map((v) => (
-            <option key={v.id} value={v[optionValue]}>
+            <option key={v.id ?? v[optionValue]} value={v[optionValue]}>
               {v[optionText]}
             </option>
           ))}

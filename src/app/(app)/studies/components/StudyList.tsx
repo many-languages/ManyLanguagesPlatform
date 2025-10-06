@@ -4,7 +4,14 @@ import StudyItem from "./StudyItem"
 interface StudyListProps {
   studies: Pick<
     Study,
-    "id" | "title" | "description" | "sampleSize" | "length" | "endDate" | "jatosStudyUUID"
+    | "id"
+    | "title"
+    | "description"
+    | "sampleSize"
+    | "length"
+    | "endDate"
+    | "jatosStudyUUID"
+    | "archived"
   >[]
 }
 

@@ -12,6 +12,7 @@ import RunStudyButton from "./studyComponent/RunStudyButton"
 import { useSession } from "@blitzjs/auth"
 import getStudyResearcher from "../../queries/getStudyResearcher"
 import getStudyParticipant from "../../queries/getStudyParticipant"
+import DownloadResultsButton from "./DownloadResultsButton"
 
 interface StudyContentProps {
   study: StudyWithRelations
@@ -31,11 +32,11 @@ export default function StudyContent({ study }: StudyContentProps) {
     { studyId: study.id },
     { enabled: role === "PARTICIPANT" }
   )
-  const [participants] = useQuery(
-    getStudyParticipants,
-    { studyId: study.id },
-    { enabled: role === "RESEARCHER" }
-  )
+  // const [participants] = useQuery(
+  //   getStudyParticipants,
+  //   { studyId: study.id },
+  //   { enabled: role === "RESEARCHER" }
+  // )
 
   return (
     <main>
@@ -67,12 +68,7 @@ export default function StudyContent({ study }: StudyContentProps) {
       {role === "RESEARCHER" && (
         <>
           <JatosInformationCard jatosStudyUUID={study.jatosStudyUUID} />
-          {/* <StudyComponentButton study={study} /> */}
-          {/* <GeneratePersonalLinkButton
-            participants={participants!}
-            jatosBatchId={study.jatosBatchId!}
-            jatosStudyId={study.jatosStudyId}
-          /> */}
+          <DownloadResultsButton jatosStudyId={study.jatosStudyId} />
         </>
       )}
     </main>

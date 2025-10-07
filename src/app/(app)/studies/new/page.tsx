@@ -5,10 +5,12 @@ import StudyForm from "../components/StudyForm"
 import { useMutation } from "@blitzjs/rpc"
 import createStudy from "../mutations/createStudy"
 import toast from "react-hot-toast"
+import updateStudyBatch from "../mutations/updateStudyBatch"
 
 export default function NewStudy() {
   const router = useRouter()
   const [createStudyMutation] = useMutation(createStudy)
+  const [updateStudyBatchMutation] = useMutation(updateStudyBatch)
 
   return (
     <StudyForm
@@ -36,15 +38,37 @@ export default function NewStudy() {
 
           // 2) Persist study (WITHOUT the file)
           const { studyFile, ...rest } = values as any
-          await createStudyMutation({
+          const study = await createStudyMutation({
             ...rest,
             jatosStudyId: jatosStudy.jatosStudyId,
             jatosStudyUUID: jatosStudy.jatosStudyUUID,
             jatosFileName: jatosStudy.jatosFileName,
           })
 
+          // 3) Fetch JATOS properties to get the batchId
+          const res = await fetch(
+            `/api/jatos/get-study-properties?studyId=${jatosStudy.jatosStudyUUID}`
+          )
+          const json = await res.json()
+          if (!res.ok) throw new Error(json.error || "Failed to fetch JATOS properties")
+
+          const batches = json?.data?.batches ?? []
+          const jatosBatchId = batches.length > 0 ? batches[0].id : null
+
+          // 4) Update the study in the DB with jatosBatchId
+          if (jatosBatchId) {
+            await updateStudyBatchMutation({
+              studyId: study.id,
+              jatosBatchId,
+            })
+          } else {
+            toast.error("No JATOS batch found for this study")
+          }
+
+          toast.success("Study created successfully")
           router.push("/studies")
         } catch (err: any) {
+          console.error(err)
           return { FORM_ERROR: `Unexpected error: ${err.message ?? String(err)}` }
         }
       }}

@@ -59,9 +59,13 @@ export default function JatosInformationCard({ jatosStudyUUID }: JatosInformatio
 
   const components = jatosInfo.components || []
   const batches = jatosInfo.batches || []
-  console.log(jatosInfo)
+  // const jatosBatchId = batches.length > 0 ? batches[0].id : null
+  // console.log(jatosBatchId)
   return (
     <Card title="JATOS Information">
+      <p className="italic">
+        This card contains live information about the study instance on the JATOS server.
+      </p>
       <p>
         <span className="font-semibold">Study ID:</span> {jatosInfo.id}
       </p>
@@ -96,6 +100,9 @@ export default function JatosInformationCard({ jatosStudyUUID }: JatosInformatio
               <li key={b.id}>
                 <span className="font-semibold">{b.title}</span>{" "}
                 {b.active ? "(active)" : "(inactive)"}
+                <br />
+                <span className="font-semibold">Batch id:</span>
+                {b.id}
               </li>
             ))}
           </ul>

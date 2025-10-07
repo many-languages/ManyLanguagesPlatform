@@ -11,6 +11,9 @@ interface StudyListProps {
     | "length"
     | "endDate"
     | "jatosStudyUUID"
+    | "jatosStudyId"
+    | "jatosWorkerType"
+    | "jatosBatchId"
     | "archived"
   >[]
   showJoinButton?: boolean

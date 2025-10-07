@@ -5,13 +5,38 @@ import { ArchiveBoxIcon } from "@heroicons/react/24/outline"
 import StudyInformationCard from "./StudyInformationCard"
 import StudyComponentButton from "./studyComponent/StudyComponentButton"
 import JatosInformationCard from "./JatosInformationCard"
-import GenerateLinkButton from "./GenerateLinkButton"
+import GeneratePersonalLinkButton from "./GeneratePersonalLinkButton"
+import { useQuery } from "@blitzjs/rpc"
+import getStudyParticipants from "../../queries/getStudyParticipants"
+import RunStudyButton from "./studyComponent/RunStudyButton"
+import { useSession } from "@blitzjs/auth"
+import getStudyResearcher from "../../queries/getStudyResearcher"
+import getStudyParticipant from "../../queries/getStudyParticipant"
 
 interface StudyContentProps {
   study: StudyWithRelations
 }
 
 export default function StudyContent({ study }: StudyContentProps) {
+  // Get user data for the study based on their role
+  const { role } = useSession()
+
+  // const [researcher] = useQuery(
+  //   getStudyResearcher,
+  //   { studyId: study.id },
+  //   { enabled: role === "RESEARCHER" }
+  // )
+  const [participant] = useQuery(
+    getStudyParticipant,
+    { studyId: study.id },
+    { enabled: role === "PARTICIPANT" }
+  )
+  const [participants] = useQuery(
+    getStudyParticipants,
+    { studyId: study.id },
+    { enabled: role === "RESEARCHER" }
+  )
+
   return (
     <main>
       <h1 className="text-3xl font-bold text-center mb-6">
@@ -26,15 +51,30 @@ export default function StudyContent({ study }: StudyContentProps) {
           {study?.title}
         </span>
       </h1>
+      {/* General information */}
       <StudyInformationCard study={study} />
-      <JatosInformationCard jatosStudyUUID={study.jatosStudyUUID} />
-      <StudyComponentButton study={study} />
-      {/* <GenerateLinkButton
-        participantId={participant.id}
-        pseudonym={participant.pseudonym}
-        jatosBatchId={study.jatosBatchId!}
-        studyCode={study.jatosStudyUUID!}
-      /> */}
+      {/* Just participant components */}
+      {role === "PARTICIPANT" && (
+        <>
+          {!participant ? (
+            <button className="btn btn-disabled loading">Loading study...</button>
+          ) : (
+            <RunStudyButton runUrl={participant.jatosRunUrl} />
+          )}
+        </>
+      )}
+      {/* Just researcher components */}
+      {role === "RESEARCHER" && (
+        <>
+          <JatosInformationCard jatosStudyUUID={study.jatosStudyUUID} />
+          {/* <StudyComponentButton study={study} /> */}
+          {/* <GeneratePersonalLinkButton
+            participants={participants!}
+            jatosBatchId={study.jatosBatchId!}
+            jatosStudyId={study.jatosStudyId}
+          /> */}
+        </>
+      )}
     </main>
   )
 }

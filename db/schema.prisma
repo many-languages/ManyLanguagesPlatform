@@ -80,6 +80,11 @@ enum StudyStatus {
   CLOSED
 }
 
+enum JatosWorkerType {
+  SINGLE
+  MULTIPLE
+}
+
 model Study {
   // Basic information
   id          Int      @id @default(autoincrement())
@@ -98,11 +103,15 @@ model Study {
 
   // JATOS integration
   jatosStudyId       Int // ID returned from JATOS after import
-  jatosStudyUUID     String  @unique // optional, JATOS also has UUIDs 
+  jatosStudyUUID     String          @unique // optional, JATOS also has UUIDs 
   jatosFileName      String // original uploaded filename
   // JATOS component fields
   jatosComponentId   Int?
   jatosComponentUUID String?
+  // JATOS batches
+  jatosBatchId       Int?
+  // JATOS workers
+  jatosWorkerType    JatosWorkerType @default(SINGLE)
 
   // Archival
   archived     Boolean   @default(false)
@@ -142,8 +151,8 @@ model ParticipantStudy {
   userId  Int
   studyId Int
 
-  pseudonym  String  @default(uuid())
-  jatosToken String? // optional, assigned after link creation
+  pseudonym   String  @default(uuid())
+  jatosRunUrl String? // stored personal single link
 
   user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
   study Study @relation(fields: [studyId], references: [id], onDelete: Cascade)

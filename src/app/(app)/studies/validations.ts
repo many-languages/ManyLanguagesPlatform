@@ -1,3 +1,4 @@
+import { JatosWorkerType } from "@/db"
 import { z } from "zod"
 
 export const Id = z.number().int().positive()
@@ -16,6 +17,7 @@ export const StudyFormSchema = z.object({
   payment: z.string().min(1, "Payment description is required"),
   ethicalPermission: z.string().url("Must be a valid URL"),
   length: z.string().min(1, "Study length is required"),
+  jatosWorkerType: z.nativeEnum(JatosWorkerType).default(JatosWorkerType.SINGLE),
   studyFile: z
     .any()
     .refine((f) => f == null || (typeof File !== "undefined" && f instanceof File), {

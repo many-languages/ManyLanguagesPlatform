@@ -14,6 +14,9 @@ interface StudyItemProps {
     | "length"
     | "endDate"
     | "jatosStudyUUID"
+    | "jatosStudyId"
+    | "jatosWorkerType"
+    | "jatosBatchId"
     | "archived"
   >
   showJoinButton?: boolean
@@ -35,7 +38,14 @@ export default function StudyItem({ study, showJoinButton }: StudyItemProps) {
           <Link className="btn btn-primary" href={`/studies/${study.id}`}>
             Open
           </Link>
-          {showJoinButton && <JoinStudyButton studyId={study.id} />}
+          {showJoinButton && (
+            <JoinStudyButton
+              studyId={study.id}
+              jatosStudyId={study.jatosStudyId}
+              jatosBatchId={study.jatosBatchId!}
+              jatosWorkerType={study.jatosWorkerType}
+            />
+          )}
         </>
       }
     >

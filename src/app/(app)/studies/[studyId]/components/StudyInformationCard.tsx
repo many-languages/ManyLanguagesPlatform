@@ -1,26 +1,24 @@
 "use client"
 
-import { useQuery } from "@blitzjs/rpc"
 import Card from "src/app/components/Card"
 import Link from "next/link"
 import { formatDate } from "@/src/app/utils/formatDate"
-import getUserStudyMembership from "../../queries/getUserStudyMembership"
 import { StudyWithRelations } from "../../queries/getStudy"
 import ArchiveStudyButton from "../../components/ArchiveStudyButton"
+import { useSession } from "@blitzjs/auth"
 
 interface StudyInformationCardProps {
   study: StudyWithRelations
 }
 
 export default function StudyInformationCard({ study }: StudyInformationCardProps) {
-  const [membership] = useQuery(getUserStudyMembership, { id: study.id })
+  const { role } = useSession()
 
   return (
     <Card
       title="Study Information"
       actions={
-        membership &&
-        membership.kind === "RESEARCHER" && (
+        role === "RESEARCHER" && (
           <div className="card-actions justify-end mt-4">
             <Link className="btn btn-primary" href={`/studies/${study.id}/edit`}>
               Update
@@ -58,6 +56,9 @@ export default function StudyInformationCard({ study }: StudyInformationCardProp
       </p>
       <p>
         <span className="font-semibold">End Date:</span> {formatDate(study.endDate)}
+      </p>
+      <p>
+        <span className="font-semibold">Data collection method:</span> {study.jatosWorkerType}
       </p>
     </Card>
   )

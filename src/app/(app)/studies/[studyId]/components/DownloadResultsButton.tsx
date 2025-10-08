@@ -52,7 +52,7 @@ export default function DownloadResultsButton({ jatosStudyId }: DownloadResultsB
       className="btn btn-primary inline-flex items-center gap-2"
     >
       <ArrowDownTrayIcon className="h-5 w-5" />
-      {loading ? "Downloading..." : "Download Results (ZIP)"}
+      {loading ? "Downloading..." : "Download All Results (ZIP archive)"}
     </button>
   )
 }

@@ -13,12 +13,15 @@ import { useSession } from "@blitzjs/auth"
 import getStudyResearcher from "../../queries/getStudyResearcher"
 import getStudyParticipant from "../../queries/getStudyParticipant"
 import DownloadResultsButton from "./DownloadResultsButton"
+import StudySummary from "./StudySummary"
+import { JatosMetadata } from "@/src/types/jatos"
 
 interface StudyContentProps {
   study: StudyWithRelations
+  metadata: JatosMetadata
 }
 
-export default function StudyContent({ study }: StudyContentProps) {
+export default function StudyContent({ study, metadata }: StudyContentProps) {
   // Get user data for the study based on their role
   const { role } = useSession()
 
@@ -69,6 +72,7 @@ export default function StudyContent({ study }: StudyContentProps) {
         <>
           <JatosInformationCard jatosStudyUUID={study.jatosStudyUUID} />
           <DownloadResultsButton jatosStudyId={study.jatosStudyId} />
+          <StudySummary metadata={metadata} />
         </>
       )}
     </main>

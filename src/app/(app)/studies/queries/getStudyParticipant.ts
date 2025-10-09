@@ -11,7 +11,14 @@ export default resolver.pipe(
     const userId = ctx.session.userId!
     return await db.participantStudy.findUnique({
       where: { userId_studyId: { userId, studyId } },
-      select: { id: true, pseudonym: true, jatosRunUrl: true, createdAt: true },
+      select: {
+        id: true,
+        pseudonym: true,
+        jatosRunUrl: true,
+        createdAt: true,
+        active: true,
+        payed: true,
+      },
     })
   }
 )

@@ -73,7 +73,7 @@ export default function StudyContent({ study, metadata }: StudyContentProps) {
           {!participant ? (
             <button className="btn btn-disabled loading">Loading study...</button>
           ) : (
-            <RunStudyButton runUrl={participant.jatosRunUrl} />
+            <RunStudyButton runUrl={participant.jatosRunUrl} isActive={participant.active} />
           )}
         </>
       )}

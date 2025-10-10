@@ -1,34 +1,43 @@
 "use client"
 
+import { Route } from "next"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import React from "react"
 
 interface PaginationControlsProps {
   page: number
   hasMore: boolean
+  /** extra params to preserve/force across pagination (e.g. { showArchived: "1" }) */
+  extraQuery?: Record<string, string | number | boolean | undefined>
 }
 
-const PaginationControls: React.FC<PaginationControlsProps> = ({ page, hasMore }) => {
+const PaginationControls: React.FC<PaginationControlsProps> = ({ page, hasMore, extraQuery }) => {
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
 
-  const createQueryString = (name: string, value: string) => {
+  const buildHref = (nextPage: number) => {
     const params = new URLSearchParams(searchParams.toString())
-    params.set(name, value)
-    return params.toString()
+
+    // apply/override extraQuery
+    if (extraQuery) {
+      for (const [k, v] of Object.entries(extraQuery)) {
+        if (v === undefined || v === null) params.delete(k)
+        else params.set(k, String(v))
+      }
+    }
+
+    params.set("page", String(nextPage))
+    const qs = params.toString()
+    return (qs ? `${pathname}?${qs}` : pathname) as Route
   }
 
   const goToPreviousPage = () => {
-    if (page > 0) {
-      router.push(`${pathname}?${createQueryString("page", String(page - 1))}` as any)
-    }
+    if (page > 0) router.push(buildHref(page - 1))
   }
 
   const goToNextPage = () => {
-    if (hasMore) {
-      router.push(`${pathname}?${createQueryString("page", String(page - 1))}` as any)
-    }
+    if (hasMore) router.push(buildHref(page + 1))
   }
 
   return (

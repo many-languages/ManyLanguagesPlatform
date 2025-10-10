@@ -16,6 +16,7 @@ export const metadata = {
 async function ExploreContent({ page, userId }: { page: number; userId: number }) {
   const result = await getStudies({
     where: {
+      archived: false,
       status: "OPEN",
       NOT: {
         OR: [{ researchers: { some: { userId } } }, { participations: { some: { userId } } }],
@@ -31,7 +32,7 @@ async function ExploreContent({ page, userId }: { page: number; userId: number }
   return (
     <>
       <Suspense fallback={<StudyListSkeleton />}>
-        <StudyList studies={studies} />
+        <StudyList studies={studies} showJoinButton={true} />
       </Suspense>
       <Suspense fallback={<PaginationControlsSkeleton />}>
         <PaginationControls page={page} hasMore={hasMore} />

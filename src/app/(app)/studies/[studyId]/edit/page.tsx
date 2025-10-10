@@ -42,6 +42,7 @@ export default function EditStudy({ params }: { params: { studyId: string } }) {
           payment: study.payment ?? "",
           ethicalPermission: study.ethicalPermission ?? "",
           length: study.length ?? "",
+          jatosWorkerType: study.jatosWorkerType ?? "SINGLE",
         }}
         onSubmit={async (values) => {
           try {

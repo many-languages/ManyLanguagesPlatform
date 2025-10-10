@@ -1,35 +1,22 @@
 import { NextResponse } from "next/server"
+import { getStudyProperties } from "@/src/app/jatos/utils/getStudyProperties"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
 
-const JATOS_BASE = process.env.JATOS_BASE!
-const JATOS_TOKEN = process.env.JATOS_TOKEN!
-
 export async function GET(req: Request) {
-  const { searchParams } = new URL(req.url)
-  const studyId = searchParams.get("studyId")
+  try {
+    const { searchParams } = new URL(req.url)
+    const studyId = searchParams.get("studyId")
 
-  if (!studyId) {
-    return NextResponse.json({ error: "Missing studyId" }, { status: 400 })
-  }
-
-  const res = await fetch(
-    `${JATOS_BASE}/jatos/api/v1/studies/${studyId}/properties?withComponentProperties=true&withBatchProperties=true`,
-    {
-      method: "GET",
-      headers: {
-        Accept: "application/json",
-        Authorization: `Bearer ${JATOS_TOKEN}`,
-      },
+    if (!studyId) {
+      return NextResponse.json({ error: "Missing studyId" }, { status: 400 })
     }
-  )
 
-  const text = await res.text()
-  if (!res.ok) {
-    return NextResponse.json({ error: text }, { status: res.status })
+    const properties = await getStudyProperties(studyId)
+    return NextResponse.json(properties) // ✅ no `.data` wrapper
+  } catch (error: any) {
+    console.error("Error fetching JATOS properties:", error)
+    return NextResponse.json({ error: error.message }, { status: 500 })
   }
-
-  const json = JSON.parse(text)
-  return NextResponse.json(json)
 }

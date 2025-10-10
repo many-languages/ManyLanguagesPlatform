@@ -14,15 +14,17 @@ import getStudyResearcher from "../../queries/getStudyResearcher"
 import getStudyParticipant from "../../queries/getStudyParticipant"
 import DownloadResultsButton from "./DownloadResultsButton"
 import StudySummary from "./StudySummary"
-import { JatosMetadata } from "@/src/types/jatos"
+import { JatosMetadata, JatosStudyProperties } from "@/src/types/jatos"
 import ParticipantManagementCard from "./ParticipantManagementCard"
+import ResultsCard from "./ResultsCard"
 
 interface StudyContentProps {
   study: StudyWithRelations
   metadata: JatosMetadata
+  properties: JatosStudyProperties
 }
 
-export default function StudyContent({ study, metadata }: StudyContentProps) {
+export default function StudyContent({ study, metadata, properties }: StudyContentProps) {
   // Get user data for the study based on their role
   const { role } = useSession()
   // Get the ResearcherStudy persona of the user IF they are a RESEARCHER on the study
@@ -81,15 +83,20 @@ export default function StudyContent({ study, metadata }: StudyContentProps) {
       {/* Just researcher components */}
       {role === "RESEARCHER" && (
         <>
-          {/* <DownloadResultsButton jatosStudyId={study.jatosStudyId} /> */}
           {/* Manage participants for the study */}
           <ParticipantManagementCard
             participants={participants ?? []}
             metadata={metadata}
             onRefresh={refetchParticipants}
           />
+          {/* Showing detailed results */}
+          <ResultsCard
+            jatosStudyId={study.jatosStudyId}
+            metadata={metadata}
+            properties={properties}
+          />
           {/* Information about the study fetched from JATOS */}
-          <JatosInformationCard jatosStudyUUID={study.jatosStudyUUID} />
+          <JatosInformationCard properties={properties} />
         </>
       )}
     </main>

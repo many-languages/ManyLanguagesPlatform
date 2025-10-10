@@ -183,7 +183,7 @@ export default function ParticipantManagementCard({
               <div className="flex gap-2 justify-end">
                 <button
                   type="button"
-                  className="btn btn-secondary btn-sm"
+                  className="btn btn-secondary"
                   disabled={isSubmitting}
                   onClick={async () => {
                     await setFieldValue("action", "TOGGLE_ACTIVE")
@@ -197,7 +197,7 @@ export default function ParticipantManagementCard({
 
                 <button
                   type="button"
-                  className="btn btn-accent btn-sm"
+                  className="btn btn-accent"
                   disabled={isSubmitting}
                   onClick={async () => {
                     await setFieldValue("action", "TOGGLE_PAYED")

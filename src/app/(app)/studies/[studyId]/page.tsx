@@ -2,6 +2,7 @@ import { notFound } from "next/navigation"
 import { getStudyRsc } from "../queries/getStudy"
 import StudyContent from "./components/StudyContent"
 import { getResultsMetadata } from "@/src/app/jatos/utils/getResultsMetadata"
+import { getStudyProperties } from "@/src/app/jatos/utils/getStudyProperties"
 
 export default async function StudyPage({ params }: { params: Promise<{ studyId: string }> }) {
   const { studyId: studyIdRaw } = await params
@@ -15,11 +16,15 @@ export default async function StudyPage({ params }: { params: Promise<{ studyId:
     // Fetch study data
     const study = await getStudyRsc(studyId)
 
-    // Fetch resultsmetadata from JATOS
-    const metadata = await getResultsMetadata({ studyIds: [study.jatosStudyId] })
+    const [metadata, properties] = await Promise.all([
+      // Fetch results metadata from JATOS
+      getResultsMetadata({ studyIds: [study.jatosStudyId] }),
+      // Fetch study properties from JATOS
+      getStudyProperties(study.jatosStudyUUID),
+    ])
 
     // Return [StudyId] content
-    return <StudyContent study={study} metadata={metadata} />
+    return <StudyContent study={study} metadata={metadata} properties={properties} />
   } catch (error: any) {
     if (error.name === "NotFoundError") {
       notFound()

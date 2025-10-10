@@ -49,7 +49,7 @@ export default function DownloadResultsButton({ jatosStudyId }: DownloadResultsB
     <button
       onClick={handleDownload}
       disabled={loading}
-      className="btn btn-primary inline-flex items-center gap-2"
+      className="btn btn-accent inline-flex items-center gap-2"
     >
       <ArrowDownTrayIcon className="h-5 w-5" />
       {loading ? "Downloading..." : "Download All Results (ZIP archive)"}

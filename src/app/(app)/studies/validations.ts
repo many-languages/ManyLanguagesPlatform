@@ -1,3 +1,4 @@
+import { JatosWorkerType } from "@/db"
 import { z } from "zod"
 
 export const Id = z.number().int().positive()
@@ -16,11 +17,22 @@ export const StudyFormSchema = z.object({
   payment: z.string().min(1, "Payment description is required"),
   ethicalPermission: z.string().url("Must be a valid URL"),
   length: z.string().min(1, "Study length is required"),
+  jatosWorkerType: z.nativeEnum(JatosWorkerType).default(JatosWorkerType.SINGLE),
+  studyFile: z
+    .any()
+    .refine((f) => f == null || (typeof File !== "undefined" && f instanceof File), {
+      message: "Must be a file",
+    })
+    .optional(),
 })
 
-export const CreateStudy = StudyFormSchema.extend({
+export const CreateStudy = StudyFormSchema.omit({ studyFile: true }).extend({
   startDate: StudyFormSchema.shape.startDate.transform((s) => new Date(s)),
   endDate: StudyFormSchema.shape.endDate.transform((s) => new Date(s)),
+  // JATOS integration fields (added by importStudy before createStudy)
+  jatosStudyId: z.number(),
+  jatosStudyUUID: z.string(),
+  jatosFileName: z.string(),
 })
 
 export type CreateStudyInput = z.infer<typeof CreateStudy>
@@ -40,6 +52,16 @@ export const UpdateStudy = z.object({
 
 export type UpdateStudyInput = z.infer<typeof UpdateStudy>
 
-export const DeleteStudy = z.object({
-  id: Id,
+export const ArchiveStudy = z.object({ id: z.number().int().positive() })
+
+export const UnarchiveStudy = z.object({ id: z.number().int().positive() })
+
+export const StudyComponentFormSchema = z.object({
+  htmlFilePath: z.string().min(1, "Please select an HTML file"),
+})
+
+export const UpdateStudyComponent = z.object({
+  id: z.number(),
+  jatosComponentId: z.number(),
+  jatosComponentUUID: z.string().optional(),
 })

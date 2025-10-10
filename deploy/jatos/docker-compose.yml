@@ -1,0 +1,49 @@
+services:
+  jatos-db:
+    image: mysql:8.0
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    volumes:
+      - jatos-db-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -ujatos -pdevpass || exit 1"]
+      interval: 5s
+      retries: 10
+      timeout: 5s
+
+  jatos:
+    image: jatos/jatos:latest
+    depends_on:
+      jatos-db:
+        condition: service_healthy
+    restart: unless-stopped
+    volumes:
+      - ./jatos.conf:/opt/jatos/conf/jatos.conf:ro
+      - jatos-study-data:/opt/jatos/study_assets_root
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.jatos.rule=Host(`${JATOS_DOMAIN}`)"
+      - "traefik.http.routers.jatos.entrypoints=websecure"
+      - "traefik.http.services.jatos.loadbalancer.server.port=9000"
+
+  traefik:
+    image: traefik:v2.11
+    restart: unless-stopped
+    command:
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+
+volumes:
+  jatos-db-data:
+  jatos-study-data:

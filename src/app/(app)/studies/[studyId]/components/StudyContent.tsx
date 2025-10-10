@@ -1,65 +1,104 @@
 "use client"
 
-import { useQuery } from "@blitzjs/rpc"
-import Card from "src/app/components/Card"
-import Link from "next/link"
-import { formatDate } from "@/src/app/utils/formatDate"
-import getUserStudyMembership from "../../queries/getUserStudyMembership"
 import { StudyWithRelations } from "../../queries/getStudy"
+import { ArchiveBoxIcon } from "@heroicons/react/24/outline"
+import StudyInformationCard from "./StudyInformationCard"
+import StudyComponentButton from "./studyComponent/StudyComponentButton"
+import JatosInformationCard from "./JatosInformationCard"
+import GeneratePersonalLinkButton from "./GeneratePersonalLinkButton"
+import { useQuery } from "@blitzjs/rpc"
+import getStudyParticipants from "../../queries/getStudyParticipants"
+import RunStudyButton from "./studyComponent/RunStudyButton"
+import { useSession } from "@blitzjs/auth"
+import getStudyResearcher from "../../queries/getStudyResearcher"
+import getStudyParticipant from "../../queries/getStudyParticipant"
+import DownloadResultsButton from "./DownloadResultsButton"
+import StudySummary from "./StudySummary"
+import { JatosMetadata, JatosStudyProperties } from "@/src/types/jatos"
+import ParticipantManagementCard from "./ParticipantManagementCard"
+import ResultsCard from "./ResultsCard"
 
 interface StudyContentProps {
   study: StudyWithRelations
+  metadata: JatosMetadata
+  properties: JatosStudyProperties
 }
 
-export default function StudyContent({ study }: StudyContentProps) {
-  const [membership] = useQuery(getUserStudyMembership, { id: study.id })
+export default function StudyContent({ study, metadata, properties }: StudyContentProps) {
+  // Get user data for the study based on their role
+  const { role } = useSession()
+  // Get the ResearcherStudy persona of the user IF they are a RESEARCHER on the study
+  // const [researcher] = useQuery(
+  //   getStudyResearcher,
+  //   { studyId: study.id },
+  //   { enabled: role === "RESEARCHER" }
+  // )
+  // Get the StudyParticipant persona of the user IF they are a PARTICIPANT on the study
+  const [participant] = useQuery(
+    getStudyParticipant,
+    { studyId: study.id },
+    { enabled: role === "PARTICIPANT" }
+  )
+  // Get all participants and their emails assigned to the study
+  const [participants, { refetch: refetchParticipants }] = useQuery(
+    getStudyParticipants,
+    { studyId: study.id },
+    { enabled: role === "RESEARCHER" }
+  )
 
   return (
     <main>
-      <h1 className="text-3xl font-bold text-center mb-6">{study?.title}</h1>
-      <Card
-        title="Study Information"
-        actions={
-          membership &&
-          membership.kind === "RESEARCHER" && (
-            <div className="card-actions justify-end mt-4">
-              <Link className="btn btn-primary" href={`/studies/${study.id}/edit`}>
-                Update Study
-              </Link>
-            </div>
-          )
-        }
-      >
-        <p>
-          <span className="font-semibold">Description:</span> {study.description}
-        </p>
-        <p>
-          <span className="font-semibold">Sample Size:</span> {study.sampleSize}
-        </p>
-        <p>
-          <span className="font-semibold">Length:</span> {study.length}
-        </p>
-        <p>
-          <span className="font-semibold">Payment:</span> {study.payment}
-        </p>
-        <p>
-          <span className="font-semibold">Ethical Permission:</span>{" "}
-          <a
-            href={study.ethicalPermission}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="link"
-          >
-            View
-          </a>
-        </p>
-        <p>
-          <span className="font-semibold">Start Date:</span> {formatDate(study.startDate)}
-        </p>
-        <p>
-          <span className="font-semibold">End Date:</span> {formatDate(study.endDate)}
-        </p>
-      </Card>
+      {/* Study header */}
+      <h1 className="text-3xl font-bold text-center">
+        <span className="inline-flex items-center gap-2">
+          {study?.archived && (
+            <ArchiveBoxIcon
+              className="h-6 w-6"
+              title="Archived study"
+              aria-label="Archived study"
+            />
+          )}
+          {study?.title}
+        </span>
+      </h1>
+
+      {/* Summary statistics of the study */}
+      {role === "RESEARCHER" && <StudySummary metadata={metadata} />}
+
+      {/* General information */}
+      <StudyInformationCard study={study} />
+
+      {/* Just participant components */}
+      {role === "PARTICIPANT" && (
+        // Button to start responding
+        <>
+          {!participant ? (
+            <button className="btn btn-disabled loading">Loading study...</button>
+          ) : (
+            <RunStudyButton runUrl={participant.jatosRunUrl} isActive={participant.active} />
+          )}
+        </>
+      )}
+
+      {/* Just researcher components */}
+      {role === "RESEARCHER" && (
+        <>
+          {/* Manage participants for the study */}
+          <ParticipantManagementCard
+            participants={participants ?? []}
+            metadata={metadata}
+            onRefresh={refetchParticipants}
+          />
+          {/* Showing detailed results */}
+          <ResultsCard
+            jatosStudyId={study.jatosStudyId}
+            metadata={metadata}
+            properties={properties}
+          />
+          {/* Information about the study fetched from JATOS */}
+          <JatosInformationCard properties={properties} />
+        </>
+      )}
     </main>
   )
 }

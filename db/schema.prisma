@@ -120,8 +120,10 @@ model Study {
   archivedBy   User?     @relation(fields: [archivedById], references: [id])
 
   // Relations
-  researchers    StudyResearcher[]
-  participations ParticipantStudy[]
+  researchers      StudyResearcher[]
+  participations   ParticipantStudy[]
+  FeedbackTemplate FeedbackTemplate[]
+  StudyVariable    StudyVariable[]
 
   @@index([archived, createdAt])
 }
@@ -140,10 +142,26 @@ model StudyResearcher {
   study Study @relation(fields: [studyId], references: [id], onDelete: Cascade)
   user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  jatosRunUrl String? // stored personal single link
+
   role      ResearcherRole @default(PI)
   createdAt DateTime       @default(now())
 
   @@unique([studyId, userId])
+}
+
+model StudyVariable {
+  id        Int      @id @default(autoincrement())
+  studyId   Int
+  name      String // e.g. "score" or "reaction_time"
+  label     String? // optional human-readable label
+  type      String? // e.g. "number", "string", "boolean"
+  example   String? // optional example value from trial run
+  createdAt DateTime @default(now())
+
+  study Study @relation(fields: [studyId], references: [id])
+
+  @@unique([studyId, name])
 }
 
 model ParticipantStudy {
@@ -163,4 +181,15 @@ model ParticipantStudy {
   active Boolean @default(true)
 
   @@unique([userId, studyId])
+}
+
+model FeedbackTemplate {
+  id        Int      @id @default(autoincrement())
+  studyId   Int
+  title     String
+  content   String // raw markdown with placeholders, e.g. "Your score: {{score}}"
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  study Study @relation(fields: [studyId], references: [id])
 }

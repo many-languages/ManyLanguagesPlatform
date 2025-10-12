@@ -17,6 +17,7 @@ import StudySummary from "./StudySummary"
 import { JatosMetadata, JatosStudyProperties } from "@/src/types/jatos"
 import ParticipantManagementCard from "./ParticipantManagementCard"
 import ResultsCard from "./ResultsCard"
+import FeedbackFormEditor from "./FeedbackFormEditor"
 
 interface StudyContentProps {
   study: StudyWithRelations
@@ -83,6 +84,7 @@ export default function StudyContent({ study, metadata, properties }: StudyConte
       {/* Just researcher components */}
       {role === "RESEARCHER" && (
         <>
+          {/* <FeedbackFormEditor /> */}
           {/* Manage participants for the study */}
           <ParticipantManagementCard
             participants={participants ?? []}

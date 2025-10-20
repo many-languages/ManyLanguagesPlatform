@@ -9,15 +9,17 @@ import updateStudy from "../../../mutations/updateStudy"
 export default function Step1Page() {
   const router = useRouter()
   const params = useParams()
-  const studyId = Number(params.id)
+  const studyId = Number(params.studyId)
   const [updateStudyMutation] = useMutation(updateStudy)
 
   return (
     <>
-      <h2 className="text-lg font-semibold mb-4">Step 1 – General information</h2>
+      <h2 className="text-lg font-semibold mb-4 text-center">Step 1 – General information</h2>
       <StudyForm
         formTitle=""
         submitText="Save and continue"
+        borderless
+        alignSubmitRight
         onSubmit={async (values) => {
           try {
             // Remove JATOS file field if still present in the form definition

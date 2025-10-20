@@ -3,10 +3,8 @@ import { NextRequest, NextResponse } from "next/server"
 
 export async function POST(req: NextRequest) {
   try {
-    const url = new URL(req.url)
-    const params = Object.fromEntries(url.searchParams.entries())
-
-    const result = await getResultsMetadata(params)
+    const body = await req.json()
+    const result = await getResultsMetadata(body)
     return NextResponse.json(result)
   } catch (error: any) {
     console.error("Error fetching metadata:", error)

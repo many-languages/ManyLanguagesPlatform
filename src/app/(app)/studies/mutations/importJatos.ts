@@ -11,24 +11,17 @@ export default resolver.pipe(
   async (input, ctx) => {
     const { studyId, jatosWorkerType, jatosStudyId, jatosStudyUUID, jatosFileName } = input
 
-    // optional safety check — only researchers of the study can import
+    // Authorization check
     const researcher = await db.studyResearcher.findFirst({
       where: { studyId, userId: ctx.session.userId! },
-      select: { id: true },
     })
 
     if (!researcher) {
       throw new Error("You are not authorized to modify this study.")
     }
 
-    // Check for duplicate uuid in the db
-    if (jatosStudyUUID) {
-      const exists = await db.study.findUnique({ where: { jatosStudyUUID: jatosStudyUUID } })
-      if (exists) throw new Error(DUP_MSG)
-    }
-
     try {
-      return await db.study.update({
+      const result = await db.study.update({
         where: { id: studyId },
         data: {
           jatosWorkerType,
@@ -44,10 +37,14 @@ export default resolver.pipe(
           jatosFileName: true,
         },
       })
+      return { study: result }
     } catch (e: any) {
-      // unique constraint fallback (race condition)
+      // Handle DB unique constraint (shouldn't happen with new flow)
       if (e?.code === "P2002" && e?.meta?.target?.includes?.("jatosStudyUUID")) {
-        throw new Error(DUP_MSG)
+        return {
+          error: "UUID already exists in database",
+          jatosStudyUUID,
+        }
       }
       throw e
     }

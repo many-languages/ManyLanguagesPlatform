@@ -6,6 +6,7 @@ export async function createStudy(data: CreateStudyInput, userId: number) {
   return db.study.create({
     data: {
       ...data,
+      status: "CLOSED", // Study starts closed until setup is complete
       researchers: {
         create: {
           userId,

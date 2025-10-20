@@ -8,11 +8,22 @@ export interface FormProps<S extends z.ZodType<any, any>>
   children?: ReactNode
   submitText?: string
   schema?: S
-  onSubmit: (values: z.infer<S>) => Promise<void | OnSubmitResult>
+  onSubmit: (
+    values: z.infer<S>,
+    helpers?: {
+      setSubmitting: (isSubmitting: boolean) => void
+      setErrors: (errors: any) => void
+      resetForm: () => void
+      submitForm: () => void
+    }
+  ) => Promise<void | OnSubmitResult>
   initialValues?: FormikProps<z.infer<S>>["initialValues"]
   cancelText?: string
   onCancel?: () => void
   title?: string
+  borderless?: boolean
+  alignSubmitRight?: boolean
+  separateActions?: boolean
 }
 
 interface OnSubmitResult {
@@ -31,6 +42,9 @@ export function Form<S extends z.ZodType<any, any>>({
   onSubmit,
   cancelText,
   onCancel,
+  borderless,
+  alignSubmitRight,
+  separateActions,
   ...props
 }: FormProps<S>) {
   const [formError, setFormError] = useState<string | null>(null)
@@ -39,8 +53,9 @@ export function Form<S extends z.ZodType<any, any>>({
     <Formik
       initialValues={initialValues || {}}
       validate={validateZodSchema(schema)}
-      onSubmit={async (values, { setErrors }) => {
-        const { FORM_ERROR, ...otherErrors } = (await onSubmit(values)) || {}
+      onSubmit={async (values, { setErrors, setSubmitting, resetForm, submitForm }) => {
+        const { FORM_ERROR, ...otherErrors } =
+          (await onSubmit(values, { setSubmitting, setErrors, resetForm, submitForm })) || {}
 
         if (FORM_ERROR) setFormError(FORM_ERROR)
         if (Object.keys(otherErrors).length > 0) setErrors(otherErrors)
@@ -48,7 +63,11 @@ export function Form<S extends z.ZodType<any, any>>({
     >
       {({ handleSubmit, isSubmitting }) => (
         <form onSubmit={handleSubmit} className="form" {...props}>
-          <fieldset className="fieldset bg-base-200 border-base-300 rounded-box w-full border p-4">
+          <fieldset
+            className={`fieldset w-full rounded-box ${
+              borderless ? "border-0 bg-transparent p-0" : "border border-base-300 bg-base-200 p-4"
+            }`}
+          >
             {title && <legend className="fieldset-legend">{title}</legend>}
             <div className="flex flex-col gap-6">{children}</div>
 
@@ -58,13 +77,11 @@ export function Form<S extends z.ZodType<any, any>>({
               </div>
             )}
 
-            <div className="form-actions flex gap-2 mt-4">
-              {submitText && (
-                <button type="submit" className="btn btn-primary" disabled={isSubmitting}>
-                  {submitText}
-                </button>
-              )}
-
+            <div
+              className={`form-actions flex gap-2 mt-4 ${
+                separateActions ? "justify-between" : alignSubmitRight ? "justify-end" : ""
+              }`}
+            >
               {cancelText && (
                 <button
                   type="button"
@@ -73,6 +90,12 @@ export function Form<S extends z.ZodType<any, any>>({
                   disabled={isSubmitting}
                 >
                   {cancelText}
+                </button>
+              )}
+
+              {submitText && (
+                <button type="submit" className="btn btn-primary" disabled={isSubmitting}>
+                  {submitText}
                 </button>
               )}
             </div>

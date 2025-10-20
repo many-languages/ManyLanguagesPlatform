@@ -10,17 +10,23 @@ type StudyFormProps = {
   formTitle: string
   submitText: string
   onCancel?: () => void
+  cancelText?: string
   /** Handles submission, must return void or errors */
   onSubmit: (values: StudyFormValues) => Promise<void | { FORM_ERROR?: string }>
   initialValues?: StudyFormValues
+  borderless?: boolean
+  alignSubmitRight?: boolean
 }
 
 export default function StudyForm({
   onCancel,
+  cancelText,
   submitText,
   formTitle,
   initialValues,
   onSubmit,
+  borderless = false,
+  alignSubmitRight = false,
 }: StudyFormProps) {
   return (
     <>
@@ -28,7 +34,7 @@ export default function StudyForm({
 
       <Form
         submitText={submitText}
-        cancelText="Cancel"
+        cancelText={cancelText}
         onCancel={onCancel}
         schema={StudyFormSchema}
         initialValues={
@@ -44,6 +50,8 @@ export default function StudyForm({
           }
         }
         onSubmit={onSubmit}
+        borderless={borderless}
+        alignSubmitRight={alignSubmitRight}
       >
         <LabeledTextField name="title" label="Title" placeholder="Study title" type="text" />
         <LabeledTextField

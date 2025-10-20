@@ -4,7 +4,6 @@ import { z } from "zod"
 
 const CreateFeedbackTemplate = z.object({
   studyId: z.number(),
-  title: z.string().min(1),
   content: z.string().min(1),
 })
 

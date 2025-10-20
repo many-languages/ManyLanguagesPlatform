@@ -8,19 +8,30 @@ export const GetStudy = z.object({
   id: Id,
 })
 
-export const JatosFormSchema = z.object({
+// Base object — no .refine() yet
+const BaseJatosFormSchema = z.object({
   jatosWorkerType: z.nativeEnum(JatosWorkerType).default(JatosWorkerType.SINGLE),
   studyFile: z
     .any()
     .refine((f) => f == null || (typeof File !== "undefined" && f instanceof File), {
-      message: "Must be a file",
+      message: "Must be a valid file",
     })
     .optional(),
+  jatosFileName: z.string().optional(),
 })
 
-export const ImportJatosSchema = JatosFormSchema.extend({
+// The actual form schema with refinement logic
+export const JatosFormSchema = BaseJatosFormSchema.refine(
+  (data) => data.studyFile instanceof File || !!data.jatosFileName,
+  {
+    message: "Please upload a JATOS .jzip file (or keep the existing one).",
+    path: ["studyFile"],
+  }
+)
+
+// Use the base schema for extension (avoids .refine() issue)
+export const ImportJatosSchema = BaseJatosFormSchema.extend({
   studyId: Id,
-  // JATOS integration fields added by import study return type
   jatosStudyId: z.number(),
   jatosStudyUUID: z.string(),
   jatosFileName: z.string(),

@@ -16,12 +16,17 @@ export default async function StudyPage({ params }: { params: Promise<{ studyId:
     // Fetch study data
     const study = await getStudyRsc(studyId)
 
-    const [metadata, properties] = await Promise.all([
-      // Fetch results metadata from JATOS
-      getResultsMetadata({ studyIds: [study.jatosStudyId] }),
-      // Fetch study properties from JATOS
-      getStudyProperties(study.jatosStudyUUID),
-    ])
+    // Initialize JATOS metadata and study properties with null
+    let metadata = null
+    let properties = null
+
+    // Only fetch from JATOS if IDs exist
+    if (study.jatosStudyId && study.jatosStudyUUID) {
+      ;[metadata, properties] = await Promise.all([
+        getResultsMetadata({ studyIds: [study.jatosStudyId] }),
+        getStudyProperties(study.jatosStudyUUID),
+      ])
+    }
 
     // Return [StudyId] content
     return <StudyContent study={study} metadata={metadata} properties={properties} />

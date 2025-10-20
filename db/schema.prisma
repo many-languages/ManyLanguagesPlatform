@@ -185,8 +185,7 @@ model ParticipantStudy {
 
 model FeedbackTemplate {
   id        Int      @id @default(autoincrement())
-  studyId   Int
-  title     String
+  studyId   Int      @unique
   content   String // raw markdown with placeholders, e.g. "Your score: {{score}}"
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

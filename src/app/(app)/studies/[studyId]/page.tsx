@@ -1,8 +1,8 @@
 import { notFound } from "next/navigation"
 import { getStudyRsc } from "../queries/getStudy"
-import StudyContent from "./components/StudyContent"
-import { getResultsMetadata } from "@/src/app/jatos/utils/getResultsMetadata"
-import { getStudyProperties } from "@/src/app/jatos/utils/getStudyProperties"
+import StudyContent from "./components/client/StudyContent"
+import { getResultsMetadata } from "@/src/lib/jatos/api/getResultsMetadata"
+import { getStudyProperties } from "@/src/lib/jatos/api/getStudyProperties"
 
 export default async function StudyPage({ params }: { params: Promise<{ studyId: string }> }) {
   const { studyId: studyIdRaw } = await params

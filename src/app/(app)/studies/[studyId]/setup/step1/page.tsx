@@ -2,7 +2,7 @@
 
 import { useRouter, useParams } from "next/navigation"
 import { useMutation } from "@blitzjs/rpc"
-import StudyForm from "../../../components/StudyForm"
+import StudyForm from "../../../components/client/StudyForm"
 import toast from "react-hot-toast"
 import updateStudy from "../../../mutations/updateStudy"
 

@@ -1,17 +1,17 @@
 "use client"
 
 import { useRouter, useParams } from "next/navigation"
-import JatosForm from "../../../components/JatosForm"
+import JatosForm from "../../../components/client/JatosForm"
 import toast from "react-hot-toast"
 import { useMutation, useQuery } from "@blitzjs/rpc"
-import importJatos from "../../../mutations/importJatos"
+import importJatos from "../mutations/importJatos"
 import updateStudyBatch from "../../../mutations/updateStudyBatch"
 import clearJatosData from "../../../mutations/clearJatosData"
 import getStudy from "../../../queries/getStudy"
 import { useState } from "react"
-import uploadJatosFile from "@/src/app/jatos/utils/uploadJatosFile"
-import fetchJatosBatchId from "@/src/app/jatos/utils/fetchJatosBatchId"
-import deleteExistingJatosStudy from "@/src/app/jatos/utils/deleteExistingJatosStudy"
+import uploadJatosFile from "@/src/lib/jatos/api/uploadJatosFile"
+import fetchJatosBatchId from "@/src/lib/jatos/api/fetchJatosBatchId"
+import deleteExistingJatosStudy from "@/src/lib/jatos/api/deleteExistingJatosStudy"
 
 export default function Step2Page() {
   const router = useRouter()

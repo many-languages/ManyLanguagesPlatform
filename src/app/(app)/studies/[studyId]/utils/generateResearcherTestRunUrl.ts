@@ -1,7 +1,7 @@
-import { generateJatosRunUrl } from "@/src/app/jatos/utils/generateJatosRunUrl"
+import { generateJatosRunUrl } from "@/src/lib/jatos/api/generateJatosRunUrl"
 import { invoke } from "@blitzjs/rpc"
 import type { Ctx } from "blitz"
-import saveResearcherJatosRunUrl from "../../mutations/saveResearcherJatosRunUrl"
+import saveResearcherJatosRunUrl from "../setup/mutations/saveResearcherJatosRunUrl"
 
 interface GenerateRunUrlArgs {
   studyResearcherId: number

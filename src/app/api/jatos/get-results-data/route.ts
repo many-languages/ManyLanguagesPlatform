@@ -1,4 +1,4 @@
-import { getResultsData } from "@/src/app/jatos/utils/getResultsData"
+import { getResultsData } from "@/src/lib/jatos/api/getResultsData"
 import { NextRequest, NextResponse } from "next/server"
 
 export async function POST(req: NextRequest) {

@@ -1,4 +1,4 @@
-import { getResultsMetadata } from "@/src/app/jatos/utils/getResultsMetadata"
+import { getResultsMetadata } from "@/src/lib/jatos/api/getResultsMetadata"
 import { NextRequest, NextResponse } from "next/server"
 
 export async function POST(req: NextRequest) {

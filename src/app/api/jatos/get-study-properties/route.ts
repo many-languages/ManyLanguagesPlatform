@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { getStudyProperties } from "@/src/app/jatos/utils/getStudyProperties"
+import { getStudyProperties } from "@/src/lib/jatos/api/getStudyProperties"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"

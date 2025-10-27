@@ -1,14 +1,14 @@
-import StudyList from "./components/StudyList"
+import StudyList from "./components/client/StudyList"
 import { getStudies } from "./queries/getStudies"
 import Link from "next/link"
-import PaginationControls from "../../components/PaginationControls"
+import PaginationControls from "./components/PaginationControls"
 import { Suspense } from "react"
 import { getBlitzContext } from "../../blitz-server"
 import { redirect } from "next/navigation"
-import PaginationControlsSkeleton from "../../components/PaginationControlsSkeleton"
-import StudyListSkeleton from "./components/StudyListSkeleton"
+import PaginationControlsSkeleton from "./components/skeletons/PaginationControlsSkeleton"
+import StudyListSkeleton from "./components/skeletons/StudyListSkeleton"
 import { Prisma } from "@/db"
-import ShowArchivedToggle from "./components/ShowArchivedToggle"
+import ShowArchivedToggle from "./components/client/ShowArchivedToggle"
 
 const ITEMS_PER_PAGE = 1
 

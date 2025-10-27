@@ -1,4 +1,4 @@
-import { deleteJatosStudy } from "@/src/app/jatos/utils/deleteStudy"
+import { deleteJatosStudy } from "@/src/lib/jatos/api/deleteStudy"
 import { NextRequest, NextResponse } from "next/server"
 
 export async function DELETE(req: NextRequest) {

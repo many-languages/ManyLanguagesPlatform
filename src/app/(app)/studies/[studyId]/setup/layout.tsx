@@ -1,4 +1,4 @@
-import StepIndicator from "../components/StepIndicator"
+import StepIndicator from "./components/StepIndicator"
 
 export default function StudySetupLayout({ children }: { children: React.ReactNode }) {
   return (

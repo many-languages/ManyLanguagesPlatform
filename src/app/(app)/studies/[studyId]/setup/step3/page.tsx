@@ -4,12 +4,12 @@ import { useQuery } from "@blitzjs/rpc"
 import { useParams, useRouter } from "next/navigation"
 import { useState } from "react"
 import { toast } from "react-hot-toast"
-import getResearcherRunUrl from "../../../queries/getResearcherRunUrl"
+import getResearcherRunUrl from "../queries/getResearcherRunUrl"
 import getStudy from "../../../queries/getStudy"
-import GenerateTestLinkButton from "../../components/GenerateTestLinkButton"
-import RunStudyButton from "../../components/studyComponent/RunStudyButton"
-import StepNavigation from "../../components/StepNavigation"
-import { checkPilotCompletion } from "../../../../../jatos/utils/checkPilotCompletion"
+import GenerateTestLinkButton from "./components/client/GenerateTestLinkButton"
+import RunStudyButton from "./components/client/RunStudyButton"
+import { checkPilotCompletion } from "@/src/lib/jatos/api/checkPilotCompletion"
+import StepNavigation from "../components/StepNavigation"
 
 export default function Step3Page() {
   const router = useRouter()

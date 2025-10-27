@@ -1,4 +1,4 @@
-import { getResultsMetadata } from "@/src/app/jatos/utils/getResultsMetadata"
+import { getResultsMetadata } from "@/src/lib/jatos/api/getResultsMetadata"
 import { resolver } from "@blitzjs/rpc"
 import db from "db"
 import { z } from "zod"

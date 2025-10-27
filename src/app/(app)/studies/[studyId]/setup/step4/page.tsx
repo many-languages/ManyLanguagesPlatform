@@ -2,15 +2,15 @@
 
 import { useParams, useRouter } from "next/navigation"
 import { useRef } from "react"
-import FeedbackFormEditor, { FeedbackFormEditorRef } from "../../components/FeedbackFormEditor"
+import FeedbackFormEditor, { FeedbackFormEditorRef } from "./components/client/FeedbackFormEditor"
 import { useQuery, useMutation } from "@blitzjs/rpc"
 import getStudyDataByComment from "../../../queries/getStudyDataByComment"
-import getFeedbackTemplate from "../../../queries/getFeedbackTemplate"
+import getFeedbackTemplate from "./queries/getFeedbackTemplate"
 import getStudy from "../../../queries/getStudy"
 import updateStudyStatus from "../../../mutations/updateStudyStatus"
-import StepNavigation from "../../components/StepNavigation"
-import { isSetupComplete } from "../../../utils/setupStatus"
+import { isSetupComplete } from "../utils/setupStatus"
 import { toast } from "react-hot-toast"
+import StepNavigation from "../components/StepNavigation"
 
 export default function Step4Page() {
   const router = useRouter()

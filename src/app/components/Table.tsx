@@ -13,7 +13,7 @@ import type { SortingState } from "@tanstack/react-table"
 import React from "react"
 
 import { ChevronUpIcon, ChevronDownIcon, ChevronUpDownIcon } from "@heroicons/react/24/outline"
-import Filter from "./Filter"
+import Filter from "../(app)/studies/components/Filter"
 
 type TableProps<TData> = {
   columns: ColumnDef<TData, any>[]

@@ -4,9 +4,9 @@ import { useRouter } from "next/navigation"
 import { useMutation, useQuery } from "@blitzjs/rpc"
 import getStudy from "../../queries/getStudy"
 import updateStudy from "../../mutations/updateStudy"
-import StudyForm from "../../components/StudyForm"
-import { FORM_ERROR } from "src/app/components/Form"
-import StudyFormSkeleton from "../../components/StudyFormSkeleton"
+import StudyForm from "../../components/client/StudyForm"
+import { FORM_ERROR } from "@/src/app/components/Form"
+import StudyFormSkeleton from "../../components/skeletons/StudyFormSkeleton"
 import toast from "react-hot-toast"
 
 export default function EditStudy({ params }: { params: { studyId: string } }) {

@@ -1,14 +1,19 @@
 "use client"
 
-import { useState, useEffect, useImperativeHandle, forwardRef } from "react"
+import { useState, useEffect, useImperativeHandle, forwardRef, useCallback } from "react"
+import { useMemo } from "react"
 import { useMutation } from "@blitzjs/rpc"
 import { toast } from "react-hot-toast"
 import MDEditor from "@uiw/react-md-editor"
 import VariableSelector from "./VariableSelector"
+import StatsSelector from "./StatsSelector"
+import ConditionalBuilder from "./ConditionalBuilder"
+import DSLHelper from "./DSLHelper"
 import { EnrichedJatosStudyResult } from "@/src/types/jatos"
 import createFeedbackTemplate from "../../mutations/createFeedbackTemplate"
 import updateFeedbackTemplate from "../../mutations/updateFeedbackTemplate"
 import syncStudyVariables from "../../mutations/syncStudyVariables"
+import { renderTemplate } from "../../utils/feedbackRenderer"
 
 interface FeedbackFormEditorProps {
   enrichedResult: EnrichedJatosStudyResult
@@ -34,6 +39,7 @@ const FeedbackFormEditor = forwardRef<FeedbackFormEditorRef, FeedbackFormEditorP
     )
     const [saving, setSaving] = useState(false)
     const [templateSaved, setTemplateSaved] = useState(false)
+    const [showConditionalBuilder, setShowConditionalBuilder] = useState(false)
 
     const [createTemplate] = useMutation(createFeedbackTemplate)
     const [updateTemplate] = useMutation(updateFeedbackTemplate)
@@ -47,22 +53,20 @@ const FeedbackFormEditor = forwardRef<FeedbackFormEditorRef, FeedbackFormEditorP
       }
     }, [initialTemplate])
 
-    const handleInsertVariable = (variableName: string) => {
-      setMarkdown((prev) => prev + ` {{${variableName}}}`)
+    const handleInsertVariable = (variableSyntax: string) => {
+      setMarkdown((prev) => prev + ` ${variableSyntax}`)
       setTemplateSaved(false) // Mark as unsaved when content changes
     }
 
-    // Expose methods to parent component
-    useImperativeHandle(
-      ref,
-      () => ({
-        saveTemplate: async () => {
-          await handleSave()
-        },
-        isTemplateSaved: () => templateSaved,
-      }),
-      [templateSaved]
-    )
+    const handleInsertStat = (statExpression: string) => {
+      setMarkdown((prev) => prev + ` ${statExpression}`)
+      setTemplateSaved(false) // Mark as unsaved when content changes
+    }
+
+    const handleInsertConditional = (conditionalBlock: string) => {
+      setMarkdown((prev) => prev + `\n\n${conditionalBlock}\n`)
+      setTemplateSaved(false)
+    }
 
     // Extract variables from enriched result (reuse logic from VariableSelector)
     const extractVariablesFromResult = (enrichedResult: EnrichedJatosStudyResult) => {
@@ -125,7 +129,7 @@ const FeedbackFormEditor = forwardRef<FeedbackFormEditorRef, FeedbackFormEditorP
       return Array.from(variableMap.values())
     }
 
-    const handleSave = async () => {
+    const handleSave = useCallback(async () => {
       if (!markdown.trim()) {
         toast.error("Please enter some content for your feedback template")
         return
@@ -170,7 +174,38 @@ const FeedbackFormEditor = forwardRef<FeedbackFormEditorRef, FeedbackFormEditorP
       } finally {
         setSaving(false)
       }
-    }
+    }, [
+      markdown,
+      initialTemplate,
+      updateTemplate,
+      createTemplate,
+      studyId,
+      enrichedResult,
+      syncVariables,
+      onTemplateSaved,
+    ])
+
+    // Expose methods to parent component
+    useImperativeHandle(
+      ref,
+      () => ({
+        saveTemplate: async () => {
+          await handleSave()
+        },
+        isTemplateSaved: () => templateSaved,
+      }),
+      [templateSaved, handleSave]
+    )
+
+    // Client-side rendering for live preview
+    const renderedPreview = useMemo(() => {
+      try {
+        return renderTemplate(markdown, { enrichedResult })
+      } catch (e) {
+        console.error("Preview render error:", e)
+        return markdown // fallback to raw markdown
+      }
+    }, [markdown, enrichedResult])
 
     return (
       <div className="card bg-base-200 shadow-md p-6">
@@ -183,7 +218,24 @@ const FeedbackFormEditor = forwardRef<FeedbackFormEditorRef, FeedbackFormEditorP
               <span className="badge badge-warning">⚠ Template not saved</span>
             )}
           </div>
-          <VariableSelector enrichedResult={enrichedResult} onInsert={handleInsertVariable} />
+          <div className="flex gap-2 flex-wrap">
+            <VariableSelector
+              enrichedResult={enrichedResult}
+              onInsert={handleInsertVariable}
+              markdown={markdown}
+            />
+            <StatsSelector
+              enrichedResult={enrichedResult}
+              onInsert={handleInsertStat}
+              markdown={markdown}
+            />
+            <button
+              className="btn btn-sm btn-outline"
+              onClick={() => setShowConditionalBuilder(true)}
+            >
+              Add Condition
+            </button>
+          </div>
         </div>
 
         {/* Markdown editor */}
@@ -196,10 +248,13 @@ const FeedbackFormEditor = forwardRef<FeedbackFormEditorRef, FeedbackFormEditorP
           />
         </div>
 
+        {/* DSL Helper */}
+        <DSLHelper enrichedResult={enrichedResult} />
+
         {/* Preview */}
         <div className="divider">Preview</div>
         <div className="prose max-w-none bg-base-100 p-4 rounded-lg border border-base-300">
-          <MDEditor.Markdown source={markdown} />
+          <MDEditor.Markdown source={renderedPreview} />
         </div>
 
         {/* Save button */}
@@ -208,6 +263,15 @@ const FeedbackFormEditor = forwardRef<FeedbackFormEditorRef, FeedbackFormEditorP
             {saving ? "Saving..." : initialTemplate ? "Update Template" : "Save Template"}
           </button>
         </div>
+
+        {/* Modals */}
+        {showConditionalBuilder && (
+          <ConditionalBuilder
+            enrichedResult={enrichedResult}
+            onInsert={handleInsertConditional}
+            onClose={() => setShowConditionalBuilder(false)}
+          />
+        )}
       </div>
     )
   }

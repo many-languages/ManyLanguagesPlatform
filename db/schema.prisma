@@ -102,16 +102,16 @@ model Study {
   length            String // e.g. "30 minutes", stored as text
 
   // JATOS integration
-  jatosStudyId       Int // ID returned from JATOS after import
-  jatosStudyUUID     String          @unique // optional, JATOS also has UUIDs 
-  jatosFileName      String // original uploaded filename
+  jatosStudyId       Int? // ID returned from JATOS after import
+  jatosStudyUUID     String?          @unique // optional, JATOS also has UUIDs 
+  jatosFileName      String? // original uploaded filename
   // JATOS component fields
   jatosComponentId   Int?
   jatosComponentUUID String?
   // JATOS batches
   jatosBatchId       Int?
   // JATOS workers
-  jatosWorkerType    JatosWorkerType @default(SINGLE)
+  jatosWorkerType    JatosWorkerType? @default(SINGLE)
 
   // Archival
   archived     Boolean   @default(false)
@@ -185,8 +185,7 @@ model ParticipantStudy {
 
 model FeedbackTemplate {
   id        Int      @id @default(autoincrement())
-  studyId   Int
-  title     String
+  studyId   Int      @unique
   content   String // raw markdown with placeholders, e.g. "Your score: {{score}}"
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

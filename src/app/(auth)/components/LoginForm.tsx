@@ -1,6 +1,6 @@
 "use client"
 
-import { AuthenticationError, PromiseReturnType } from "blitz"
+import { PromiseReturnType } from "blitz"
 import Link from "next/link"
 import { LabeledTextField } from "src/app/components/LabeledTextField"
 import { Form, FORM_ERROR } from "src/app/components/Form"
@@ -28,23 +28,17 @@ export const LoginForm = (props: LoginFormProps) => {
         schema={Login}
         initialValues={{ email: "", password: "" }}
         onSubmit={async (values) => {
-          try {
-            await loginMutation(values)
-            router.refresh()
-            if (next) {
-              router.push(next as Route)
-            } else {
-              router.push("/dashboard")
-            }
-          } catch (error: any) {
-            if (error instanceof AuthenticationError) {
-              return { [FORM_ERROR]: "Sorry, those credentials are invalid" }
-            } else {
-              return {
-                [FORM_ERROR]:
-                  "Sorry, we had an unexpected error. Please try again. - " + error.toString(),
-              }
-            }
+          const result = await loginMutation(values)
+
+          if (result.error) {
+            return { [FORM_ERROR]: result.error }
+          }
+
+          router.refresh()
+          if (next) {
+            router.push(next as Route)
+          } else {
+            router.push("/dashboard")
           }
         }}
       >

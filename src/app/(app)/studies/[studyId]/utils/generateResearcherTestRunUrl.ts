@@ -28,7 +28,7 @@ export async function generateAndSaveResearcherTestRunUrl({
     body: JSON.stringify({
       jatosStudyId,
       jatosBatchId,
-      type: "ps",
+      type: "pm",
       comment: "test",
     }),
   })

@@ -8,6 +8,35 @@ export const GetStudy = z.object({
   id: Id,
 })
 
+// Base object — no .refine() yet
+const BaseJatosFormSchema = z.object({
+  jatosWorkerType: z.nativeEnum(JatosWorkerType).default(JatosWorkerType.SINGLE),
+  studyFile: z
+    .any()
+    .refine((f) => f == null || (typeof File !== "undefined" && f instanceof File), {
+      message: "Must be a valid file",
+    })
+    .optional(),
+  jatosFileName: z.string().optional(),
+})
+
+// The actual form schema with refinement logic
+export const JatosFormSchema = BaseJatosFormSchema.refine(
+  (data) => data.studyFile instanceof File || !!data.jatosFileName,
+  {
+    message: "Please upload a JATOS .jzip file (or keep the existing one).",
+    path: ["studyFile"],
+  }
+)
+
+// Use the base schema for extension (avoids .refine() issue)
+export const ImportJatosSchema = BaseJatosFormSchema.extend({
+  studyId: Id,
+  jatosStudyId: z.number(),
+  jatosStudyUUID: z.string(),
+  jatosFileName: z.string(),
+})
+
 export const StudyFormSchema = z.object({
   title: z.string().min(1, "Title is required"),
   description: z.string().min(1, "Description is required"),
@@ -17,39 +46,26 @@ export const StudyFormSchema = z.object({
   payment: z.string().min(1, "Payment description is required"),
   ethicalPermission: z.string().url("Must be a valid URL"),
   length: z.string().min(1, "Study length is required"),
-  jatosWorkerType: z.nativeEnum(JatosWorkerType).default(JatosWorkerType.SINGLE),
-  studyFile: z
-    .any()
-    .refine((f) => f == null || (typeof File !== "undefined" && f instanceof File), {
-      message: "Must be a file",
-    })
-    .optional(),
 })
 
-export const CreateStudy = StudyFormSchema.omit({ studyFile: true }).extend({
-  startDate: StudyFormSchema.shape.startDate.transform((s) => new Date(s)),
-  endDate: StudyFormSchema.shape.endDate.transform((s) => new Date(s)),
-  // JATOS integration fields (added by importStudy before createStudy)
-  jatosStudyId: z.number(),
-  jatosStudyUUID: z.string(),
-  jatosFileName: z.string(),
+export const CreateStudy = z.object({
+  // Bare minimum for creating a new study draft record
+  title: z.string().default("Untitled study"),
+  description: z.string().default(""),
+  startDate: z.date().default(() => new Date()),
+  endDate: z.date().default(() => new Date()),
+  sampleSize: z.number().default(0),
+  payment: z.string().default(""),
+  ethicalPermission: z.string().default("https://example.com"),
+  length: z.string().default(""),
 })
 
 export type CreateStudyInput = z.infer<typeof CreateStudy>
 
-export const UpdateStudy = z.object({
+export const UpdateStudy = StudyFormSchema.extend({
   id: Id,
-  title: z.string().min(1, "Title is required"),
-  description: z.string().optional(),
-  startDate: z.string().transform((s) => new Date(s)),
-  endDate: z.string().transform((s) => new Date(s)),
-  sampleSize: z.number().min(1, "Sample size must be at least 1"),
-  payment: z.string().optional(),
-  ethicalPermission: z.string().url("Must be a valid URL"),
-  length: z.string().optional(),
   status: z.enum(["OPEN", "CLOSED"]).optional(),
 })
-
 export type UpdateStudyInput = z.infer<typeof UpdateStudy>
 
 export const ArchiveStudy = z.object({ id: z.number().int().positive() })

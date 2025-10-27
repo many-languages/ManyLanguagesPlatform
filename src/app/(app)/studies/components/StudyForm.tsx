@@ -3,8 +3,6 @@ import { LabeledTextField } from "src/app/components/LabeledTextField"
 import DateField from "src/app/components/DateField"
 import { StudyFormSchema } from "../validations"
 import { z } from "zod"
-import FileUploadField from "@/src/app/components/FileUploadField"
-import LabeledSelectField from "@/src/app/components/LabeledSelectField"
 
 type StudyFormValues = z.infer<typeof StudyFormSchema>
 
@@ -12,22 +10,23 @@ type StudyFormProps = {
   formTitle: string
   submitText: string
   onCancel?: () => void
+  cancelText?: string
   /** Handles submission, must return void or errors */
   onSubmit: (values: StudyFormValues) => Promise<void | { FORM_ERROR?: string }>
   initialValues?: StudyFormValues
+  borderless?: boolean
+  alignSubmitRight?: boolean
 }
-
-export const jatosWorkerTypeOptions = [
-  { id: 0, label: "Single Personal Links (no reuse)", value: "SINGLE" },
-  { id: 1, label: "Multiple Personal Links (reuse allowed)", value: "MULTIPLE" },
-]
 
 export default function StudyForm({
   onCancel,
+  cancelText,
   submitText,
   formTitle,
   initialValues,
   onSubmit,
+  borderless = false,
+  alignSubmitRight = false,
 }: StudyFormProps) {
   return (
     <>
@@ -35,7 +34,7 @@ export default function StudyForm({
 
       <Form
         submitText={submitText}
-        cancelText="Cancel"
+        cancelText={cancelText}
         onCancel={onCancel}
         schema={StudyFormSchema}
         initialValues={
@@ -48,10 +47,11 @@ export default function StudyForm({
             payment: "",
             ethicalPermission: "",
             length: "",
-            jatosWorkerType: "SINGLE",
           }
         }
         onSubmit={onSubmit}
+        borderless={borderless}
+        alignSubmitRight={alignSubmitRight}
       >
         <LabeledTextField name="title" label="Title" placeholder="Study title" type="text" />
         <LabeledTextField
@@ -80,15 +80,6 @@ export default function StudyForm({
           placeholder="30 minutes"
           type="text"
         />
-        <LabeledSelectField
-          name="jatosWorkerType"
-          label="Data collection method"
-          options={jatosWorkerTypeOptions}
-          optionText={"label"}
-          optionValue={"value"}
-        />
-        <FileUploadField name="studyFile" label="Upload Study (.jzip)" />
-        <p className="text-xs opacity-70">Only .jzip exports from JATOS are accepted.</p>
       </Form>
     </>
   )

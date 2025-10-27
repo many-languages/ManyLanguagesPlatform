@@ -1,22 +1,28 @@
+import { resolver } from "@blitzjs/rpc"
 import db, { UserRole } from "db"
 import { SecurePassword } from "@blitzjs/auth/secure-password"
+import { Signup } from "../validations"
 
-export default async function signup(
-  input: { password: string; email: string; role: UserRole },
-  ctx: any
-) {
-  const blitzContext = ctx
-  const hashedPassword = await SecurePassword.hash((input.password as string) || "test-password")
-  const email = (input.email as string) || "test" + Math.random() + "@test.com"
-  const role = input.role
-  const user = await db.user.create({
-    data: { email, hashedPassword, role },
-  })
+export default resolver.pipe(resolver.zod(Signup), async ({ email, password, role }, ctx) => {
+  try {
+    const hashedPassword = await SecurePassword.hash(password)
+    const user = await db.user.create({
+      data: { email, hashedPassword, role },
+    })
 
-  await blitzContext.session.$create({
-    userId: user.id,
-    role: role,
-  })
+    await ctx.session.$create({
+      userId: user.id,
+      role: role,
+    })
 
-  return { userId: blitzContext.session.userId, ...user, email: input.email, role: role }
-}
+    return { user: { ...user, email, role } }
+  } catch (error: any) {
+    // Handle Prisma unique constraint error for duplicate email
+    if (error.code === "P2002" && error.meta?.target?.includes("email")) {
+      return { error: "This email is already being used" }
+    }
+
+    // For other errors, throw them (unknown errors)
+    throw error
+  }
+})

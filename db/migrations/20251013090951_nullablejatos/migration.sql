@@ -1,0 +1,5 @@
+-- AlterTable
+ALTER TABLE "public"."Study" ALTER COLUMN "jatosFileName" DROP NOT NULL,
+ALTER COLUMN "jatosStudyId" DROP NOT NULL,
+ALTER COLUMN "jatosStudyUUID" DROP NOT NULL,
+ALTER COLUMN "jatosWorkerType" DROP NOT NULL;

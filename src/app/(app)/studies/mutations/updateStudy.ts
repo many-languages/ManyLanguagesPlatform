@@ -7,28 +7,35 @@ export async function updateStudy(
   userId: number,
   data: Omit<UpdateStudyInput, "id">
 ) {
-  // Ensure current user is a PI of the study
-  const researcher = await db.studyResearcher.findFirst({
+  // Ensure the current user is a PI of the study
+  const isPI = await db.studyResearcher.findFirst({
     where: { studyId, userId, role: "PI" },
+    select: { id: true },
   })
-  if (!researcher) {
+  if (!isPI) {
     throw new Error("You are not authorized to update this study")
   }
 
-  // Apply update
+  // Apply update — no redundant transformations
   return db.study.update({
     where: { id: studyId },
     data: {
-      ...data,
-      startDate: data.startDate ? new Date(data.startDate) : undefined,
-      endDate: data.endDate ? new Date(data.endDate) : undefined,
+      title: data.title,
+      description: data.description,
+      startDate: new Date(data.startDate),
+      endDate: new Date(data.endDate),
+      sampleSize: data.sampleSize,
+      payment: data.payment,
+      ethicalPermission: data.ethicalPermission,
+      length: data.length,
+      status: data.status,
     },
   })
 }
 
 export default resolver.pipe(
   resolver.zod(UpdateStudy),
-  resolver.authorize("RESEARCHER"), // global role check
+  resolver.authorize("RESEARCHER"), // ensure user is at least a researcher
   async ({ id, ...data }, ctx) => {
     if (!ctx.session.userId) throw new Error("Not authenticated")
     return updateStudy(id, ctx.session.userId, data)

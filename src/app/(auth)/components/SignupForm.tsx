@@ -31,18 +31,14 @@ export const SignupForm = (props: SignupFormProps) => {
         schema={Signup}
         initialValues={{ email: "", password: "", role: UserRole.PARTICIPANT }}
         onSubmit={async (values) => {
-          try {
-            await signupMutation(values)
-            router.refresh()
-            router.push("/dashboard")
-          } catch (error: any) {
-            if (error.code === "P2002" && error.meta?.target?.includes("email")) {
-              // This error comes from Prisma
-              return { email: "This email is already being used" }
-            } else {
-              return { [FORM_ERROR]: error.toString() }
-            }
+          const result = await signupMutation(values)
+
+          if (result.error) {
+            return { email: result.error }
           }
+
+          router.refresh()
+          router.push("/dashboard")
         }}
       >
         <LabeledTextField name="email" label="Email" placeholder="Email" type="text" />

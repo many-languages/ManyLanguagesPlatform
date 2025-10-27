@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { EnrichedJatosStudyResult } from "@/src/types/jatos"
 import VariableSelector from "./VariableSelector"
 import StatsSelector from "./StatsSelector"
@@ -44,12 +44,12 @@ export default function ConditionalBuilder({
   const availableFields = extractAvailableFields(enrichedResult)
 
   // Get available variables for the condition builder
-  const getAvailableVariables = () => {
+  const getAvailableVariables = useCallback(() => {
     return availableFields.map((field) => ({
       name: field.name,
       type: field.type,
     }))
-  }
+  }, [availableFields])
 
   // Get available metrics based on variable type
   const getAvailableMetrics = (variableType: string) => {
@@ -73,12 +73,12 @@ export default function ConditionalBuilder({
   }
 
   // Get available operators based on variable type
-  const getAvailableOperators = (variableType: string) => {
+  const getAvailableOperators = useCallback((variableType: string) => {
     return OPERATORS.filter((op) => op.types.includes(variableType))
-  }
+  }, [])
 
   // Get current variable type for operator filtering
-  const getCurrentVariableType = () => {
+  const getCurrentVariableType = useCallback(() => {
     if (conditionType === "variable") {
       return selectedVariable
         ? getAvailableVariables().find((v) => v.name === selectedVariable)?.type || "string"
@@ -88,7 +88,7 @@ export default function ConditionalBuilder({
       return "number"
     }
     return "string"
-  }
+  }, [conditionType, selectedVariable, getAvailableVariables])
 
   // Reset operator when variable type changes
   useEffect(() => {
@@ -101,7 +101,14 @@ export default function ConditionalBuilder({
         setOperator(availableOps[0].key)
       }
     }
-  }, [selectedVariable, conditionType, selectedMetric])
+  }, [
+    selectedVariable,
+    conditionType,
+    selectedMetric,
+    operator,
+    getCurrentVariableType,
+    getAvailableOperators,
+  ])
 
   // Handle variable insertion for condition
   const handleInsertVariable = (variableSyntax: string) => {

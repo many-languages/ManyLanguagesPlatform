@@ -14,6 +14,7 @@ import createFeedbackTemplate from "../../mutations/createFeedbackTemplate"
 import updateFeedbackTemplate from "../../mutations/updateFeedbackTemplate"
 import syncStudyVariables from "../../mutations/syncStudyVariables"
 import { renderTemplate } from "../../utils/feedbackRenderer"
+import { validateDSL, DSLError } from "../../utils/dslValidator"
 
 interface FeedbackFormEditorProps {
   enrichedResult: EnrichedJatosStudyResult
@@ -40,6 +41,8 @@ const FeedbackFormEditor = forwardRef<FeedbackFormEditorRef, FeedbackFormEditorP
     const [saving, setSaving] = useState(false)
     const [templateSaved, setTemplateSaved] = useState(false)
     const [showConditionalBuilder, setShowConditionalBuilder] = useState(false)
+    const [dslErrors, setDslErrors] = useState<DSLError[]>([])
+    const [showErrors, setShowErrors] = useState(false)
 
     const [createTemplate] = useMutation(createFeedbackTemplate)
     const [updateTemplate] = useMutation(updateFeedbackTemplate)
@@ -52,6 +55,17 @@ const FeedbackFormEditor = forwardRef<FeedbackFormEditorRef, FeedbackFormEditorP
         setTemplateSaved(true) // Template already exists, so it's "saved"
       }
     }, [initialTemplate])
+
+    // Validate DSL syntax when markdown changes
+    useEffect(() => {
+      const validationResult = validateDSL(markdown, enrichedResult)
+      setDslErrors(validationResult.errors)
+
+      // Auto-show errors if there are any
+      if (validationResult.errors.length > 0) {
+        setShowErrors(true)
+      }
+    }, [markdown, enrichedResult])
 
     const handleInsertVariable = (variableSyntax: string) => {
       setMarkdown((prev) => prev + ` ${variableSyntax}`)
@@ -237,6 +251,33 @@ const FeedbackFormEditor = forwardRef<FeedbackFormEditorRef, FeedbackFormEditorP
             </button>
           </div>
         </div>
+
+        {/* Error Display */}
+        {dslErrors.length > 0 && (
+          <div className="mb-4">
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-lg font-semibold text-error">DSL Errors</h3>
+              <button className="btn btn-sm btn-ghost" onClick={() => setShowErrors(!showErrors)}>
+                {showErrors ? "Hide" : "Show"} ({dslErrors.length})
+              </button>
+            </div>
+            {showErrors && (
+              <div className="space-y-2">
+                {dslErrors.map((error, index) => (
+                  <div key={index} className="alert alert-error">
+                    <div>
+                      <div className="font-bold">{error.type.toUpperCase()} Error</div>
+                      <div className="text-sm">{error.message}</div>
+                      <div className="text-xs opacity-75">
+                        Position: {error.start}-{error.end}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Markdown editor */}
         <div data-color-mode="light" className="rounded-lg overflow-hidden border border-base-300">

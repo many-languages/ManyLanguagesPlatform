@@ -1,10 +1,13 @@
 "use client"
 
+import { useState } from "react"
 import { EnrichedJatosStudyResult } from "@/src/types/jatos"
+import FilterBuilder from "./FilterBuilder"
 
 interface VariableSelectorProps {
   enrichedResult: EnrichedJatosStudyResult
-  onInsert: (variableName: string) => void
+  onInsert: (variableSyntax: string) => void
+  markdown?: string
 }
 
 interface ExtractedVariable {
@@ -15,48 +18,160 @@ interface ExtractedVariable {
   dataStructure: "array" | "object"
 }
 
-/**
- * Dropdown that lists all variable names detected in the enriched JATOS result,
- * with example values. Selecting one inserts it as a placeholder.
- *
- * Handles both:
- * - jsPsych-style data: Array of trial objects with repeated fields
- * - SurveyJS-style data: Single object with unique field names
- *
- * Future: Will support computed variables with aggregation functions
- */
-export default function VariableSelector({ enrichedResult, onInsert }: VariableSelectorProps) {
+const MODIFIERS = [
+  { key: "all", label: "All Values", description: "Show all occurrences" },
+  { key: "first", label: "First Value", description: "Show only first occurrence" },
+  { key: "last", label: "Last Value", description: "Show only last occurrence" },
+]
+
+export default function VariableSelector({
+  enrichedResult,
+  onInsert,
+  markdown,
+}: VariableSelectorProps) {
+  const [selectedVariable, setSelectedVariable] = useState("")
+  const [selectedModifier, setSelectedModifier] = useState("all")
+  const [showFilterBuilder, setShowFilterBuilder] = useState(false)
+  const [currentFilterClause, setCurrentFilterClause] = useState("")
+
   const variables = extractVariables(enrichedResult)
+
+  const handleInsert = () => {
+    let syntax = `{{ var:${selectedVariable}`
+    if (selectedModifier !== "all") {
+      syntax += `:${selectedModifier}`
+    }
+    syntax += " }}"
+
+    if (currentFilterClause) {
+      syntax = syntax.replace(" }}", `${currentFilterClause} }}`)
+    }
+
+    onInsert(syntax)
+    // Clear selections after insert for next use
+    setSelectedVariable("")
+    setSelectedModifier("all")
+    setCurrentFilterClause("")
+  }
+
+  const handleFilterInsert = (filterClause: string) => {
+    setCurrentFilterClause(filterClause)
+    setShowFilterBuilder(false)
+  }
 
   return (
     <div className="dropdown dropdown-hover">
       <label tabIndex={0} className="btn btn-sm btn-outline m-1">
         Insert Variable ⌄
       </label>
-      <ul
-        tabIndex={0}
-        className="dropdown-content menu bg-base-200 rounded-box shadow p-2 w-64 max-h-96 overflow-y-auto"
-      >
-        {variables.length === 0 && (
-          <li className="text-sm opacity-70 px-2 py-1">No variables available</li>
-        )}
+      <div tabIndex={0} className="dropdown-content menu bg-base-200 rounded-box shadow p-4 w-80">
+        <div className="space-y-3">
+          <div>
+            <label className="label">
+              <span className="label-text">Variable</span>
+            </label>
+            <select
+              className="select select-bordered w-full"
+              value={selectedVariable}
+              onChange={(e) => {
+                const newVariable = e.target.value
+                setSelectedVariable(newVariable)
+                if (newVariable) {
+                  setSelectedModifier("all")
+                }
+              }}
+            >
+              <option value="">Select variable...</option>
+              {variables.map((variable) => (
+                <option key={variable.variableName} value={variable.variableName}>
+                  {variable.variableName} ({variable.occurrences} occurrences)
+                </option>
+              ))}
+            </select>
+          </div>
 
-        {variables.map((v, i) => (
-          <li
-            key={`${v.variableName}-${i}`}
-            onClick={() => onInsert(v.variableName)}
-            className="hover:bg-base-300 rounded-md cursor-pointer px-2 py-1 flex justify-between"
-          >
-            <div className="flex flex-col">
-              <span className="font-semibold">{v.variableName}</span>
-              {v.occurrences > 1 && (
-                <span className="text-xs opacity-60">{v.occurrences} occurrences</span>
+          {selectedVariable && (
+            <div>
+              <label className="label">
+                <span className="label-text">Value</span>
+              </label>
+              <select
+                className="select select-bordered w-full"
+                value={selectedModifier}
+                onChange={(e) => setSelectedModifier(e.target.value)}
+              >
+                {MODIFIERS.map((modifier) => (
+                  <option key={modifier.key} value={modifier.key}>
+                    {modifier.label} - {modifier.description}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          {/* Filter Button */}
+          {selectedVariable && (
+            <div>
+              <button
+                className="btn btn-sm btn-outline w-full"
+                onClick={() => setShowFilterBuilder(true)}
+              >
+                {currentFilterClause ? "Edit Filter" : "Add Filter"}
+              </button>
+              {currentFilterClause && (
+                <div className="mt-2 p-2 bg-base-100 rounded text-xs">
+                  <div className="font-medium">Current filter:</div>
+                  <code>{currentFilterClause}</code>
+                  <button
+                    className="btn btn-xs btn-error ml-2"
+                    onClick={() => setCurrentFilterClause("")}
+                  >
+                    Clear
+                  </button>
+                </div>
               )}
             </div>
-            <span className="opacity-50 text-xs truncate max-w-[100px]">{v.exampleValue}</span>
-          </li>
-        ))}
-      </ul>
+          )}
+
+          {/* Preview */}
+          {selectedVariable && (
+            <div className="bg-base-100 p-2 rounded">
+              <div className="text-sm font-medium">Preview:</div>
+              <code className="text-sm">
+                {(() => {
+                  let syntax = `{{ var:${selectedVariable}`
+                  if (selectedModifier !== "all") {
+                    syntax += `:${selectedModifier}`
+                  }
+                  syntax += " }}"
+
+                  if (currentFilterClause) {
+                    syntax = syntax.replace(" }}", `${currentFilterClause} }}`)
+                  }
+                  return syntax
+                })()}
+              </code>
+            </div>
+          )}
+
+          <button
+            className="btn btn-primary btn-sm w-full"
+            onClick={handleInsert}
+            disabled={!selectedVariable}
+          >
+            Insert Variable
+          </button>
+        </div>
+      </div>
+
+      {/* FilterBuilder Modal */}
+      {showFilterBuilder && (
+        <FilterBuilder
+          enrichedResult={enrichedResult}
+          onInsert={handleFilterInsert}
+          onClose={() => setShowFilterBuilder(false)}
+        />
+      )}
     </div>
   )
 }

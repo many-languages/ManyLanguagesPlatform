@@ -1,4 +1,5 @@
-import { forwardRef } from "react"
+"use client"
+
 import { useFormContext } from "react-hook-form"
 
 interface DateFieldProps extends React.InputHTMLAttributes<HTMLInputElement> {
@@ -7,30 +8,38 @@ interface DateFieldProps extends React.InputHTMLAttributes<HTMLInputElement> {
   error?: string
 }
 
-export const DateField = forwardRef<HTMLInputElement, DateFieldProps>(
-  ({ name, label, error, className, ...props }, ref) => {
-    const {
-      register,
-      formState: { isSubmitting, errors },
-    } = useFormContext()
+export const DateField = ({ name, label, error, className, ...props }: DateFieldProps) => {
+  const {
+    register,
+    formState: { isSubmitting, errors },
+  } = useFormContext()
 
-    const fieldError = error || (errors[name]?.message as string)
+  // Prioritize form errors over custom error prop
+  const fieldError = (errors[name]?.message as string) || error
 
-    return (
-      <fieldset className="fieldset">
-        <label className="label">{label}</label>
-        <input
-          {...register(name)}
-          {...props}
-          type="date"
-          disabled={isSubmitting}
-          className={`input input-bordered ${fieldError ? "input-error" : ""} ${className || ""}`}
-        />
-        {fieldError && <span className="text-error text-sm">{fieldError}</span>}
-      </fieldset>
-    )
-  }
-)
+  return (
+    <fieldset className="fieldset">
+      <label htmlFor={name} className="label">
+        {label}
+      </label>
+      <input
+        id={name}
+        {...register(name)}
+        {...props}
+        type="date"
+        disabled={isSubmitting}
+        className={`input input-bordered ${fieldError ? "input-error" : ""} ${className || ""}`}
+        aria-invalid={fieldError ? true : false}
+        aria-describedby={fieldError ? `${name}-error` : undefined}
+      />
+      {fieldError && (
+        <span id={`${name}-error`} className="text-error text-sm" role="alert">
+          {fieldError}
+        </span>
+      )}
+    </fieldset>
+  )
+}
 
 DateField.displayName = "DateField"
 

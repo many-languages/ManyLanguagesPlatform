@@ -1,9 +1,5 @@
-import { Study, StudyResearcher, FeedbackTemplate } from "@prisma/client"
-
-export interface StudyWithRelations extends Study {
-  researchers?: StudyResearcher[]
-  FeedbackTemplate?: FeedbackTemplate | null
-}
+import { Study, FeedbackTemplate } from "@prisma/client"
+import { StudyWithRelations } from "../../../queries/getStudy"
 
 // More flexible interface for studies with minimal researcher data
 export interface StudyWithMinimalRelations extends Study {
@@ -27,9 +23,8 @@ export function isSetupComplete(
   // Step 3: Pilot test completed (researcher has run URL)
   const step3Complete = step2Complete && !!study.researchers?.some((r) => r.jatosRunUrl)
 
-  // Step 4: Feedback template created
-  const step4Complete =
-    opts?.hasFeedbackTemplate !== undefined ? !!opts.hasFeedbackTemplate : !!study.FeedbackTemplate
+  // Step 4: Feedback template created (checked via opts parameter only)
+  const step4Complete = opts?.hasFeedbackTemplate !== undefined ? !!opts.hasFeedbackTemplate : false
   return step1Complete && step2Complete && step3Complete && step4Complete
 }
 
@@ -55,9 +50,8 @@ export function getIncompleteStep(
     return 3
   }
 
-  // Step 4: Feedback template created
-  const hasTemplate =
-    opts?.hasFeedbackTemplate !== undefined ? !!opts.hasFeedbackTemplate : !!study.FeedbackTemplate
+  // Step 4: Feedback template created (checked via opts parameter only)
+  const hasTemplate = opts?.hasFeedbackTemplate !== undefined ? !!opts.hasFeedbackTemplate : false
   if (!hasTemplate) {
     return 4
   }

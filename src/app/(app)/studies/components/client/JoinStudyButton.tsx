@@ -6,7 +6,7 @@ import joinStudy from "../../mutations/joinStudy"
 import toast from "react-hot-toast"
 import isParticipantInStudy from "../../queries/isParticipantInStudy"
 import saveJatosRunUrl from "../../[studyId]/setup/mutations/saveJatosRunUrl"
-import { generateJatosRunUrl } from "@/src/lib/jatos/api/generateJatosRunUrl"
+import { createPersonalStudyCodeAndSave } from "@/src/lib/jatos/api/createPersonalStudyCodeAndSave"
 import { useRouter } from "next/navigation"
 
 interface JoinStudyButtonProps {
@@ -35,27 +35,15 @@ export default function JoinStudyButton({
       const participant = await joinStudyMutation({ studyId })
       const { id: participantStudyId, pseudonym } = participant
 
-      // 2) Create a personal study code on JATOS
+      // 2) Create personal study code and save run URL
       const type = jatosWorkerType === "MULTIPLE" ? "pm" : "ps"
-      const res = await fetch("/api/jatos/create-personal-studycode", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          jatosStudyId,
-          jatosBatchId,
-          type,
-          comment: pseudonym,
-        }),
+      await createPersonalStudyCodeAndSave({
+        jatosStudyId,
+        jatosBatchId,
+        type,
+        comment: pseudonym,
+        onSave: (runUrl) => saveJatosRunUrlMutation({ participantStudyId, jatosRunUrl: runUrl }),
       })
-
-      const json = await res.json()
-      if (!res.ok) throw new Error(json.error || "Failed to create study code")
-
-      const code = json.code
-      const runUrl = generateJatosRunUrl(code)
-
-      // 3) Save the generated runUrl to ParticipantStudy
-      await saveJatosRunUrlMutation({ participantStudyId, jatosRunUrl: runUrl })
 
       toast.success("You have joined the study!")
       router.push(`/studies/${studyId}`)

@@ -5,7 +5,9 @@ import { useState } from "react"
 import { toast } from "react-hot-toast"
 import GenerateTestLinkButton from "./GenerateTestLinkButton"
 import RunStudyButton from "./RunStudyButton"
-import { checkPilotCompletion } from "@/src/lib/jatos/api/checkPilotCompletion"
+import { checkPilotCompletionFromMetadata } from "@/src/lib/jatos/api/checkPilotCompletion"
+import { callJatosApi } from "@/src/lib/jatos/api/client"
+import type { GetResultsMetadataResponse } from "@/src/types/jatos-api"
 import { StudyWithRelations } from "../../../../../queries/getStudy"
 import StepNavigation from "../../../components/StepNavigation"
 
@@ -36,7 +38,13 @@ export default function Step3Content({
 
     setCheckingPilot(true)
     try {
-      const completed = await checkPilotCompletion(study.jatosStudyUUID)
+      // Fetch metadata using typed API client
+      const metadata = await callJatosApi<GetResultsMetadataResponse>("/get-results-metadata", {
+        method: "POST",
+        body: { studyUuids: [study.jatosStudyUUID] },
+      })
+
+      const completed = checkPilotCompletionFromMetadata(metadata, study.jatosStudyUUID)
       setPilotCompleted(completed)
 
       if (completed) {

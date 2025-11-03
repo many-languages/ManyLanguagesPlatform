@@ -5,13 +5,10 @@ import { ArchiveBoxIcon } from "@heroicons/react/24/outline"
 import StudyInformationCard from "./StudyInformationCard"
 import StudyComponentButton from "./StudyComponentButton"
 import JatosInformationCard from "./JatosInformationCard"
-import GeneratePersonalLinkButton from "./GeneratePersonalLinkButton"
 import { useQuery } from "@blitzjs/rpc"
 import getStudyParticipants from "../../../queries/getStudyParticipants"
 import RunStudyButton from "../../setup/step3/components/client/RunStudyButton"
 import { useSession } from "@blitzjs/auth"
-import getStudyResearcher from "../../../queries/getStudyResearcher"
-import getStudyParticipant from "../../../queries/getStudyParticipant"
 import DownloadResultsButton from "./DownloadResultsButton"
 import StudySummary from "./StudySummary"
 import { JatosMetadata, JatosStudyProperties } from "@/src/types/jatos"
@@ -23,45 +20,45 @@ import {
   getNextSetupStepUrl,
 } from "../../setup/utils/setupStatus"
 import { useRouter } from "next/navigation"
-import getFeedbackTemplate from "../../setup/step4/queries/getFeedbackTemplate"
 
 interface StudyContentProps {
   study: StudyWithRelations
   metadata?: JatosMetadata | null
   properties?: JatosStudyProperties | null
+  feedbackTemplate?: { id: number; content: string; createdAt: Date; updatedAt: Date } | null
+  participant?: {
+    id: number
+    pseudonym: string
+    jatosRunUrl: string | null
+    createdAt: Date
+    active: boolean
+    payed: boolean
+  } | null
 }
 
-export default function StudyContent({ study, metadata, properties }: StudyContentProps) {
+export default function StudyContent({
+  study,
+  metadata,
+  properties,
+  feedbackTemplate,
+  participant: initialParticipant,
+}: StudyContentProps) {
   // Get user data for the study based on their role
   const { role } = useSession()
   const router = useRouter()
 
-  // Optionally load feedback template (for setup status) only for researchers
-  const [feedbackTemplate] = useQuery(
-    getFeedbackTemplate,
-    { studyId: study.id },
-    { enabled: role === "RESEARCHER" }
-  )
-
+  // Use server-fetched feedback template
   const hasFeedbackTemplate = !!feedbackTemplate?.id
 
   // Check setup completion status with optional override for template presence
   const setupComplete = isSetupComplete(study, { hasFeedbackTemplate })
   const incompleteStep = getIncompleteStep(study, { hasFeedbackTemplate })
 
-  // Get the ResearcherStudy persona of the user IF they are a RESEARCHER on the study
-  // const [researcher] = useQuery(
-  //   getStudyResearcher,
-  //   { studyId: study.id },
-  //   { enabled: role === "RESEARCHER" }
-  // )
-  // Get the StudyParticipant persona of the user IF they are a PARTICIPANT on the study
-  const [participant] = useQuery(
-    getStudyParticipant,
-    { studyId: study.id },
-    { enabled: role === "PARTICIPANT" }
-  )
+  // Use server-fetched participant data
+  const participant = initialParticipant
+
   // Get all participants and their emails assigned to the study
+  // Keep as useQuery because it needs reactive refetching after mutations
   const [participants, { refetch: refetchParticipants }] = useQuery(
     getStudyParticipants,
     { studyId: study.id },

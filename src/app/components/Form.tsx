@@ -11,6 +11,10 @@ export interface FormProps<T extends z.ZodType<any, any>> {
   onSubmit: (values: z.infer<T>) => Promise<void | { FORM_ERROR?: string }>
   defaultValues?: Partial<z.infer<T>>
   className?: string
+  /** Optional callback called after successful submission (before form reset) */
+  onSuccess?: () => void
+  /** Whether to reset form after successful submission. Defaults to false. */
+  resetOnSuccess?: boolean
 }
 
 export const FORM_ERROR = "FORM_ERROR"
@@ -21,6 +25,8 @@ export function Form<T extends z.ZodType<any, any>>({
   onSubmit,
   defaultValues,
   className,
+  onSuccess,
+  resetOnSuccess = false,
 }: FormProps<T>) {
   const form = useForm<z.infer<T>>({
     resolver: zodResolver(schema),
@@ -38,6 +44,14 @@ export function Form<T extends z.ZodType<any, any>>({
             const result = await onSubmit(values)
             if (result && result.FORM_ERROR) {
               form.setError("root", { message: result.FORM_ERROR })
+            } else {
+              // Successful submission
+              if (onSuccess) {
+                onSuccess()
+              }
+              if (resetOnSuccess) {
+                form.reset()
+              }
             }
           } catch (error) {
             const errorMessage =

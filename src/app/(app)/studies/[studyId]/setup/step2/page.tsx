@@ -12,6 +12,7 @@ import { useState } from "react"
 import uploadJatosFile from "@/src/lib/jatos/api/uploadJatosFile"
 import fetchJatosBatchId from "@/src/lib/jatos/api/fetchJatosBatchId"
 import deleteExistingJatosStudy from "@/src/lib/jatos/api/deleteExistingJatosStudy"
+import { FORM_ERROR } from "@/src/app/components/Form"
 
 export default function Step2Page() {
   const router = useRouter()
@@ -136,27 +137,17 @@ export default function Step2Page() {
         submitText={loading ? "Uploading..." : "Save and continue"}
         cancelText="Back"
         onCancel={() => router.push(`/studies/${studyId}/setup/step1`)}
-        initialValues={{
+        defaultValues={{
           jatosWorkerType: study?.jatosWorkerType || "SINGLE",
           jatosFileName: study?.jatosFileName || undefined,
         }}
-        borderless
-        alignSubmitRight
-        separateActions
-        onSubmit={async (
-          values: any,
-          helpers?: {
-            setSubmitting: (isSubmitting: boolean) => void
-            setErrors: (errors: any) => void
-            resetForm: () => void
-            submitForm: () => void
-          }
-        ) => {
+        onSubmit={async (values) => {
           const file = values.studyFile as File | undefined
-          if (!file) return { FORM_ERROR: "A JATOS .jzip file is required" }
+          if (!file) {
+            return { [FORM_ERROR]: "A JATOS .jzip file is required" }
+          }
 
           setLoading(true)
-          helpers?.setSubmitting(true)
 
           try {
             // 1️⃣ Upload to JATOS
@@ -172,7 +163,6 @@ export default function Step2Page() {
                 title: uploadResult.currentStudyTitle,
               })
               setLoading(false)
-              helpers?.setSubmitting(false)
               return
             }
 
@@ -182,10 +172,7 @@ export default function Step2Page() {
             console.error("Upload error:", err)
             toast.error("Failed to upload file")
             setLoading(false)
-            helpers?.setSubmitting(false)
-            return { FORM_ERROR: `Upload error: ${err.message}` }
-          } finally {
-            helpers?.setSubmitting(false)
+            return { [FORM_ERROR]: `Upload error: ${err.message}` }
           }
         }}
       />

@@ -1,5 +1,5 @@
 "use client"
-import { LabeledTextField } from "@/src/app/components/LabeledTextField"
+import { TextField } from "@/src/app/components/fields"
 import { Form, FORM_ERROR } from "@/src/app/components/Form"
 import { ResetPassword } from "../../validations"
 import resetPassword from "../../mutations/resetPassword"
@@ -13,7 +13,7 @@ export function ResetPasswordForm() {
   const [resetPasswordMutation, { isSuccess }] = useMutation(resetPassword)
 
   return (
-    <div>
+    <div className="space-y-6">
       <h1 className="mb-4 font-black text-xl">Set a New Password</h1>
 
       {isSuccess ? (
@@ -25,9 +25,8 @@ export function ResetPasswordForm() {
         </div>
       ) : (
         <Form
-          submitText="Reset Password"
           schema={ResetPassword}
-          initialValues={{
+          defaultValues={{
             password: "",
             passwordConfirmation: "",
             token,
@@ -47,13 +46,26 @@ export function ResetPasswordForm() {
               }
             }
           }}
+          className="space-y-4"
         >
-          <LabeledTextField name="password" label="New Password" type="password" />
-          <LabeledTextField
-            name="passwordConfirmation"
-            label="Confirm New Password"
-            type="password"
-          />
+          {(form) => (
+            <>
+              <TextField name="password" label="New Password" type="password" />
+              <TextField name="passwordConfirmation" label="Confirm New Password" type="password" />
+
+              <button
+                type="submit"
+                className="btn btn-primary w-full"
+                disabled={form.formState.isSubmitting}
+              >
+                {form.formState.isSubmitting ? "Resetting..." : "Reset Password"}
+              </button>
+
+              {form.formState.errors.root && (
+                <div className="alert alert-error">{form.formState.errors.root.message}</div>
+              )}
+            </>
+          )}
         </Form>
       )}
     </div>

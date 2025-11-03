@@ -1,6 +1,6 @@
 "use client"
 
-import { LabeledTextField } from "@/src/app/components/LabeledTextField"
+import { TextField } from "@/src/app/components/fields"
 import { Form, FORM_ERROR } from "@/src/app/components/Form"
 import { ForgotPassword } from "../../validations"
 import forgotPassword from "../../mutations/forgotPassword"
@@ -10,7 +10,7 @@ export function ForgotPasswordForm() {
   const [forgotPasswordMutation, { isSuccess }] = useMutation(forgotPassword)
 
   return (
-    <>
+    <div className="space-y-6">
       <h1>Forgot your password?</h1>
       <>
         {isSuccess ? (
@@ -23,9 +23,8 @@ export function ForgotPasswordForm() {
           </div>
         ) : (
           <Form
-            submitText="Send Reset Password Instructions"
             schema={ForgotPassword}
-            initialValues={{ email: "" }}
+            defaultValues={{ email: "" }}
             onSubmit={async (values) => {
               try {
                 await forgotPasswordMutation(values)
@@ -35,11 +34,28 @@ export function ForgotPasswordForm() {
                 }
               }
             }}
+            className="space-y-4"
           >
-            <LabeledTextField name="email" label="Email" placeholder="Email" />
+            {(form) => (
+              <>
+                <TextField name="email" label="Email" placeholder="Email" type="email" />
+
+                <button
+                  type="submit"
+                  className="btn btn-primary w-full"
+                  disabled={form.formState.isSubmitting}
+                >
+                  {form.formState.isSubmitting ? "Sending..." : "Send Reset Password Instructions"}
+                </button>
+
+                {form.formState.errors.root && (
+                  <div className="alert alert-error">{form.formState.errors.root.message}</div>
+                )}
+              </>
+            )}
           </Form>
         )}
       </>
-    </>
+    </div>
   )
 }

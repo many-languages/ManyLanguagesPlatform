@@ -4,7 +4,9 @@ import React, { useMemo } from "react"
 import type { JatosMetadata } from "@/src/types/jatos"
 import Card from "@/src/app/components/Card"
 import CheckboxFieldTable from "../../../components/CheckboxFieldTable"
-import { Form, Formik } from "formik"
+import { useForm, FormProvider } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
+import { z } from "zod"
 import toast from "react-hot-toast"
 import { useMutation } from "@blitzjs/rpc"
 import toggleParticipantActive from "../../../mutations/toggleParticipantActive"
@@ -17,10 +19,12 @@ interface ParticipantManagementCardProps {
   onRefresh: () => Promise<any>
 }
 
-interface FormValues {
-  selectedParticipantIds: number[]
-  action?: "TOGGLE_ACTIVE" | "TOGGLE_PAYED"
-}
+const ParticipantSchema = z.object({
+  selectedParticipantIds: z.array(z.number()).min(1, "Please select at least one participant"),
+  action: z.enum(["TOGGLE_ACTIVE", "TOGGLE_PAYED"]).optional(),
+})
+
+type ParticipantFormData = z.infer<typeof ParticipantSchema>
 
 export default function ParticipantManagementCard({
   participants,
@@ -32,9 +36,15 @@ export default function ParticipantManagementCard({
   const [togglePayedMutation] = useMutation(toggleParticipantPayed)
 
   // Get studyResults from metadata
-  const studyResults = metadata?.data?.[0]?.studyResults ?? []
+  const studyResults = useMemo(() => metadata?.data?.[0]?.studyResults ?? [], [metadata])
 
-  // Handle action defitions
+  const form = useForm<ParticipantFormData>({
+    resolver: zodResolver(ParticipantSchema),
+    defaultValues: { selectedParticipantIds: [], action: undefined },
+    mode: "onChange",
+  })
+
+  // Handle action definitions
   const handleToggleActive = async (ids: number[]) => {
     const areAllActive = participants.filter((p) => ids.includes(p.id)).every((p) => p.active)
     await toggleActiveMutation({ participantIds: ids, makeActive: !areAllActive })
@@ -47,6 +57,20 @@ export default function ParticipantManagementCard({
     await togglePayedMutation({ participantIds: ids, makePayed: !areAllPayed })
     toast.success(areAllPayed ? "Marked as unpaid" : "Marked as paid")
     await onRefresh()
+  }
+
+  const onSubmit = async (values: ParticipantFormData) => {
+    try {
+      if (values.action === "TOGGLE_ACTIVE") {
+        await handleToggleActive(values.selectedParticipantIds)
+      } else if (values.action === "TOGGLE_PAYED") {
+        await handleTogglePayed(values.selectedParticipantIds)
+      } else {
+        toast.error("No action selected")
+      }
+    } finally {
+      form.reset()
+    }
   }
 
   // Match JATOS results to participants (using pseudonym/comment or user.email)
@@ -150,76 +174,50 @@ export default function ParticipantManagementCard({
   )
 
   return (
-    <Formik<FormValues>
-      initialValues={{ selectedParticipantIds: [], action: undefined }}
-      validate={(values) => {
-        const errors: Partial<Record<keyof FormValues, string>> = {}
-        if (!values.selectedParticipantIds.length) {
-          errors.selectedParticipantIds = "Please select at least one participant"
-        }
-        return errors
-      }}
-      onSubmit={async (values, { setSubmitting, resetForm }) => {
-        setSubmitting(true)
-        try {
-          if (values.action === "TOGGLE_ACTIVE") {
-            await handleToggleActive(values.selectedParticipantIds)
-          } else if (values.action === "TOGGLE_PAYED") {
-            await handleTogglePayed(values.selectedParticipantIds)
-          } else {
-            toast.error("No action selected")
-          }
-        } finally {
-          setSubmitting(false)
-          resetForm()
-        }
-      }}
-    >
-      {({ values, setFieldValue, submitForm, isSubmitting }) => (
-        <Form>
-          <Card
-            title="Participant Management"
-            actions={
-              <div className="flex gap-2 justify-end">
-                <button
-                  type="button"
-                  className="btn btn-secondary"
-                  disabled={isSubmitting}
-                  onClick={async () => {
-                    await setFieldValue("action", "TOGGLE_ACTIVE")
-                    await submitForm()
-                  }}
-                >
-                  {isSubmitting && values.action === "TOGGLE_ACTIVE"
-                    ? "Processing..."
-                    : "Toggle Active"}
-                </button>
+    <FormProvider {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)}>
+        <Card
+          title="Participant Management"
+          actions={
+            <div className="flex gap-2 justify-end">
+              <button
+                type="button"
+                className="btn btn-secondary"
+                disabled={form.formState.isSubmitting}
+                onClick={async () => {
+                  form.setValue("action", "TOGGLE_ACTIVE")
+                  await form.handleSubmit(onSubmit)()
+                }}
+              >
+                {form.formState.isSubmitting && form.watch("action") === "TOGGLE_ACTIVE"
+                  ? "Processing..."
+                  : "Toggle Active"}
+              </button>
 
-                <button
-                  type="button"
-                  className="btn btn-accent"
-                  disabled={isSubmitting}
-                  onClick={async () => {
-                    await setFieldValue("action", "TOGGLE_PAYED")
-                    await submitForm()
-                  }}
-                >
-                  {isSubmitting && values.action === "TOGGLE_PAYED"
-                    ? "Processing..."
-                    : "Toggle Payed"}
-                </button>
-              </div>
-            }
-          >
-            <CheckboxFieldTable
-              name="selectedParticipantIds"
-              options={participantRows.map((p) => ({ id: p.id, label: p.label }))}
-              extraData={participantRows}
-              extraColumns={columns}
-            />
-          </Card>
-        </Form>
-      )}
-    </Formik>
+              <button
+                type="button"
+                className="btn btn-accent"
+                disabled={form.formState.isSubmitting}
+                onClick={async () => {
+                  form.setValue("action", "TOGGLE_PAYED")
+                  await form.handleSubmit(onSubmit)()
+                }}
+              >
+                {form.formState.isSubmitting && form.watch("action") === "TOGGLE_PAYED"
+                  ? "Processing..."
+                  : "Toggle Payed"}
+              </button>
+            </div>
+          }
+        >
+          <CheckboxFieldTable
+            name="selectedParticipantIds"
+            options={participantRows.map((p) => ({ id: p.id, label: p.label }))}
+            extraData={participantRows}
+            extraColumns={columns}
+          />
+        </Card>
+      </form>
+    </FormProvider>
   )
 }

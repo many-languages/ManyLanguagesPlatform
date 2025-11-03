@@ -21,7 +21,7 @@ export default function StudyComponentButton({ study }: StudyComponentButtonProp
 
       {open && (
         <StudyComponentModal
-          studyId={study.id}
+          study={study}
           jatosStudyId={study.jatosStudyId!}
           isOpen={open}
           onClose={() => setOpen(false)}

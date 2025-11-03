@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { ArrowDownTrayIcon } from "@heroicons/react/24/outline"
 import toast from "react-hot-toast"
+import { downloadBlob } from "@/src/lib/jatos/api/downloadBlob"
 
 interface DownloadResultsButtonProps {
   jatosStudyId: number
@@ -16,26 +17,11 @@ export default function DownloadResultsButton({ jatosStudyId }: DownloadResultsB
     toast.loading("Preparing results...", { id: "download" })
 
     try {
-      const res = await fetch(`/api/jatos/get-all-results?studyIds=${jatosStudyId}`, {
-        method: "POST",
-      })
-
-      if (!res.ok) {
-        const err = await res.text()
-        throw new Error(err || "Failed to download results")
-      }
-
-      const blob = await res.blob()
-      const url = URL.createObjectURL(blob)
-
-      const a = document.createElement("a")
-      a.href = url
-      a.download = `study_${jatosStudyId}_results.zip`
-      document.body.appendChild(a)
-      a.click()
-      a.remove()
-      URL.revokeObjectURL(url)
-
+      await downloadBlob(
+        `/api/jatos/get-all-results?studyIds=${jatosStudyId}`,
+        `study_${jatosStudyId}_results.zip`,
+        { method: "POST" }
+      )
       toast.success("Results downloaded", { id: "download" })
     } catch (err) {
       console.error(err)

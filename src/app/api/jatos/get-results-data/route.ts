@@ -1,7 +1,21 @@
+/**
+ * JATOS API Route: Get Results Data
+ *
+ * Fetches raw results data (ZIP file) from JATOS for specified studies.
+ * This route wraps the server-side lib function for client-side usage.
+ *
+ * @route POST /api/jatos/get-results-data
+ * @queryParams studyIds (query parameter or body)
+ * @returns Binary ZIP file with results data
+ */
 import { getResultsData } from "@/src/lib/jatos/api/getResultsData"
 import { NextRequest, NextResponse } from "next/server"
+import type { JatosApiError } from "@/src/types/jatos-api"
 
-export async function POST(req: NextRequest) {
+export const runtime = "nodejs"
+export const dynamic = "force-dynamic"
+
+export async function POST(req: NextRequest): Promise<NextResponse<ArrayBuffer | JatosApiError>> {
   try {
     const url = new URL(req.url)
     const params = Object.fromEntries(url.searchParams.entries())
@@ -17,6 +31,9 @@ export async function POST(req: NextRequest) {
     })
   } catch (error: any) {
     console.error("Error fetching results data:", error)
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    const errorResponse: JatosApiError = {
+      error: error.message || "Failed to fetch results data",
+    }
+    return NextResponse.json(errorResponse, { status: 500 })
   }
 }

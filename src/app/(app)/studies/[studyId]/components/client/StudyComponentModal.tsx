@@ -2,26 +2,28 @@
 
 import toast from "react-hot-toast"
 import StudyComponentForm from "./StudyComponentForm"
-import { useMutation, useQuery } from "@blitzjs/rpc"
-import getStudy from "../../../queries/getStudy"
+import { useMutation } from "@blitzjs/rpc"
+import { StudyWithRelations } from "../../../queries/getStudy"
 import updateStudyComponent from "../../../mutations/updateStudyComponent"
-import Modal from "@/src/components/Modal"
+import { callJatosApi } from "@/src/lib/jatos/api/client"
+import type { CreateComponentResponse } from "@/src/types/jatos-api"
+import { FORM_ERROR } from "@/src/app/components/Form"
+import Modal from "@/src/app/components/Modal"
 
 interface StudyComponentModalProps {
-  studyId: number
+  study: StudyWithRelations
   jatosStudyId: number
   isOpen: boolean
   onClose: () => void
 }
 
 export default function StudyComponentModal({
-  studyId,
+  study,
   jatosStudyId,
   isOpen,
   onClose,
 }: StudyComponentModalProps) {
   const [updateStudyComponentMutation] = useMutation(updateStudyComponent)
-  const [study] = useQuery(getStudy, { id: studyId })
 
   return (
     <Modal open={isOpen}>
@@ -31,21 +33,17 @@ export default function StudyComponentModal({
         jatosStudyId={jatosStudyId}
         onSubmit={async (values) => {
           try {
-            const res = await fetch("/api/jatos/create-component", {
+            const data = await callJatosApi<CreateComponentResponse>("/create-component", {
               method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
+              body: {
                 jatosStudyId,
                 title: "Main Component",
                 htmlFilePath: values.htmlFilePath,
-              }),
+              },
             })
 
-            const data = await res.json()
-            if (!res.ok) throw new Error(data?.error || "Component creation failed")
-
             await updateStudyComponentMutation({
-              id: studyId,
+              id: study.id,
               jatosComponentId: data.jatosComponentId,
               jatosComponentUUID: data.jatosComponentUUID,
             })

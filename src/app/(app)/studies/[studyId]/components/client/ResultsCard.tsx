@@ -5,6 +5,7 @@ import Card from "@/src/app/components/Card"
 import Table from "@/src/app/components/Table"
 import toast from "react-hot-toast"
 import { parseJatosZip } from "@/src/lib/jatos/api/parseJatosZip"
+import { fetchResultsBlob } from "@/src/lib/jatos/api/fetchResultsBlob"
 import { JatosMetadata, JatosStudyProperties, EnrichedJatosStudyResult } from "@/src/types/jatos"
 import { matchJatosDataToMetadata } from "@/src/lib/jatos/api/matchJatosDataToMetadata"
 import { getComponentMap } from "@/src/lib/jatos/api/getComponentMap"
@@ -58,16 +59,7 @@ export default function ResultsCard({ jatosStudyId, metadata, properties }: Resu
     setLoading(true)
     setError(null)
     try {
-      const res = await fetch(`/api/jatos/get-results-data?studyIds=${jatosStudyId}`, {
-        method: "POST",
-      })
-
-      if (!res.ok) {
-        const err = await res.text()
-        throw new Error(`Fetch failed (${res.status}): ${err}`)
-      }
-
-      const blob = await res.blob()
+      const blob = await fetchResultsBlob(jatosStudyId)
       const files = await parseJatosZip(blob)
       const enriched = matchJatosDataToMetadata(metadata, files)
       setEnrichedResults(enriched)

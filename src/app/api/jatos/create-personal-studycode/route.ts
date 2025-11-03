@@ -1,4 +1,15 @@
+/**
+ * JATOS API Route: Create Personal Study Code
+ *
+ * Creates a single personal study code (PersonalSingle or PersonalMultiple) with optional comment.
+ * Used for generating individual participant links.
+ *
+ * @route POST /api/jatos/create-personal-studycode
+ * @body { jatosStudyId: number, jatosBatchId?: number, type?: "ps" | "pm", comment?: string }
+ * @returns Study code for generating run URL
+ */
 import { NextResponse } from "next/server"
+import type { CreatePersonalStudyCodeResponse, JatosApiError } from "@/src/types/jatos-api"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -6,11 +17,9 @@ export const dynamic = "force-dynamic"
 const JATOS_BASE = process.env.JATOS_BASE!
 const JATOS_TOKEN = process.env.JATOS_TOKEN!
 
-/**
- * Creates a single commented personal link (PersonalSingle or PersonalMultiple)
- * via GET /jatos/api/v1/studies/{id}/studyCodes
- */
-export async function POST(req: Request) {
+export async function POST(
+  req: Request
+): Promise<NextResponse<CreatePersonalStudyCodeResponse | JatosApiError>> {
   try {
     const { jatosStudyId, jatosBatchId, type = "ps", comment } = await req.json()
 
@@ -57,12 +66,17 @@ export async function POST(req: Request) {
     const code = data[0]
 
     if (!code) {
-      return NextResponse.json({ error: "No study code returned from JATOS" }, { status: 502 })
+      const errorResponse: JatosApiError = { error: "No study code returned from JATOS" }
+      return NextResponse.json(errorResponse, { status: 502 })
     }
 
-    return NextResponse.json({ code })
+    const successResponse: CreatePersonalStudyCodeResponse = { code }
+    return NextResponse.json(successResponse)
   } catch (err: any) {
     console.error("Error creating single personal link:", err)
-    return NextResponse.json({ error: err.message ?? "Unexpected error" }, { status: 500 })
+    const errorResponse: JatosApiError = {
+      error: err.message ?? "Unexpected error",
+    }
+    return NextResponse.json(errorResponse, { status: 500 })
   }
 }

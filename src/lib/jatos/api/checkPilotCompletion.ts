@@ -1,43 +1,23 @@
-export async function checkPilotCompletion(jatosStudyUUID: string): Promise<boolean> {
-  try {
-    const res = await fetch("/api/jatos/get-results-metadata", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ studyUuids: [jatosStudyUUID] }),
+/**
+ * Pure utility function to check if pilot study is completed from metadata.
+ * This function processes metadata and returns whether a completed pilot exists.
+ *
+ * @param metadata - JATOS results metadata response
+ * @param jatosStudyUUID - The JATOS study UUID to check
+ * @returns true if a finished personal worker result exists, false otherwise
+ */
+export function checkPilotCompletionFromMetadata(metadata: any, jatosStudyUUID: string): boolean {
+  if (!metadata?.data) return false
+
+  return metadata.data.some((study: any) => {
+    if (study.studyUuid !== jatosStudyUUID) return false
+
+    return study.studyResults?.some((result: any) => {
+      const isFinished = result.studyState === "FINISHED"
+      const isPersonalWorker =
+        result.workerType === "PersonalMultiple" || result.workerType === "PersonalSingle"
+
+      return isFinished && isPersonalWorker
     })
-
-    if (!res.ok) return false
-
-    const metadata = await res.json()
-
-    // Add debugging
-    console.log("🔍 Pilot check metadata:", JSON.stringify(metadata, null, 2))
-    console.log("🔍 Looking for studyUUID:", jatosStudyUUID)
-
-    const hasCompletedPilot = metadata.data?.some((study: any) => {
-      console.log("🔍 Checking study:", study.studyUuid, "results:", study.studyResults?.length)
-
-      return study.studyResults?.some((result: any) => {
-        console.log("🔍 Checking result:", {
-          studyState: result.studyState,
-          workerType: result.workerType,
-          comment: result.comment,
-        })
-
-        const isFinished = result.studyState === "FINISHED"
-        const isPersonalWorker =
-          result.workerType === "PersonalMultiple" || result.workerType === "PersonalSingle"
-
-        console.log("🔍 Result check:", { isFinished, isPersonalWorker })
-
-        return isFinished && isPersonalWorker
-      })
-    })
-
-    console.log("🔍 Final result:", hasCompletedPilot)
-    return hasCompletedPilot || false
-  } catch (error) {
-    console.error("Error checking pilot completion:", error)
-    return false
-  }
+  })
 }

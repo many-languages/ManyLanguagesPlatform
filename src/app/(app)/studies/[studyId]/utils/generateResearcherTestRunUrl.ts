@@ -1,7 +1,7 @@
-import { generateJatosRunUrl } from "@/src/lib/jatos/api/generateJatosRunUrl"
 import { invoke } from "@blitzjs/rpc"
 import type { Ctx } from "blitz"
 import saveResearcherJatosRunUrl from "../setup/mutations/saveResearcherJatosRunUrl"
+import { createPersonalStudyCodeAndSave } from "@/src/lib/jatos/api/createPersonalStudyCodeAndSave"
 
 interface GenerateRunUrlArgs {
   studyResearcherId: number
@@ -21,33 +21,26 @@ export async function generateAndSaveResearcherTestRunUrl({
   jatosBatchId,
   ctx,
 }: GenerateRunUrlArgs): Promise<string> {
-  // 1) Create personal study code in JATOS
-  const res = await fetch("/api/jatos/create-personal-studycode", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      jatosStudyId,
-      jatosBatchId,
-      type: "pm",
-      comment: "test",
-    }),
+  // Create personal study code and save run URL
+  const runUrl = await createPersonalStudyCodeAndSave({
+    jatosStudyId,
+    jatosBatchId,
+    type: "pm",
+    comment: "test",
+    onSave: async (url: string) => {
+      if (typeof window !== "undefined") {
+        // client-side
+        await invoke(saveResearcherJatosRunUrl, {
+          studyResearcherId,
+          jatosRunUrl: url,
+        })
+      } else {
+        // server-side
+        if (!ctx) throw new Error("Missing Blitz context (ctx) for server-side call")
+        await saveResearcherJatosRunUrl({ studyResearcherId, jatosRunUrl: url }, ctx)
+      }
+    },
   })
-
-  const json = await res.json()
-  if (!res.ok) throw new Error(json.error || "Failed to create study code")
-
-  // 2) Generate full run URL
-  const runUrl = generateJatosRunUrl(json.code)
-
-  // 3) Save to StudyResearcher record
-  if (typeof window !== "undefined") {
-    // client-side
-    await invoke(saveResearcherJatosRunUrl, { studyResearcherId, jatosRunUrl: runUrl })
-  } else {
-    // server-side
-    if (!ctx) throw new Error("Missing Blitz context (ctx) for server-side call")
-    await saveResearcherJatosRunUrl({ studyResearcherId, jatosRunUrl: runUrl }, ctx)
-  }
 
   return runUrl
 }

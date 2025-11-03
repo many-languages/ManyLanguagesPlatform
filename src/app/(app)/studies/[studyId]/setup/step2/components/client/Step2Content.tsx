@@ -8,9 +8,9 @@ import { useMutation } from "@blitzjs/rpc"
 import importJatos from "../../../mutations/importJatos"
 import updateStudyBatch from "../../../../../mutations/updateStudyBatch"
 import clearJatosData from "../../../../../mutations/clearJatosData"
-import uploadJatosFile from "@/src/lib/jatos/api/uploadJatosFile"
 import fetchJatosBatchId from "@/src/lib/jatos/api/fetchJatosBatchId"
 import deleteExistingJatosStudy from "@/src/lib/jatos/api/deleteExistingJatosStudy"
+import { uploadStudyFile } from "@/src/lib/jatos/api/uploadStudyFile"
 import { FORM_ERROR } from "@/src/app/components/Form"
 import { StudyWithRelations } from "../../../../../queries/getStudy"
 
@@ -82,7 +82,12 @@ export default function Step2Content({ study, studyId }: Step2ContentProps) {
 
       // 3️⃣ Re-upload to JATOS
       setLoading(true)
-      const uploadResult = await uploadJatosFile(duplicateAlert.file)
+      const uploadResult = await uploadStudyFile(duplicateAlert.file)
+
+      // If conflict, this shouldn't happen after deletion, but handle it
+      if ("studyExists" in uploadResult && uploadResult.studyExists) {
+        throw new Error("Study still exists after deletion. Please try again.")
+      }
 
       // 4️⃣ Complete import (reuse same logic)
       const success = await completeImport(uploadResult, duplicateAlert.jatosWorkerType)
@@ -153,10 +158,11 @@ export default function Step2Content({ study, studyId }: Step2ContentProps) {
 
           try {
             // 1️⃣ Upload to JATOS
-            const uploadResult = await uploadJatosFile(file)
+            const uploadResult = await uploadStudyFile(file)
 
-            // 2️⃣ Check if study exists
-            if (uploadResult.studyExists) {
+            // Handle existing study (409 conflict)
+            if ("studyExists" in uploadResult && uploadResult.studyExists) {
+              // 2️⃣ Show duplicate alert
               setDuplicateAlert({
                 uuid: uploadResult.jatosStudyUUID,
                 studyId: uploadResult.jatosStudyId,

@@ -1,6 +1,7 @@
 "use client"
 
 import React, { useMemo } from "react"
+import { useRouter } from "next/navigation"
 import type { JatosMetadata } from "@/src/types/jatos"
 import Card from "@/src/app/components/Card"
 import CheckboxFieldTable from "../../../components/CheckboxFieldTable"
@@ -16,7 +17,6 @@ import { ParticipantWithEmail } from "../../../queries/getStudyParticipants"
 interface ParticipantManagementCardProps {
   participants: ParticipantWithEmail[]
   metadata: JatosMetadata
-  onRefresh: () => Promise<any>
 }
 
 const ParticipantSchema = z.object({
@@ -29,11 +29,17 @@ type ParticipantFormData = z.infer<typeof ParticipantSchema>
 export default function ParticipantManagementCard({
   participants,
   metadata,
-  onRefresh,
 }: ParticipantManagementCardProps) {
+  const router = useRouter()
+
   // Mutations
   const [toggleActiveMutation] = useMutation(toggleParticipantActive)
   const [togglePayedMutation] = useMutation(toggleParticipantPayed)
+
+  // Use router.refresh() to refetch server data after mutations
+  const handleRefresh = async () => {
+    router.refresh()
+  }
 
   // Get studyResults from metadata
   const studyResults = useMemo(() => metadata?.data?.[0]?.studyResults ?? [], [metadata])
@@ -49,14 +55,14 @@ export default function ParticipantManagementCard({
     const areAllActive = participants.filter((p) => ids.includes(p.id)).every((p) => p.active)
     await toggleActiveMutation({ participantIds: ids, makeActive: !areAllActive })
     toast.success(areAllActive ? "Participants deactivated" : "Participants activated")
-    await onRefresh()
+    await handleRefresh()
   }
 
   const handleTogglePayed = async (ids: number[]) => {
     const areAllPayed = participants.filter((p) => ids.includes(p.id)).every((p) => p.payed)
     await togglePayedMutation({ participantIds: ids, makePayed: !areAllPayed })
     toast.success(areAllPayed ? "Marked as unpaid" : "Marked as paid")
-    await onRefresh()
+    await handleRefresh()
   }
 
   const onSubmit = async (values: ParticipantFormData) => {

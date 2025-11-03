@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { AsyncButton } from "@/src/app/components/AsyncButton"
 
 interface RunStudyButtonProps {
   runUrl: string | null
@@ -8,17 +8,10 @@ interface RunStudyButtonProps {
 }
 
 export default function RunStudyButton({ runUrl, isActive = true }: RunStudyButtonProps) {
-  const [loading, setLoading] = useState(false)
-
   const handleRunStudy = () => {
     if (!runUrl || !isActive) return
-    setLoading(true)
-    try {
-      // open JATOS run link in new tab
-      window.open(runUrl, "_blank", "noopener,noreferrer")
-    } finally {
-      setLoading(false)
-    }
+    // open JATOS run link in new tab
+    window.open(runUrl, "_blank", "noopener,noreferrer")
   }
 
   if (!runUrl) {
@@ -29,20 +22,20 @@ export default function RunStudyButton({ runUrl, isActive = true }: RunStudyButt
     )
   }
 
-  const disabled = loading || !isActive
   const tooltipText = !isActive
     ? "You cannot currently participate. Please contact the researcher if this is a mistake or you have any questions."
     : undefined
 
   return (
     <div className="tooltip tooltip-bottom" data-tip={tooltipText}>
-      <button
-        className={`btn btn-primary mt-4 ${loading ? "loading" : ""}`}
+      <AsyncButton
         onClick={handleRunStudy}
-        disabled={disabled}
+        loadingText="Starting..."
+        disabled={!isActive}
+        className="btn btn-primary mt-4"
       >
-        {loading ? "Starting..." : "Run Study"}
-      </button>
+        Run Study
+      </AsyncButton>
     </div>
   )
 }

@@ -1,36 +1,15 @@
-"use client"
-
-import { useRouter, useParams } from "next/navigation"
-import { useMutation } from "@blitzjs/rpc"
-import StudyForm from "../../../components/client/StudyForm"
-import { FORM_ERROR } from "@/src/app/components/Form"
-import toast from "react-hot-toast"
-import updateStudy from "../../../mutations/updateStudy"
+import StepPageWrapper from "../components/StepPageWrapper"
+import Step1Content from "./components/client/Step1Content"
 
 export default function Step1Page() {
-  const router = useRouter()
-  const params = useParams()
-  const studyId = Number(params.studyId)
-  const [updateStudyMutation] = useMutation(updateStudy)
-
   return (
-    <>
-      <h2 className="text-lg font-semibold mb-4 text-center">Step 1 – General information</h2>
-      <StudyForm
-        formTitle=""
-        submitText="Save and continue"
-        onSubmit={async (values) => {
-          try {
-            // Remove JATOS file field if still present in the form definition
-            await updateStudyMutation({ id: studyId, ...values })
-            toast.success("General information saved")
-            router.push(`/studies/${studyId}/setup/step2`)
-          } catch (err: any) {
-            const errorMessage = err?.message || "An unexpected error occurred. Please try again."
-            return { [FORM_ERROR]: errorMessage }
-          }
-        }}
-      />
-    </>
+    <StepPageWrapper>
+      {(study, studyId) => (
+        <>
+          <h2 className="text-lg font-semibold mb-4 text-center">Step 1 – General information</h2>
+          <Step1Content study={study} studyId={studyId} />
+        </>
+      )}
+    </StepPageWrapper>
   )
 }

@@ -1,5 +1,6 @@
 "use client" // Error components must be Client components
 import React, { useEffect } from "react"
+import { Alert } from "./components/Alert"
 
 export default function Error({ error, reset }: { error: Error; reset: () => void }) {
   useEffect(() => {
@@ -9,9 +10,9 @@ export default function Error({ error, reset }: { error: Error; reset: () => voi
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen gap-4">
-      <div className="alert alert-error">
+      <Alert variant="error">
         <span>Something went wrong!</span>
-      </div>
+      </Alert>
       <div className="flex gap-2">
         <button className="btn btn-error" onClick={() => reset()}>
           Try again

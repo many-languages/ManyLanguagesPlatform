@@ -1,18 +1,18 @@
-"use client"
-import { useCurrentUser } from "../../users/hooks/useCurrentUser"
+import { Suspense } from "react"
+import { getBlitzContext } from "../../blitz-server"
+import { getCurrentUserRsc } from "../../users/queries/getCurrentUser"
+import DashboardContent from "./components/DashboardContent"
+import DashboardSkeleton from "./components/DashboardSkeleton"
 
-export default function DashboardPage() {
-  // Get current user data
-  const currentUser = useCurrentUser()
+export default async function DashboardPage() {
+  const { session } = await getBlitzContext()
+
+  // Fetch user data server-side (will be cached if already fetched in layout)
+  const currentUser = session.userId ? await getCurrentUserRsc().catch(() => null) : null
 
   return (
-    <main>
-      <h1 className="text-3xl flex justify-center mb-2">
-        Welcome{" "}
-        {currentUser?.firstname && currentUser?.lastname
-          ? `${currentUser.firstname} ${currentUser.lastname}`
-          : currentUser?.username || ""}
-      </h1>
-    </main>
+    <Suspense fallback={<DashboardSkeleton />}>
+      <DashboardContent currentUser={currentUser} />
+    </Suspense>
   )
 }

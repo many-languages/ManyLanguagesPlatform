@@ -1,37 +1,40 @@
-import { notFound } from "next/navigation"
-import { getStudyRsc } from "../../../queries/getStudy"
-import { getResearcherRunUrlRsc } from "../queries/getResearcherRunUrl"
+import { Suspense } from "react"
+import StepPageWrapper from "../components/StepPageWrapper"
 import Step3Content from "./components/client/Step3Content"
+import { getResearcherRunUrlRsc } from "../queries/getResearcherRunUrl"
+import SetupContentSkeleton from "../components/SetupContentSkeleton"
+import { StudyWithRelations } from "../../../queries/getStudy"
 
-export default async function Step3Page({ params }: { params: Promise<{ studyId: string }> }) {
-  const { studyId: studyIdRaw } = await params
-  const studyId = Number(studyIdRaw)
+async function Step3DataFetcher({
+  studyId,
+  study,
+}: {
+  studyId: number
+  study: StudyWithRelations
+}) {
+  const researcher = await getResearcherRunUrlRsc(studyId).catch(() => null)
 
-  if (!Number.isFinite(studyId)) {
-    notFound()
-  }
+  return (
+    <Step3Content
+      study={study}
+      studyId={studyId}
+      researcherId={researcher?.id ?? null}
+      jatosRunUrl={researcher?.jatosRunUrl ?? null}
+    />
+  )
+}
 
-  try {
-    const [study, researcher] = await Promise.all([
-      getStudyRsc(studyId),
-      getResearcherRunUrlRsc(studyId).catch(() => null),
-    ])
-
-    return (
-      <>
-        <h2 className="text-lg font-semibold mb-4 text-center">Step 3 – Test run</h2>
-        <Step3Content
-          study={study}
-          studyId={studyId}
-          researcherId={researcher?.id ?? null}
-          jatosRunUrl={researcher?.jatosRunUrl ?? null}
-        />
-      </>
-    )
-  } catch (error: any) {
-    if (error.name === "NotFoundError") {
-      notFound()
-    }
-    throw error
-  }
+export default function Step3Page() {
+  return (
+    <StepPageWrapper>
+      {(study, studyId) => (
+        <>
+          <h2 className="text-lg font-semibold mb-4 text-center">Step 3 – Test run</h2>
+          <Suspense fallback={<SetupContentSkeleton />}>
+            <Step3DataFetcher studyId={studyId} study={study} />
+          </Suspense>
+        </>
+      )}
+    </StepPageWrapper>
+  )
 }

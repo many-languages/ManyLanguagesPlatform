@@ -1,12 +1,12 @@
 "use client"
 
-import { useState } from "react"
 import { useMutation, useQuery } from "@blitzjs/rpc"
 import joinStudy from "../../mutations/joinStudy"
 import toast from "react-hot-toast"
 import isParticipantInStudy from "../../queries/isParticipantInStudy"
 import saveJatosRunUrl from "../../[studyId]/setup/mutations/saveJatosRunUrl"
 import { createPersonalStudyCodeAndSave } from "@/src/lib/jatos/api/createPersonalStudyCodeAndSave"
+import { AsyncButton } from "@/src/app/components/AsyncButton"
 import { useRouter } from "next/navigation"
 
 interface JoinStudyButtonProps {
@@ -26,42 +26,36 @@ export default function JoinStudyButton({
   const [{ joined } = { joined: false }] = useQuery(isParticipantInStudy, { studyId })
   const [joinStudyMutation] = useMutation(joinStudy)
   const [saveJatosRunUrlMutation] = useMutation(saveJatosRunUrl)
-  const [loading, setLoading] = useState(false)
 
   const handleJoin = async () => {
-    setLoading(true)
-    try {
-      // 1) Join the study (creates ParticipantStudy entry)
-      const participant = await joinStudyMutation({ studyId })
-      const { id: participantStudyId, pseudonym } = participant
+    // 1) Join the study (creates ParticipantStudy entry)
+    const participant = await joinStudyMutation({ studyId })
+    const { id: participantStudyId, pseudonym } = participant
 
-      // 2) Create personal study code and save run URL
-      const type = jatosWorkerType === "MULTIPLE" ? "pm" : "ps"
-      await createPersonalStudyCodeAndSave({
-        jatosStudyId,
-        jatosBatchId,
-        type,
-        comment: pseudonym,
-        onSave: (runUrl) => saveJatosRunUrlMutation({ participantStudyId, jatosRunUrl: runUrl }),
-      })
+    // 2) Create personal study code and save run URL
+    const type = jatosWorkerType === "MULTIPLE" ? "pm" : "ps"
+    await createPersonalStudyCodeAndSave({
+      jatosStudyId,
+      jatosBatchId,
+      type,
+      comment: pseudonym,
+      onSave: async (runUrl) => {
+        await saveJatosRunUrlMutation({ participantStudyId, jatosRunUrl: runUrl })
+      },
+    })
 
-      toast.success("You have joined the study!")
-      router.push(`/studies/${studyId}`)
-    } catch (err: any) {
-      console.error(err)
-      toast.error(err.message ?? "Failed to join study")
-    } finally {
-      setLoading(false)
-    }
+    toast.success("You have joined the study!")
+    router.push(`/studies/${studyId}`)
   }
 
   return (
-    <button
-      className={`btn ${joined ? "btn-disabled" : "btn-secondary"} ${loading ? "loading" : ""}`}
+    <AsyncButton
       onClick={handleJoin}
-      disabled={joined || loading}
+      loadingText="Joining..."
+      disabled={joined}
+      className={`${joined ? "btn-disabled" : "btn-secondary"}`}
     >
       {joined ? "Already Joined" : "Join Study"}
-    </button>
+    </AsyncButton>
   )
 }

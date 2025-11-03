@@ -3,28 +3,14 @@
 import { StudyWithRelations } from "../../../queries/getStudy"
 import { ArchiveBoxIcon } from "@heroicons/react/24/outline"
 import StudyInformationCard from "./StudyInformationCard"
-import StudyComponentButton from "./StudyComponentButton"
-import JatosInformationCard from "./JatosInformationCard"
-import { useQuery } from "@blitzjs/rpc"
-import getStudyParticipants from "../../../queries/getStudyParticipants"
-import RunStudyButton from "../../setup/step3/components/client/RunStudyButton"
 import { useSession } from "@blitzjs/auth"
-import DownloadResultsButton from "./DownloadResultsButton"
-import StudySummary from "./StudySummary"
-import { JatosMetadata, JatosStudyProperties } from "@/src/types/jatos"
-import ParticipantManagementCard from "./ParticipantManagementCard"
-import ResultsCard from "./ResultsCard"
-import {
-  isSetupComplete,
-  getIncompleteStep,
-  getNextSetupStepUrl,
-} from "../../setup/utils/setupStatus"
+import { getIncompleteStep, getNextSetupStepUrl } from "../../setup/utils/setupStatus"
 import { useRouter } from "next/navigation"
+import { Alert } from "@/src/app/components/Alert"
+import { ParticipantWithEmail } from "../../../queries/getStudyParticipants"
 
 interface StudyContentProps {
   study: StudyWithRelations
-  metadata?: JatosMetadata | null
-  properties?: JatosStudyProperties | null
   feedbackTemplate?: { id: number; content: string; createdAt: Date; updatedAt: Date } | null
   participant?: {
     id: number
@@ -34,39 +20,30 @@ interface StudyContentProps {
     active: boolean
     payed: boolean
   } | null
+  initialParticipants: ParticipantWithEmail[]
+  setupComplete: boolean
 }
 
 export default function StudyContent({
   study,
-  metadata,
-  properties,
   feedbackTemplate,
-  participant: initialParticipant,
+  participant,
+  initialParticipants,
+  setupComplete,
 }: StudyContentProps) {
-  // Get user data for the study based on their role
   const { role } = useSession()
   const router = useRouter()
 
-  // Use server-fetched feedback template
-  const hasFeedbackTemplate = !!feedbackTemplate?.id
+  // Use router.refresh() to refetch server data after mutations
+  const handleRefreshParticipants = async () => {
+    router.refresh()
+  }
 
-  // Check setup completion status with optional override for template presence
-  const setupComplete = isSetupComplete(study, { hasFeedbackTemplate })
+  const hasFeedbackTemplate = !!feedbackTemplate?.id
   const incompleteStep = getIncompleteStep(study, { hasFeedbackTemplate })
 
-  // Use server-fetched participant data
-  const participant = initialParticipant
-
-  // Get all participants and their emails assigned to the study
-  // Keep as useQuery because it needs reactive refetching after mutations
-  const [participants, { refetch: refetchParticipants }] = useQuery(
-    getStudyParticipants,
-    { studyId: study.id },
-    { enabled: role === "RESEARCHER" }
-  )
-
   return (
-    <main>
+    <>
       {/* Setup incomplete alert for researchers */}
       {role === "RESEARCHER" && !setupComplete && (
         <div className="alert alert-warning mb-6">
@@ -115,57 +92,8 @@ export default function StudyContent({
         </span>
       </h1>
 
-      {/* Summary statistics of the study */}
-      {role === "RESEARCHER" && metadata && <StudySummary metadata={metadata} />}
-
       {/* General information */}
       <StudyInformationCard study={study} />
-
-      {/* Participant view */}
-      {role === "PARTICIPANT" && (
-        <>
-          {study.status === "CLOSED" || !setupComplete ? (
-            <div className="alert alert-warning mt-4">
-              <p>This study is not currently accepting participants.</p>
-            </div>
-          ) : !participant ? (
-            <button className="btn btn-disabled loading">Loading study...</button>
-          ) : (
-            <RunStudyButton runUrl={participant.jatosRunUrl} isActive={participant.active} />
-          )}
-        </>
-      )}
-
-      {/* Researcher view - only show JATOS cards if step 2 complete */}
-      {role === "RESEARCHER" &&
-      study?.jatosStudyUUID &&
-      study?.jatosStudyId &&
-      metadata &&
-      properties ? (
-        <>
-          {/* Manage participants for the study */}
-          <ParticipantManagementCard
-            participants={participants ?? []}
-            metadata={metadata}
-            onRefresh={refetchParticipants}
-          />
-
-          {/* Showing detailed results */}
-          <ResultsCard
-            jatosStudyId={study.jatosStudyId}
-            metadata={metadata}
-            properties={properties}
-          />
-          {/* Information about the study fetched from JATOS */}
-          <JatosInformationCard properties={properties} />
-        </>
-      ) : (
-        role === "RESEARCHER" && (
-          <div className="alert alert-info mt-4">
-            <p>Complete Step 2 of setup to import your JATOS study.</p>
-          </div>
-        )
-      )}
-    </main>
+    </>
   )
 }

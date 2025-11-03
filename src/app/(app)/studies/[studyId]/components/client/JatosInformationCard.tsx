@@ -1,6 +1,7 @@
 "use client"
 
 import Card from "@/src/app/components/Card"
+import { EmptyState } from "@/src/app/components/EmptyState"
 import type { JatosStudyProperties } from "@/src/types/jatos"
 
 interface JatosInformationCardProps {
@@ -42,7 +43,7 @@ export default function JatosInformationCard({ properties }: JatosInformationCar
           </ul>
         </>
       ) : (
-        <p className="mt-2 text-warning">No components found for this study.</p>
+        <EmptyState message="No components found for this study." className="p-0 mt-2" />
       )}
 
       {batches.length > 0 && (

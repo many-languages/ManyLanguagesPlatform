@@ -1,6 +1,6 @@
 "use client"
 
-import { useFormState } from "react-hook-form"
+import { useFormContext } from "react-hook-form"
 
 interface FormSubmitButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   submitText: string
@@ -14,7 +14,8 @@ export function FormSubmitButton({
   disabled,
   ...props
 }: FormSubmitButtonProps) {
-  const { isSubmitting } = useFormState()
+  const { formState } = useFormContext()
+  const { isSubmitting } = formState
 
   return (
     <button type="submit" disabled={isSubmitting || disabled} className={className} {...props}>

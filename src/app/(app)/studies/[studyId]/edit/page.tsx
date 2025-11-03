@@ -33,7 +33,7 @@ export default function EditStudy({ params }: { params: { studyId: string } }) {
       <StudyForm
         formTitle={`Edit ${study?.title}`}
         submitText="Edit Study"
-        initialValues={{
+        defaultValues={{
           title: study.title,
           description: study.description ?? "",
           startDate: study.startDate?.toISOString().split("T")[0] ?? "",

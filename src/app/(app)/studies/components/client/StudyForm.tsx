@@ -1,6 +1,5 @@
 import { Form } from "@/src/app/components/Form"
-import { LabeledTextField } from "@/src/app/components/LabeledTextField"
-import DateField from "../DateField"
+import { TextField, DateField } from "@/src/app/components/fields"
 import { StudyFormSchema } from "../../validations"
 import { z } from "zod"
 
@@ -13,9 +12,7 @@ type StudyFormProps = {
   cancelText?: string
   /** Handles submission, must return void or errors */
   onSubmit: (values: StudyFormValues) => Promise<void | { FORM_ERROR?: string }>
-  initialValues?: StudyFormValues
-  borderless?: boolean
-  alignSubmitRight?: boolean
+  defaultValues?: Partial<StudyFormValues>
 }
 
 export default function StudyForm({
@@ -23,64 +20,62 @@ export default function StudyForm({
   cancelText,
   submitText,
   formTitle,
-  initialValues,
+  defaultValues,
   onSubmit,
-  borderless = false,
-  alignSubmitRight = false,
 }: StudyFormProps) {
   return (
-    <>
-      <h1 className="text-2xl font-bold mb-4">{formTitle}</h1>
+    <div className="space-y-6">
+      <h1 className="text-2xl font-bold">{formTitle}</h1>
 
       <Form
-        submitText={submitText}
-        cancelText={cancelText}
-        onCancel={onCancel}
         schema={StudyFormSchema}
-        initialValues={
-          initialValues ?? {
-            title: "",
-            description: "",
-            startDate: "",
-            endDate: "",
-            sampleSize: 0,
-            payment: "",
-            ethicalPermission: "",
-            length: "",
-          }
-        }
         onSubmit={onSubmit}
-        borderless={borderless}
-        alignSubmitRight={alignSubmitRight}
+        defaultValues={defaultValues}
+        className="space-y-4"
       >
-        <LabeledTextField name="title" label="Title" placeholder="Study title" type="text" />
-        <LabeledTextField
-          name="description"
-          label="Description"
-          placeholder="Short description"
-          type="text"
-        />
-        <DateField name="startDate" label="Start Date" />
-        <DateField name="endDate" label="End Date" />
-        <LabeledTextField name="sampleSize" label="Sample Size" placeholder="100" type="number" />
-        <LabeledTextField
-          name="payment"
-          label="Payment"
-          placeholder="e.g., $10 voucher"
-          type="text"
-        />
-        <LabeledTextField
-          name="ethicalPermission"
-          label="Ethical Permission"
-          placeholder="https://example.com/approval"
-        />
-        <LabeledTextField
-          name="length"
-          label="Expected Duration"
-          placeholder="30 minutes"
-          type="text"
-        />
+        {(form) => (
+          <>
+            <TextField name="title" label="Title" placeholder="Study title" />
+            <TextField name="description" label="Description" placeholder="Short description" />
+            <DateField name="startDate" label="Start Date" />
+            <DateField name="endDate" label="End Date" />
+            <TextField name="sampleSize" label="Sample Size" placeholder="100" type="number" />
+            <TextField name="payment" label="Payment" placeholder="e.g., $10 voucher" />
+            <TextField
+              name="ethicalPermission"
+              label="Ethical Permission"
+              placeholder="https://example.com/approval"
+            />
+            <TextField name="length" label="Expected Duration" placeholder="30 minutes" />
+
+            {/* Form Actions */}
+            <div className="flex gap-2 pt-4">
+              {cancelText && (
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={onCancel}
+                  disabled={form.formState.isSubmitting}
+                >
+                  {cancelText}
+                </button>
+              )}
+              <button
+                type="submit"
+                className="btn btn-primary"
+                disabled={form.formState.isSubmitting}
+              >
+                {form.formState.isSubmitting ? "Saving..." : submitText}
+              </button>
+            </div>
+
+            {/* Global Form Error */}
+            {form.formState.errors.root && (
+              <div className="alert alert-error">{form.formState.errors.root.message}</div>
+            )}
+          </>
+        )}
       </Form>
-    </>
+    </div>
   )
 }

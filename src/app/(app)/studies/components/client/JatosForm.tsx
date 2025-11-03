@@ -1,8 +1,7 @@
 import { Form } from "@/src/app/components/Form"
-import { JatosFormSchema, StudyFormSchema } from "../../validations"
+import { JatosFormSchema } from "../../validations"
 import { z } from "zod"
-import LabeledSelectField from "@/src/app/components/LabeledSelectField"
-import FileUploadField from "../FileUploadField"
+import { SelectField, FileField } from "@/src/app/components/fields"
 
 type JatosFormValues = z.infer<typeof JatosFormSchema>
 
@@ -12,24 +11,13 @@ type JatosFormProps = {
   onCancel?: () => void
   cancelText?: string
   /** Handles submission, must return void or errors */
-  onSubmit: (
-    values: JatosFormValues,
-    helpers?: {
-      setSubmitting: (isSubmitting: boolean) => void
-      setErrors: (errors: any) => void
-      resetForm: () => void
-      submitForm: () => void
-    }
-  ) => Promise<void | { FORM_ERROR?: string }>
-  initialValues?: JatosFormValues
-  borderless?: boolean
-  alignSubmitRight?: boolean
-  separateActions?: boolean
+  onSubmit: (values: JatosFormValues) => Promise<void | { FORM_ERROR?: string }>
+  defaultValues?: Partial<JatosFormValues>
 }
 
 export const jatosWorkerTypeOptions = [
-  { id: 0, label: "Single Personal Links (no reuse)", value: "SINGLE" },
-  { id: 1, label: "Multiple Personal Links (reuse allowed)", value: "MULTIPLE" },
+  { value: "SINGLE", label: "Single Personal Links (no reuse)" },
+  { value: "MULTIPLE", label: "Multiple Personal Links (reuse allowed)" },
 ]
 
 export default function JatosForm({
@@ -37,46 +25,63 @@ export default function JatosForm({
   cancelText,
   submitText,
   formTitle,
-  initialValues,
+  defaultValues,
   onSubmit,
-  borderless = false,
-  alignSubmitRight = false,
-  separateActions = false,
 }: JatosFormProps) {
   return (
-    <>
-      <h1 className="text-2xl font-bold mb-4">{formTitle}</h1>
+    <div className="space-y-6">
+      <h1 className="text-2xl font-bold">{formTitle}</h1>
 
       <Form
-        submitText={submitText}
-        cancelText={cancelText}
-        onCancel={onCancel}
         schema={JatosFormSchema}
-        initialValues={
-          initialValues ?? {
+        defaultValues={
+          defaultValues ?? {
             jatosWorkerType: "SINGLE",
             jatosFileName: undefined,
           }
         }
         onSubmit={onSubmit}
-        borderless={borderless}
-        alignSubmitRight={alignSubmitRight}
-        separateActions={separateActions}
+        className="space-y-4"
       >
-        <LabeledSelectField
-          name="jatosWorkerType"
-          label="Data collection method"
-          options={jatosWorkerTypeOptions}
-          optionText={"label"}
-          optionValue={"value"}
-        />
-        <FileUploadField
-          name="studyFile"
-          label="Upload Study (.jzip)"
-          // existingFileName={initialValues?.jatosFileName}
-        />
-        <p className="text-xs opacity-70">Only .jzip exports from JATOS are accepted.</p>
+        {(form) => (
+          <>
+            <SelectField
+              name="jatosWorkerType"
+              label="Data collection method"
+              options={jatosWorkerTypeOptions}
+              placeholder="Select data collection method"
+            />
+            <FileField name="studyFile" label="Upload Study (.jzip)" accept=".jzip,.zip" />
+            <p className="text-xs opacity-70">Only .jzip exports from JATOS are accepted.</p>
+
+            {/* Form Actions */}
+            <div className="flex gap-2 pt-4">
+              {cancelText && (
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={onCancel}
+                  disabled={form.formState.isSubmitting}
+                >
+                  {cancelText}
+                </button>
+              )}
+              <button
+                type="submit"
+                className="btn btn-primary"
+                disabled={form.formState.isSubmitting}
+              >
+                {form.formState.isSubmitting ? "Uploading..." : submitText}
+              </button>
+            </div>
+
+            {/* Global Form Error */}
+            {form.formState.errors.root && (
+              <div className="alert alert-error">{form.formState.errors.root.message}</div>
+            )}
+          </>
+        )}
       </Form>
-    </>
+    </div>
   )
 }

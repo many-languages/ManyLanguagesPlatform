@@ -1,9 +1,12 @@
 "use client"
 
 import React, { useState, useMemo } from "react"
-import { Formik, Form } from "formik"
+import { useForm } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
+import { z } from "zod"
 import Modal from "@/src/app/components/Modal"
 import CheckboxFieldTable from "../../../components/CheckboxFieldTable"
+import { FormProvider } from "react-hook-form"
 
 interface FilterComponentProps {
   components: {
@@ -14,6 +17,12 @@ interface FilterComponentProps {
   selectedUuids: string[] // ✅ new prop
   onFilterSelect: (selectedUuids: string[]) => void
 }
+
+const FilterSchema = z.object({
+  selectedComponentIds: z.array(z.number()).min(1, "Please select at least one component"),
+})
+
+type FilterFormData = z.infer<typeof FilterSchema>
 
 /**
  * Modal that displays all study components with color-coded status spheres
@@ -51,6 +60,18 @@ export default function FilterComponent({
       .filter((index) => index !== -1)
   }, [selectedUuids, components])
 
+  const form = useForm<FilterFormData>({
+    resolver: zodResolver(FilterSchema),
+    defaultValues: { selectedComponentIds: initialSelectedIds },
+    mode: "onChange",
+  })
+
+  const onSubmit = (values: FilterFormData) => {
+    const selectedUuids = values.selectedComponentIds.map((id) => components[id].uuid)
+    onFilterSelect(selectedUuids)
+    setOpen(false)
+  }
+
   return (
     <>
       <button className="btn btn-outline btn-primary" onClick={() => setOpen(true)}>
@@ -61,47 +82,34 @@ export default function FilterComponent({
         <div className="flex flex-col gap-4">
           <h2 className="text-xl font-semibold text-center mb-2">Select Components to Filter</h2>
 
-          <Formik
-            enableReinitialize
-            initialValues={{ selectedComponentIds: initialSelectedIds }}
-            validate={(values) => {
-              const errors: Partial<{ selectedComponentIds: string }> = {}
-              if (!values.selectedComponentIds.length) {
-                errors.selectedComponentIds = "Please select at least one component"
-              }
-              return errors
-            }}
-            onSubmit={(values) => {
-              const selectedUuids = values.selectedComponentIds.map((id) => components[id].uuid)
-              onFilterSelect(selectedUuids)
-              setOpen(false)
-            }}
-          >
-            {({ isSubmitting }) => (
-              <Form>
-                <CheckboxFieldTable
-                  name="selectedComponentIds"
-                  options={options}
-                  extraData={extraData}
-                  extraColumns={extraColumns}
-                />
+          <FormProvider {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)}>
+              <CheckboxFieldTable
+                name="selectedComponentIds"
+                options={options}
+                extraData={extraData}
+                extraColumns={extraColumns}
+              />
 
-                <div className="flex justify-end gap-2 mt-4">
-                  <button
-                    type="button"
-                    className="btn btn-ghost"
-                    onClick={() => setOpen(false)}
-                    disabled={isSubmitting}
-                  >
-                    Cancel
-                  </button>
-                  <button type="submit" className="btn btn-primary" disabled={isSubmitting}>
-                    Filter
-                  </button>
-                </div>
-              </Form>
-            )}
-          </Formik>
+              <div className="flex justify-end gap-2 mt-4">
+                <button
+                  type="button"
+                  className="btn btn-ghost"
+                  onClick={() => setOpen(false)}
+                  disabled={form.formState.isSubmitting}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="btn btn-primary"
+                  disabled={form.formState.isSubmitting}
+                >
+                  Filter
+                </button>
+              </div>
+            </form>
+          </FormProvider>
         </div>
       </Modal>
     </>

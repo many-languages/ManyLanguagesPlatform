@@ -38,14 +38,14 @@ export const ImportJatosSchema = BaseJatosFormSchema.extend({
 })
 
 export const StudyFormSchema = z.object({
-  title: z.string().min(1, "Title is required"),
-  description: z.string().min(1, "Description is required"),
+  title: z.string().min(1, "Title is required").trim(),
+  description: z.string().min(1, "Description is required").trim(),
   startDate: z.string().min(1, "Start date is required"),
   endDate: z.string().min(1, "End date is required"),
-  sampleSize: z.number().int().positive("Must be a positive number"),
-  payment: z.string().min(1, "Payment description is required"),
+  sampleSize: z.coerce.number().int().positive("Must be a positive number"),
+  payment: z.string().min(1, "Payment description is required").trim(),
   ethicalPermission: z.string().url("Must be a valid URL"),
-  length: z.string().min(1, "Study length is required"),
+  length: z.string().min(1, "Study length is required").trim(),
 })
 
 export const CreateStudy = z.object({

@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useCallback, useMemo, useRef, useEffect } from "react"
-import { useField, useFormikContext, ErrorMessage } from "formik"
+import { useFormContext } from "react-hook-form"
 import Table from "@/src/app/components/Table"
 
 interface CheckboxFieldTableProps<T> {
@@ -17,32 +17,38 @@ const CheckboxFieldTable = <T,>({
   extraData = [],
   extraColumns = [],
 }: CheckboxFieldTableProps<T>) => {
-  const [field, , helpers] = useField<number[]>({ name })
-  const { isSubmitting } = useFormikContext()
+  const {
+    watch,
+    setValue,
+    formState: { isSubmitting, errors },
+  } = useFormContext()
 
-  const selectedIds = field.value || []
-  const { setValue } = helpers
+  const selectedIds = useMemo(() => watch(name) || [], [watch, name])
+  const error = errors[name]
 
   // ✅ Toggle one
   const toggleSelection = useCallback(
     (id: number) => {
       const isSelected = selectedIds.includes(id)
       const newSelectedIds = isSelected
-        ? selectedIds.filter((selectedId) => selectedId !== id)
+        ? selectedIds.filter((selectedId: number) => selectedId !== id)
         : [...selectedIds, id]
-      setValue(newSelectedIds)
+      setValue(name, newSelectedIds)
     },
-    [selectedIds, setValue]
+    [selectedIds, setValue, name]
   )
 
   // ✅ Toggle all
   const toggleAll = useCallback(() => {
     if (selectedIds.length === options.length) {
-      setValue([]) // deselect all
+      setValue(name, []) // deselect all
     } else {
-      setValue(options.map((o) => o.id)) // select all
+      setValue(
+        name,
+        options.map((o) => o.id)
+      ) // select all
     }
-  }, [selectedIds, setValue, options])
+  }, [selectedIds, setValue, name, options])
 
   // ✅ Ref for indeterminate checkbox
   const headerCheckboxRef = useRef<HTMLInputElement>(null)
@@ -98,9 +104,7 @@ const CheckboxFieldTable = <T,>({
   return (
     <div className="flex flex-col gap-1">
       <Table columns={columns} data={data} addPagination={true} />
-      <ErrorMessage name={name}>
-        {(msg) => <span className="text-error text-sm">{msg}</span>}
-      </ErrorMessage>
+      {error && <span className="text-error text-sm">{error.message as string}</span>}
     </div>
   )
 }

@@ -18,8 +18,6 @@ export default function Step1Page() {
       <StudyForm
         formTitle=""
         submitText="Save and continue"
-        borderless
-        alignSubmitRight
         onSubmit={async (values) => {
           try {
             // Remove JATOS file field if still present in the form definition

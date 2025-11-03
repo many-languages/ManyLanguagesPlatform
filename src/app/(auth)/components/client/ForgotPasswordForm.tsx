@@ -1,13 +1,17 @@
 "use client"
 
-import { TextField } from "@/src/app/components/fields"
+import { useMemo } from "react"
+import { TextField, FormSubmitButton, FormErrorDisplay } from "@/src/app/components/fields"
 import { Form, FORM_ERROR } from "@/src/app/components/Form"
 import { ForgotPassword } from "../../validations"
 import forgotPassword from "../../mutations/forgotPassword"
 import { useMutation } from "@blitzjs/rpc"
+import toast from "react-hot-toast"
 
 export function ForgotPasswordForm() {
   const [forgotPasswordMutation, { isSuccess }] = useMutation(forgotPassword)
+
+  const defaultValues = useMemo(() => ({ email: "" }), [])
 
   return (
     <div className="space-y-6">
@@ -24,35 +28,32 @@ export function ForgotPasswordForm() {
         ) : (
           <Form
             schema={ForgotPassword}
-            defaultValues={{ email: "" }}
+            defaultValues={defaultValues}
             onSubmit={async (values) => {
               try {
                 await forgotPasswordMutation(values)
+                toast.success("Password reset instructions sent to your email")
               } catch (error: any) {
+                const errorMessage =
+                  error?.message || "Sorry, we had an unexpected error. Please try again."
                 return {
-                  [FORM_ERROR]: "Sorry, we had an unexpected error. Please try again.",
+                  [FORM_ERROR]: errorMessage,
                 }
               }
             }}
             className="space-y-4"
           >
-            {(form) => (
-              <>
-                <TextField name="email" label="Email" placeholder="Email" type="email" />
+            <>
+              <TextField name="email" label="Email" placeholder="Email" type="email" />
 
-                <button
-                  type="submit"
-                  className="btn btn-primary w-full"
-                  disabled={form.formState.isSubmitting}
-                >
-                  {form.formState.isSubmitting ? "Sending..." : "Send Reset Password Instructions"}
-                </button>
+              <FormSubmitButton
+                submitText="Send Reset Password Instructions"
+                loadingText="Sending..."
+                className="btn btn-primary w-full"
+              />
 
-                {form.formState.errors.root && (
-                  <div className="alert alert-error">{form.formState.errors.root.message}</div>
-                )}
-              </>
-            )}
+              <FormErrorDisplay />
+            </>
           </Form>
         )}
       </>

@@ -1,8 +1,9 @@
 "use client"
 
+import { useMemo } from "react"
 import { PromiseReturnType } from "blitz"
 import Link from "next/link"
-import { TextField } from "@/src/app/components/fields"
+import { TextField, FormSubmitButton, FormErrorDisplay } from "@/src/app/components/fields"
 import { Form, FORM_ERROR } from "@/src/app/components/Form"
 import login from "../../mutations/login"
 import { Login } from "../../validations"
@@ -20,51 +21,52 @@ export const LoginForm = (props: LoginFormProps) => {
   const router = useRouter()
   const next = useSearchParams()?.get("next")
 
+  const defaultValues = useMemo(() => ({ email: "", password: "" }), [])
+
   return (
     <div className="space-y-6">
       <h1 className="font-black text-xl">Login</h1>
 
       <Form
         schema={Login}
-        defaultValues={{ email: "", password: "" }}
+        defaultValues={defaultValues}
         onSubmit={async (values) => {
-          const result = await loginMutation(values)
+          try {
+            const result = await loginMutation(values)
 
-          if (result.error) {
-            return { [FORM_ERROR]: result.error }
-          }
+            if (result.error) {
+              return { [FORM_ERROR]: result.error }
+            }
 
-          router.refresh()
-          if (next) {
-            router.push(next as Route)
-          } else {
-            router.push("/dashboard")
+            router.refresh()
+            if (next) {
+              router.push(next as Route)
+            } else {
+              router.push("/dashboard")
+            }
+          } catch (error: any) {
+            const errorMessage = error?.message || "An unexpected error occurred. Please try again."
+            return { [FORM_ERROR]: errorMessage }
           }
         }}
         className="space-y-4"
       >
-        {(form) => (
-          <>
-            <TextField name="email" label="Email" placeholder="Email" type="email" />
-            <TextField name="password" label="Password" placeholder="Password" type="password" />
+        <>
+          <TextField name="email" label="Email" placeholder="Email" type="email" />
+          <TextField name="password" label="Password" placeholder="Password" type="password" />
 
-            <div>
-              <Link href={"/forgot-password"}>Forgot your password?</Link>
-            </div>
+          <div>
+            <Link href={"/forgot-password"}>Forgot your password?</Link>
+          </div>
 
-            <button
-              type="submit"
-              className="btn btn-primary w-full"
-              disabled={form.formState.isSubmitting}
-            >
-              {form.formState.isSubmitting ? "Logging in..." : "Login"}
-            </button>
+          <FormSubmitButton
+            submitText="Login"
+            loadingText="Logging in..."
+            className="btn btn-primary w-full"
+          />
 
-            {form.formState.errors.root && (
-              <div className="alert alert-error">{form.formState.errors.root.message}</div>
-            )}
-          </>
-        )}
+          <FormErrorDisplay />
+        </>
       </Form>
 
       <div>

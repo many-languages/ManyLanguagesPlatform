@@ -1,6 +1,7 @@
 "use client"
 
 import { useRouter, useParams } from "next/navigation"
+import { useMemo } from "react"
 import JatosForm from "../../../components/client/JatosForm"
 import toast from "react-hot-toast"
 import { useMutation, useQuery } from "@blitzjs/rpc"
@@ -95,6 +96,14 @@ export default function Step2Page() {
     }
   }
 
+  const defaultValues = useMemo(
+    () => ({
+      jatosWorkerType: (study?.jatosWorkerType || "SINGLE") as "SINGLE" | "MULTIPLE",
+      jatosFileName: study?.jatosFileName || undefined,
+    }),
+    [study?.jatosWorkerType, study?.jatosFileName]
+  )
+
   if (studyLoading) return <p>Loading study...</p>
 
   return (
@@ -134,13 +143,10 @@ export default function Step2Page() {
 
       <JatosForm
         formTitle=""
-        submitText={loading ? "Uploading..." : "Save and continue"}
+        submitText="Save and continue"
         cancelText="Back"
         onCancel={() => router.push(`/studies/${studyId}/setup/step1`)}
-        defaultValues={{
-          jatosWorkerType: study?.jatosWorkerType || "SINGLE",
-          jatosFileName: study?.jatosFileName || undefined,
-        }}
+        defaultValues={defaultValues}
         onSubmit={async (values) => {
           const file = values.studyFile as File | undefined
           if (!file) {

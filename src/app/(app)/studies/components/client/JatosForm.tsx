@@ -1,7 +1,15 @@
+"use client"
+
+import { useMemo } from "react"
 import { Form } from "@/src/app/components/Form"
 import { JatosFormSchema } from "../../validations"
 import { z } from "zod"
-import { SelectField, FileField } from "@/src/app/components/fields"
+import {
+  SelectField,
+  FileField,
+  FormSubmitButton,
+  FormErrorDisplay,
+} from "@/src/app/components/fields"
 
 type JatosFormValues = z.infer<typeof JatosFormSchema>
 
@@ -28,59 +36,53 @@ export default function JatosForm({
   defaultValues,
   onSubmit,
 }: JatosFormProps) {
+  const memoizedDefaultValues = useMemo(
+    () =>
+      defaultValues ??
+      ({
+        jatosWorkerType: "SINGLE" as const,
+        jatosFileName: undefined,
+      } satisfies Partial<JatosFormValues>),
+    [defaultValues]
+  )
+
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold">{formTitle}</h1>
 
       <Form
         schema={JatosFormSchema}
-        defaultValues={
-          defaultValues ?? {
-            jatosWorkerType: "SINGLE",
-            jatosFileName: undefined,
-          }
-        }
+        defaultValues={memoizedDefaultValues}
         onSubmit={onSubmit}
         className="space-y-4"
       >
-        {(form) => (
-          <>
-            <SelectField
-              name="jatosWorkerType"
-              label="Data collection method"
-              options={jatosWorkerTypeOptions}
-              placeholder="Select data collection method"
-            />
-            <FileField name="studyFile" label="Upload Study (.jzip)" accept=".jzip,.zip" />
-            <p className="text-xs opacity-70">Only .jzip exports from JATOS are accepted.</p>
+        <>
+          <SelectField
+            name="jatosWorkerType"
+            label="Data collection method"
+            options={jatosWorkerTypeOptions}
+            placeholder="Select data collection method"
+          />
+          <FileField name="studyFile" label="Upload Study (.jzip)" accept=".jzip,.zip" />
+          <p className="text-xs opacity-70">Only .jzip exports from JATOS are accepted.</p>
 
-            {/* Form Actions */}
-            <div className="flex gap-2 pt-4">
-              {cancelText && (
-                <button
-                  type="button"
-                  className="btn btn-secondary"
-                  onClick={onCancel}
-                  disabled={form.formState.isSubmitting}
-                >
-                  {cancelText}
-                </button>
-              )}
-              <button
-                type="submit"
-                className="btn btn-primary"
-                disabled={form.formState.isSubmitting}
-              >
-                {form.formState.isSubmitting ? "Uploading..." : submitText}
+          {/* Form Actions */}
+          <div className="flex gap-2 pt-4">
+            {cancelText && onCancel && (
+              <button type="button" className="btn btn-secondary" onClick={onCancel}>
+                {cancelText}
               </button>
-            </div>
-
-            {/* Global Form Error */}
-            {form.formState.errors.root && (
-              <div className="alert alert-error">{form.formState.errors.root.message}</div>
             )}
-          </>
-        )}
+            <FormSubmitButton
+              submitText={submitText}
+              loadingText="Uploading..."
+              className="btn btn-primary"
+            />
+          </div>
+
+          {/* Global Form Error */}
+          <FormErrorDisplay />
+        </>
       </Form>
     </div>
   )

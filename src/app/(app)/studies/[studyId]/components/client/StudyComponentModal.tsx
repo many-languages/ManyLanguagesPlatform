@@ -53,8 +53,8 @@ export default function StudyComponentModal({
             toast.success("Component created successfully!")
             onClose()
           } catch (err: any) {
-            toast.error(err.message ?? "Unexpected error")
-            return { FORM_ERROR: `Unexpected error: ${err.message ?? String(err)}` }
+            const errorMessage = err?.message || "An unexpected error occurred. Please try again."
+            return { [FORM_ERROR]: errorMessage }
           }
         }}
         onCancel={onClose}

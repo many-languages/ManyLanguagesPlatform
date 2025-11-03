@@ -3,6 +3,7 @@
 import { useRouter, useParams } from "next/navigation"
 import { useMutation } from "@blitzjs/rpc"
 import StudyForm from "../../../components/client/StudyForm"
+import { FORM_ERROR } from "@/src/app/components/Form"
 import toast from "react-hot-toast"
 import updateStudy from "../../../mutations/updateStudy"
 
@@ -25,8 +26,8 @@ export default function Step1Page() {
             toast.success("General information saved")
             router.push(`/studies/${studyId}/setup/step2`)
           } catch (err: any) {
-            console.error(err)
-            return { FORM_ERROR: `Unexpected error: ${err.message ?? String(err)}` }
+            const errorMessage = err?.message || "An unexpected error occurred. Please try again."
+            return { [FORM_ERROR]: errorMessage }
           }
         }}
       />

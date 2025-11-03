@@ -1,5 +1,6 @@
 "use client"
 
+import { useMemo } from "react"
 import { useRouter, useParams } from "next/navigation"
 import { useMutation, useQuery } from "@blitzjs/rpc"
 import getStudy from "../../queries/getStudy"
@@ -29,34 +30,36 @@ export default function EditStudy() {
     return <StudyFormSkeleton />
   }
 
+  const defaultValues = useMemo(
+    () => ({
+      title: study.title,
+      description: study.description ?? "",
+      startDate: study.startDate?.toISOString().split("T")[0] ?? "",
+      endDate: study.endDate?.toISOString().split("T")[0] ?? "",
+      sampleSize: study.sampleSize,
+      payment: study.payment ?? "",
+      ethicalPermission: study.ethicalPermission ?? "",
+      length: study.length ?? "",
+    }),
+    [study]
+  )
+
   return (
     <main>
       <StudyForm
-        formTitle={`Edit ${study?.title}`}
+        formTitle={`Edit ${study.title}`}
         submitText="Edit Study"
-        defaultValues={{
-          title: study.title,
-          description: study.description ?? "",
-          startDate: study.startDate?.toISOString().split("T")[0] ?? "",
-          endDate: study.endDate?.toISOString().split("T")[0] ?? "",
-          sampleSize: study.sampleSize,
-          payment: study.payment ?? "",
-          ethicalPermission: study.ethicalPermission ?? "",
-          length: study.length ?? "",
-        }}
+        defaultValues={defaultValues}
         onSubmit={async (values) => {
           try {
-            await toast.promise(updateStudyMutation({ id: studyId, ...values }), {
-              loading: "Updating study...",
-              success: "Study updated successfully!",
-              error: "Failed to update study",
-            })
+            await updateStudyMutation({ id: studyId, ...values })
+            toast.success("Study updated successfully!")
             router.push(`/studies/${studyId}`)
           } catch (error: any) {
-            console.error(error)
+            const errorMessage =
+              error?.message || "Sorry, we had an unexpected error. Please try again."
             return {
-              [FORM_ERROR]:
-                "Sorry, we had an unexpected error. Please try again. - " + error.toString(),
+              [FORM_ERROR]: errorMessage,
             }
           }
         }}

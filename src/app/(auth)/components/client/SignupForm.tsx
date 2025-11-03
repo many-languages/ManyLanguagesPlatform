@@ -1,6 +1,12 @@
 "use client"
 
-import { TextField, SelectField } from "@/src/app/components/fields"
+import { useMemo } from "react"
+import {
+  TextField,
+  SelectField,
+  FormSubmitButton,
+  FormErrorDisplay,
+} from "@/src/app/components/fields"
 import { Form, FORM_ERROR } from "@/src/app/components/Form"
 import signup from "../../mutations/signup"
 import { Signup } from "../../validations"
@@ -22,49 +28,50 @@ export const SignupForm = (props: SignupFormProps) => {
   const [signupMutation] = useMutation(signup)
   const router = useRouter()
 
+  const defaultValues = useMemo(() => ({ email: "", password: "", role: UserRole.PARTICIPANT }), [])
+
   return (
     <div className="space-y-6">
       <h1 className="font-black text-xl">Create an Account</h1>
 
       <Form
         schema={Signup}
-        defaultValues={{ email: "", password: "", role: UserRole.PARTICIPANT }}
+        defaultValues={defaultValues}
         onSubmit={async (values) => {
-          const result = await signupMutation(values)
+          try {
+            const result = await signupMutation(values)
 
-          if (result.error) {
-            return { [FORM_ERROR]: result.error }
+            if (result.error) {
+              return { [FORM_ERROR]: result.error }
+            }
+
+            router.refresh()
+            router.push("/dashboard")
+          } catch (error: any) {
+            const errorMessage = error?.message || "An unexpected error occurred. Please try again."
+            return { [FORM_ERROR]: errorMessage }
           }
-
-          router.refresh()
-          router.push("/dashboard")
         }}
         className="space-y-4"
       >
-        {(form) => (
-          <>
-            <TextField name="email" label="Email" placeholder="Email" type="email" />
-            <TextField name="password" label="Password" placeholder="Password" type="password" />
-            <SelectField
-              name="role"
-              label="Role"
-              options={RoleOptions}
-              placeholder="Select your role"
-            />
+        <>
+          <TextField name="email" label="Email" placeholder="Email" type="email" />
+          <TextField name="password" label="Password" placeholder="Password" type="password" />
+          <SelectField
+            name="role"
+            label="Role"
+            options={RoleOptions}
+            placeholder="Select your role"
+          />
 
-            <button
-              type="submit"
-              className="btn btn-primary w-full"
-              disabled={form.formState.isSubmitting}
-            >
-              {form.formState.isSubmitting ? "Creating Account..." : "Create Account"}
-            </button>
+          <FormSubmitButton
+            submitText="Create Account"
+            loadingText="Creating Account..."
+            className="btn btn-primary w-full"
+          />
 
-            {form.formState.errors.root && (
-              <div className="alert alert-error">{form.formState.errors.root.message}</div>
-            )}
-          </>
-        )}
+          <FormErrorDisplay />
+        </>
       </Form>
 
       <div>

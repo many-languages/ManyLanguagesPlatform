@@ -1,8 +1,8 @@
 "use client"
 
-import { useState } from "react"
 import toast from "react-hot-toast"
 import { generateAndSaveResearcherTestRunUrl } from "../../../../utils/generateResearcherTestRunUrl"
+import { AsyncButton } from "@/src/app/components/AsyncButton"
 
 interface GenerateTestLinkButtonProps {
   studyResearcherId: number
@@ -17,35 +17,20 @@ export default function GenerateTestLinkButton({
   jatosBatchId,
   onGenerated,
 }: GenerateTestLinkButtonProps) {
-  const [loading, setLoading] = useState(false)
-
   const handleGenerate = async () => {
-    if (loading) return
-    setLoading(true)
-    try {
-      const runUrl = await generateAndSaveResearcherTestRunUrl({
-        studyResearcherId,
-        jatosStudyId,
-        jatosBatchId,
-      })
+    const runUrl = await generateAndSaveResearcherTestRunUrl({
+      studyResearcherId,
+      jatosStudyId,
+      jatosBatchId,
+    })
 
-      toast.success("Test link generated successfully!")
-      onGenerated?.(runUrl)
-    } catch (err: any) {
-      console.error(err)
-      toast.error(err.message ?? "Failed to generate test link")
-    } finally {
-      setLoading(false)
-    }
+    toast.success("Test link generated successfully!")
+    onGenerated?.(runUrl)
   }
 
   return (
-    <button
-      className={`btn btn-primary ${loading ? "loading" : ""}`}
-      onClick={handleGenerate}
-      disabled={loading}
-    >
-      {loading ? "Generating..." : "Generate Test Link"}
-    </button>
+    <AsyncButton onClick={handleGenerate} loadingText="Generating..." className="btn btn-primary">
+      Generate Test Link
+    </AsyncButton>
   )
 }

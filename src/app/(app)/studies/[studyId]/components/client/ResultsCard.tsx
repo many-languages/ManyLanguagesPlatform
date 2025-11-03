@@ -9,6 +9,9 @@ import { fetchResultsBlob } from "@/src/lib/jatos/api/fetchResultsBlob"
 import { JatosMetadata, JatosStudyProperties, EnrichedJatosStudyResult } from "@/src/types/jatos"
 import { matchJatosDataToMetadata } from "@/src/lib/jatos/api/matchJatosDataToMetadata"
 import { getComponentMap } from "@/src/lib/jatos/api/getComponentMap"
+import { AsyncButton } from "@/src/app/components/AsyncButton"
+import { EmptyState } from "@/src/app/components/EmptyState"
+import { LoadingMessage } from "@/src/app/components/LoadingStates"
 import cn from "classnames"
 import FilterComponent from "./FilterComponent"
 import DownloadResultsButton from "./DownloadResultsButton"
@@ -163,23 +166,21 @@ export default function ResultsCard({ jatosStudyId, metadata, properties }: Resu
             onFilterSelect={(uuids: string[]) => setSelectedComponentUuids(uuids)}
           />
           {/* Refetch results again from JATOS */}
-          <button
-            className={`btn btn-secondary w-fit ${loading ? "loading" : ""}`}
+          <AsyncButton
             onClick={fetchResults}
-            disabled={loading}
+            loadingText="Fetching..."
+            className="btn btn-secondary w-fit"
           >
-            {loading ? "Fetching..." : "Fetch Raw Results"}
-          </button>
+            Fetch Raw Results
+          </AsyncButton>
           {/* Download all data */}
           <DownloadResultsButton jatosStudyId={jatosStudyId} />
         </div>
       }
     >
-      {loading && <div className="text-center text-sm p-3">Loading results...</div>}
+      {loading && <LoadingMessage message="Loading results..." />}
       {error && <div className="text-error text-sm p-3">{error}</div>}
-      {!loading && !error && !enrichedResults.length && (
-        <div className="text-center text-sm p-3">No results found</div>
-      )}
+      {!loading && !error && !enrichedResults.length && <EmptyState message="No results found" />}
       {/* Show results in the table */}
       {!loading && !error && tableData.length > 0 && (
         <div className="overflow-x-auto max-w-full border border-base-300 rounded-lg mt-3">

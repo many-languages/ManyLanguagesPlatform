@@ -8,6 +8,8 @@ import RunStudyButton from "./RunStudyButton"
 import { checkPilotCompletionFromMetadata } from "@/src/lib/jatos/api/checkPilotCompletion"
 import { callJatosApi } from "@/src/lib/jatos/api/client"
 import type { GetResultsMetadataResponse } from "@/src/types/jatos-api"
+import { Alert } from "@/src/app/components/Alert"
+import { AsyncButton } from "@/src/app/components/AsyncButton"
 import { StudyWithRelations } from "../../../../../queries/getStudy"
 import StepNavigation from "../../../components/StepNavigation"
 
@@ -27,7 +29,6 @@ export default function Step3Content({
 
   // Pilot completion state
   const [pilotCompleted, setPilotCompleted] = useState<boolean | null>(null)
-  const [checkingPilot, setCheckingPilot] = useState(false)
 
   const handleGenerated = () => {
     window.location.reload() // refresh to pick up new runUrl
@@ -36,7 +37,6 @@ export default function Step3Content({
   const checkPilotStatus = async () => {
     if (!study?.jatosStudyUUID) return
 
-    setCheckingPilot(true)
     try {
       // Fetch metadata using typed API client
       const metadata = await callJatosApi<GetResultsMetadataResponse>("/get-results-metadata", {
@@ -56,8 +56,6 @@ export default function Step3Content({
       console.error("Failed to check pilot status:", error)
       setPilotCompleted(false)
       toast.error("Failed to check pilot status")
-    } finally {
-      setCheckingPilot(false)
     }
   }
 
@@ -92,18 +90,18 @@ export default function Step3Content({
 
           {/* Check pilot status button */}
           <div className="mt-4">
-            <button
+            <AsyncButton
               onClick={checkPilotStatus}
-              disabled={checkingPilot}
+              loadingText="Checking..."
               className="btn btn-sm btn-outline"
             >
-              {checkingPilot ? "Checking..." : "Check Pilot Status"}
-            </button>
+              Check Pilot Status
+            </AsyncButton>
           </div>
 
           {/* Status messages */}
           {pilotCompleted === false && (
-            <div className="alert alert-warning mt-4">
+            <Alert variant="warning" className="mt-4">
               <p>Please complete the pilot study before proceeding to Step 4.</p>
               <p className="text-sm">
                 1. Click "Run Study" above to open the survey
@@ -112,19 +110,19 @@ export default function Step3Content({
                 <br />
                 3. Click "Check Pilot Status" to verify completion
               </p>
-            </div>
+            </Alert>
           )}
 
           {pilotCompleted === true && (
-            <div className="alert alert-success mt-4">
+            <Alert variant="success" className="mt-4">
               <p>✓ Pilot study completed! You can proceed to Step 4.</p>
-            </div>
+            </Alert>
           )}
 
           {pilotCompleted === null && jatosRunUrl && (
-            <div className="alert alert-info mt-4">
+            <Alert variant="info" className="mt-4">
               <p>After completing the pilot study, click "Check Pilot Status" to verify.</p>
-            </div>
+            </Alert>
           )}
         </>
       )}

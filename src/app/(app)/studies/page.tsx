@@ -2,11 +2,8 @@ import StudyList from "./components/client/StudyList"
 import { getStudies } from "./queries/getStudies"
 import Link from "next/link"
 import PaginationControls from "./components/PaginationControls"
-import { Suspense } from "react"
 import { getBlitzContext } from "../../blitz-server"
 import { redirect } from "next/navigation"
-import PaginationControlsSkeleton from "./components/skeletons/PaginationControlsSkeleton"
-import StudyListSkeleton from "./components/skeletons/StudyListSkeleton"
 import { Prisma } from "@/db"
 import ShowArchivedToggle from "./components/client/ShowArchivedToggle"
 
@@ -49,16 +46,12 @@ async function StudiesContent({
       <Link className="btn btn-primary mb-2" href={"/studies/new"}>
         Create Study
       </Link>
-      <Suspense fallback={<StudyListSkeleton />}>
-        <StudyList studies={studies} showJoinButton={false} />
-      </Suspense>
-      <Suspense fallback={<PaginationControlsSkeleton />}>
-        <PaginationControls
-          page={page}
-          hasMore={hasMore}
-          extraQuery={showArchived ? { showArchived: "1" } : {}}
-        />
-      </Suspense>
+      <StudyList studies={studies} showJoinButton={false} />
+      <PaginationControls
+        page={page}
+        hasMore={hasMore}
+        extraQuery={showArchived ? { showArchived: "1" } : {}}
+      />
     </>
   )
 }

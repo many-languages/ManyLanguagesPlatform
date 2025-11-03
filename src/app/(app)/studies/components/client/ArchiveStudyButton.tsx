@@ -5,7 +5,7 @@ import { useMutation } from "@blitzjs/rpc"
 import toast from "react-hot-toast"
 import archiveStudy from "../../mutations/archiveStudy"
 import unarchiveStudy from "../../mutations/unarchiveStudy"
-import { useCallback, useState } from "react"
+import { ConfirmButton } from "@/src/app/components/ConfirmButton"
 
 interface ArchiveStudyButtonProps {
   studyId: number
@@ -17,19 +17,10 @@ const ArchiveStudyButton = ({ studyId, isArchived, redirectTo }: ArchiveStudyBut
   const router = useRouter()
   const [archiveStudyMutation] = useMutation(archiveStudy)
   const [unarchiveStudyMutation] = useMutation(unarchiveStudy)
-  const [busy, setBusy] = useState(false)
 
-  const onClick = useCallback(async () => {
-    if (busy) return
-
+  const handleConfirm = async () => {
     const action = isArchived ? "unarchive" : "archive"
-    const confirmMsg = isArchived
-      ? "This study will be restored (made active). Continue?"
-      : "This study will be archived (not deleted). Continue?"
 
-    if (!window.confirm(confirmMsg)) return
-
-    setBusy(true)
     try {
       if (isArchived) {
         await unarchiveStudyMutation({ id: studyId })
@@ -43,20 +34,22 @@ const ArchiveStudyButton = ({ studyId, isArchived, redirectTo }: ArchiveStudyBut
       redirectTo ? router.replace(redirectTo as any) : router.refresh()
     } catch (e: any) {
       toast.error(e?.message || `Failed to ${action} study`)
-    } finally {
-      setBusy(false)
     }
-  }, [busy, isArchived, studyId, redirectTo, archiveStudyMutation, unarchiveStudyMutation, router])
+  }
+
+  const confirmMessage = isArchived
+    ? "This study will be restored (made active). Continue?"
+    : "This study will be archived (not deleted). Continue?"
 
   return (
-    <button
+    <ConfirmButton
+      onConfirm={handleConfirm}
+      confirmMessage={confirmMessage}
+      loadingText="Please wait..."
       className={`btn ${isArchived ? "btn-success" : "btn-warning"}`}
-      onClick={onClick}
-      disabled={busy}
-      aria-busy={busy}
     >
-      {busy ? "Please wait..." : isArchived ? "Unarchive" : "Archive"}
-    </button>
+      {isArchived ? "Unarchive" : "Archive"}
+    </ConfirmButton>
   )
 }
 

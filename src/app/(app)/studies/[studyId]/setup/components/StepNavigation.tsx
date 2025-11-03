@@ -1,6 +1,7 @@
 "use client"
 
-import { useParams, useRouter } from "next/navigation"
+import { useRouter } from "next/navigation"
+import { useStudySetup } from "./StudySetupProvider"
 import type { Route } from "next"
 
 interface StepNavigationProps {
@@ -20,7 +21,7 @@ export default function StepNavigation({
   nextLabel = "Next",
   onNext,
 }: StepNavigationProps) {
-  const { studyId } = useParams<{ studyId: string }>()
+  const { studyId } = useStudySetup()
   const router = useRouter()
 
   const handleNav = (step: string | undefined) => {

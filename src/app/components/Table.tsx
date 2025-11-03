@@ -14,6 +14,7 @@ import React from "react"
 
 import { ChevronUpIcon, ChevronDownIcon, ChevronUpDownIcon } from "@heroicons/react/24/outline"
 import Filter from "../(app)/studies/components/Filter"
+import { EmptyState } from "./EmptyState"
 
 type TableProps<TData> = {
   columns: ColumnDef<TData, any>[]
@@ -115,7 +116,7 @@ const Table = <TData,>({
           {table.getRowModel().rows.length === 0 ? (
             <tr>
               <td colSpan={columns.length} className="text-center p-3">
-                No data found
+                <EmptyState message="No data found" className="p-0" />
               </td>
             </tr>
           ) : (

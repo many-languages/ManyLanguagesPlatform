@@ -11,6 +11,7 @@ import clearJatosData from "../../../../../mutations/clearJatosData"
 import fetchJatosBatchId from "@/src/lib/jatos/api/fetchJatosBatchId"
 import deleteExistingJatosStudy from "@/src/lib/jatos/api/deleteExistingJatosStudy"
 import { uploadStudyFile } from "@/src/lib/jatos/api/uploadStudyFile"
+import { Alert } from "@/src/app/components/Alert"
 import { FORM_ERROR } from "@/src/app/components/Form"
 import { StudyWithRelations } from "../../../../../queries/getStudy"
 
@@ -112,27 +113,29 @@ export default function Step2Content({ study, studyId }: Step2ContentProps) {
   return (
     <>
       {duplicateAlert && (
-        <div role="alert" className="alert alert-warning mb-6 flex justify-between items-center">
-          <div>
-            <span className="font-semibold">
-              A study with UUID <code>{duplicateAlert.uuid}</code> already exists.
-            </span>
-            <p className="text-sm opacity-80">
-              <strong>Existing study:</strong> {duplicateAlert.title}
-            </p>
-            <p className="text-sm opacity-80">
-              Would you like to delete the old study on JATOS and re-upload this one?
-            </p>
+        <Alert variant="warning" className="mb-6" role="alert">
+          <div className="flex justify-between items-center w-full">
+            <div>
+              <span className="font-semibold">
+                A study with UUID <code>{duplicateAlert.uuid}</code> already exists.
+              </span>
+              <p className="text-sm opacity-80">
+                <strong>Existing study:</strong> {duplicateAlert.title}
+              </p>
+              <p className="text-sm opacity-80">
+                Would you like to delete the old study on JATOS and re-upload this one?
+              </p>
+            </div>
+            <div className="flex gap-2">
+              <button className="btn btn-error btn-sm" onClick={handleOverwrite}>
+                Delete & Re-upload
+              </button>
+              <button className="btn btn-ghost btn-sm" onClick={() => setDuplicateAlert(null)}>
+                Keep old study
+              </button>
+            </div>
           </div>
-          <div className="flex gap-2">
-            <button className="btn btn-error btn-sm" onClick={handleOverwrite}>
-              Delete & Re-upload
-            </button>
-            <button className="btn btn-ghost btn-sm" onClick={() => setDuplicateAlert(null)}>
-              Keep old study
-            </button>
-          </div>
-        </div>
+        </Alert>
       )}
 
       {/* Save & Exit button */}

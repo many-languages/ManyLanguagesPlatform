@@ -1,11 +1,8 @@
 import StudyList from "../studies/components/client/StudyList"
 import { getStudies } from "../studies/queries/getStudies"
 import PaginationControls from "../studies/components/PaginationControls"
-import { Suspense } from "react"
 import { getBlitzContext } from "../../blitz-server"
 import { redirect } from "next/navigation"
-import PaginationControlsSkeleton from "../studies/components/skeletons/PaginationControlsSkeleton"
-import StudyListSkeleton from "../studies/components/skeletons/StudyListSkeleton"
 
 const ITEMS_PER_PAGE = 10
 
@@ -31,12 +28,8 @@ async function ExploreContent({ page, userId }: { page: number; userId: number }
 
   return (
     <>
-      <Suspense fallback={<StudyListSkeleton />}>
-        <StudyList studies={studies} showJoinButton={true} />
-      </Suspense>
-      <Suspense fallback={<PaginationControlsSkeleton />}>
-        <PaginationControls page={page} hasMore={hasMore} />
-      </Suspense>
+      <StudyList studies={studies} showJoinButton={true} />
+      <PaginationControls page={page} hasMore={hasMore} />
     </>
   )
 }

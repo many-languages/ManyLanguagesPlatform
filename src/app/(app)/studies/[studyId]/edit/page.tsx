@@ -1,6 +1,6 @@
 "use client"
 
-import { useRouter } from "next/navigation"
+import { useRouter, useParams } from "next/navigation"
 import { useMutation, useQuery } from "@blitzjs/rpc"
 import getStudy from "../../queries/getStudy"
 import updateStudy from "../../mutations/updateStudy"
@@ -9,8 +9,9 @@ import { FORM_ERROR } from "@/src/app/components/Form"
 import StudyFormSkeleton from "../../components/skeletons/StudyFormSkeleton"
 import toast from "react-hot-toast"
 
-export default function EditStudy({ params }: { params: { studyId: string } }) {
+export default function EditStudy() {
   const router = useRouter()
+  const params = useParams()
   const studyId = Number(params.studyId)
   const [updateStudyMutation] = useMutation(updateStudy)
 

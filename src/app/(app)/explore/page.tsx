@@ -41,7 +41,11 @@ async function ExploreContent({ page, userId }: { page: number; userId: number }
   )
 }
 
-export default async function ExplorePage({ searchParams }: { searchParams: { page?: string } }) {
+export default async function ExplorePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ page?: string }>
+}) {
   const params = await searchParams
   const page = Number(params.page || 0)
 

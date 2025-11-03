@@ -1,13 +1,9 @@
 import { resolver } from "@blitzjs/rpc"
 import db from "db"
-import { z } from "zod"
-
-const ClearJatosDataSchema = z.object({
-  studyId: z.number(),
-})
+import { ClearJatosData } from "../validations"
 
 export default resolver.pipe(
-  resolver.zod(ClearJatosDataSchema),
+  resolver.zod(ClearJatosData),
   resolver.authorize("RESEARCHER"),
   async ({ studyId }, ctx) => {
     // Clear JATOS fields in Study table

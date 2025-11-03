@@ -68,16 +68,72 @@ export const UpdateStudy = StudyFormSchema.extend({
 })
 export type UpdateStudyInput = z.infer<typeof UpdateStudy>
 
-export const ArchiveStudy = z.object({ id: z.number().int().positive() })
+export const ArchiveStudy = z.object({ id: Id })
 
-export const UnarchiveStudy = z.object({ id: z.number().int().positive() })
+export const UnarchiveStudy = z.object({ id: Id })
 
 export const StudyComponentFormSchema = z.object({
   htmlFilePath: z.string().min(1, "Please select an HTML file"),
 })
 
 export const UpdateStudyComponent = z.object({
-  id: z.number(),
+  id: Id,
   jatosComponentId: z.number(),
   jatosComponentUUID: z.string().optional(),
 })
+
+// Mutation validations
+export const JoinStudy = z.object({
+  studyId: Id,
+})
+
+export const UpdateStudyBatch = z.object({
+  studyId: Id,
+  jatosBatchId: z.number(),
+})
+
+export const UpdateStudyStatus = z.object({
+  studyId: Id,
+  status: z.enum(["OPEN", "CLOSED"]),
+})
+
+export const ClearJatosData = z.object({
+  studyId: Id,
+})
+
+// Query validations
+export const GetStudyParticipants = z.object({
+  studyId: Id,
+})
+
+export const IsParticipantInStudy = z.object({
+  studyId: Id,
+})
+
+export const GetStudyParticipant = z.object({
+  studyId: Id,
+})
+
+export const GetStudyResearcher = z.object({
+  studyId: Id,
+})
+
+export const ToggleParticipantActive = z.object({
+  participantIds: z.array(Id),
+  makeActive: z.boolean(),
+})
+
+export const ToggleParticipantPayed = z.object({
+  participantIds: z.array(Id),
+  makePayed: z.boolean(),
+})
+
+// GetStudies uses Prisma types, but we can create a partial validation for common cases
+export const GetStudiesInput = z
+  .object({
+    skip: z.number().int().nonnegative().optional(),
+    take: z.number().int().positive().max(100).optional().default(100),
+    // where, orderBy, include are too complex to validate with Zod
+    // They're validated by Prisma at runtime
+  })
+  .passthrough() // Allow additional Prisma args

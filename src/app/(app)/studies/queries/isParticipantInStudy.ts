@@ -1,10 +1,6 @@
 import db from "db"
 import { resolver } from "@blitzjs/rpc"
-import { z } from "zod"
-
-const IsParticipantInStudy = z.object({
-  studyId: z.number(),
-})
+import { IsParticipantInStudy } from "../validations"
 
 export default resolver.pipe(
   resolver.zod(IsParticipantInStudy),

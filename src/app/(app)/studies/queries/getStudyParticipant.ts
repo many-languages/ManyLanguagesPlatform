@@ -1,11 +1,9 @@
 import { resolver } from "@blitzjs/rpc"
 import db from "db"
-import { z } from "zod"
-
-const GetParticipantStudy = z.object({ studyId: z.number() })
+import { GetStudyParticipant } from "../validations"
 
 export default resolver.pipe(
-  resolver.zod(GetParticipantStudy),
+  resolver.zod(GetStudyParticipant),
   resolver.authorize(),
   async ({ studyId }, ctx) => {
     const userId = ctx.session.userId!

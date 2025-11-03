@@ -1,8 +1,6 @@
 import { resolver } from "@blitzjs/rpc"
 import db from "db"
-import { z } from "zod"
-
-const GetStudyResearcher = z.object({ studyId: z.number() })
+import { GetStudyResearcher } from "../validations"
 
 export default resolver.pipe(
   resolver.zod(GetStudyResearcher),

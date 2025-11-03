@@ -1,11 +1,6 @@
 import db from "db"
 import { resolver } from "@blitzjs/rpc"
-import { z } from "zod"
-
-const ToggleParticipantActive = z.object({
-  participantIds: z.array(z.number().int()),
-  makeActive: z.boolean(),
-})
+import { ToggleParticipantActive } from "../validations"
 
 export default resolver.pipe(
   resolver.zod(ToggleParticipantActive),

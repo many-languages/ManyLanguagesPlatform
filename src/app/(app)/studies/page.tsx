@@ -66,7 +66,7 @@ async function StudiesContent({
 export default async function StudiesPage({
   searchParams,
 }: {
-  searchParams: { page?: string; showArchived?: string }
+  searchParams: Promise<{ page?: string; showArchived?: string }>
 }) {
   const params = await searchParams
   const page = Number(params.page || 0)

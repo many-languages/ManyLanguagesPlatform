@@ -1,4 +1,5 @@
-import { forwardRef } from "react"
+"use client"
+
 import { useFormContext } from "react-hook-form"
 
 interface SelectOption {
@@ -14,43 +15,54 @@ interface SelectFieldProps extends React.SelectHTMLAttributes<HTMLSelectElement>
   error?: string
 }
 
-export const SelectField = forwardRef<HTMLSelectElement, SelectFieldProps>(
-  (
-    { name, label, options, placeholder = "Please select an option", error, className, ...props },
-    ref
-  ) => {
-    const {
-      register,
-      formState: { isSubmitting, errors },
-    } = useFormContext()
+export const SelectField = ({
+  name,
+  label,
+  options,
+  placeholder = "Please select an option",
+  error,
+  className,
+  ...props
+}: SelectFieldProps) => {
+  const {
+    register,
+    formState: { isSubmitting, errors },
+  } = useFormContext()
 
-    const fieldError = error || (errors[name]?.message as string)
+  // Prioritize form errors over custom error prop
+  const fieldError = (errors[name]?.message as string) || error
 
-    return (
-      <fieldset className="fieldset">
-        <label className="label">{label}</label>
-        <select
-          {...register(name)}
-          {...props}
-          disabled={isSubmitting}
-          className={`select select-bordered ${fieldError ? "select-error" : ""} ${
-            className || ""
-          }`}
-        >
-          <option value="" disabled>
-            {placeholder}
+  return (
+    <fieldset className="fieldset">
+      <label htmlFor={name} className="label">
+        {label}
+      </label>
+      <select
+        id={name}
+        {...register(name)}
+        {...props}
+        disabled={isSubmitting}
+        className={`select select-bordered ${fieldError ? "select-error" : ""} ${className || ""}`}
+        aria-invalid={fieldError ? true : false}
+        aria-describedby={fieldError ? `${name}-error` : undefined}
+      >
+        <option value="" disabled>
+          {placeholder}
+        </option>
+        {options.map((option) => (
+          <option key={option.value} value={option.value}>
+            {option.label}
           </option>
-          {options.map((option) => (
-            <option key={option.value} value={option.value}>
-              {option.label}
-            </option>
-          ))}
-        </select>
-        {fieldError && <span className="text-error text-sm">{fieldError}</span>}
-      </fieldset>
-    )
-  }
-)
+        ))}
+      </select>
+      {fieldError && (
+        <span id={`${name}-error`} className="text-error text-sm" role="alert">
+          {fieldError}
+        </span>
+      )}
+    </fieldset>
+  )
+}
 
 SelectField.displayName = "SelectField"
 

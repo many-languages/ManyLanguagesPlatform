@@ -2,7 +2,7 @@
 
 import { useMemo } from "react"
 import { Form } from "@/src/app/components/Form"
-import { JatosFormSchema } from "../../validations"
+import { JatosFormSchema } from "../../../../../validations"
 import { z } from "zod"
 import {
   SelectField,

@@ -4,91 +4,120 @@ import { StudyWithRelations } from "../../../queries/getStudy"
 // More flexible interface for studies with minimal researcher data
 export interface StudyWithMinimalRelations extends Study {
   researchers?: { userId: number; role: string; jatosRunUrl?: string | null }[]
-  FeedbackTemplate?: FeedbackTemplate | null
+  FeedbackTemplate?: FeedbackTemplate[] | { id: number }[]
 }
 
 /**
  * Determines if a study's setup is complete by checking all required steps
+ * Uses DB fields as source of truth
  */
-export function isSetupComplete(
-  study: StudyWithRelations | StudyWithMinimalRelations,
-  opts?: { hasFeedbackTemplate?: boolean }
-): boolean {
-  // Step 1: Basic study information (always complete for existing studies)
-  const step1Complete = !!(study.title && study.description)
-
-  // Step 2: JATOS study uploaded
-  const step2Complete = !!(study.jatosStudyUUID && study.jatosStudyId)
-
-  // Step 3: Pilot test completed (researcher has run URL)
-  const step3Complete = step2Complete && !!study.researchers?.some((r) => r.jatosRunUrl)
-
-  // Step 4: Feedback template created (checked via opts parameter only)
-  const step4Complete = opts?.hasFeedbackTemplate !== undefined ? !!opts.hasFeedbackTemplate : false
-  return step1Complete && step2Complete && step3Complete && step4Complete
+export function isSetupComplete(study: StudyWithRelations | StudyWithMinimalRelations): boolean {
+  return !!(
+    study.step1Completed &&
+    study.step2Completed &&
+    study.step3Completed &&
+    study.step4Completed
+  )
 }
 
 /**
  * Returns the first incomplete step number, or null if all complete
+ * Uses DB fields as source of truth
  */
 export function getIncompleteStep(
-  study: StudyWithRelations | StudyWithMinimalRelations,
-  opts?: { hasFeedbackTemplate?: boolean }
+  study: StudyWithRelations | StudyWithMinimalRelations
 ): number | null {
-  // Step 1: Basic study information
-  if (!study.title || !study.description) {
-    return 1
-  }
-
-  // Step 2: JATOS study uploaded
-  if (!study.jatosStudyUUID || !study.jatosStudyId) {
-    return 2
-  }
-
-  // Step 3: Pilot test completed
-  if (!study.researchers?.some((r) => r.jatosRunUrl)) {
-    return 3
-  }
-
-  // Step 4: Feedback template created (checked via opts parameter only)
-  const hasTemplate = opts?.hasFeedbackTemplate !== undefined ? !!opts.hasFeedbackTemplate : false
-  if (!hasTemplate) {
-    return 4
-  }
-
+  if (!study.step1Completed) return 1
+  if (!study.step2Completed) return 2
+  if (!study.step3Completed) return 3
+  if (!study.step4Completed) return 4
   return null // All complete
 }
 
 /**
- * Returns setup progress information for display
+ * Returns an array of completed step numbers (1-4)
+ * Uses DB fields as source of truth
  */
-export function getSetupProgress(
-  study: StudyWithRelations | StudyWithMinimalRelations,
-  opts?: { hasFeedbackTemplate?: boolean }
-) {
-  const incompleteStep = getIncompleteStep(study, opts)
-  const isComplete = isSetupComplete(study, opts)
+export function getCompletedSteps(study: StudyWithRelations | StudyWithMinimalRelations): number[] {
+  const completed: number[] = []
+
+  if (study.step1Completed) completed.push(1)
+  if (study.step2Completed) completed.push(2)
+  if (study.step3Completed) completed.push(3)
+  if (study.step4Completed) completed.push(4)
+
+  return completed
+}
+
+/**
+ * Returns setup progress information for display
+ * Uses DB fields as source of truth
+ */
+export function getSetupProgress(study: StudyWithRelations | StudyWithMinimalRelations) {
+  const incompleteStep = getIncompleteStep(study)
+  const isComplete = isSetupComplete(study)
+  const completedSteps = getCompletedSteps(study)
 
   return {
     isComplete,
     incompleteStep,
     totalSteps: 4,
-    completedSteps: incompleteStep ? incompleteStep - 1 : 4,
-    progressPercentage: incompleteStep ? ((incompleteStep - 1) / 4) * 100 : 100,
+    completedSteps: completedSteps.length,
+    completedStepsList: completedSteps,
+    progressPercentage: (completedSteps.length / 4) * 100,
   }
 }
 
 /**
  * Returns the next step URL for continuing setup
+ * Uses DB fields as source of truth
  */
 export function getNextSetupStepUrl(
   studyId: number,
-  study: StudyWithRelations | StudyWithMinimalRelations,
-  opts?: { hasFeedbackTemplate?: boolean }
+  study: StudyWithRelations | StudyWithMinimalRelations
 ): string {
-  const incompleteStep = getIncompleteStep(study, opts)
+  const incompleteStep = getIncompleteStep(study)
   if (!incompleteStep) {
     return `/studies/${studyId}` // All complete, go to study page
   }
   return `/studies/${studyId}/setup/step${incompleteStep}`
+}
+
+/**
+ * Returns the navigation URL after completing a setup step
+ * @param studyId - The study ID
+ * @param currentStep - The step number that was just completed (1-4)
+ * @param returnTo - Navigation target: "study" to return to study page, "next" to go to next step, or a specific step number
+ * @param study - Optional study object to determine next incomplete step when returnTo is "next"
+ */
+export function getPostStepNavigationUrl(
+  studyId: number,
+  currentStep: number,
+  returnTo: "study" | "next" | number = "next",
+  study?: StudyWithRelations | StudyWithMinimalRelations
+): string {
+  if (returnTo === "study") {
+    return `/studies/${studyId}`
+  }
+
+  if (typeof returnTo === "number") {
+    if (returnTo < 1 || returnTo > 4) {
+      // Invalid step number, default to study page
+      return `/studies/${studyId}`
+    }
+    return `/studies/${studyId}/setup/step${returnTo}`
+  }
+
+  // returnTo === "next"
+  if (study) {
+    // Use existing logic to find next incomplete step
+    return getNextSetupStepUrl(studyId, study)
+  }
+
+  // Default to next step if study not provided
+  const nextStep = currentStep + 1
+  if (nextStep > 4) {
+    return `/studies/${studyId}` // All steps complete, go to study page
+  }
+  return `/studies/${studyId}/setup/step${nextStep}`
 }

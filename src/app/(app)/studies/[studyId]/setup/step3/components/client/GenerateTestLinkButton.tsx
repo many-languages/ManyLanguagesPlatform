@@ -9,6 +9,7 @@ interface GenerateTestLinkButtonProps {
   jatosStudyId: number
   jatosBatchId: number
   onGenerated?: (runUrl: string) => void
+  label?: string
 }
 
 export default function GenerateTestLinkButton({
@@ -16,6 +17,7 @@ export default function GenerateTestLinkButton({
   jatosStudyId,
   jatosBatchId,
   onGenerated,
+  label = "Generate Test Link",
 }: GenerateTestLinkButtonProps) {
   const handleGenerate = async () => {
     const runUrl = await generateAndSaveResearcherTestRunUrl({
@@ -30,7 +32,7 @@ export default function GenerateTestLinkButton({
 
   return (
     <AsyncButton onClick={handleGenerate} loadingText="Generating..." className="btn btn-primary">
-      Generate Test Link
+      {label}
     </AsyncButton>
   )
 }

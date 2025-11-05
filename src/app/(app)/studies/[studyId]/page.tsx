@@ -1,7 +1,6 @@
 import { Suspense } from "react"
 import { notFound } from "next/navigation"
 import { getStudyRsc } from "../queries/getStudy"
-import StudyContent from "./components/client/StudyContent"
 import { getStudyParticipantRsc } from "../queries/getStudyParticipant"
 import { getBlitzContext } from "@/src/app/blitz-server"
 import { getFeedbackTemplateRsc } from "./setup/step4/queries/getFeedbackTemplate"
@@ -10,6 +9,9 @@ import JatosDataFetcher from "./components/JatosDataFetcher"
 import ParticipantData from "./components/RoleSpecificDataFetcher"
 import { Alert } from "@/src/app/components/Alert"
 import { isSetupComplete } from "./setup/utils/setupStatus"
+import SetupProgressCard from "./setup/components/SetupProgressCard"
+import StudyHeader from "./components/StudyHeader"
+import StudyInformationCard from "./components/client/StudyInformationCard"
 
 export default async function StudyPage({ params }: { params: Promise<{ studyId: string }> }) {
   const { studyId: studyIdRaw } = await params
@@ -44,19 +46,18 @@ export default async function StudyPage({ params }: { params: Promise<{ studyId:
         : Promise.resolve([]),
     ])
 
-    const hasFeedbackTemplate = !!feedbackTemplate?.id
-    const setupComplete = isSetupComplete(study, { hasFeedbackTemplate })
+    const setupComplete = isSetupComplete(study)
 
     return (
       <main>
-        {/* Pass all data to client component - it handles rendering core study data */}
-        <StudyContent
-          study={study}
-          feedbackTemplate={feedbackTemplate}
-          participant={participant}
-          initialParticipants={participants}
-          setupComplete={setupComplete}
-        />
+        {/* Study header */}
+        <StudyHeader study={study} />
+
+        {/* Setup Progress Card for researchers */}
+        {session.role === "RESEARCHER" && <SetupProgressCard study={study} />}
+
+        {/* Study information */}
+        <StudyInformationCard study={study} />
 
         {/* JATOS data - progressive loading via Suspense (only for researchers with JATOS study) */}
         {session.role === "RESEARCHER" &&

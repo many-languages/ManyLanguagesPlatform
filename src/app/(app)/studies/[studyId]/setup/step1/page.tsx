@@ -1,15 +1,18 @@
-import StepPageWrapper from "../components/StepPageWrapper"
 import Step1Content from "./components/client/Step1Content"
 
-export default function Step1Page() {
+export default async function Step1Page({
+  searchParams,
+}: {
+  searchParams: Promise<{ edit?: string; returnTo?: string }>
+}) {
+  const params = await searchParams
+  const isEditMode = params.edit === "true"
+  const returnTo = params.returnTo || "step2"
+
   return (
-    <StepPageWrapper>
-      {(study, studyId) => (
-        <>
-          <h2 className="text-lg font-semibold mb-4 text-center">Step 1 – General information</h2>
-          <Step1Content study={study} studyId={studyId} />
-        </>
-      )}
-    </StepPageWrapper>
+    <>
+      <h2 className="text-lg font-semibold mb-4 text-center">Step 1 – General information</h2>
+      <Step1Content isEditMode={isEditMode} returnTo={returnTo} />
+    </>
   )
 }

@@ -5,20 +5,18 @@ import Link from "next/link"
 import { formatDate } from "@/src/lib/utils/formatDate"
 import { StudyWithRelations } from "../../../queries/getStudy"
 import ArchiveStudyButton from "../../../components/client/ArchiveStudyButton"
-import { useSession } from "@blitzjs/auth"
 
 interface StudyInformationCardProps {
   study: StudyWithRelations
+  userRole: "RESEARCHER" | "PARTICIPANT"
 }
 
-export default function StudyInformationCard({ study }: StudyInformationCardProps) {
-  const { role } = useSession()
-
+export default function StudyInformationCard({ study, userRole }: StudyInformationCardProps) {
   return (
     <Card
       title="Study Information"
       actions={
-        role === "RESEARCHER" && (
+        userRole === "RESEARCHER" && (
           <div className="card-actions justify-end mt-4">
             <Link
               className="btn btn-primary"

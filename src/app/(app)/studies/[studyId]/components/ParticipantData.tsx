@@ -1,14 +1,16 @@
 import { getStudyParticipantRsc } from "../../queries/getStudyParticipant"
 import RunStudyButton from "../setup/step3/components/client/RunStudyButton"
 import { Alert } from "@/src/app/components/Alert"
+import { isSetupComplete } from "../setup/utils/setupStatus"
+import { StudyWithRelations } from "../../queries/getStudy"
 
 interface ParticipantDataProps {
   studyId: number
-  setupComplete: boolean
+  study: StudyWithRelations
 }
 
-export default async function ParticipantData({ studyId, setupComplete }: ParticipantDataProps) {
-  const participant = await getStudyParticipantRsc(studyId).catch(() => null)
+export default async function ParticipantData({ studyId, study }: ParticipantDataProps) {
+  const setupComplete = isSetupComplete(study)
 
   if (!setupComplete) {
     return (
@@ -17,6 +19,8 @@ export default async function ParticipantData({ studyId, setupComplete }: Partic
       </Alert>
     )
   }
+
+  const participant = await getStudyParticipantRsc(studyId).catch(() => null)
 
   if (!participant) {
     return <button className="btn btn-disabled loading">Loading study...</button>

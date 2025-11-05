@@ -11,10 +11,13 @@ export async function findStudyById(id: number) {
     where: { id },
     include: {
       researchers: {
-        select: { userId: true, role: true, jatosRunUrl: true },
+        select: { id: true, userId: true, role: true, jatosRunUrl: true },
       },
       participations: {
         select: { userId: true },
+      },
+      FeedbackTemplate: {
+        select: { id: true },
       },
     },
   })

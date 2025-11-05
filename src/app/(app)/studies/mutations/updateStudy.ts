@@ -16,6 +16,10 @@ export async function updateStudy(
     throw new Error("You are not authorized to update this study")
   }
 
+  // Determine if step1 should be marked complete
+  // Step 1 is complete when title and description are provided
+  const step1Completed = !!(data.title && data.description)
+
   // Apply update — no redundant transformations
   return db.study.update({
     where: { id: studyId },
@@ -29,6 +33,7 @@ export async function updateStudy(
       ethicalPermission: data.ethicalPermission,
       length: data.length,
       status: data.status,
+      step1Completed,
     },
   })
 }

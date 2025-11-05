@@ -12,6 +12,13 @@ export default resolver.pipe(
   resolver.authorize("RESEARCHER"), // only researchers can create
   async (input) => {
     const template = await db.feedbackTemplate.create({ data: input })
+
+    // Mark step 4 as complete after successful creation
+    await db.study.update({
+      where: { id: input.studyId },
+      data: { step4Completed: true },
+    })
+
     return template
   }
 )

@@ -20,7 +20,10 @@ export default function StudyInformationCard({ study }: StudyInformationCardProp
       actions={
         role === "RESEARCHER" && (
           <div className="card-actions justify-end mt-4">
-            <Link className="btn btn-primary" href={`/studies/${study.id}/edit`}>
+            <Link
+              className="btn btn-primary"
+              href={`/studies/${study.id}/setup/step1?edit=true&returnTo=study`}
+            >
               Update
             </Link>
             <ArchiveStudyButton studyId={study.id} isArchived={study.archived} />

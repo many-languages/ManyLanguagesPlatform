@@ -2,30 +2,37 @@
 
 import { useRouter } from "next/navigation"
 import { useRef } from "react"
+import { useQuery } from "@blitzjs/rpc"
+import { useStudySetup } from "../../../components/StudySetupProvider"
 import FeedbackFormEditor, { FeedbackFormEditorRef } from "./FeedbackFormEditor"
 import { useMutation } from "@blitzjs/rpc"
 import { toast } from "react-hot-toast"
 import { isSetupComplete } from "../../../utils/setupStatus"
-import { StudyWithRelations } from "../../../../../queries/getStudy"
 import updateStudyStatus from "@/src/app/(app)/studies/mutations/updateStudyStatus"
 import StepNavigation from "../../../components/StepNavigation"
+import { Alert } from "@/src/app/components/Alert"
+import SaveExitButton from "../../../components/SaveExitButton"
+import getStudyDataByComment from "@/src/app/(app)/studies/queries/getStudyDataByComment"
 
 interface Step4ContentProps {
-  study: StudyWithRelations
-  studyId: number
-  enrichedResult: any
-  feedbackTemplate: any
+  initialFeedbackTemplate?: {
+    id: number
+    content: string
+    createdAt: Date
+    updatedAt: Date
+  } | null
 }
 
-export default function Step4Content({
-  study,
-  studyId,
-  enrichedResult,
-  feedbackTemplate,
-}: Step4ContentProps) {
+export default function Step4Content({ initialFeedbackTemplate = null }: Step4ContentProps) {
   const router = useRouter()
+  const { study, studyId } = useStudySetup()
   const feedbackEditorRef = useRef<FeedbackFormEditorRef>(null)
   const [updateStudyStatusMutation] = useMutation(updateStudyStatus)
+
+  // Fetch enriched result client-side (complex processing, interactive editor)
+  const [dataResult] = useQuery(getStudyDataByComment, { studyId, comment: "test" })
+
+  const enrichedResult = dataResult?.enrichedResult ?? null
 
   const handleFinish = async () => {
     if (feedbackEditorRef.current) {
@@ -40,6 +47,7 @@ export default function Step4Content({
     if (study && isSetupComplete(study)) {
       try {
         await updateStudyStatusMutation({ studyId, status: "OPEN" })
+        router.refresh() // Refresh to get updated study data
         toast.success("Setup complete! Study is now open for participants.")
       } catch (error) {
         console.error("Failed to open study:", error)
@@ -50,23 +58,28 @@ export default function Step4Content({
     router.push(`/studies/${studyId}`)
   }
 
+  // Show warning if no test run data found
+  if (!enrichedResult) {
+    return (
+      <>
+        <SaveExitButton />
+        <Alert variant="warning">No test run data found.</Alert>
+      </>
+    )
+  }
+
   return (
     <>
-      {/* Save & Exit button */}
-      <div className="mb-4">
-        <button className="btn btn-ghost" onClick={() => router.push(`/studies/${studyId}`)}>
-          ← Save & Exit Setup
-        </button>
-      </div>
+      <SaveExitButton />
 
       <FeedbackFormEditor
         ref={feedbackEditorRef}
         enrichedResult={enrichedResult}
-        initialTemplate={feedbackTemplate}
+        initialTemplate={initialFeedbackTemplate}
         studyId={studyId}
         onTemplateSaved={() => {
-          // Refetch template data to update the navigation state
-          window.location.reload()
+          // Refresh to get updated study data (step4Completed will be updated)
+          router.refresh()
         }}
       />
       <StepNavigation

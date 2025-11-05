@@ -2,29 +2,31 @@
 
 import { useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
+import { useSession } from "@blitzjs/auth"
+import { useStudySetup } from "../../../components/StudySetupProvider"
 import JatosForm from "./JatosForm"
 import toast from "react-hot-toast"
 import { useMutation } from "@blitzjs/rpc"
 import importJatos from "../../../mutations/importJatos"
 import updateStudyBatch from "../../../../../mutations/updateStudyBatch"
 import clearJatosData from "../../../../../mutations/clearJatosData"
+import updateSetupCompletion from "../../../mutations/updateSetupCompletion"
 import fetchJatosBatchId from "@/src/lib/jatos/api/fetchJatosBatchId"
 import deleteExistingJatosStudy from "@/src/lib/jatos/api/deleteExistingJatosStudy"
 import { uploadStudyFile } from "@/src/lib/jatos/api/uploadStudyFile"
 import { Alert } from "@/src/app/components/Alert"
 import { FORM_ERROR } from "@/src/app/components/Form"
-import { StudyWithRelations } from "../../../../../queries/getStudy"
+import SaveExitButton from "../../../components/SaveExitButton"
+import { generateAndSaveResearcherTestRunUrl } from "../../../../utils/generateResearcherTestRunUrl"
 
-interface Step2ContentProps {
-  study: StudyWithRelations
-  studyId: number
-}
-
-export default function Step2Content({ study, studyId }: Step2ContentProps) {
+export default function Step2Content() {
   const router = useRouter()
+  const { study } = useStudySetup()
+  const { userId } = useSession()
   const [importJatosMutation] = useMutation(importJatos)
   const [updateStudyBatchMutation] = useMutation(updateStudyBatch)
   const [clearJatosDataMutation] = useMutation(clearJatosData)
+  const [updateSetupCompletionMutation] = useMutation(updateSetupCompletion)
 
   const [duplicateAlert, setDuplicateAlert] = useState<{
     uuid: string
@@ -39,7 +41,7 @@ export default function Step2Content({ study, studyId }: Step2ContentProps) {
   async function completeImport(uploadResult: any, jatosWorkerType: string) {
     // 1️⃣ Save to DB
     const dbResult = (await importJatosMutation({
-      studyId,
+      studyId: study.id,
       jatosWorkerType: jatosWorkerType as "SINGLE" | "MULTIPLE",
       jatosStudyId: uploadResult.jatosStudyId,
       jatosStudyUUID: uploadResult.jatosStudyUUID,
@@ -55,14 +57,46 @@ export default function Step2Content({ study, studyId }: Step2ContentProps) {
     // 2️⃣ Get batch ID
     const jatosBatchId = await fetchJatosBatchId(uploadResult.jatosStudyUUID)
     if (jatosBatchId) {
-      await updateStudyBatchMutation({ studyId, jatosBatchId } as any)
+      await updateStudyBatchMutation({ studyId: study.id, jatosBatchId } as any)
     } else {
       toast.error("No JATOS batch found for this study")
+      setLoading(false)
+      return false
     }
 
-    // 3️⃣ Success
+    // 3️⃣ Mark step 2 as complete
+    try {
+      await updateSetupCompletionMutation({
+        studyId: study.id,
+        step2Completed: true,
+      })
+      router.refresh() // Refresh to get updated study data
+    } catch (err) {
+      console.error("Failed to update step 2 completion:", err)
+      // Don't fail the whole import if this fails, but log it
+    }
+
+    // 4️⃣ Auto-generate test link for the current researcher
+    try {
+      const researcher = study.researchers?.find((r) => r.userId === userId)
+      if (researcher?.id && jatosBatchId) {
+        await generateAndSaveResearcherTestRunUrl({
+          studyResearcherId: researcher.id,
+          jatosStudyId: uploadResult.jatosStudyId,
+          jatosBatchId: jatosBatchId,
+        })
+        // Silent success - test link generated automatically
+      }
+    } catch (err) {
+      console.error("Failed to auto-generate test link:", err)
+      // Don't fail the import if test link generation fails - user can generate it manually in Step 3
+    }
+
+    // 5️⃣ Success
     toast.success("JATOS instance created")
-    router.push(`/studies/${studyId}/setup/step3`)
+    router.push(`/studies/${study.id}/setup/step3`)
+    // Refresh after navigation to ensure fresh data is loaded
+    router.refresh()
     return true
   }
 
@@ -77,7 +111,7 @@ export default function Step2Content({ study, studyId }: Step2ContentProps) {
       await deleteExistingJatosStudy(duplicateAlert.uuid)
 
       // 2️⃣ Clear DB record
-      await clearJatosDataMutation({ studyId } as any)
+      await clearJatosDataMutation({ studyId: study.id } as any)
 
       toast.success("Old JATOS study deleted")
 
@@ -138,18 +172,13 @@ export default function Step2Content({ study, studyId }: Step2ContentProps) {
         </Alert>
       )}
 
-      {/* Save & Exit button */}
-      <div className="mb-4">
-        <button className="btn btn-ghost" onClick={() => router.push(`/studies/${studyId}`)}>
-          ← Save & Exit Setup
-        </button>
-      </div>
+      <SaveExitButton />
 
       <JatosForm
         formTitle=""
         submitText="Save and continue"
         cancelText="Back"
-        onCancel={() => router.push(`/studies/${studyId}/setup/step1`)}
+        onCancel={() => router.push(`/studies/${study.id}/setup/step1`)}
         defaultValues={defaultValues}
         onSubmit={async (values) => {
           const file = values.studyFile as File | undefined
@@ -171,7 +200,7 @@ export default function Step2Content({ study, studyId }: Step2ContentProps) {
                 studyId: uploadResult.jatosStudyId,
                 file: file,
                 jatosWorkerType: values.jatosWorkerType,
-                title: uploadResult.currentStudyTitle,
+                title: uploadResult.currentStudyTitle!,
               })
               setLoading(false)
               return

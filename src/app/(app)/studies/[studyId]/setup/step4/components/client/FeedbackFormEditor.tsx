@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useImperativeHandle, forwardRef, useCallback } from "react"
 import { useMemo } from "react"
+import { useRouter } from "next/navigation"
 import { useMutation } from "@blitzjs/rpc"
 import { toast } from "react-hot-toast"
 import MDEditor from "@uiw/react-md-editor"
@@ -35,6 +36,7 @@ export interface FeedbackFormEditorRef {
 
 const FeedbackFormEditor = forwardRef<FeedbackFormEditorRef, FeedbackFormEditorProps>(
   ({ enrichedResult, initialTemplate, studyId, onTemplateSaved }, ref) => {
+    const router = useRouter()
     const [markdown, setMarkdown] = useState(
       "## Feedback Form\nWrite your feedback message here..."
     )
@@ -181,6 +183,7 @@ const FeedbackFormEditor = forwardRef<FeedbackFormEditorRef, FeedbackFormEditorP
 
         // Mark as saved and call the callback to refresh the page state
         setTemplateSaved(true)
+        router.refresh() // Refresh to get updated study data
         onTemplateSaved?.()
       } catch (error: any) {
         console.error("Error saving template:", error)

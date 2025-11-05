@@ -1,9 +1,11 @@
 import { Suspense } from "react"
 import { notFound } from "next/navigation"
-import { getStudyRsc } from "../../../queries/getStudy"
+
 import StepIndicator from "./components/StepIndicator"
 import { StudySetupProvider } from "./components/StudySetupProvider"
 import SetupContentSkeleton from "./components/SetupContentSkeleton"
+import { getStudyRsc } from "../../queries/getStudy"
+import { getCompletedSteps } from "./utils/setupStatus"
 
 export default async function StudySetupLayout({
   children,
@@ -23,11 +25,14 @@ export default async function StudySetupLayout({
     // Fetch study data once in layout - will be preserved across step navigation
     const study = await getStudyRsc(studyId)
 
+    // Calculate completed steps for the indicator
+    const completedSteps = getCompletedSteps(study)
+
     return (
       <StudySetupProvider study={study} studyId={studyId}>
         <div className="max-w-4xl mx-auto mt-10">
-          {/* Step indicator */}
-          <StepIndicator />
+          {/* Step indicator - client component detects current step from pathname */}
+          <StepIndicator completedSteps={completedSteps} />
           <div className="card bg-base-200 p-6 shadow-md">
             {/* Suspense boundary for progressive loading of step-specific data */}
             <Suspense fallback={<SetupContentSkeleton />}>{children}</Suspense>

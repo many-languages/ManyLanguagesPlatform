@@ -10,6 +10,7 @@ import {
   FormSubmitButton,
   FormErrorDisplay,
 } from "@/src/app/components/fields"
+import { clsx } from "clsx"
 
 type JatosFormValues = z.infer<typeof JatosFormSchema>
 
@@ -18,6 +19,7 @@ type JatosFormProps = {
   submitText: string
   onCancel?: () => void
   cancelText?: string
+  actionsClassName?: string
   /** Handles submission, must return void or errors */
   onSubmit: (values: JatosFormValues) => Promise<void | { FORM_ERROR?: string }>
   defaultValues?: Partial<JatosFormValues>
@@ -35,6 +37,7 @@ export default function JatosForm({
   formTitle,
   defaultValues,
   onSubmit,
+  actionsClassName,
 }: JatosFormProps) {
   const memoizedDefaultValues = useMemo(
     () =>
@@ -67,11 +70,13 @@ export default function JatosForm({
           <p className="text-xs opacity-70">Only .jzip exports from JATOS are accepted.</p>
 
           {/* Form Actions */}
-          <div className="flex gap-2 pt-4">
-            {cancelText && onCancel && (
+          <div className={clsx("flex gap-2 pt-4", actionsClassName || "justify-end")}>
+            {cancelText && onCancel ? (
               <button type="button" className="btn btn-secondary" onClick={onCancel}>
                 {cancelText}
               </button>
+            ) : (
+              <div /> // placeholder to keep submit button on right when no cancel
             )}
             <FormSubmitButton
               submitText={submitText}

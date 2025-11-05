@@ -7,7 +7,7 @@ import { FORM_ERROR } from "@/src/app/components/Form"
 import toast from "react-hot-toast"
 import { useStudySetup } from "../../../components/StudySetupProvider"
 import updateStudy from "@/src/app/(app)/studies/mutations/updateStudy"
-import StudyForm from "@/src/app/(app)/studies/components/client/StudyForm"
+import StudyInformationForm from "@/src/app/(app)/studies/components/client/StudyInformationForm"
 import { getPostStepNavigationUrl } from "../../../utils/setupStatus"
 
 interface Step1ContentProps {
@@ -39,9 +39,10 @@ export default function Step1Content({
   }
 
   return (
-    <StudyForm
+    <StudyInformationForm
       formTitle={isEditMode ? `Edit ${study.title || "Study"}` : ""}
       submitText={isEditMode ? "Update Study" : "Save and continue"}
+      actionsClassName="justify-between"
       defaultValues={{
         title: study.title || "",
         description: study.description || "",

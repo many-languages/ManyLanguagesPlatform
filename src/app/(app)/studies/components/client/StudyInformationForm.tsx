@@ -8,29 +8,32 @@ import {
   FormSubmitButton,
   FormErrorDisplay,
 } from "@/src/app/components/fields"
-import { StudyFormSchema } from "../../validations"
+import { StudyInformationFormSchema } from "../../validations"
 import { z } from "zod"
+import { clsx } from "clsx"
 
-type StudyFormValues = z.infer<typeof StudyFormSchema>
+type StudyInformationFormValues = z.infer<typeof StudyInformationFormSchema>
 
-type StudyFormProps = {
+type StudyInformationFormProps = {
   formTitle: string
   submitText: string
   onCancel?: () => void
   cancelText?: string
+  actionsClassName?: string
   /** Handles submission, must return void or errors */
-  onSubmit: (values: StudyFormValues) => Promise<void | { FORM_ERROR?: string }>
-  defaultValues?: Partial<StudyFormValues>
+  onSubmit: (values: StudyInformationFormValues) => Promise<void | { FORM_ERROR?: string }>
+  defaultValues?: Partial<StudyInformationFormValues>
 }
 
-export default function StudyForm({
+export default function StudyInformationForm({
   onCancel,
   cancelText,
   submitText,
   formTitle,
   defaultValues,
   onSubmit,
-}: StudyFormProps) {
+  actionsClassName,
+}: StudyInformationFormProps) {
   const memoizedDefaultValues = useMemo(() => defaultValues, [defaultValues])
 
   return (
@@ -38,7 +41,7 @@ export default function StudyForm({
       <h1 className="text-2xl font-bold">{formTitle}</h1>
 
       <Form
-        schema={StudyFormSchema}
+        schema={StudyInformationFormSchema}
         onSubmit={onSubmit}
         defaultValues={memoizedDefaultValues}
         className="space-y-4"
@@ -58,11 +61,13 @@ export default function StudyForm({
           <TextField name="length" label="Expected Duration" placeholder="30 minutes" />
 
           {/* Form Actions */}
-          <div className="flex gap-2 pt-4">
-            {cancelText && onCancel && (
+          <div className={clsx("flex gap-2 pt-4", actionsClassName || "justify-end")}>
+            {cancelText && onCancel ? (
               <button type="button" className="btn btn-secondary" onClick={onCancel}>
                 {cancelText}
               </button>
+            ) : (
+              <div /> // placeholder to keep submit button on right when no cancel
             )}
             <FormSubmitButton
               submitText={submitText}

@@ -1,17 +1,29 @@
 "use client"
 
 import { useEffect } from "react"
-import toast from "react-hot-toast"
+import { Alert } from "@/src/app/components/Alert"
 
-export default function Error({ error }: { error: Error }) {
+export default function StudyPageError({
+  error,
+  reset,
+}: {
+  error: Error & { digest?: string }
+  reset: () => void
+}) {
   useEffect(() => {
-    console.error(error)
-    toast.error("Could not load study")
+    // Log error to monitoring service
+    console.error("Study page error:", error)
   }, [error])
 
   return (
-    <main className="p-6">
-      <h1 className="text-2xl font-bold text-center mt-8">Something went wrong</h1>
-    </main>
+    <div className="container mx-auto p-4">
+      <Alert variant="error">
+        <h2 className="font-bold mb-2">Something went wrong!</h2>
+        <p className="mb-4">{error.message || "An unexpected error occurred"}</p>
+        <button onClick={reset} className="btn btn-primary">
+          Try again
+        </button>
+      </Alert>
+    </div>
   )
 }

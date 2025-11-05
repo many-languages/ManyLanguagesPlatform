@@ -1,9 +1,23 @@
+/**
+ * JATOS API Route: Get All Results
+ *
+ * Fetches all results from JATOS as a ZIP file for specified studies.
+ * Supports both query parameters and JSON body.
+ *
+ * @route POST /api/jatos/get-all-results
+ * @queryParams studyIds (can also be in body)
+ * @returns Binary ZIP file with all results
+ */
 import { NextRequest, NextResponse } from "next/server"
+import type { JatosApiError } from "@/src/types/jatos-api"
+
+export const runtime = "nodejs"
+export const dynamic = "force-dynamic"
 
 const JATOS_BASE = process.env.JATOS_BASE
 const JATOS_TOKEN = process.env.JATOS_TOKEN
 
-export async function POST(req: NextRequest) {
+export async function POST(req: NextRequest): Promise<NextResponse<ArrayBuffer | JatosApiError>> {
   try {
     // Try to parse JSON body (if present)
     let body: any = {}
@@ -43,10 +57,11 @@ export async function POST(req: NextRequest) {
 
     if (!response.ok) {
       const text = await response.text()
-      return NextResponse.json(
-        { error: `JATOS API error: ${response.status}`, details: text },
-        { status: response.status }
-      )
+      const errorResponse: JatosApiError = {
+        error: `JATOS API error: ${response.status}`,
+        details: text,
+      }
+      return NextResponse.json(errorResponse, { status: response.status })
     }
 
     // Stream ZIP file back to client
@@ -60,6 +75,10 @@ export async function POST(req: NextRequest) {
     })
   } catch (error: any) {
     console.error("Error fetching JATOS results:", error)
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+    const errorResponse: JatosApiError = {
+      error: "Internal server error",
+      details: error.message,
+    }
+    return NextResponse.json(errorResponse, { status: 500 })
   }
 }

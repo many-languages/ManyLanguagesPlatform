@@ -1,10 +1,6 @@
 import db from "db"
 import { resolver } from "@blitzjs/rpc"
-import { z } from "zod"
-
-const JoinStudy = z.object({
-  studyId: z.number(),
-})
+import { JoinStudy } from "../validations"
 
 export default resolver.pipe(
   resolver.zod(JoinStudy),

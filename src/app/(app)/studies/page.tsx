@@ -1,14 +1,11 @@
-import StudyList from "./components/StudyList"
+import StudyList from "./components/client/StudyList"
 import { getStudies } from "./queries/getStudies"
 import Link from "next/link"
-import PaginationControls from "../../components/PaginationControls"
-import { Suspense } from "react"
+import PaginationControls from "./components/PaginationControls"
 import { getBlitzContext } from "../../blitz-server"
 import { redirect } from "next/navigation"
-import PaginationControlsSkeleton from "../../components/PaginationControlsSkeleton"
-import StudyListSkeleton from "./components/StudyListSkeleton"
 import { Prisma } from "@/db"
-import ShowArchivedToggle from "./components/ShowArchivedToggle"
+import ShowArchivedToggle from "./components/client/ShowArchivedToggle"
 
 const ITEMS_PER_PAGE = 1
 
@@ -49,16 +46,12 @@ async function StudiesContent({
       <Link className="btn btn-primary mb-2" href={"/studies/new"}>
         Create Study
       </Link>
-      <Suspense fallback={<StudyListSkeleton />}>
-        <StudyList studies={studies} showJoinButton={false} />
-      </Suspense>
-      <Suspense fallback={<PaginationControlsSkeleton />}>
-        <PaginationControls
-          page={page}
-          hasMore={hasMore}
-          extraQuery={showArchived ? { showArchived: "1" } : {}}
-        />
-      </Suspense>
+      <StudyList studies={studies} showJoinButton={false} />
+      <PaginationControls
+        page={page}
+        hasMore={hasMore}
+        extraQuery={showArchived ? { showArchived: "1" } : {}}
+      />
     </>
   )
 }
@@ -66,7 +59,7 @@ async function StudiesContent({
 export default async function StudiesPage({
   searchParams,
 }: {
-  searchParams: { page?: string; showArchived?: string }
+  searchParams: Promise<{ page?: string; showArchived?: string }>
 }) {
   const params = await searchParams
   const page = Number(params.page || 0)

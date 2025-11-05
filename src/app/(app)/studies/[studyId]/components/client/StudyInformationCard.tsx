@@ -1,5 +1,3 @@
-"use client"
-
 import Card from "@/src/app/components/Card"
 import Link from "next/link"
 import { formatDate } from "@/src/lib/utils/formatDate"

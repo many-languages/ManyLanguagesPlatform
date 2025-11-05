@@ -23,32 +23,35 @@ const CheckboxFieldTable = <T,>({
     formState: { isSubmitting, errors },
   } = useFormContext()
 
-  const selectedIds = useMemo(() => watch(name) || [], [watch, name])
+  const selectedIds = watch(name) || []
   const error = errors[name]
 
   // ✅ Toggle one
   const toggleSelection = useCallback(
     (id: number) => {
-      const isSelected = selectedIds.includes(id)
+      const currentIds = watch(name) || []
+      const isSelected = currentIds.includes(id)
       const newSelectedIds = isSelected
-        ? selectedIds.filter((selectedId: number) => selectedId !== id)
-        : [...selectedIds, id]
-      setValue(name, newSelectedIds)
+        ? currentIds.filter((selectedId: number) => selectedId !== id)
+        : [...currentIds, id]
+      setValue(name, newSelectedIds, { shouldValidate: true, shouldDirty: true })
     },
-    [selectedIds, setValue, name]
+    [watch, setValue, name]
   )
 
   // ✅ Toggle all
   const toggleAll = useCallback(() => {
-    if (selectedIds.length === options.length) {
-      setValue(name, []) // deselect all
+    const currentIds = watch(name) || []
+    if (currentIds.length === options.length) {
+      setValue(name, [], { shouldValidate: true, shouldDirty: true }) // deselect all
     } else {
       setValue(
         name,
-        options.map((o) => o.id)
+        options.map((o) => o.id),
+        { shouldValidate: true, shouldDirty: true }
       ) // select all
     }
-  }, [selectedIds, setValue, name, options])
+  }, [watch, setValue, name, options])
 
   // ✅ Ref for indeterminate checkbox
   const headerCheckboxRef = useRef<HTMLInputElement>(null)
@@ -93,7 +96,7 @@ const CheckboxFieldTable = <T,>({
       },
       ...extraColumns,
     ],
-    [selectedIds, toggleSelection, extraColumns, isSubmitting, toggleAll, options.length]
+    [selectedIds, toggleSelection, extraColumns, isSubmitting, toggleAll, options.length, watch]
   )
 
   const data = useMemo(

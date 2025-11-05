@@ -23,16 +23,17 @@ export default function StepIndicator({
 }: StepIndicatorProps) {
   const pathname = usePathname()
 
-  // Auto-detect current step from pathname
-  const step = steps.find((s) => pathname.endsWith(s.path))
-  const currentStep = step ? step.id : 1 // Default to step 1 if no match
+  // Only detect current step if we're actually on a setup page
+  const isOnSetupPage = pathname.includes("/setup/")
+  const step = isOnSetupPage ? steps.find((s) => pathname.endsWith(s.path)) : null
+  const currentStep = step ? step.id : null // null means no current step (e.g., on study page)
 
   return (
     <ul className="steps mb-8 w-full">
       {steps.map((s) => {
         const isCompleted = completedSteps.includes(s.id)
-        const isCurrent = currentStep === s.id
-        const isUpToCurrent = s.id <= currentStep // Steps up to and including current
+        const isCurrent = currentStep !== null && currentStep === s.id
+        const isUpToCurrent = currentStep !== null && s.id <= currentStep // Steps up to and including current (only on setup pages)
         // Only completed steps are clickable when editable
         const isClickable = editable && onClickStep && isCompleted
 
@@ -42,7 +43,7 @@ export default function StepIndicator({
             className={clsx(
               "step",
               (isCompleted || isUpToCurrent) && "step-primary", // Color completed steps OR steps up to current (for edge coloring)
-              isCurrent && "step-info", // Highlight current step (overrides primary on node but edges remain colored)
+              isCurrent && "step-secondary", // Highlight current step (overrides primary on node but edges remain colored)
               isClickable && "cursor-pointer hover:opacity-80",
               editable && !isCompleted && "opacity-50 cursor-not-allowed"
             )}

@@ -37,7 +37,7 @@ export const ImportJatosSchema = BaseJatosFormSchema.extend({
   jatosFileName: z.string(),
 })
 
-export const StudyFormSchema = z.object({
+export const StudyInformationFormSchema = z.object({
   title: z.string().min(1, "Title is required").trim(),
   description: z.string().min(1, "Description is required").trim(),
   startDate: z.string().min(1, "Start date is required"),
@@ -62,7 +62,7 @@ export const CreateStudy = z.object({
 
 export type CreateStudyInput = z.infer<typeof CreateStudy>
 
-export const UpdateStudy = StudyFormSchema.extend({
+export const UpdateStudy = StudyInformationFormSchema.extend({
   id: Id,
   status: z.enum(["OPEN", "CLOSED"]).optional(),
 })

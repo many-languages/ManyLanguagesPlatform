@@ -179,6 +179,7 @@ export default function Step2Content() {
         submitText="Save and continue"
         cancelText="Back"
         onCancel={() => router.push(`/studies/${study.id}/setup/step1`)}
+        actionsClassName="justify-between"
         defaultValues={defaultValues}
         onSubmit={async (values) => {
           const file = values.studyFile as File | undefined

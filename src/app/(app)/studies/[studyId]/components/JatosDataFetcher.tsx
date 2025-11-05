@@ -1,5 +1,5 @@
+import { ParticipantWithEmail } from "../../queries/getStudyParticipants"
 import JatosDataContentServer from "./JatosDataContentServer"
-import { ParticipantWithEmail } from "../../../queries/getStudyParticipants"
 
 interface JatosDataFetcherProps {
   jatosStudyId: number

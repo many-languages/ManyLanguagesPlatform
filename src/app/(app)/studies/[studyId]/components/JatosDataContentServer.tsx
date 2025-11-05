@@ -4,7 +4,7 @@ import StudySummary from "./client/StudySummary"
 import ParticipantManagementCard from "./client/ParticipantManagementCard"
 import ResultsCard from "./client/ResultsCard"
 import JatosInformationCard from "./client/JatosInformationCard"
-import { ParticipantWithEmail } from "../../../queries/getStudyParticipants"
+import { ParticipantWithEmail } from "../../queries/getStudyParticipants"
 
 interface JatosDataContentServerProps {
   jatosStudyId: number

@@ -4,17 +4,30 @@ import Link from "next/link"
 import React from "react"
 import { useMutation } from "@blitzjs/rpc"
 import { useRouter } from "next/navigation"
-import { useCurrentUser } from "../users/hooks/useCurrentUser"
 import Gravatar from "react-gravatar"
 import logout from "../(auth)/mutations/logout"
+
+// User type from getCurrentUser query
+type CurrentUser = {
+  id: number
+  firstname: string | null
+  lastname: string | null
+  username: string | null
+  email: string
+  role: string
+  gravatar: string | null
+  createdAt: Date
+} | null
+
+interface MainNavbarProps {
+  currentUser: CurrentUser
+}
 
 // MainNavbar
 // Always present on the top of the page
 // Includes non-project specific functionalities
-const Navbar = () => {
-  // Get current user data
-  const currentUser = useCurrentUser()
-
+// Receives user data from layout (server-side) to preserve state across navigation
+const MainNavbar = ({ currentUser }: MainNavbarProps) => {
   const gravatar_email =
     currentUser?.gravatar && currentUser.gravatar.trim() !== ""
       ? currentUser.gravatar
@@ -24,7 +37,6 @@ const Navbar = () => {
   const [logoutMutation] = useMutation(logout)
   const router = useRouter()
 
-  // return pages
   return (
     <div className="navbar bg-base-100 sticky shadow-sm border-b border-gray-300">
       {/* Title */}
@@ -76,10 +88,6 @@ const Navbar = () => {
       </div>
     </div>
   )
-}
-
-const MainNavbar = () => {
-  return <Navbar />
 }
 
 export default MainNavbar

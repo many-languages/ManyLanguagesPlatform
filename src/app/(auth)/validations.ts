@@ -20,8 +20,12 @@ export const Signup = z.object({
 })
 
 export const Login = z.object({
-  email,
-  password: z.string(),
+  email: z
+    .string()
+    .min(1, "Email is required")
+    .email("Please enter a valid email")
+    .transform((str) => str.toLowerCase().trim()),
+  password: z.string().min(1, "Password is required"),
 })
 
 export const ForgotPassword = z.object({

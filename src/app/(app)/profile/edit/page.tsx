@@ -1,5 +1,5 @@
 import Card from "@/src/app/components/Card"
-import { EditProfileForm } from "../components/EditProfileForm"
+import { EditProfileForm } from "../components/client/EditProfileForm"
 
 export default function EditProfilePage() {
   return (

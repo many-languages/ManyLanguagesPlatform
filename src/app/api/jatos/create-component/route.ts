@@ -1,4 +1,14 @@
+/**
+ * JATOS API Route: Create Component
+ *
+ * Creates a new component in a JATOS study.
+ *
+ * @route POST /api/jatos/create-component
+ * @body { jatosStudyId: number, title: string, htmlFilePath: string, comments?: string }
+ * @returns Created component ID and UUID
+ */
 import { NextResponse } from "next/server"
+import type { CreateComponentResponse, JatosApiError } from "@/src/types/jatos-api"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -6,11 +16,14 @@ export const dynamic = "force-dynamic"
 const JATOS_BASE = process.env.JATOS_BASE!
 const JATOS_TOKEN = process.env.JATOS_TOKEN!
 
-export async function POST(req: Request) {
+export async function POST(
+  req: Request
+): Promise<NextResponse<CreateComponentResponse | JatosApiError>> {
   const { jatosStudyId, title, htmlFilePath, comments } = await req.json()
 
   if (!jatosStudyId || !title || !htmlFilePath) {
-    return NextResponse.json({ error: "Missing required fields" }, { status: 400 })
+    const errorResponse: JatosApiError = { error: "Missing required fields" }
+    return NextResponse.json(errorResponse, { status: 400 })
   }
 
   const payload = {
@@ -30,13 +43,20 @@ export async function POST(req: Request) {
   })
 
   const text = await res.text()
-  if (!res.ok) return NextResponse.json({ error: text }, { status: res.status })
+  if (!res.ok) {
+    const errorResponse: JatosApiError = { error: text }
+    return NextResponse.json(errorResponse, { status: res.status })
+  }
 
   const json = JSON.parse(text) as { id: number; uuid?: string }
-  if (!json.id) return NextResponse.json({ error: "Missing id in JATOS response" }, { status: 502 })
+  if (!json.id) {
+    const errorResponse: JatosApiError = { error: "Missing id in JATOS response" }
+    return NextResponse.json(errorResponse, { status: 502 })
+  }
 
-  return NextResponse.json({
+  const successResponse: CreateComponentResponse = {
     jatosComponentId: json.id,
     jatosComponentUUID: json.uuid,
-  })
+  }
+  return NextResponse.json(successResponse)
 }

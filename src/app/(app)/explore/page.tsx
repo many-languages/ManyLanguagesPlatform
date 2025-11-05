@@ -1,11 +1,8 @@
-import StudyList from "../studies/components/StudyList"
+import StudyList from "../studies/components/client/StudyList"
 import { getStudies } from "../studies/queries/getStudies"
-import PaginationControls from "../../components/PaginationControls"
-import { Suspense } from "react"
+import PaginationControls from "../studies/components/PaginationControls"
 import { getBlitzContext } from "../../blitz-server"
 import { redirect } from "next/navigation"
-import PaginationControlsSkeleton from "../../components/PaginationControlsSkeleton"
-import StudyListSkeleton from "../studies/components/StudyListSkeleton"
 
 const ITEMS_PER_PAGE = 10
 
@@ -31,17 +28,17 @@ async function ExploreContent({ page, userId }: { page: number; userId: number }
 
   return (
     <>
-      <Suspense fallback={<StudyListSkeleton />}>
-        <StudyList studies={studies} showJoinButton={true} />
-      </Suspense>
-      <Suspense fallback={<PaginationControlsSkeleton />}>
-        <PaginationControls page={page} hasMore={hasMore} />
-      </Suspense>
+      <StudyList studies={studies} showJoinButton={true} />
+      <PaginationControls page={page} hasMore={hasMore} />
     </>
   )
 }
 
-export default async function ExplorePage({ searchParams }: { searchParams: { page?: string } }) {
+export default async function ExplorePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ page?: string }>
+}) {
   const params = await searchParams
   const page = Number(params.page || 0)
 

@@ -1,14 +1,9 @@
 import { resolver } from "@blitzjs/rpc"
 import db from "db"
-import { z } from "zod"
-
-const UpdateStudyBatchSchema = z.object({
-  studyId: z.number(),
-  jatosBatchId: z.number(),
-})
+import { UpdateStudyBatch } from "../validations"
 
 export default resolver.pipe(
-  resolver.zod(UpdateStudyBatchSchema),
+  resolver.zod(UpdateStudyBatch),
   resolver.authorize(),
   async ({ studyId, jatosBatchId }) => {
     return await db.study.update({

@@ -125,6 +125,13 @@ model Study {
   FeedbackTemplate FeedbackTemplate[]
   StudyVariable    StudyVariable[]
 
+  // Setup completion tracking
+  // These fields track explicit completion of each setup step
+  step1Completed Boolean @default(false) // General information completed (title + description)
+  step2Completed Boolean @default(false) // JATOS study imported (jatosStudyId + jatosStudyUUID exist)
+  step3Completed Boolean @default(false) // Test run completed (pilot test finished + test data available)
+  step4Completed Boolean @default(false) // Feedback template created (FeedbackTemplate exists)
+
   @@index([archived, createdAt])
 }
 

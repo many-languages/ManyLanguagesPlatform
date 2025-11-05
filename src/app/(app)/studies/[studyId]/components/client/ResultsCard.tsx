@@ -1,13 +1,10 @@
 "use client"
 
-import { useEffect, useState, useMemo } from "react"
+import { useState, useMemo } from "react"
+import { useRouter } from "next/navigation"
 import Card from "@/src/app/components/Card"
 import Table from "@/src/app/components/Table"
-import toast from "react-hot-toast"
-import { parseJatosZip } from "@/src/lib/jatos/api/parseJatosZip"
-import { fetchResultsBlob } from "@/src/lib/jatos/api/fetchResultsBlob"
-import { JatosMetadata, JatosStudyProperties, EnrichedJatosStudyResult } from "@/src/types/jatos"
-import { matchJatosDataToMetadata } from "@/src/lib/jatos/api/matchJatosDataToMetadata"
+import { Alert } from "@/src/app/components/Alert"
 import { getComponentMap } from "@/src/lib/jatos/api/getComponentMap"
 import { AsyncButton } from "@/src/app/components/AsyncButton"
 import { EmptyState } from "@/src/app/components/EmptyState"
@@ -16,15 +13,31 @@ import cn from "classnames"
 import FilterComponent from "./FilterComponent"
 import DownloadResultsButton from "./DownloadResultsButton"
 
+import type {
+  JatosMetadata,
+  JatosStudyProperties,
+  EnrichedJatosStudyResult,
+} from "@/src/types/jatos"
+import { refetchEnrichedResultsAction } from "../../actions/results"
+
 interface ResultsCardProps {
   jatosStudyId: number
   metadata: JatosMetadata
   properties: JatosStudyProperties
+  initialEnrichedResults: EnrichedJatosStudyResult[]
+  studyId: number
 }
 
-export default function ResultsCard({ jatosStudyId, metadata, properties }: ResultsCardProps) {
-  const [enrichedResults, setEnrichedResults] = useState<EnrichedJatosStudyResult[]>([])
-  const [loading, setLoading] = useState(true)
+export default function ResultsCard({
+  jatosStudyId,
+  metadata,
+  properties,
+  initialEnrichedResults,
+  studyId,
+}: ResultsCardProps) {
+  const router = useRouter()
+  const [enrichedResults, setEnrichedResults] = useState(initialEnrichedResults)
+  const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [selectedComponentUuids, setSelectedComponentUuids] = useState<string[]>(
     properties.components?.map((c) => c.uuid) ?? []
@@ -58,27 +71,24 @@ export default function ResultsCard({ jatosStudyId, metadata, properties }: Resu
     )
   }, [componentsWithColors])
 
-  const fetchResults = async () => {
+  const handleRefetch = async () => {
     setLoading(true)
     setError(null)
-    try {
-      const blob = await fetchResultsBlob(jatosStudyId)
-      const files = await parseJatosZip(blob)
-      const enriched = matchJatosDataToMetadata(metadata, files)
-      setEnrichedResults(enriched)
-      toast.success("Results loaded successfully")
-    } catch (err: any) {
-      console.error(err)
-      setError(err.message)
-      toast.error("Failed to fetch results")
-    } finally {
-      setLoading(false)
-    }
-  }
 
-  useEffect(() => {
-    fetchResults()
-  }, [jatosStudyId])
+    const result = await refetchEnrichedResultsAction(jatosStudyId, metadata, studyId)
+
+    if (!result.success) {
+      setError(result.error)
+      setLoading(false)
+      return
+    }
+
+    setEnrichedResults(result.data)
+    setLoading(false)
+
+    // Refresh router to update server component cache
+    router.refresh()
+  }
 
   // ✅ Build table data (filtered by selected components)
   const tableData = useMemo(() => {
@@ -167,9 +177,10 @@ export default function ResultsCard({ jatosStudyId, metadata, properties }: Resu
           />
           {/* Refetch results again from JATOS */}
           <AsyncButton
-            onClick={fetchResults}
+            onClick={handleRefetch}
             loadingText="Fetching..."
             className="btn btn-secondary w-fit"
+            disabled={loading}
           >
             Fetch Raw Results
           </AsyncButton>
@@ -179,7 +190,11 @@ export default function ResultsCard({ jatosStudyId, metadata, properties }: Resu
       }
     >
       {loading && <LoadingMessage message="Loading results..." />}
-      {error && <div className="text-error text-sm p-3">{error}</div>}
+      {error && (
+        <Alert variant="error" className="mt-3">
+          <p>{error}</p>
+        </Alert>
+      )}
       {!loading && !error && !enrichedResults.length && <EmptyState message="No results found" />}
       {/* Show results in the table */}
       {!loading && !error && tableData.length > 0 && (

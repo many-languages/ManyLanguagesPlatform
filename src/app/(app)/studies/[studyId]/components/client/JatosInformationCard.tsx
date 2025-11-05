@@ -1,14 +1,20 @@
-"use client"
-
 import Card from "@/src/app/components/Card"
 import { EmptyState } from "@/src/app/components/EmptyState"
 import type { JatosStudyProperties } from "@/src/types/jatos"
 
 interface JatosInformationCardProps {
-  properties: JatosStudyProperties
+  properties: JatosStudyProperties | null
 }
 
 export default function JatosInformationCard({ properties }: JatosInformationCardProps) {
+  if (!properties) {
+    return (
+      <Card title="JATOS Information">
+        <EmptyState message="JATOS study properties could not be loaded." className="p-0 mt-2" />
+      </Card>
+    )
+  }
+
   const components = properties.components || []
   const batches = properties.batches || []
 

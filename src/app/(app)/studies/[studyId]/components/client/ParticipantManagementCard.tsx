@@ -1,12 +1,13 @@
 "use client"
 
-import React, { useMemo } from "react"
+import React, { useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
 import type { JatosMetadata } from "@/src/types/jatos"
 import Card from "@/src/app/components/Card"
 import CheckboxFieldTable from "../../../components/CheckboxFieldTable"
-import { useForm, FormProvider } from "react-hook-form"
-import { zodResolver } from "@hookform/resolvers/zod"
+import { Form, FORM_ERROR } from "@/src/app/components/Form"
+import { FormErrorDisplay } from "@/src/app/components/FormErrorDisplay"
+import { useFormContext } from "react-hook-form"
 import { z } from "zod"
 import toast from "react-hot-toast"
 import { useMutation } from "@blitzjs/rpc"
@@ -21,10 +22,86 @@ interface ParticipantManagementCardProps {
 
 const ParticipantSchema = z.object({
   selectedParticipantIds: z.array(z.number()).min(1, "Please select at least one participant"),
-  action: z.enum(["TOGGLE_ACTIVE", "TOGGLE_PAYED"]).optional(),
 })
 
 type ParticipantFormData = z.infer<typeof ParticipantSchema>
+
+// Custom button component that sets action and submits
+function ActionButton({
+  action,
+  label,
+  className,
+  participants,
+}: {
+  action: "TOGGLE_ACTIVE" | "TOGGLE_PAYED"
+  label: string
+  className: string
+  participants: ParticipantWithEmail[]
+}) {
+  const { watch, setValue, formState, trigger } = useFormContext<ParticipantFormData>()
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const router = useRouter()
+  const [toggleActiveMutation] = useMutation(toggleParticipantActive)
+  const [togglePayedMutation] = useMutation(toggleParticipantPayed)
+
+  const handleClick = async () => {
+    const selectedIds = watch("selectedParticipantIds")
+
+    // Validate form before proceeding
+    const isValid = await trigger("selectedParticipantIds")
+
+    if (!isValid || selectedIds.length === 0) {
+      // Validation will show error via FormErrorDisplay
+      return
+    }
+
+    setIsSubmitting(true)
+    try {
+      if (action === "TOGGLE_ACTIVE") {
+        const areAllActive = participants
+          .filter((p) => selectedIds.includes(p.id))
+          .every((p) => p.active)
+
+        await toggleActiveMutation({
+          participantIds: selectedIds,
+          makeActive: !areAllActive,
+        })
+
+        toast.success(areAllActive ? "Participants deactivated" : "Participants activated")
+      } else {
+        const areAllPayed = participants
+          .filter((p) => selectedIds.includes(p.id))
+          .every((p) => p.payed)
+
+        await togglePayedMutation({
+          participantIds: selectedIds,
+          makePayed: !areAllPayed,
+        })
+
+        toast.success(areAllPayed ? "Marked as unpaid" : "Marked as paid")
+      }
+
+      // Clear selection after successful mutation
+      setValue("selectedParticipantIds", [], { shouldValidate: false })
+      router.refresh()
+    } catch (error: any) {
+      toast.error(error?.message || "An unexpected error occurred")
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  return (
+    <button
+      type="button"
+      className={className}
+      disabled={formState.isSubmitting || isSubmitting}
+      onClick={handleClick}
+    >
+      {isSubmitting ? "Processing..." : label}
+    </button>
+  )
+}
 
 export default function ParticipantManagementCard({
   participants,
@@ -32,52 +109,8 @@ export default function ParticipantManagementCard({
 }: ParticipantManagementCardProps) {
   const router = useRouter()
 
-  // Mutations
-  const [toggleActiveMutation] = useMutation(toggleParticipantActive)
-  const [togglePayedMutation] = useMutation(toggleParticipantPayed)
-
-  // Use router.refresh() to refetch server data after mutations
-  const handleRefresh = async () => {
-    router.refresh()
-  }
-
   // Get studyResults from metadata
   const studyResults = useMemo(() => metadata?.data?.[0]?.studyResults ?? [], [metadata])
-
-  const form = useForm<ParticipantFormData>({
-    resolver: zodResolver(ParticipantSchema),
-    defaultValues: { selectedParticipantIds: [], action: undefined },
-    mode: "onChange",
-  })
-
-  // Handle action definitions
-  const handleToggleActive = async (ids: number[]) => {
-    const areAllActive = participants.filter((p) => ids.includes(p.id)).every((p) => p.active)
-    await toggleActiveMutation({ participantIds: ids, makeActive: !areAllActive })
-    toast.success(areAllActive ? "Participants deactivated" : "Participants activated")
-    await handleRefresh()
-  }
-
-  const handleTogglePayed = async (ids: number[]) => {
-    const areAllPayed = participants.filter((p) => ids.includes(p.id)).every((p) => p.payed)
-    await togglePayedMutation({ participantIds: ids, makePayed: !areAllPayed })
-    toast.success(areAllPayed ? "Marked as unpaid" : "Marked as paid")
-    await handleRefresh()
-  }
-
-  const onSubmit = async (values: ParticipantFormData) => {
-    try {
-      if (values.action === "TOGGLE_ACTIVE") {
-        await handleToggleActive(values.selectedParticipantIds)
-      } else if (values.action === "TOGGLE_PAYED") {
-        await handleTogglePayed(values.selectedParticipantIds)
-      } else {
-        toast.error("No action selected")
-      }
-    } finally {
-      form.reset()
-    }
-  }
 
   // Match JATOS results to participants (using pseudonym/comment or user.email)
   // And calculate values for the table
@@ -180,50 +213,42 @@ export default function ParticipantManagementCard({
   )
 
   return (
-    <FormProvider {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)}>
-        <Card
-          title="Participant Management"
-          actions={
-            <div className="flex gap-2 justify-end">
-              <button
-                type="button"
-                className="btn btn-secondary"
-                disabled={form.formState.isSubmitting}
-                onClick={async () => {
-                  form.setValue("action", "TOGGLE_ACTIVE")
-                  await form.handleSubmit(onSubmit)()
-                }}
-              >
-                {form.formState.isSubmitting && form.watch("action") === "TOGGLE_ACTIVE"
-                  ? "Processing..."
-                  : "Toggle Active"}
-              </button>
-
-              <button
-                type="button"
-                className="btn btn-accent"
-                disabled={form.formState.isSubmitting}
-                onClick={async () => {
-                  form.setValue("action", "TOGGLE_PAYED")
-                  await form.handleSubmit(onSubmit)()
-                }}
-              >
-                {form.formState.isSubmitting && form.watch("action") === "TOGGLE_PAYED"
-                  ? "Processing..."
-                  : "Toggle Payed"}
-              </button>
-            </div>
-          }
-        >
-          <CheckboxFieldTable
-            name="selectedParticipantIds"
-            options={participantRows.map((p) => ({ id: p.id, label: p.label }))}
-            extraData={participantRows}
-            extraColumns={columns}
-          />
-        </Card>
-      </form>
-    </FormProvider>
+    <Form
+      schema={ParticipantSchema}
+      defaultValues={{ selectedParticipantIds: [] }}
+      onSubmit={async () => {
+        // Form submission is handled by ActionButton components
+        // This is just for validation
+      }}
+      onSuccess={() => router.refresh()}
+    >
+      <Card
+        title="Participant Management"
+        actions={
+          <div className="flex gap-2 justify-end">
+            <ActionButton
+              action="TOGGLE_ACTIVE"
+              label="Toggle Active"
+              className="btn btn-secondary"
+              participants={participants}
+            />
+            <ActionButton
+              action="TOGGLE_PAYED"
+              label="Toggle Payed"
+              className="btn btn-accent"
+              participants={participants}
+            />
+          </div>
+        }
+      >
+        <CheckboxFieldTable
+          name="selectedParticipantIds"
+          options={participantRows.map((p) => ({ id: p.id, label: p.label }))}
+          extraData={participantRows}
+          extraColumns={columns}
+        />
+        <FormErrorDisplay />
+      </Card>
+    </Form>
   )
 }

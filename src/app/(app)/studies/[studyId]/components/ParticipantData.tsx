@@ -4,7 +4,7 @@ import { Alert } from "@/src/app/components/Alert"
 import { LoadingMessage } from "@/src/app/components/LoadingStates"
 import { isSetupComplete } from "../setup/utils/setupStatus"
 import { StudyWithRelations } from "../../queries/getStudy"
-import ParticipantFeedback from "./ParticipantFeedback"
+import ParticipantFeedback from "../feedback/components/ParticipantFeedback"
 
 interface ParticipantDataProps {
   studyId: number

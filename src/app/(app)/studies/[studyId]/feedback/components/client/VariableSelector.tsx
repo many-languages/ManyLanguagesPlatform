@@ -1,21 +1,15 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useMemo } from "react"
 import { EnrichedJatosStudyResult } from "@/src/types/jatos"
 import FilterBuilder from "./FilterBuilder"
+import { extractVariables } from "../../utils/extractVariable"
+import { SelectField, FilterButtonWithDisplay, SyntaxPreview } from "./shared"
 
 interface VariableSelectorProps {
   enrichedResult: EnrichedJatosStudyResult
   onInsert: (variableSyntax: string) => void
   markdown?: string
-}
-
-interface ExtractedVariable {
-  variableName: string
-  exampleValue: string
-  type: "primitive" | "object" | "array"
-  occurrences: number
-  dataStructure: "array" | "object"
 }
 
 const MODIFIERS = [
@@ -36,18 +30,40 @@ export default function VariableSelector({
 
   const variables = extractVariables(enrichedResult)
 
-  const handleInsert = () => {
+  const variableOptions = useMemo(
+    () =>
+      variables.map((v) => ({
+        value: v.variableName,
+        label: `${v.variableName} (${v.occurrences} occurrences)`,
+      })),
+    [variables]
+  )
+
+  const modifierOptions = useMemo(
+    () =>
+      MODIFIERS.map((m) => ({
+        value: m.key,
+        label: `${m.label} - ${m.description}`,
+      })),
+    []
+  )
+
+  const generateSyntax = useMemo(() => {
+    if (!selectedVariable) return ""
     let syntax = `{{ var:${selectedVariable}`
     if (selectedModifier !== "all") {
       syntax += `:${selectedModifier}`
     }
     syntax += " }}"
-
     if (currentFilterClause) {
       syntax = syntax.replace(" }}", `${currentFilterClause} }}`)
     }
+    return syntax
+  }, [selectedVariable, selectedModifier, currentFilterClause])
 
-    onInsert(syntax)
+  const handleInsert = () => {
+    if (!selectedVariable) return
+    onInsert(generateSyntax)
     // Clear selections after insert for next use
     setSelectedVariable("")
     setSelectedModifier("all")
@@ -66,93 +82,36 @@ export default function VariableSelector({
       </label>
       <div tabIndex={0} className="dropdown-content menu bg-base-200 rounded-box shadow p-4 w-80">
         <div className="space-y-3">
-          <div>
-            <label className="label">
-              <span className="label-text">Variable</span>
-            </label>
-            <select
-              className="select select-bordered w-full"
-              value={selectedVariable}
-              onChange={(e) => {
-                const newVariable = e.target.value
-                setSelectedVariable(newVariable)
-                if (newVariable) {
-                  setSelectedModifier("all")
-                }
-              }}
-            >
-              <option value="">Select variable...</option>
-              {variables.map((variable) => (
-                <option key={variable.variableName} value={variable.variableName}>
-                  {variable.variableName} ({variable.occurrences} occurrences)
-                </option>
-              ))}
-            </select>
-          </div>
+          <SelectField
+            label="Variable"
+            value={selectedVariable}
+            onChange={(value) => {
+              setSelectedVariable(value)
+              if (value) {
+                setSelectedModifier("all")
+              }
+            }}
+            options={variableOptions}
+            placeholder="Select variable..."
+          />
 
           {selectedVariable && (
-            <div>
-              <label className="label">
-                <span className="label-text">Value</span>
-              </label>
-              <select
-                className="select select-bordered w-full"
-                value={selectedModifier}
-                onChange={(e) => setSelectedModifier(e.target.value)}
-              >
-                {MODIFIERS.map((modifier) => (
-                  <option key={modifier.key} value={modifier.key}>
-                    {modifier.label} - {modifier.description}
-                  </option>
-                ))}
-              </select>
-            </div>
+            <SelectField
+              label="Value"
+              value={selectedModifier}
+              onChange={setSelectedModifier}
+              options={modifierOptions}
+            />
           )}
 
-          {/* Filter Button */}
-          {selectedVariable && (
-            <div>
-              <button
-                className="btn btn-sm btn-outline w-full"
-                onClick={() => setShowFilterBuilder(true)}
-              >
-                {currentFilterClause ? "Edit Filter" : "Add Filter"}
-              </button>
-              {currentFilterClause && (
-                <div className="mt-2 p-2 bg-base-100 rounded text-xs">
-                  <div className="font-medium">Current filter:</div>
-                  <code>{currentFilterClause}</code>
-                  <button
-                    className="btn btn-xs btn-error ml-2"
-                    onClick={() => setCurrentFilterClause("")}
-                  >
-                    Clear
-                  </button>
-                </div>
-              )}
-            </div>
-          )}
+          <FilterButtonWithDisplay
+            currentFilterClause={currentFilterClause}
+            onAddFilter={() => setShowFilterBuilder(true)}
+            onClearFilter={() => setCurrentFilterClause("")}
+            enabled={!!selectedVariable}
+          />
 
-          {/* Preview */}
-          {selectedVariable && (
-            <div className="bg-base-100 p-2 rounded">
-              <div className="text-sm font-medium">Preview:</div>
-              <code className="text-sm">
-                {(() => {
-                  let syntax = `{{ var:${selectedVariable}`
-                  if (selectedModifier !== "all") {
-                    syntax += `:${selectedModifier}`
-                  }
-                  syntax += " }}"
-
-                  if (currentFilterClause) {
-                    syntax = syntax.replace(" }}", `${currentFilterClause} }}`)
-                  }
-                  return syntax
-                })()}
-              </code>
-            </div>
-          )}
+          <SyntaxPreview syntax={generateSyntax} show={!!selectedVariable} />
 
           <button
             className="btn btn-primary btn-sm w-full"
@@ -174,98 +133,4 @@ export default function VariableSelector({
       )}
     </div>
   )
-}
-
-/**
- * Extract variables from enriched JATOS result, handling both array and object data structures
- */
-function extractVariables(enrichedResult: EnrichedJatosStudyResult): ExtractedVariable[] {
-  const variableMap = new Map<string, ExtractedVariable>()
-
-  // Excluded jsPsych metadata fields that researchers typically don't want in feedback
-  const excludedFields = new Set([
-    "trial_type",
-    "trial_index",
-    "time_elapsed",
-    "internal_node_id",
-    "success",
-    "timeout",
-    "failed_images",
-    "failed_audio",
-    "failed_video",
-  ])
-
-  enrichedResult.componentResults.forEach((component) => {
-    const data = component.parsedData ?? null
-    if (!data) return
-
-    if (Array.isArray(data)) {
-      // jsPsych-style: array of trial objects
-      data.forEach((trial) => {
-        if (typeof trial === "object" && trial !== null) {
-          Object.entries(trial).forEach(([key, value]) => {
-            if (excludedFields.has(key)) return
-
-            if (!variableMap.has(key)) {
-              variableMap.set(key, {
-                variableName: key,
-                exampleValue: formatExampleValue(value),
-                type: getValueType(value),
-                occurrences: 1,
-                dataStructure: "array",
-              })
-            } else {
-              const existing = variableMap.get(key)!
-              existing.occurrences++
-              // Update example value to show a more recent occurrence
-              if (existing.occurrences <= 3) {
-                existing.exampleValue = formatExampleValue(value)
-              }
-            }
-          })
-        }
-      })
-    } else if (typeof data === "object") {
-      // SurveyJS-style: single object with responses
-      Object.entries(data).forEach(([key, value]) => {
-        if (excludedFields.has(key)) return
-
-        variableMap.set(key, {
-          variableName: key,
-          exampleValue: formatExampleValue(value),
-          type: getValueType(value),
-          occurrences: 1,
-          dataStructure: "object",
-        })
-      })
-    }
-  })
-
-  return Array.from(variableMap.values()).sort((a, b) =>
-    a.variableName.localeCompare(b.variableName)
-  )
-}
-
-/**
- * Format example value for display, truncating long values
- */
-function formatExampleValue(value: any): string {
-  if (value === null || value === undefined) return "null"
-
-  if (typeof value === "object") {
-    const str = JSON.stringify(value)
-    return str.length > 50 ? str.substring(0, 50) + "..." : str
-  }
-
-  const str = String(value)
-  return str.length > 50 ? str.substring(0, 50) + "..." : str
-}
-
-/**
- * Determine the type of a value for categorization
- */
-function getValueType(value: any): "primitive" | "object" | "array" {
-  if (Array.isArray(value)) return "array"
-  if (typeof value === "object" && value !== null) return "object"
-  return "primitive"
 }

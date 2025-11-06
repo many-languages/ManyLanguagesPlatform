@@ -1,55 +1,32 @@
 "use client"
 
-import { useState, useEffect, useImperativeHandle, forwardRef, useCallback } from "react"
+import { useState, useEffect, useImperativeHandle, forwardRef } from "react"
 import { useMemo } from "react"
-import { useRouter } from "next/navigation"
-import { useMutation } from "@blitzjs/rpc"
-import { toast } from "react-hot-toast"
 import MDEditor from "@uiw/react-md-editor"
 import VariableSelector from "./VariableSelector"
 import StatsSelector from "./StatsSelector"
 import ConditionalBuilder from "./ConditionalBuilder"
 import DSLHelper from "./DSLHelper"
-import { EnrichedJatosStudyResult } from "@/src/types/jatos"
-import syncStudyVariables from "../../../setup/mutations/syncStudyVariables"
-import { renderTemplate } from "../../utils/feedbackRenderer"
+import { useFeedbackTemplate } from "../../hooks/useFeedbackTemplate"
+import { useTemplatePreview } from "../../hooks/useTemplatePreview"
 import { validateDSL, DSLError } from "../../utils/dslValidator"
-import createFeedbackTemplate from "../../mutations/createFeedbackTemplate"
-import updateFeedbackTemplate from "../../mutations/updateFeedbackTemplate"
-
-interface FeedbackFormEditorProps {
-  enrichedResult: EnrichedJatosStudyResult
-  initialTemplate?: {
-    id: number
-    content: string
-    createdAt: Date
-    updatedAt: Date
-  } | null
-  studyId: number
-  onTemplateSaved?: () => void
-  allTestResults?: EnrichedJatosStudyResult[]
-}
-
-export interface FeedbackFormEditorRef {
-  saveTemplate: () => Promise<void>
-  isTemplateSaved: () => boolean
-}
+import type { FeedbackFormEditorProps, FeedbackFormEditorRef } from "../../types"
 
 const FeedbackFormEditor = forwardRef<FeedbackFormEditorRef, FeedbackFormEditorProps>(
   ({ enrichedResult, initialTemplate, studyId, onTemplateSaved, allTestResults }, ref) => {
-    const router = useRouter()
     const [markdown, setMarkdown] = useState(
       "## Feedback Form\nWrite your feedback message here..."
     )
-    const [saving, setSaving] = useState(false)
-    const [templateSaved, setTemplateSaved] = useState(false)
     const [showConditionalBuilder, setShowConditionalBuilder] = useState(false)
     const [dslErrors, setDslErrors] = useState<DSLError[]>([])
     const [showErrors, setShowErrors] = useState(false)
 
-    const [createTemplate] = useMutation(createFeedbackTemplate)
-    const [updateTemplate] = useMutation(updateFeedbackTemplate)
-    const [syncVariables] = useMutation(syncStudyVariables)
+    const { saveTemplate, saving, templateSaved, setTemplateSaved } = useFeedbackTemplate({
+      studyId,
+      enrichedResult,
+      initialTemplate,
+      onSuccess: onTemplateSaved,
+    })
 
     // Load initial template if it exists
     useEffect(() => {
@@ -85,123 +62,9 @@ const FeedbackFormEditor = forwardRef<FeedbackFormEditorRef, FeedbackFormEditorP
       setTemplateSaved(false)
     }
 
-    // Extract variables from enriched result (reuse logic from VariableSelector)
-    const extractVariablesFromResult = (enrichedResult: EnrichedJatosStudyResult) => {
-      const variableMap = new Map<
-        string,
-        { variableName: string; exampleValue: string; type: string }
-      >()
-
-      const excludedFields = new Set([
-        "trial_type",
-        "trial_index",
-        "time_elapsed",
-        "internal_node_id",
-        "success",
-        "timeout",
-        "failed_images",
-        "failed_audio",
-        "failed_video",
-      ])
-
-      enrichedResult.componentResults.forEach((component) => {
-        const data = component.parsedData ?? null
-        if (!data) return
-
-        if (Array.isArray(data)) {
-          data.forEach((trial) => {
-            if (typeof trial === "object" && trial !== null) {
-              Object.entries(trial).forEach(([key, value]) => {
-                if (excludedFields.has(key)) return
-                if (!variableMap.has(key)) {
-                  variableMap.set(key, {
-                    variableName: key,
-                    exampleValue: typeof value === "object" ? JSON.stringify(value) : String(value),
-                    type: Array.isArray(value)
-                      ? "array"
-                      : typeof value === "object"
-                      ? "object"
-                      : "primitive",
-                  })
-                }
-              })
-            }
-          })
-        } else if (typeof data === "object") {
-          Object.entries(data).forEach(([key, value]) => {
-            if (excludedFields.has(key)) return
-            variableMap.set(key, {
-              variableName: key,
-              exampleValue: typeof value === "object" ? JSON.stringify(value) : String(value),
-              type: Array.isArray(value)
-                ? "array"
-                : typeof value === "object"
-                ? "object"
-                : "primitive",
-            })
-          })
-        }
-      })
-
-      return Array.from(variableMap.values())
+    const handleSave = async () => {
+      await saveTemplate(markdown)
     }
-
-    const handleSave = useCallback(async () => {
-      if (!markdown.trim()) {
-        toast.error("Please enter some content for your feedback template")
-        return
-      }
-
-      setSaving(true)
-      try {
-        if (initialTemplate) {
-          // Update existing template
-          await updateTemplate({
-            id: initialTemplate.id,
-            content: markdown.trim(),
-          })
-          toast.success("Feedback template updated successfully!")
-        } else {
-          // Create new template
-          await createTemplate({
-            studyId,
-            content: markdown.trim(),
-          })
-          toast.success("Feedback template created successfully!")
-        }
-
-        // Sync variables to database
-        const variables = extractVariablesFromResult(enrichedResult)
-        await syncVariables({
-          studyId,
-          variables: variables.map((v) => ({
-            name: v.variableName,
-            label: v.variableName,
-            type: v.type,
-            example: v.exampleValue,
-          })),
-        })
-
-        // Mark as saved and call the callback to refresh the page state
-        setTemplateSaved(true)
-        router.refresh() // Refresh to get updated study data
-        onTemplateSaved?.()
-      } catch (error: any) {
-        console.error("Error saving template:", error)
-        toast.error("Failed to save feedback template")
-      } finally {
-        setSaving(false)
-      }
-    }, [
-      markdown,
-      initialTemplate,
-      updateTemplate,
-      createTemplate,
-      studyId,
-      enrichedResult,
-      syncVariables,
-      onTemplateSaved,
-    ])
 
     // Expose methods to parent component
     useImperativeHandle(
@@ -221,17 +84,11 @@ const FeedbackFormEditor = forwardRef<FeedbackFormEditorRef, FeedbackFormEditorP
     }, [markdown])
 
     // Client-side rendering for live preview
-    const renderedPreview = useMemo(() => {
-      try {
-        return renderTemplate(markdown, {
-          enrichedResult,
-          allEnrichedResults: allTestResults, // Use all test results for preview
-        })
-      } catch (e) {
-        console.error("Preview render error:", e)
-        return markdown // fallback to raw markdown
-      }
-    }, [markdown, enrichedResult, allTestResults])
+    const renderedPreview = useTemplatePreview({
+      template: markdown,
+      enrichedResult,
+      allEnrichedResults: allTestResults,
+    })
 
     return (
       <div className="card bg-base-200 shadow-md p-6">

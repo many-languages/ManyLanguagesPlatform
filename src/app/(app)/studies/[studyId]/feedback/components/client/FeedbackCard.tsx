@@ -3,7 +3,7 @@
 import { useMemo } from "react"
 import MDEditor from "@uiw/react-md-editor"
 import Card from "@/src/app/components/Card"
-import { renderTemplate } from "../../feedback/utils/feedbackRenderer"
+import { renderTemplate } from "../../utils/feedbackRenderer"
 import { EnrichedJatosStudyResult } from "@/src/types/jatos"
 
 interface FeedbackCardProps {

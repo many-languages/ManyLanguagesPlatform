@@ -1,7 +1,9 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useMemo } from "react"
 import { EnrichedJatosStudyResult } from "@/src/types/jatos"
+import { extractAllVariables } from "../../utils/extractVariable"
+import { SelectField } from "./shared"
 
 interface DSLHelperProps {
   enrichedResult: EnrichedJatosStudyResult
@@ -104,7 +106,18 @@ export default function DSLHelper({ enrichedResult }: DSLHelperProps) {
     },
   ]
 
-  const availableVariables = extractAvailableVariables(enrichedResult)
+  const availableVariables = extractAllVariables(enrichedResult)
+
+  const categoryOptions = useMemo(
+    () => [
+      { value: "all", label: "All Categories" },
+      { value: "variables", label: "Variables" },
+      { value: "stats", label: "Statistics" },
+      { value: "conditionals", label: "Conditionals" },
+      { value: "filters", label: "Filters" },
+    ],
+    []
+  )
 
   const filteredExamples = examples.filter((example) => {
     const matchesSearch =
@@ -136,17 +149,14 @@ export default function DSLHelper({ enrichedResult }: DSLHelperProps) {
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
-            <select
-              className="select select-bordered select-sm"
-              value={selectedCategory}
-              onChange={(e) => setSelectedCategory(e.target.value)}
-            >
-              <option value="all">All Categories</option>
-              <option value="variables">Variables</option>
-              <option value="stats">Statistics</option>
-              <option value="conditionals">Conditionals</option>
-              <option value="filters">Filters</option>
-            </select>
+            <div className="w-48">
+              <SelectField
+                value={selectedCategory}
+                onChange={setSelectedCategory}
+                options={categoryOptions}
+                selectClassName="select-sm"
+              />
+            </div>
           </div>
 
           {/* Available Variables */}
@@ -228,67 +238,4 @@ export default function DSLHelper({ enrichedResult }: DSLHelperProps) {
       </div>
     </div>
   )
-}
-
-interface AvailableVariable {
-  name: string
-  type: "string" | "number" | "boolean"
-  example: any
-}
-
-function extractAvailableVariables(enrichedResult: EnrichedJatosStudyResult): AvailableVariable[] {
-  const variableMap = new Map<string, AvailableVariable>()
-
-  const excludedFields = new Set([
-    "trial_type",
-    "trial_index",
-    "time_elapsed",
-    "internal_node_id",
-    "success",
-    "timeout",
-    "failed_images",
-    "failed_audio",
-    "failed_video",
-  ])
-
-  enrichedResult.componentResults.forEach((component) => {
-    const data = component.parsedData ?? null
-    if (!data) return
-
-    if (Array.isArray(data)) {
-      data.forEach((trial) => {
-        if (typeof trial === "object" && trial !== null) {
-          Object.entries(trial).forEach(([key, value]) => {
-            if (excludedFields.has(key)) return
-
-            if (!variableMap.has(key)) {
-              variableMap.set(key, {
-                name: key,
-                type: getFieldType(value),
-                example: value,
-              })
-            }
-          })
-        }
-      })
-    } else if (typeof data === "object") {
-      Object.entries(data).forEach(([key, value]) => {
-        if (excludedFields.has(key)) return
-
-        variableMap.set(key, {
-          name: key,
-          type: getFieldType(value),
-          example: value,
-        })
-      })
-    }
-  })
-
-  return Array.from(variableMap.values()).sort((a, b) => a.name.localeCompare(b.name))
-}
-
-function getFieldType(value: any): "string" | "number" | "boolean" {
-  if (typeof value === "number") return "number"
-  if (typeof value === "boolean") return "boolean"
-  return "string"
 }

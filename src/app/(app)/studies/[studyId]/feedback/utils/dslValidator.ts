@@ -1,4 +1,5 @@
 import { EnrichedJatosStudyResult } from "@/src/types/jatos"
+import { extractAvailableFields, extractAllVariables } from "./extractVariable"
 
 export interface DSLError {
   type: "variable" | "stat" | "conditional" | "filter" | "syntax"
@@ -22,7 +23,7 @@ export function validateDSL(
 ): ValidationResult {
   const errors: DSLError[] = []
 
-  // Get available variables
+  // Get available variables and fields from service
   const availableVariables = extractAvailableVariables(enrichedResult)
   const availableFields = extractAvailableFields(enrichedResult)
 
@@ -325,69 +326,9 @@ function validateMalformedSyntax(template: string): DSLError[] {
 
 /**
  * Extracts available variables from enriched result
+ * Uses variable service to get variable names
  */
 function extractAvailableVariables(enrichedResult: EnrichedJatosStudyResult): string[] {
-  const variables = new Set<string>()
-
-  for (const comp of enrichedResult.componentResults) {
-    const data = comp.parsedData as any
-    if (!data) continue
-
-    if (Array.isArray(data)) {
-      for (const trial of data) {
-        if (trial && typeof trial === "object") {
-          for (const key of Object.keys(trial)) {
-            variables.add(key)
-          }
-        }
-      }
-    } else if (typeof data === "object") {
-      for (const key of Object.keys(data)) {
-        variables.add(key)
-      }
-    }
-  }
-
-  return Array.from(variables)
-}
-
-/**
- * Extracts available fields from enriched result
- */
-function extractAvailableFields(enrichedResult: EnrichedJatosStudyResult): any[] {
-  const fields = new Set<string>()
-  const fieldTypes = new Map<string, string>()
-
-  for (const comp of enrichedResult.componentResults) {
-    const data = comp.parsedData as any
-    if (!data) continue
-
-    if (Array.isArray(data)) {
-      for (const trial of data) {
-        if (trial && typeof trial === "object") {
-          for (const [key, value] of Object.entries(trial)) {
-            fields.add(key)
-            fieldTypes.set(key, getFieldType(value))
-          }
-        }
-      }
-    } else if (typeof data === "object") {
-      for (const [key, value] of Object.entries(data)) {
-        fields.add(key)
-        fieldTypes.set(key, getFieldType(value))
-      }
-    }
-  }
-
-  return Array.from(fields).map((name) => ({
-    name,
-    type: fieldTypes.get(name) || "string",
-  }))
-}
-
-function getFieldType(value: any): string {
-  if (typeof value === "number") return "number"
-  if (typeof value === "boolean") return "boolean"
-  if (typeof value === "string") return "string"
-  return "string"
+  const variables = extractAllVariables(enrichedResult)
+  return variables.map((v) => v.name)
 }

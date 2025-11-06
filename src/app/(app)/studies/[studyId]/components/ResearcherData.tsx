@@ -8,7 +8,7 @@ import JatosInformationCard from "./client/JatosInformationCard"
 import { Alert } from "@/src/app/components/Alert"
 import { isSetupComplete } from "../setup/utils/setupStatus"
 import { StudyWithRelations } from "../../queries/getStudy"
-import ResearcherFeedback from "./ResearcherFeedback"
+import ResearcherFeedback from "../feedback/components/ResearcherFeedback"
 
 interface ResearcherDataProps {
   studyId: number

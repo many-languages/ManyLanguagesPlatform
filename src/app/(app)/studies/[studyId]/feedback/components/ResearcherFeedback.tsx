@@ -1,5 +1,5 @@
-import { getStudyDataByCommentRsc } from "../../queries/getStudyDataByComment"
-import { getFeedbackTemplateRsc } from "../feedback/queries/getFeedbackTemplate"
+import { getStudyDataByCommentRsc } from "../../../queries/getStudyDataByComment"
+import { getFeedbackTemplateRsc } from "../queries/getFeedbackTemplate"
 import FeedbackCard from "./client/FeedbackCard"
 import { getAllTestResultsRsc } from "@/src/app/(app)/studies/[studyId]/utils/getAllTestResults"
 

@@ -27,6 +27,7 @@ interface FeedbackFormEditorProps {
   } | null
   studyId: number
   onTemplateSaved?: () => void
+  allTestResults?: EnrichedJatosStudyResult[]
 }
 
 export interface FeedbackFormEditorRef {
@@ -35,7 +36,7 @@ export interface FeedbackFormEditorRef {
 }
 
 const FeedbackFormEditor = forwardRef<FeedbackFormEditorRef, FeedbackFormEditorProps>(
-  ({ enrichedResult, initialTemplate, studyId, onTemplateSaved }, ref) => {
+  ({ enrichedResult, initialTemplate, studyId, onTemplateSaved, allTestResults }, ref) => {
     const router = useRouter()
     const [markdown, setMarkdown] = useState(
       "## Feedback Form\nWrite your feedback message here..."
@@ -214,15 +215,23 @@ const FeedbackFormEditor = forwardRef<FeedbackFormEditorRef, FeedbackFormEditorP
       [templateSaved, handleSave]
     )
 
+    // Check if template uses "across" scope
+    const usesAcrossScope = useMemo(() => {
+      return /stat:[^}]+:across/.test(markdown)
+    }, [markdown])
+
     // Client-side rendering for live preview
     const renderedPreview = useMemo(() => {
       try {
-        return renderTemplate(markdown, { enrichedResult })
+        return renderTemplate(markdown, {
+          enrichedResult,
+          allEnrichedResults: allTestResults, // Use all test results for preview
+        })
       } catch (e) {
         console.error("Preview render error:", e)
         return markdown // fallback to raw markdown
       }
-    }, [markdown, enrichedResult])
+    }, [markdown, enrichedResult, allTestResults])
 
     return (
       <div className="card bg-base-200 shadow-md p-6">
@@ -254,6 +263,34 @@ const FeedbackFormEditor = forwardRef<FeedbackFormEditorRef, FeedbackFormEditorP
             </button>
           </div>
         </div>
+
+        {/* Warning when using across scope */}
+        {usesAcrossScope && (
+          <div className="alert alert-warning mb-4">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="stroke-current shrink-0 h-6 w-6"
+              fill="none"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+              />
+            </svg>
+            <div>
+              <h3 className="font-bold">Using "Across All Results" Statistics</h3>
+              <div className="text-sm">
+                This template uses statistics calculated across all participants. In the preview
+                above, we're using all "test" results ({allTestResults?.length || 0} result
+                {allTestResults?.length !== 1 ? "s" : ""}). In actual participant feedback, it will
+                use all participant results from the study.
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Error Display */}
         {dslErrors.length > 0 && (

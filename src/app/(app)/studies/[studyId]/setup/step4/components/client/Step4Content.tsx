@@ -2,7 +2,6 @@
 
 import { useRouter } from "next/navigation"
 import { useRef } from "react"
-import { useQuery } from "@blitzjs/rpc"
 import { useStudySetup } from "../../../components/StudySetupProvider"
 import FeedbackFormEditor, { FeedbackFormEditorRef } from "./FeedbackFormEditor"
 import { useMutation } from "@blitzjs/rpc"
@@ -12,7 +11,7 @@ import updateStudyStatus from "@/src/app/(app)/studies/mutations/updateStudyStat
 import StepNavigation from "../../../components/StepNavigation"
 import { Alert } from "@/src/app/components/Alert"
 import SaveExitButton from "../../../components/SaveExitButton"
-import getStudyDataByComment from "@/src/app/(app)/studies/queries/getStudyDataByComment"
+import type { EnrichedJatosStudyResult } from "@/src/types/jatos"
 
 interface Step4ContentProps {
   initialFeedbackTemplate?: {
@@ -21,18 +20,19 @@ interface Step4ContentProps {
     createdAt: Date
     updatedAt: Date
   } | null
+  enrichedResult: EnrichedJatosStudyResult | null
+  allTestResults: EnrichedJatosStudyResult[]
 }
 
-export default function Step4Content({ initialFeedbackTemplate = null }: Step4ContentProps) {
+export default function Step4Content({
+  initialFeedbackTemplate = null,
+  enrichedResult,
+  allTestResults,
+}: Step4ContentProps) {
   const router = useRouter()
   const { study, studyId } = useStudySetup()
   const feedbackEditorRef = useRef<FeedbackFormEditorRef>(null)
   const [updateStudyStatusMutation] = useMutation(updateStudyStatus)
-
-  // Fetch enriched result client-side (complex processing, interactive editor)
-  const [dataResult] = useQuery(getStudyDataByComment, { studyId, comment: "test" })
-
-  const enrichedResult = dataResult?.enrichedResult ?? null
 
   const handleFinish = async () => {
     if (feedbackEditorRef.current) {
@@ -77,6 +77,7 @@ export default function Step4Content({ initialFeedbackTemplate = null }: Step4Co
         enrichedResult={enrichedResult}
         initialTemplate={initialFeedbackTemplate}
         studyId={studyId}
+        allTestResults={allTestResults}
         onTemplateSaved={() => {
           // Refresh to get updated study data (step4Completed will be updated)
           router.refresh()

@@ -4,6 +4,7 @@ type Primitive = string | number | boolean | null
 
 export interface RenderContext {
   enrichedResult: EnrichedJatosStudyResult
+  allEnrichedResults?: EnrichedJatosStudyResult[] // For across-results statistics
 }
 
 // Build a participant variable map with all values for each variable
@@ -165,22 +166,52 @@ export function renderTemplate(template: string, ctx: RenderContext): string {
     }
   )
 
-  // Replace stats with optional filters: {{ stat:var.metric | where: field == "val" and correct == true }}
+  // Replace stats with optional scope and filters: {{ stat:var.metric:scope | where: condition }}
   out = out.replace(
-    /\{\{\s*stat:([a-zA-Z0-9_\.]+)\.(avg|median|sd|count)(?:\s*\|\s*where:\s*([\s\S]*?))?\s*\}\}/g,
-    (_m, varName: string, metric: string, whereClause?: string) => {
-      if (metric === "count") {
-        // For count, we need to count all values (not just numeric)
+    /\{\{\s*stat:([a-zA-Z0-9_\.]+)\.(avg|median|sd|count)(?::(within|across))?(?:\s*\|\s*where:\s*([\s\S]*?))?\s*\}\}/g,
+    (_m, varName: string, metric: string, scope?: string, whereClause?: string) => {
+      const statisticScope = scope || "within" // default to within for backward compatibility
+
+      if (statisticScope === "across") {
+        // Calculate across all results
+        if (!ctx.allEnrichedResults || ctx.allEnrichedResults.length === 0) {
+          return "" // No data available
+        }
+
+        // Collect values from all results
         const pred = whereClause ? buildPredicate(whereClause) : undefined
-        const allValues = extractAllValuesWithPredicate(ctx.enrichedResult, varName, pred)
-        return String(allValues.length)
+        const allValues: number[] = []
+
+        for (const result of ctx.allEnrichedResults) {
+          if (metric === "count") {
+            const values = extractAllValuesWithPredicate(result, varName, pred)
+            // For count across results, we count each result's values
+            allValues.push(...values.map((v) => (typeof v === "number" ? v : 1)))
+          } else {
+            const series = extractNumericSeriesWithPredicate(result, varName, pred)
+            allValues.push(...series)
+          }
+        }
+
+        if (metric === "count") return String(allValues.length)
+        if (metric === "avg") return safeNum(mean(allValues))
+        if (metric === "median") return safeNum(median(allValues))
+        if (metric === "sd") return safeNum(sd(allValues))
       } else {
-        // For avg, median, sd, we need numeric values
-        const pred = whereClause ? buildPredicate(whereClause) : undefined
-        const series = extractNumericSeriesWithPredicate(ctx.enrichedResult, varName, pred)
-        if (metric === "avg") return safeNum(mean(series))
-        if (metric === "median") return safeNum(median(series))
-        if (metric === "sd") return safeNum(sd(series))
+        // Existing behavior: within result
+        if (metric === "count") {
+          // For count, we need to count all values (not just numeric)
+          const pred = whereClause ? buildPredicate(whereClause) : undefined
+          const allValues = extractAllValuesWithPredicate(ctx.enrichedResult, varName, pred)
+          return String(allValues.length)
+        } else {
+          // For avg, median, sd, we need numeric values
+          const pred = whereClause ? buildPredicate(whereClause) : undefined
+          const series = extractNumericSeriesWithPredicate(ctx.enrichedResult, varName, pred)
+          if (metric === "avg") return safeNum(mean(series))
+          if (metric === "median") return safeNum(median(series))
+          if (metric === "sd") return safeNum(sd(series))
+        }
       }
       return ""
     }

@@ -17,6 +17,7 @@ interface FeedbackCardProps {
     | undefined
   title?: string
   className?: string
+  allEnrichedResults?: EnrichedJatosStudyResult[]
 }
 
 export default function FeedbackCard({
@@ -25,6 +26,7 @@ export default function FeedbackCard({
   template,
   title = "Feedback",
   className,
+  allEnrichedResults,
 }: FeedbackCardProps) {
   const renderedContent = useMemo(() => {
     if (!template?.content) {
@@ -36,12 +38,15 @@ export default function FeedbackCard({
     }
 
     try {
-      return renderTemplate(template.content, { enrichedResult })
+      return renderTemplate(template.content, {
+        enrichedResult,
+        allEnrichedResults, // For "across" scope statistics
+      })
     } catch (e) {
       console.error("Error rendering feedback template:", e)
       return "Error rendering feedback. Please contact the researcher."
     }
-  }, [template?.content, enrichedResult])
+  }, [template?.content, enrichedResult, allEnrichedResults])
 
   return (
     <Card title={title} className={className}>

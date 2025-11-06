@@ -1,6 +1,7 @@
 import { getStudyDataByCommentRsc } from "../../queries/getStudyDataByComment"
 import { getFeedbackTemplateRsc } from "../setup/step4/queries/getFeedbackTemplate"
 import FeedbackCard from "./client/FeedbackCard"
+import { getAllTestResultsRsc } from "@/src/app/(app)/studies/[studyId]/utils/getAllTestResults"
 
 interface ResearcherFeedbackProps {
   studyId: number
@@ -18,12 +19,16 @@ export default async function ResearcherFeedback({ studyId }: ResearcherFeedback
       return null
     }
 
+    // Get all test results for "across" scope statistics
+    const allTestResults = await getAllTestResultsRsc(studyId)
+
     return (
       <FeedbackCard
         studyId={studyId}
         enrichedResult={enrichedResult}
         template={template}
         title="Feedback Preview (Test Results)"
+        allEnrichedResults={allTestResults}
       />
     )
   } catch (error) {

@@ -30,6 +30,7 @@ const METRICS = [
 export default function StatsSelector({ enrichedResult, onInsert, markdown }: StatsSelectorProps) {
   const [selectedVariable, setSelectedVariable] = useState("")
   const [selectedMetric, setSelectedMetric] = useState("avg")
+  const [selectedScope, setSelectedScope] = useState<"within" | "across">("within")
   const [showFilterBuilder, setShowFilterBuilder] = useState(false)
   const [currentFilterClause, setCurrentFilterClause] = useState("")
 
@@ -37,7 +38,7 @@ export default function StatsSelector({ enrichedResult, onInsert, markdown }: St
 
   const handleInsert = () => {
     if (selectedVariable && selectedMetric) {
-      let syntax = `{{ stat:${selectedVariable}.${selectedMetric}`
+      let syntax = `{{ stat:${selectedVariable}.${selectedMetric}:${selectedScope}`
 
       if (currentFilterClause) {
         syntax += currentFilterClause
@@ -49,6 +50,7 @@ export default function StatsSelector({ enrichedResult, onInsert, markdown }: St
       // Clear selections after insert for next use
       setSelectedVariable("")
       setSelectedMetric("avg")
+      setSelectedScope("within")
       setCurrentFilterClause("")
     }
   }
@@ -136,6 +138,27 @@ export default function StatsSelector({ enrichedResult, onInsert, markdown }: St
             </select>
           </div>
 
+          {/* Scope Selection */}
+          <div>
+            <label className="label">
+              <span className="label-text">Scope</span>
+            </label>
+            <select
+              className="select select-bordered w-full"
+              value={selectedScope}
+              onChange={(e) => setSelectedScope(e.target.value as "within" | "across")}
+            >
+              <option value="within">Within result (across trials for this participant)</option>
+              <option value="across">Across all results (across all participants)</option>
+            </select>
+            {selectedScope === "across" && (
+              <div className="text-xs text-warning mt-1">
+                ⚠️ In preview, this uses all "test" results. In actual feedback, it uses all
+                participant results.
+              </div>
+            )}
+          </div>
+
           {/* Filter Button */}
           {selectedVariable && selectedMetric && (
             <div>
@@ -165,7 +188,7 @@ export default function StatsSelector({ enrichedResult, onInsert, markdown }: St
             <div className="bg-base-100 p-2 rounded">
               <div className="text-sm font-medium">Preview:</div>
               <code className="text-sm">
-                {`{{ stat:${selectedVariable}.${selectedMetric}${currentFilterClause} }}`}
+                {`{{ stat:${selectedVariable}.${selectedMetric}:${selectedScope}${currentFilterClause} }}`}
               </code>
             </div>
           )}

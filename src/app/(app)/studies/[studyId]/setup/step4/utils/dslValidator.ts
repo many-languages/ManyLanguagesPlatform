@@ -68,12 +68,12 @@ export function validateDSL(
     }
   }
 
-  // Validate stats: {{ stat:var.metric | where: condition }}
+  // Validate stats: {{ stat:var.metric:scope | where: condition }}
   const statRegex =
-    /\{\{\s*stat:([a-zA-Z0-9_\.]+)\.(avg|median|sd|count)(?:\s*\|\s*where:\s*([\s\S]*?))?\s*\}\}/g
+    /\{\{\s*stat:([a-zA-Z0-9_\.]+)\.(avg|median|sd|count)(?::(within|across))?(?:\s*\|\s*where:\s*([\s\S]*?))?\s*\}\}/g
   let statMatch
   while ((statMatch = statRegex.exec(template)) !== null) {
-    const [fullMatch, varName, metric, whereClause] = statMatch
+    const [fullMatch, varName, metric, scope, whereClause] = statMatch
     const start = statMatch.index
     const end = start + fullMatch.length
 
@@ -94,6 +94,17 @@ export function validateDSL(
       errors.push({
         type: "stat",
         message: `Invalid metric '${metric}'. Valid metrics: ${validMetrics.join(", ")}`,
+        start,
+        end,
+        severity: "error",
+      })
+    }
+
+    // Check scope validity if present
+    if (scope && !["within", "across"].includes(scope)) {
+      errors.push({
+        type: "stat",
+        message: `Invalid scope '${scope}'. Valid scopes: within, across`,
         start,
         end,
         severity: "error",
@@ -295,7 +306,9 @@ function validateMalformedSyntax(template: string): DSLError[] {
   while ((match = malformedStatRegex.exec(template)) !== null) {
     const content = match[0]
     if (
-      !content.match(/\{\{\s*stat:[a-zA-Z0-9_\.]+\.[a-zA-Z0-9_]+(?:\s*\|\s*where:\s*[^}]*)?\s*\}\}/)
+      !content.match(
+        /\{\{\s*stat:[a-zA-Z0-9_\.]+\.[a-zA-Z0-9_]+(?::(within|across))?(?:\s*\|\s*where:\s*[^}]*)?\s*\}\}/
+      )
     ) {
       errors.push({
         type: "syntax",

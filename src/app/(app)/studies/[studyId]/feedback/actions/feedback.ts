@@ -1,7 +1,7 @@
 "use server"
 
 import { z } from "zod"
-import { renderTemplate } from "../setup/step4/utils/feedbackRenderer"
+import { renderTemplate } from "../utils/feedbackRenderer"
 
 const PreviewSchema = z.object({
   template: z.string().min(1),

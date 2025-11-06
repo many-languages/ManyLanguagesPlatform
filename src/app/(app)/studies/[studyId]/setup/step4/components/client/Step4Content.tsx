@@ -3,7 +3,9 @@
 import { useRouter } from "next/navigation"
 import { useRef } from "react"
 import { useStudySetup } from "../../../components/StudySetupProvider"
-import FeedbackFormEditor, { FeedbackFormEditorRef } from "./FeedbackFormEditor"
+import FeedbackFormEditor, {
+  FeedbackFormEditorRef,
+} from "../../../../feedback/components/client/FeedbackFormEditor"
 import { useMutation } from "@blitzjs/rpc"
 import { toast } from "react-hot-toast"
 import { isSetupComplete } from "../../../utils/setupStatus"

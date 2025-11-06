@@ -2,7 +2,7 @@ import { Suspense } from "react"
 import { notFound } from "next/navigation"
 import Step4Content from "./components/client/Step4Content"
 import SetupContentSkeleton from "../components/SetupContentSkeleton"
-import { getFeedbackTemplateRsc } from "./queries/getFeedbackTemplate"
+import { getFeedbackTemplateRsc } from "../../feedback/queries/getFeedbackTemplate"
 import { getAllTestResultsRsc } from "@/src/app/(app)/studies/[studyId]/utils/getAllTestResults"
 
 async function Step4ContentWrapper({ studyId }: { studyId: number }) {

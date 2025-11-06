@@ -1,6 +1,6 @@
 import { getParticipantPseudonymRsc } from "../../queries/getParticipantPseudonym"
 import { getStudyDataByCommentRsc } from "../../queries/getStudyDataByComment"
-import { getFeedbackTemplateRsc } from "../setup/step4/queries/getFeedbackTemplate"
+import { getFeedbackTemplateRsc } from "../feedback/queries/getFeedbackTemplate"
 import FeedbackCard from "./client/FeedbackCard"
 import { getResultsMetadata } from "@/src/lib/jatos/api/getResultsMetadata"
 import { getResultsData } from "@/src/lib/jatos/api/getResultsData"

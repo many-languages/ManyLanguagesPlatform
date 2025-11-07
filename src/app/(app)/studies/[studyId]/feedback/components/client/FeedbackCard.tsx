@@ -5,6 +5,7 @@ import MDEditor from "@uiw/react-md-editor"
 import Card from "@/src/app/components/Card"
 import { renderTemplate } from "../../utils/feedbackRenderer"
 import { EnrichedJatosStudyResult } from "@/src/types/jatos"
+import { mdEditorStyles, mdEditorClassName } from "../../styles/feedbackStyles"
 
 interface FeedbackCardProps {
   studyId: number
@@ -50,8 +51,8 @@ export default function FeedbackCard({
 
   return (
     <Card title={title} className={className}>
-      <div data-color-mode="light">
-        <MDEditor.Markdown source={renderedContent} />
+      <div data-color-mode="light" className={mdEditorClassName.preview}>
+        <MDEditor.Markdown source={renderedContent} style={mdEditorStyles.preview} />
       </div>
     </Card>
   )

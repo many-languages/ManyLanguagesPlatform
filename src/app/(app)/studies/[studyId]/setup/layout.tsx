@@ -1,9 +1,9 @@
 import { Suspense } from "react"
 import { notFound } from "next/navigation"
 
-import StepIndicator from "./components/StepIndicator"
-import { StudySetupProvider } from "./components/StudySetupProvider"
-import SetupContentSkeleton from "./components/SetupContentSkeleton"
+import StepIndicator from "./components/client/StepIndicator"
+import { StudySetupProvider } from "./components/client/StudySetupProvider"
+import SetupContentSkeleton from "./components/skeletons/SetupContentSkeleton"
 import { getStudyRsc } from "../../queries/getStudy"
 import { getCompletedSteps } from "./utils/setupStatus"
 

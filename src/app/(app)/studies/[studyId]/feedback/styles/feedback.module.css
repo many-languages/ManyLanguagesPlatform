@@ -1,0 +1,59 @@
+/* MDEditor shared styles for DaisyUI theme compatibility */
+
+.mdEditorContainer {
+  background-color: color-mix(in srgb, hsl(var(--b1)) 85%, white 15%);
+  color: hsl(var(--nc));
+}
+
+.mdEditorTextarea {
+  background-color: color-mix(in srgb, hsl(var(--b1)) 85%, white 15%) !important;
+  color: hsl(var(--nc)) !important;
+}
+
+.mdEditorPreview {
+  background-color: color-mix(in srgb, hsl(var(--b1)) 85%, white 15%);
+  color: hsl(var(--nc));
+}
+
+/* Ensure proper text contrast in MDEditor */
+.mdEditorContainer :global(.w-md-editor-text-pre) {
+  color: hsl(var(--nc)) !important;
+}
+
+.mdEditorContainer :global(.w-md-editor-text) {
+  color: hsl(var(--nc)) !important;
+}
+
+.mdEditorContainer :global(.w-md-editor-text h1),
+.mdEditorContainer :global(.w-md-editor-text h2),
+.mdEditorContainer :global(.w-md-editor-text h3),
+.mdEditorContainer :global(.w-md-editor-text h4),
+.mdEditorContainer :global(.w-md-editor-text h5),
+.mdEditorContainer :global(.w-md-editor-text h6) {
+  color: hsl(var(--nc)) !important;
+}
+
+/* Preview markdown styles */
+.mdEditorPreview :global(h1),
+.mdEditorPreview :global(h2),
+.mdEditorPreview :global(h3),
+.mdEditorPreview :global(h4),
+.mdEditorPreview :global(h5),
+.mdEditorPreview :global(h6) {
+  color: hsl(var(--nc)) !important;
+}
+
+.mdEditorPreview :global(p),
+.mdEditorPreview :global(span),
+.mdEditorPreview :global(div) {
+  color: hsl(var(--nc)) !important;
+}
+
+.dslHelperContainer {
+  background-color: color-mix(in srgb, hsl(var(--b2)) 80%, white 20%);
+  border: 1px solid color-mix(in srgb, hsl(var(--b3)) 40%, white 60%);
+}
+
+.dslHelperSection {
+  background-color: color-mix(in srgb, hsl(var(--b1)) 90%, white 10%);
+}

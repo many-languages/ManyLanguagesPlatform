@@ -1,6 +1,6 @@
 import { Suspense } from "react"
 import Step3Content from "./components/client/Step3Content"
-import SetupContentSkeleton from "../components/SetupContentSkeleton"
+import SetupContentSkeleton from "../components/skeletons/SetupContentSkeleton"
 
 export default function Step3Page() {
   return (

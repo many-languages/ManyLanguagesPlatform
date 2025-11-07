@@ -13,14 +13,14 @@ import { useRouter } from "next/navigation"
 import { toast } from "react-hot-toast"
 import { useSession } from "@blitzjs/auth"
 import { useMutation } from "@blitzjs/rpc"
-import { useStudySetup } from "../../../components/StudySetupProvider"
+import { useStudySetup } from "../../../components/client/StudySetupProvider"
 import updateSetupCompletion from "../../../mutations/updateSetupCompletion"
 import { checkPilotStatusAction } from "../../actions/checkPilotStatus"
 import RunStudyButton from "./RunStudyButton"
 import TestLinkDisplay from "./TestLinkDisplay"
 import { Alert } from "@/src/app/components/Alert"
-import StepNavigation from "../../../components/StepNavigation"
-import SaveExitButton from "../../../components/SaveExitButton"
+import StepNavigation from "../../../components/client/StepNavigation"
+import SaveExitButton from "../../../components/client/SaveExitButton"
 
 export default function Step3Content() {
   const { study, studyId } = useStudySetup()

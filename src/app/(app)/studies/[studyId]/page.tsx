@@ -4,7 +4,7 @@ import { getStudyRsc } from "../queries/getStudy"
 import { getBlitzContext } from "@/src/app/blitz-server"
 import ResearcherData from "./components/ResearcherData"
 import ParticipantData from "./components/ParticipantData"
-import SetupProgressCard from "./setup/components/SetupProgressCard"
+import SetupProgressCard from "./setup/components/client/SetupProgressCard"
 import StudyHeader from "./components/StudyHeader"
 import StudyInformationCard from "./components/client/StudyInformationCard"
 

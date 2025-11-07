@@ -11,6 +11,7 @@ import { useFeedbackTemplate } from "../../hooks/useFeedbackTemplate"
 import { useTemplatePreview } from "../../hooks/useTemplatePreview"
 import { validateDSL, DSLError } from "../../utils/dslValidator"
 import type { FeedbackFormEditorProps, FeedbackFormEditorRef } from "../../types"
+import { mdEditorStyles, mdEditorClassName } from "../../styles/feedbackStyles"
 
 const FeedbackFormEditor = forwardRef<FeedbackFormEditorRef, FeedbackFormEditorProps>(
   ({ enrichedResult, initialTemplate, studyId, onTemplateSaved, allTestResults }, ref) => {
@@ -177,12 +178,22 @@ const FeedbackFormEditor = forwardRef<FeedbackFormEditorRef, FeedbackFormEditorP
         )}
 
         {/* Markdown editor */}
-        <div data-color-mode="light" className="rounded-lg overflow-hidden border border-base-300">
+        <div
+          data-color-mode="light"
+          className={`rounded-lg overflow-hidden border border-base-300 ${mdEditorClassName.container}`}
+        >
           <MDEditor
             value={markdown}
-            onChange={(value) => setMarkdown(value || "")}
+            onChange={(value) => {
+              setMarkdown(value || "")
+              setTemplateSaved(false)
+            }}
             height={300}
             preview="edit"
+            style={mdEditorStyles.container}
+            textareaProps={{
+              style: mdEditorStyles.textarea,
+            }}
           />
         </div>
 
@@ -191,8 +202,10 @@ const FeedbackFormEditor = forwardRef<FeedbackFormEditorRef, FeedbackFormEditorP
 
         {/* Preview */}
         <div className="divider">Preview</div>
-        <div className="prose max-w-none bg-base-100 p-4 rounded-lg border border-base-300">
-          <MDEditor.Markdown source={renderedPreview} />
+        <div
+          className={`prose max-w-none bg-base-100 p-4 rounded-lg border border-base-300 ${mdEditorClassName.preview}`}
+        >
+          <MDEditor.Markdown source={renderedPreview} style={mdEditorStyles.preview} />
         </div>
 
         {/* Save button */}

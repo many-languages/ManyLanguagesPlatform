@@ -2,18 +2,17 @@
 
 import { useRouter } from "next/navigation"
 import { useRef } from "react"
-import { useStudySetup } from "../../../components/StudySetupProvider"
-import FeedbackFormEditor, {
-  FeedbackFormEditorRef,
-} from "../../../../feedback/components/client/FeedbackFormEditor"
+import { useStudySetup } from "../../../components/client/StudySetupProvider"
 import { useMutation } from "@blitzjs/rpc"
 import { toast } from "react-hot-toast"
 import { isSetupComplete } from "../../../utils/setupStatus"
 import updateStudyStatus from "@/src/app/(app)/studies/mutations/updateStudyStatus"
-import StepNavigation from "../../../components/StepNavigation"
+import StepNavigation from "../../../components/client/StepNavigation"
 import { Alert } from "@/src/app/components/Alert"
-import SaveExitButton from "../../../components/SaveExitButton"
+import SaveExitButton from "../../../components/client/SaveExitButton"
 import type { EnrichedJatosStudyResult } from "@/src/types/jatos"
+import { FeedbackFormEditorRef } from "../../../../feedback/types"
+import FeedbackFormEditor from "../../../../feedback/components/client/FeedbackFormEditor"
 
 interface Step4ContentProps {
   initialFeedbackTemplate?: {

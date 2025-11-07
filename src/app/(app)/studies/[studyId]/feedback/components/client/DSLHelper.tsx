@@ -1,7 +1,10 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useMemo } from "react"
 import { EnrichedJatosStudyResult } from "@/src/types/jatos"
+import { extractAllVariables } from "../../utils/extractVariable"
+import { SelectField } from "./shared"
+import { dslHelperClassName, dslHelperStyles } from "../../styles/feedbackStyles"
 
 interface DSLHelperProps {
   enrichedResult: EnrichedJatosStudyResult
@@ -45,41 +48,65 @@ export default function DSLHelper({ enrichedResult }: DSLHelperProps) {
 
     // Statistics
     {
-      title: "Average Reaction Time",
-      syntax: "{{ stat:rt.avg }}",
-      description: "Shows the average reaction time across all participants",
+      title: "Average Reaction Time (Participant)",
+      syntax: "{{ stat:rt.avg:within }}",
+      description: "Average reaction time for the current participant",
       category: "stats",
     },
     {
-      title: "Median Accuracy",
-      syntax: "{{ stat:correct.median }}",
-      description: "Shows the median accuracy across all participants",
+      title: "Average Reaction Time (All Participants)",
+      syntax: "{{ stat:rt.avg:across }}",
+      description: "Average reaction time calculated across all participants",
       category: "stats",
     },
     {
-      title: "Standard Deviation",
-      syntax: "{{ stat:rt.sd }}",
-      description: "Shows the standard deviation of reaction times",
+      title: "Median Accuracy (Participant)",
+      syntax: "{{ stat:correct.median:within }}",
+      description: "Median accuracy for the current participant",
       category: "stats",
     },
     {
-      title: "Count",
-      syntax: "{{ stat:trials.count }}",
-      description: "Shows the total number of trials completed",
+      title: "Median Accuracy (All Participants)",
+      syntax: "{{ stat:correct.median:across }}",
+      description: "Median accuracy calculated across all participants",
+      category: "stats",
+    },
+    {
+      title: "Standard Deviation (Participant)",
+      syntax: "{{ stat:rt.sd:within }}",
+      description: "Standard deviation of reaction times for the current participant",
+      category: "stats",
+    },
+    {
+      title: "Standard Deviation (All Participants)",
+      syntax: "{{ stat:rt.sd:across }}",
+      description: "Standard deviation of reaction times across all participants",
+      category: "stats",
+    },
+    {
+      title: "Count (Participant)",
+      syntax: "{{ stat:trials.count:within }}",
+      description: "Total number of trials completed by the current participant",
+      category: "stats",
+    },
+    {
+      title: "Count (All Participants)",
+      syntax: "{{ stat:trials.count:across }}",
+      description: "Total number of trials completed across all participants",
       category: "stats",
     },
 
     // Filtered Statistics
     {
       title: "Filtered Average",
-      syntax: "{{ stat:rt.avg | where: correct == true }}",
-      description: "Average reaction time for correct trials only",
+      syntax: "{{ stat:rt.avg:within | where: correct == true }}",
+      description: "Average reaction time for correct trials for the current participant",
       category: "filters",
     },
     {
       title: "Multiple Conditions",
-      syntax: '{{ stat:rt.avg | where: correct == true and stimulus == "blue" }}',
-      description: "Average RT for correct blue stimulus trials",
+      syntax: '{{ stat:rt.avg:across | where: correct == true and stimulus == "blue" }}',
+      description: "Average RT across participants for correct blue stimulus trials",
       category: "filters",
     },
 
@@ -104,7 +131,18 @@ export default function DSLHelper({ enrichedResult }: DSLHelperProps) {
     },
   ]
 
-  const availableVariables = extractAvailableVariables(enrichedResult)
+  const availableVariables = extractAllVariables(enrichedResult)
+
+  const categoryOptions = useMemo(
+    () => [
+      { value: "all", label: "All Categories" },
+      { value: "variables", label: "Variables" },
+      { value: "stats", label: "Statistics" },
+      { value: "conditionals", label: "Conditionals" },
+      { value: "filters", label: "Filters" },
+    ],
+    []
+  )
 
   const filteredExamples = examples.filter((example) => {
     const matchesSearch =
@@ -122,7 +160,10 @@ export default function DSLHelper({ enrichedResult }: DSLHelperProps) {
   }
 
   return (
-    <div className="collapse collapse-arrow bg-base-200">
+    <div
+      className={`collapse collapse-arrow ${dslHelperClassName.container}`}
+      style={dslHelperStyles.container}
+    >
       <input type="checkbox" checked={isOpen} onChange={(e) => setIsOpen(e.target.checked)} />
       <div className="collapse-title text-lg font-medium">📚 DSL Reference & Examples</div>
       <div className="collapse-content">
@@ -136,22 +177,22 @@ export default function DSLHelper({ enrichedResult }: DSLHelperProps) {
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
-            <select
-              className="select select-bordered select-sm"
-              value={selectedCategory}
-              onChange={(e) => setSelectedCategory(e.target.value)}
-            >
-              <option value="all">All Categories</option>
-              <option value="variables">Variables</option>
-              <option value="stats">Statistics</option>
-              <option value="conditionals">Conditionals</option>
-              <option value="filters">Filters</option>
-            </select>
+            <div className="w-48">
+              <SelectField
+                value={selectedCategory}
+                onChange={setSelectedCategory}
+                options={categoryOptions}
+                selectClassName="select-sm"
+              />
+            </div>
           </div>
 
           {/* Available Variables */}
           {availableVariables.length > 0 && (
-            <div className="bg-base-100 p-3 rounded-lg">
+            <div
+              className={`${dslHelperClassName.section} p-3 rounded-lg`}
+              style={dslHelperStyles.section}
+            >
               <h4 className="font-semibold mb-2">Available Variables</h4>
               <div className="flex flex-wrap gap-1">
                 {availableVariables.map((variable) => (
@@ -175,7 +216,11 @@ export default function DSLHelper({ enrichedResult }: DSLHelperProps) {
               <p className="text-sm opacity-70">No examples match your search.</p>
             ) : (
               filteredExamples.map((example, index) => (
-                <div key={index} className="bg-base-100 p-3 rounded-lg">
+                <div
+                  key={index}
+                  className={`${dslHelperClassName.section} p-3 rounded-lg`}
+                  style={dslHelperStyles.section}
+                >
                   <div className="flex justify-between items-start mb-2">
                     <h5 className="font-medium">{example.title}</h5>
                     <span className="badge badge-sm badge-outline">{example.category}</span>
@@ -196,7 +241,10 @@ export default function DSLHelper({ enrichedResult }: DSLHelperProps) {
           </div>
 
           {/* Quick Reference */}
-          <div className="bg-base-100 p-3 rounded-lg">
+          <div
+            className={`${dslHelperClassName.section} p-3 rounded-lg`}
+            style={dslHelperStyles.section}
+          >
             <h4 className="font-semibold mb-2">Quick Reference</h4>
             <div className="text-sm space-y-1">
               <div>
@@ -207,7 +255,7 @@ export default function DSLHelper({ enrichedResult }: DSLHelperProps) {
                 <code>{`{{ var:name:last }}`}</code>
               </div>
               <div>
-                <strong>Stats:</strong> <code>{`{{ stat:name.metric }}`}</code>
+                <strong>Stats:</strong> <code>{`{{ stat:name.metric:scope }}`}</code>
               </div>
               <div>
                 <strong>Filters:</strong> <code>{`{{ stat:name.metric | where: condition }}`}</code>
@@ -215,6 +263,10 @@ export default function DSLHelper({ enrichedResult }: DSLHelperProps) {
               <div>
                 <strong>Conditionals:</strong>{" "}
                 <code>{`{{#if condition }}text{{else}}text{{/if}}`}</code>
+              </div>
+              <div>
+                <strong>Scopes:</strong> <code>within</code> (current participant),{" "}
+                <code>across</code> (all participants)
               </div>
               <div>
                 <strong>Metrics:</strong> avg, median, sd, count
@@ -228,67 +280,4 @@ export default function DSLHelper({ enrichedResult }: DSLHelperProps) {
       </div>
     </div>
   )
-}
-
-interface AvailableVariable {
-  name: string
-  type: "string" | "number" | "boolean"
-  example: any
-}
-
-function extractAvailableVariables(enrichedResult: EnrichedJatosStudyResult): AvailableVariable[] {
-  const variableMap = new Map<string, AvailableVariable>()
-
-  const excludedFields = new Set([
-    "trial_type",
-    "trial_index",
-    "time_elapsed",
-    "internal_node_id",
-    "success",
-    "timeout",
-    "failed_images",
-    "failed_audio",
-    "failed_video",
-  ])
-
-  enrichedResult.componentResults.forEach((component) => {
-    const data = component.parsedData ?? null
-    if (!data) return
-
-    if (Array.isArray(data)) {
-      data.forEach((trial) => {
-        if (typeof trial === "object" && trial !== null) {
-          Object.entries(trial).forEach(([key, value]) => {
-            if (excludedFields.has(key)) return
-
-            if (!variableMap.has(key)) {
-              variableMap.set(key, {
-                name: key,
-                type: getFieldType(value),
-                example: value,
-              })
-            }
-          })
-        }
-      })
-    } else if (typeof data === "object") {
-      Object.entries(data).forEach(([key, value]) => {
-        if (excludedFields.has(key)) return
-
-        variableMap.set(key, {
-          name: key,
-          type: getFieldType(value),
-          example: value,
-        })
-      })
-    }
-  })
-
-  return Array.from(variableMap.values()).sort((a, b) => a.name.localeCompare(b.name))
-}
-
-function getFieldType(value: any): "string" | "number" | "boolean" {
-  if (typeof value === "number") return "number"
-  if (typeof value === "boolean") return "boolean"
-  return "string"
 }

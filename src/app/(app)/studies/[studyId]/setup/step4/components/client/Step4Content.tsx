@@ -2,17 +2,17 @@
 
 import { useRouter } from "next/navigation"
 import { useRef } from "react"
-import { useQuery } from "@blitzjs/rpc"
-import { useStudySetup } from "../../../components/StudySetupProvider"
-import FeedbackFormEditor, { FeedbackFormEditorRef } from "./FeedbackFormEditor"
+import { useStudySetup } from "../../../components/client/StudySetupProvider"
 import { useMutation } from "@blitzjs/rpc"
 import { toast } from "react-hot-toast"
 import { isSetupComplete } from "../../../utils/setupStatus"
 import updateStudyStatus from "@/src/app/(app)/studies/mutations/updateStudyStatus"
-import StepNavigation from "../../../components/StepNavigation"
+import StepNavigation from "../../../components/client/StepNavigation"
 import { Alert } from "@/src/app/components/Alert"
-import SaveExitButton from "../../../components/SaveExitButton"
-import getStudyDataByComment from "@/src/app/(app)/studies/queries/getStudyDataByComment"
+import SaveExitButton from "../../../components/client/SaveExitButton"
+import type { EnrichedJatosStudyResult } from "@/src/types/jatos"
+import { FeedbackFormEditorRef } from "../../../../feedback/types"
+import FeedbackFormEditor from "../../../../feedback/components/client/FeedbackFormEditor"
 
 interface Step4ContentProps {
   initialFeedbackTemplate?: {
@@ -21,18 +21,19 @@ interface Step4ContentProps {
     createdAt: Date
     updatedAt: Date
   } | null
+  enrichedResult: EnrichedJatosStudyResult | null
+  allTestResults: EnrichedJatosStudyResult[]
 }
 
-export default function Step4Content({ initialFeedbackTemplate = null }: Step4ContentProps) {
+export default function Step4Content({
+  initialFeedbackTemplate = null,
+  enrichedResult,
+  allTestResults,
+}: Step4ContentProps) {
   const router = useRouter()
   const { study, studyId } = useStudySetup()
   const feedbackEditorRef = useRef<FeedbackFormEditorRef>(null)
   const [updateStudyStatusMutation] = useMutation(updateStudyStatus)
-
-  // Fetch enriched result client-side (complex processing, interactive editor)
-  const [dataResult] = useQuery(getStudyDataByComment, { studyId, comment: "test" })
-
-  const enrichedResult = dataResult?.enrichedResult ?? null
 
   const handleFinish = async () => {
     if (feedbackEditorRef.current) {
@@ -77,6 +78,7 @@ export default function Step4Content({ initialFeedbackTemplate = null }: Step4Co
         enrichedResult={enrichedResult}
         initialTemplate={initialFeedbackTemplate}
         studyId={studyId}
+        allTestResults={allTestResults}
         onTemplateSaved={() => {
           // Refresh to get updated study data (step4Completed will be updated)
           router.refresh()

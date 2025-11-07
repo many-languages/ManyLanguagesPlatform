@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
 import { useSession } from "@blitzjs/auth"
-import { useStudySetup } from "../../../components/StudySetupProvider"
+import { useStudySetup } from "../../../components/client/StudySetupProvider"
 import JatosForm from "./JatosForm"
 import toast from "react-hot-toast"
 import { useMutation } from "@blitzjs/rpc"
@@ -16,7 +16,7 @@ import deleteExistingJatosStudy from "@/src/lib/jatos/api/deleteExistingJatosStu
 import { uploadStudyFile } from "@/src/lib/jatos/api/uploadStudyFile"
 import { Alert } from "@/src/app/components/Alert"
 import { FORM_ERROR } from "@/src/app/components/Form"
-import SaveExitButton from "../../../components/SaveExitButton"
+import SaveExitButton from "../../../components/client/SaveExitButton"
 import { generateAndSaveResearcherTestRunUrl } from "../../../../utils/generateResearcherTestRunUrl"
 
 export default function Step2Content() {

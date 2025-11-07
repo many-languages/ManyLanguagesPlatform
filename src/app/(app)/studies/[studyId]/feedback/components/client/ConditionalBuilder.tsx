@@ -1,10 +1,11 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, useMemo } from "react"
 import { EnrichedJatosStudyResult } from "@/src/types/jatos"
 import VariableSelector from "./VariableSelector"
 import StatsSelector from "./StatsSelector"
-import FilterBuilder from "./FilterBuilder"
+import { extractAvailableFields } from "../../utils/extractVariable"
+import { SelectField, FilterButtonWithDisplay, SyntaxPreview } from "./shared"
 
 interface ConditionalBuilderProps {
   enrichedResult: EnrichedJatosStudyResult
@@ -41,7 +42,7 @@ export default function ConditionalBuilder({
   const [focusedTextArea, setFocusedTextArea] = useState<"then" | "else">("then")
   const [currentFilterClause, setCurrentFilterClause] = useState("")
 
-  const availableFields = extractAvailableFields(enrichedResult)
+  const availableFields = extractAvailableFields(enrichedResult, { includeExample: true })
 
   // Get available variables for the condition builder
   const getAvailableVariables = useCallback(() => {
@@ -51,8 +52,26 @@ export default function ConditionalBuilder({
     }))
   }, [availableFields])
 
+  const variableOptions = useMemo(
+    () =>
+      getAvailableVariables().map((v) => ({
+        value: v.name,
+        label: `${v.name} (${v.type})`,
+      })),
+    [getAvailableVariables]
+  )
+
+  const modifierOptions = useMemo(
+    () => [
+      { value: "first", label: "First Value" },
+      { value: "last", label: "Last Value" },
+      { value: "all", label: "All Values" },
+    ],
+    []
+  )
+
   // Get available metrics based on variable type
-  const getAvailableMetrics = (variableType: string) => {
+  const getAvailableMetrics = useCallback((variableType: string) => {
     const METRICS = [
       { key: "avg", label: "Average", description: "Mean value" },
       { key: "median", label: "Median", description: "Middle value" },
@@ -70,7 +89,7 @@ export default function ConditionalBuilder({
       default:
         return METRICS.filter((metric) => metric.key === "count")
     }
-  }
+  }, [])
 
   // Get available operators based on variable type
   const getAvailableOperators = useCallback((variableType: string) => {
@@ -89,6 +108,32 @@ export default function ConditionalBuilder({
     }
     return "string"
   }, [conditionType, selectedVariable, getAvailableVariables])
+
+  const metricOptions = useMemo(() => {
+    const METRICS = [
+      { key: "avg", label: "Average", description: "Mean value" },
+      { key: "median", label: "Median", description: "Middle value" },
+      { key: "sd", label: "Std Dev", description: "Standard deviation" },
+      { key: "count", label: "Count", description: "Number of trials" },
+    ]
+
+    const currentType = selectedVariable
+      ? getAvailableVariables().find((v) => v.name === selectedVariable)?.type || "string"
+      : "string"
+
+    return getAvailableMetrics(currentType).map((m) => ({
+      value: m.key,
+      label: `${m.label} - ${m.description}`,
+    }))
+  }, [selectedVariable, getAvailableVariables, getAvailableMetrics])
+
+  const operatorOptions = useMemo(() => {
+    const currentType = getCurrentVariableType()
+    return getAvailableOperators(currentType).map((op) => ({
+      value: op.key,
+      label: op.label,
+    }))
+  }, [getCurrentVariableType, getAvailableOperators])
 
   // Reset operator when variable type changes
   useEffect(() => {
@@ -126,11 +171,6 @@ export default function ConditionalBuilder({
     } else if (focusedTextArea === "else") {
       setElseContent((prev) => prev + statSyntax)
     }
-  }
-
-  // Handle filter insertion for condition
-  const handleInsertFilter = (filterClause: string) => {
-    setCurrentFilterClause(filterClause)
   }
 
   const generateConditionalBlock = () => {
@@ -213,67 +253,37 @@ export default function ConditionalBuilder({
               <div className="space-y-3">
                 <div className="flex items-end gap-2">
                   <div className="flex-1">
-                    <label className="label">
-                      <span className="label-text">Variable</span>
-                    </label>
-                    <select
-                      className="select select-bordered w-full"
+                    <SelectField
+                      label="Variable"
                       value={selectedVariable}
-                      onChange={(e) => {
-                        setSelectedVariable(e.target.value)
-                        setSelectedModifier("first") // Reset modifier when variable changes
+                      onChange={(value) => {
+                        setSelectedVariable(value)
+                        setSelectedModifier("first")
                       }}
-                    >
-                      <option value="">Select variable...</option>
-                      {getAvailableVariables().map((variable) => (
-                        <option key={variable.name} value={variable.name}>
-                          {variable.name} ({variable.type})
-                        </option>
-                      ))}
-                    </select>
+                      options={variableOptions}
+                      placeholder="Select variable..."
+                    />
                   </div>
 
                   <div className="flex-1">
-                    <label className="label">
-                      <span className="label-text">Modifier</span>
-                    </label>
-                    <select
-                      className="select select-bordered w-full"
+                    <SelectField
+                      label="Modifier"
                       value={selectedModifier}
-                      onChange={(e) => setSelectedModifier(e.target.value)}
-                    >
-                      <option value="first">First Value</option>
-                      <option value="last">Last Value</option>
-                      <option value="all">All Values</option>
-                    </select>
+                      onChange={setSelectedModifier}
+                      options={modifierOptions}
+                      disabled={!selectedVariable}
+                    />
                   </div>
                 </div>
 
-                {/* Filter for Variable */}
-                {selectedVariable && (
-                  <div>
-                    <button
-                      className="btn btn-sm btn-outline"
-                      onClick={() => {
-                        /* TODO: Add filter modal */
-                      }}
-                    >
-                      {currentFilterClause ? "Edit Filter" : "Add Filter"}
-                    </button>
-                    {currentFilterClause && (
-                      <div className="mt-2 p-2 bg-base-200 rounded text-xs">
-                        <div className="font-medium">Current filter:</div>
-                        <code>{currentFilterClause}</code>
-                        <button
-                          className="btn btn-xs btn-error ml-2"
-                          onClick={() => setCurrentFilterClause("")}
-                        >
-                          Clear
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                )}
+                <FilterButtonWithDisplay
+                  currentFilterClause={currentFilterClause}
+                  onAddFilter={() => {
+                    /* TODO: Add filter modal */
+                  }}
+                  onClearFilter={() => setCurrentFilterClause("")}
+                  enabled={!!selectedVariable}
+                />
               </div>
             )}
 
@@ -282,104 +292,57 @@ export default function ConditionalBuilder({
               <div className="space-y-3">
                 <div className="flex items-end gap-2">
                   <div className="flex-1">
-                    <label className="label">
-                      <span className="label-text">Variable</span>
-                    </label>
-                    <select
-                      className="select select-bordered w-full"
+                    <SelectField
+                      label="Variable"
                       value={selectedVariable}
-                      onChange={(e) => {
-                        const newVariable = e.target.value
-                        setSelectedVariable(newVariable)
-
-                        if (newVariable) {
+                      onChange={(value) => {
+                        setSelectedVariable(value)
+                        if (value) {
                           const variableType =
-                            getAvailableVariables().find((v) => v.name === newVariable)?.type ||
-                            "string"
+                            getAvailableVariables().find((v) => v.name === value)?.type || "string"
                           const availableMetrics = getAvailableMetrics(variableType)
                           if (availableMetrics.length > 0) {
                             setSelectedMetric(availableMetrics[0].key)
                           }
                         }
                       }}
-                    >
-                      <option value="">Select variable...</option>
-                      {getAvailableVariables().map((variable) => (
-                        <option key={variable.name} value={variable.name}>
-                          {variable.name} ({variable.type})
-                        </option>
-                      ))}
-                    </select>
+                      options={variableOptions}
+                      placeholder="Select variable..."
+                    />
                   </div>
 
                   <div className="flex-1">
-                    <label className="label">
-                      <span className="label-text">Statistic</span>
-                    </label>
-                    <select
-                      className="select select-bordered w-full"
+                    <SelectField
+                      label="Statistic"
                       value={selectedMetric}
-                      onChange={(e) => setSelectedMetric(e.target.value)}
-                    >
-                      {getAvailableMetrics(
-                        selectedVariable
-                          ? getAvailableVariables().find((v) => v.name === selectedVariable)
-                              ?.type || "string"
-                          : "string"
-                      ).map((metric) => (
-                        <option key={metric.key} value={metric.key}>
-                          {metric.label} - {metric.description}
-                        </option>
-                      ))}
-                    </select>
+                      onChange={setSelectedMetric}
+                      options={metricOptions}
+                      disabled={!selectedVariable}
+                    />
                   </div>
                 </div>
 
-                {/* Filter for Statistic */}
-                {selectedVariable && selectedMetric && (
-                  <div>
-                    <button
-                      className="btn btn-sm btn-outline"
-                      onClick={() => {
-                        /* TODO: Add filter modal */
-                      }}
-                    >
-                      {currentFilterClause ? "Edit Filter" : "Add Filter"}
-                    </button>
-                    {currentFilterClause && (
-                      <div className="mt-2 p-2 bg-base-200 rounded text-xs">
-                        <div className="font-medium">Current filter:</div>
-                        <code>{currentFilterClause}</code>
-                        <button
-                          className="btn btn-xs btn-error ml-2"
-                          onClick={() => setCurrentFilterClause("")}
-                        >
-                          Clear
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                )}
+                <FilterButtonWithDisplay
+                  currentFilterClause={currentFilterClause}
+                  onAddFilter={() => {
+                    /* TODO: Add filter modal */
+                  }}
+                  onClearFilter={() => setCurrentFilterClause("")}
+                  enabled={!!selectedVariable && !!selectedMetric}
+                />
               </div>
             )}
 
             {/* Operator and Value */}
             <div className="flex items-end gap-2 mt-4">
               <div className="flex-1">
-                <label className="label">
-                  <span className="label-text">Operator</span>
-                </label>
-                <select
-                  className="select select-bordered w-full"
+                <SelectField
+                  label="Operator"
                   value={operator}
-                  onChange={(e) => setOperator(e.target.value)}
-                >
-                  {getAvailableOperators(getCurrentVariableType()).map((op) => (
-                    <option key={op.key} value={op.key}>
-                      {op.label}
-                    </option>
-                  ))}
-                </select>
+                  onChange={setOperator}
+                  options={operatorOptions}
+                  disabled={!selectedVariable}
+                />
               </div>
 
               <div className="flex-1">
@@ -400,32 +363,31 @@ export default function ConditionalBuilder({
               </div>
             </div>
 
-            {/* Live Preview */}
-            {selectedVariable && operator && value && (
-              <div className="mt-4 p-3 bg-base-200 rounded">
-                <div className="text-sm font-medium mb-1">Preview:</div>
-                <code className="text-sm">
-                  {(() => {
-                    let expression = ""
-                    if (conditionType === "variable") {
-                      expression = `var:${selectedVariable}`
-                      if (selectedModifier !== "all") {
-                        expression += `:${selectedModifier}`
+            <SyntaxPreview
+              syntax={
+                selectedVariable && operator && value
+                  ? (() => {
+                      let expression = ""
+                      if (conditionType === "variable") {
+                        expression = `var:${selectedVariable}`
+                        if (selectedModifier !== "all") {
+                          expression += `:${selectedModifier}`
+                        }
+                        if (currentFilterClause) {
+                          expression += ` | where: ${currentFilterClause}`
+                        }
+                      } else if (conditionType === "statistic") {
+                        expression = `stat:${selectedVariable}.${selectedMetric}`
+                        if (currentFilterClause) {
+                          expression += ` | where: ${currentFilterClause}`
+                        }
                       }
-                      if (currentFilterClause) {
-                        expression += ` | where: ${currentFilterClause}`
-                      }
-                    } else if (conditionType === "statistic") {
-                      expression = `stat:${selectedVariable}.${selectedMetric}`
-                      if (currentFilterClause) {
-                        expression += ` | where: ${currentFilterClause}`
-                      }
-                    }
-                    return `{{#if ${expression} ${operator} ${value}}}`
-                  })()}
-                </code>
-              </div>
-            )}
+                      return `{{#if ${expression} ${operator} ${value}}}`
+                    })()
+                  : ""
+              }
+              show={!!selectedVariable && !!operator && !!value}
+            />
           </div>
 
           {/* Then Content */}
@@ -507,67 +469,4 @@ export default function ConditionalBuilder({
       </div>
     </div>
   )
-}
-
-interface AvailableField {
-  name: string
-  type: "string" | "number" | "boolean"
-  example: any
-}
-
-function extractAvailableFields(enrichedResult: EnrichedJatosStudyResult): AvailableField[] {
-  const fieldMap = new Map<string, AvailableField>()
-
-  const excludedFields = new Set([
-    "trial_type",
-    "trial_index",
-    "time_elapsed",
-    "internal_node_id",
-    "success",
-    "timeout",
-    "failed_images",
-    "failed_audio",
-    "failed_video",
-  ])
-
-  enrichedResult.componentResults.forEach((component) => {
-    const data = component.parsedData ?? null
-    if (!data) return
-
-    if (Array.isArray(data)) {
-      data.forEach((trial) => {
-        if (typeof trial === "object" && trial !== null) {
-          Object.entries(trial).forEach(([key, value]) => {
-            if (excludedFields.has(key)) return
-
-            if (!fieldMap.has(key)) {
-              fieldMap.set(key, {
-                name: key,
-                type: getFieldType(value),
-                example: value,
-              })
-            }
-          })
-        }
-      })
-    } else if (typeof data === "object") {
-      Object.entries(data).forEach(([key, value]) => {
-        if (excludedFields.has(key)) return
-
-        fieldMap.set(key, {
-          name: key,
-          type: getFieldType(value),
-          example: value,
-        })
-      })
-    }
-  })
-
-  return Array.from(fieldMap.values()).sort((a, b) => a.name.localeCompare(b.name))
-}
-
-function getFieldType(value: any): "string" | "number" | "boolean" {
-  if (typeof value === "number") return "number"
-  if (typeof value === "boolean") return "boolean"
-  return "string"
 }

@@ -1,13 +1,8 @@
-// src/app/(app)/studies/queries/getFeedbackTemplate.ts
 import { resolver } from "@blitzjs/rpc"
 import db from "db"
 import { cache } from "react"
-import { z } from "zod"
 import { getBlitzContext } from "@/src/app/blitz-server"
-
-const GetFeedbackTemplate = z.object({
-  studyId: z.number(),
-})
+import { GetFeedbackTemplateSchema } from "../validations"
 
 // Server-side helper for RSCs
 export const getFeedbackTemplateRsc = cache(async (studyId: number) => {
@@ -32,7 +27,7 @@ export const getFeedbackTemplateRsc = cache(async (studyId: number) => {
 
 // Blitz RPC for client usage
 export default resolver.pipe(
-  resolver.zod(GetFeedbackTemplate),
+  resolver.zod(GetFeedbackTemplateSchema),
   resolver.authorize("RESEARCHER"),
   async ({ studyId }) => {
     return getFeedbackTemplateRsc(studyId)

@@ -4,6 +4,7 @@ import { Alert } from "@/src/app/components/Alert"
 import { LoadingMessage } from "@/src/app/components/LoadingStates"
 import { isSetupComplete } from "../setup/utils/setupStatus"
 import { StudyWithRelations } from "../../queries/getStudy"
+import ParticipantFeedback from "../feedback/components/ParticipantFeedback"
 
 interface ParticipantDataProps {
   studyId: number
@@ -32,7 +33,12 @@ export default async function ParticipantData({ studyId, study }: ParticipantDat
       )
     }
 
-    return <RunStudyButton runUrl={participant.jatosRunUrl} isActive={participant.active} />
+    return (
+      <>
+        <RunStudyButton runUrl={participant.jatosRunUrl} isActive={participant.active} />
+        <ParticipantFeedback studyId={studyId} />
+      </>
+    )
   } catch (error: any) {
     console.error("Error fetching participant data:", error)
     return (

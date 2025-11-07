@@ -1,7 +1,7 @@
 import type { JatosMetadata } from "@/src/types/jatos"
 import { formatDuration } from "@/src/lib/utils/formatDuration"
 import { formatBytes } from "@/src/lib/utils/formatBytes"
-import { calculateStudySummary } from "../utils/calculateStudySummary"
+import { calculateStudySummary } from "../../utils/calculateStudySummary"
 import { EmptyState } from "@/src/app/components/EmptyState"
 import { Alert } from "@/src/app/components/Alert"
 

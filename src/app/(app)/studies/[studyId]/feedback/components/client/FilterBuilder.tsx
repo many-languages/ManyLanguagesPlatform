@@ -1,7 +1,9 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useMemo } from "react"
 import { EnrichedJatosStudyResult } from "@/src/types/jatos"
+import { extractAvailableFields } from "../../utils/extractVariable"
+import { SelectField, SyntaxPreview } from "./shared"
 
 interface FilterBuilderProps {
   enrichedResult: EnrichedJatosStudyResult
@@ -45,6 +47,15 @@ export default function FilterBuilder({ enrichedResult, onInsert, onClose }: Fil
   ])
 
   const availableFields = extractAvailableFields(enrichedResult)
+
+  const fieldOptions = useMemo(
+    () =>
+      availableFields.map((f) => ({
+        value: f.name,
+        label: `${f.name} (${f.type})`,
+      })),
+    [availableFields]
+  )
 
   const updateCondition = (index: number, updates: Partial<FilterCondition>) => {
     setConditions((prev) =>
@@ -99,11 +110,19 @@ export default function FilterBuilder({ enrichedResult, onInsert, onClose }: Fil
     }
   }
 
-  const selectedFieldType = (index: number) => {
+  const getFieldType = (index: number): "string" | "number" | "boolean" => {
     const field = conditions[index]?.field
     if (!field) return "string"
     const fieldInfo = availableFields.find((f) => f.name === field)
-    return fieldInfo?.type || "string"
+    return (fieldInfo?.type as "string" | "number" | "boolean") || "string"
+  }
+
+  const getOperatorOptions = (index: number) => {
+    const fieldType = getFieldType(index)
+    return OPERATORS[fieldType].map((op) => ({
+      value: op.value,
+      label: op.label,
+    }))
   }
 
   const getPlaceholder = (fieldType: string, operator: string) => {
@@ -118,6 +137,32 @@ export default function FilterBuilder({ enrichedResult, onInsert, onClose }: Fil
     }
     return "enter value"
   }
+
+  const filterPreview = useMemo(() => {
+    const validConditions = conditions.filter((c) => c.field && c.operator && c.value !== "")
+    if (validConditions.length === 0) return ""
+
+    const clause = validConditions
+      .map((condition, index) => {
+        const { field, operator, value, logicalOperator } = condition
+        let conditionStr = ""
+
+        if (operator === "in") {
+          conditionStr = `${field} in [${value}]`
+        } else {
+          conditionStr = `${field} ${operator} ${value}`
+        }
+
+        if (index > 0 && logicalOperator) {
+          return `${logicalOperator} ${conditionStr}`
+        }
+
+        return conditionStr
+      })
+      .join(" ")
+
+    return clause ? `| where: ${clause}` : ""
+  }, [conditions])
 
   return (
     <div className="modal modal-open">
@@ -135,42 +180,26 @@ export default function FilterBuilder({ enrichedResult, onInsert, onClose }: Fil
               <div className="flex items-end gap-2 p-4 bg-base-100 rounded-lg">
                 {/* Field Selection */}
                 <div className="flex-1">
-                  <label className="label">
-                    <span className="label-text">Field</span>
-                  </label>
-                  <select
-                    className="select select-bordered w-full"
+                  <SelectField
+                    label="Field"
                     value={condition.field}
-                    onChange={(e) => {
-                      const newField = e.target.value
-                      updateCondition(index, { field: newField, operator: "==", value: "" })
-                    }}
-                  >
-                    <option value="">Select field...</option>
-                    {availableFields.map((field) => (
-                      <option key={field.name} value={field.name}>
-                        {field.name} ({field.type})
-                      </option>
-                    ))}
-                  </select>
+                    onChange={(value) =>
+                      updateCondition(index, { field: value, operator: "==", value: "" })
+                    }
+                    options={fieldOptions}
+                    placeholder="Select field..."
+                  />
                 </div>
 
                 {/* Operator Selection */}
                 <div className="flex-1">
-                  <label className="label">
-                    <span className="label-text">Operator</span>
-                  </label>
-                  <select
-                    className="select select-bordered w-full"
+                  <SelectField
+                    label="Operator"
                     value={condition.operator}
-                    onChange={(e) => updateCondition(index, { operator: e.target.value })}
-                  >
-                    {OPERATORS[selectedFieldType(index) as keyof typeof OPERATORS].map((op) => (
-                      <option key={op.value} value={op.value}>
-                        {op.label}
-                      </option>
-                    ))}
-                  </select>
+                    onChange={(value) => updateCondition(index, { operator: value })}
+                    options={getOperatorOptions(index)}
+                    disabled={!condition.field}
+                  />
                 </div>
 
                 {/* Value Input */}
@@ -181,9 +210,10 @@ export default function FilterBuilder({ enrichedResult, onInsert, onClose }: Fil
                   <input
                     type="text"
                     className="input input-bordered w-full"
-                    placeholder={getPlaceholder(selectedFieldType(index), condition.operator)}
+                    placeholder={getPlaceholder(getFieldType(index), condition.operator)}
                     value={condition.value}
                     onChange={(e) => updateCondition(index, { value: e.target.value })}
+                    disabled={!condition.field || !condition.operator}
                   />
                 </div>
 
@@ -228,13 +258,10 @@ export default function FilterBuilder({ enrichedResult, onInsert, onClose }: Fil
           </div>
         )}
 
-        {/* Preview */}
-        {conditions.some((c) => c.field && c.operator && c.value !== "") && (
-          <div className="mt-4 p-3 bg-base-200 rounded">
-            <div className="text-sm font-medium mb-2">Preview:</div>
-            <code className="text-sm">{`| where: ${generateFilterClause()}`}</code>
-          </div>
-        )}
+        <SyntaxPreview
+          syntax={filterPreview}
+          show={conditions.some((c) => c.field && c.operator && c.value !== "")}
+        />
 
         {/* Action Buttons */}
         <div className="modal-action">
@@ -252,43 +279,4 @@ export default function FilterBuilder({ enrichedResult, onInsert, onClose }: Fil
       </div>
     </div>
   )
-}
-
-/**
- * Extract available fields for filtering
- */
-function extractAvailableFields(
-  enrichedResult: EnrichedJatosStudyResult
-): Array<{ name: string; type: string }> {
-  const fieldMap = new Map<string, string>()
-
-  enrichedResult.componentResults.forEach((component) => {
-    const data = component.parsedData ?? null
-    if (!data) return
-
-    if (Array.isArray(data)) {
-      data.forEach((trial) => {
-        if (typeof trial === "object" && trial !== null) {
-          Object.entries(trial).forEach(([key, value]) => {
-            fieldMap.set(key, getFieldType(value))
-          })
-        }
-      })
-    } else if (typeof data === "object") {
-      Object.entries(data).forEach(([key, value]) => {
-        fieldMap.set(key, getFieldType(value))
-      })
-    }
-  })
-
-  return Array.from(fieldMap.entries()).map(([name, type]) => ({ name, type }))
-}
-
-/**
- * Get field type for filtering
- */
-function getFieldType(value: any): "string" | "number" | "boolean" {
-  if (typeof value === "number") return "number"
-  if (typeof value === "boolean") return "boolean"
-  return "string"
 }

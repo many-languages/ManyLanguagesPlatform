@@ -1,7 +1,7 @@
 "use client"
 
 import { createContext, useContext } from "react"
-import { StudyWithRelations } from "../../../queries/getStudy"
+import { StudyWithRelations } from "../../../../queries/getStudy"
 
 interface StudySetupContextValue {
   study: StudyWithRelations

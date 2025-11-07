@@ -1,18 +1,16 @@
 "use server"
 
-import { z } from "zod"
-import { renderTemplate } from "../setup/step4/utils/feedbackRenderer"
+import { renderTemplate } from "../utils/feedbackRenderer"
+import { PreviewFeedbackSchema } from "../validations"
 
-const PreviewSchema = z.object({
-  template: z.string().min(1),
-  enrichedResult: z.any(),
-})
-
-export async function previewFeedbackAction(prevState: any, formData: FormData) {
+export async function previewFeedbackAction(_prevState: any, formData: FormData) {
   try {
     const template = String(formData.get("template") || "")
     const enrichedResultRaw = String(formData.get("enrichedResult") || "{}")
-    const parsed = PreviewSchema.parse({ template, enrichedResult: JSON.parse(enrichedResultRaw) })
+    const parsed = PreviewFeedbackSchema.parse({
+      template,
+      enrichedResult: JSON.parse(enrichedResultRaw),
+    })
     const rendered = renderTemplate(parsed.template, { enrichedResult: parsed.enrichedResult })
     return { rendered, error: null }
   } catch (e: any) {

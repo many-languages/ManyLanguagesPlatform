@@ -9,7 +9,7 @@ import {
   getNextSetupStepUrl,
   getSetupProgress,
   StudyWithMinimalRelations,
-} from "../utils/setupStatus"
+} from "../../utils/setupStatus"
 
 interface SetupProgressCardProps {
   study: StudyWithMinimalRelations

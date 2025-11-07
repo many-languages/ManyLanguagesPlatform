@@ -8,6 +8,7 @@ import JatosInformationCard from "./client/JatosInformationCard"
 import { Alert } from "@/src/app/components/Alert"
 import { isSetupComplete } from "../setup/utils/setupStatus"
 import { StudyWithRelations } from "../../queries/getStudy"
+import ResearcherFeedback from "../feedback/components/ResearcherFeedback"
 
 interface ResearcherDataProps {
   studyId: number
@@ -98,6 +99,9 @@ export default async function ResearcherData({ studyId, study }: ResearcherDataP
 
       {/* Information about the study fetched from JATOS */}
       <JatosInformationCard properties={properties} />
+
+      {/* Feedback preview with test results */}
+      <ResearcherFeedback studyId={studyId} />
     </>
   )
 }

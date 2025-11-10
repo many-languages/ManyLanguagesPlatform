@@ -8,6 +8,12 @@ import { useNotificationMenuContext } from "../../context/NotificationMenuContex
 const NotificationsMenu = () => {
   const { unreadCount, latestNotifications } = useNotificationMenuContext()
 
+  const closeDropdown = () => {
+    if (document.activeElement instanceof HTMLElement) {
+      document.activeElement.blur()
+    }
+  }
+
   return (
     <div className="dropdown dropdown-end">
       <label tabIndex={0} className="btn btn-ghost btn-circle">
@@ -33,7 +39,11 @@ const NotificationsMenu = () => {
           )}
 
           <div className="card-actions">
-            <Link className="btn btn-primary btn-block" href={{ pathname: "/notifications" }}>
+            <Link
+              className="btn btn-primary btn-block"
+              href={{ pathname: "/notifications" }}
+              onClick={closeDropdown}
+            >
               View All Notifications
             </Link>
           </div>

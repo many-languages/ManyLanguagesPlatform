@@ -1,7 +1,7 @@
 "use client"
 
+import Card from "@/src/app/components/Card"
 import Link from "next/link"
-import Card from "../../components/Card"
 
 type CurrentUser = {
   id: number

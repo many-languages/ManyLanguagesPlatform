@@ -4,6 +4,7 @@ import { useTransition } from "react"
 import toast from "react-hot-toast"
 
 import { deleteNotifications } from "../../actions"
+import { useNotificationMenuContext } from "../../context/NotificationMenuContext"
 
 interface DeleteNotificationButtonProps {
   ids: number[]
@@ -11,6 +12,7 @@ interface DeleteNotificationButtonProps {
 
 export const DeleteNotificationButton = ({ ids }: DeleteNotificationButtonProps) => {
   const [isPending, startTransition] = useTransition()
+  const { refetch } = useNotificationMenuContext()
 
   const handleDelete = () => {
     if (ids.length === 0) return
@@ -27,6 +29,7 @@ export const DeleteNotificationButton = ({ ids }: DeleteNotificationButtonProps)
     startTransition(async () => {
       try {
         const { deleted } = await deleteNotifications(ids)
+        await refetch()
         toast.success(`Deleted ${deleted} notification${deleted === 1 ? "" : "s"}.`)
       } catch (error) {
         console.error("Error deleting notifications:", error)

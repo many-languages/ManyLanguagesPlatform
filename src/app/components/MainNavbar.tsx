@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation"
 import Gravatar from "react-gravatar"
 import logout from "../(auth)/mutations/logout"
 import NotificationsMenu from "../(app)/notifications/components/clients/NotificationMenu"
+import { NotificationMenuProvider } from "../(app)/notifications/context/NotificationMenuContext"
 
 // User type from getCurrentUser query
 type CurrentUser = {
@@ -50,7 +51,9 @@ const MainNavbar = ({ currentUser }: MainNavbarProps) => {
         {/* Tabs */}
         <ul className="menu menu-horizontal px-6">
           <li>
-            <NotificationsMenu />
+            <NotificationMenuProvider>
+              <NotificationsMenu />
+            </NotificationMenuProvider>
           </li>
           <li>
             <Link href={"/dashboard"}>Dashboard</Link>

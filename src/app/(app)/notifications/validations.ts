@@ -5,8 +5,15 @@ export const dataCollectionStartedSchema = z.object({
   endDate: z.string().optional(),
 })
 
+export const studySetupCompletedSchema = z.object({
+  studyTitle: z.string(),
+  setupCompletedAt: z.string().optional(),
+  nextStep: z.string().optional(),
+})
+
 export const templateSchemaMap: Record<string, z.ZodSchema<any>> = {
   dataCollectionStarted: dataCollectionStartedSchema,
+  studySetupCompleted: studySetupCompletedSchema,
 }
 
 export const getTemplateSchema = (templateId: string) => {

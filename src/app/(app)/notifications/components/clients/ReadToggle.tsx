@@ -5,6 +5,7 @@ import { EyeIcon, EyeSlashIcon } from "@heroicons/react/24/outline"
 
 import { markNotificationsRead, markNotificationsUnread } from "../../actions"
 import { NotificationWithRecipient } from "../../types"
+import { useNotificationMenuContext } from "../../context/NotificationMenuContext"
 
 type ReadToggleProps = {
   recipient: NotificationWithRecipient
@@ -12,12 +13,14 @@ type ReadToggleProps = {
 
 const ReadToggle = ({ recipient }: ReadToggleProps) => {
   const [isPending, startTransition] = useTransition()
+  const { refetch } = useNotificationMenuContext()
   const isRead = Boolean(recipient.readAt)
 
   const toggleReadStatus = () => {
     startTransition(async () => {
       const action = isRead ? markNotificationsUnread : markNotificationsRead
       await action([recipient.notificationId])
+      await refetch()
     })
   }
 

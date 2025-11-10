@@ -2,11 +2,11 @@
 
 import { BellIcon } from "@heroicons/react/24/outline"
 import Link from "next/link"
-import { useNotificationMenuData, type MenuNotification } from "../../hooks/useNotificationMenuData"
 import NotificationItem from "./NotificationItem"
+import { useNotificationMenuContext } from "../../context/NotificationMenuContext"
 
 const NotificationsMenu = () => {
-  const { unreadCount, latestUnreadNotifications } = useNotificationMenuData()
+  const { unreadCount, latestNotifications } = useNotificationMenuContext()
 
   return (
     <div className="dropdown dropdown-end">
@@ -24,8 +24,8 @@ const NotificationsMenu = () => {
         <div className="card-body">
           <span className="font-bold text-lg">{unreadCount} Notifications</span>
 
-          {latestUnreadNotifications.length > 0 ? (
-            latestUnreadNotifications.map((notification: MenuNotification) => (
+          {latestNotifications.length > 0 ? (
+            latestNotifications.map((notification) => (
               <NotificationItem key={notification.id} notification={notification} />
             ))
           ) : (

@@ -6,6 +6,7 @@ import { useMutation } from "@blitzjs/rpc"
 import { useRouter } from "next/navigation"
 import Gravatar from "react-gravatar"
 import logout from "../(auth)/mutations/logout"
+import NotificationsMenu from "../(app)/notifications/components/clients/NotificationMenu"
 
 // User type from getCurrentUser query
 type CurrentUser = {
@@ -48,7 +49,9 @@ const MainNavbar = ({ currentUser }: MainNavbarProps) => {
       <div className="flex-none px-6">
         {/* Tabs */}
         <ul className="menu menu-horizontal px-6">
-          {/* Dashboard tab */}
+          <li>
+            <NotificationsMenu />
+          </li>
           <li>
             <Link href={"/dashboard"}>Dashboard</Link>
           </li>

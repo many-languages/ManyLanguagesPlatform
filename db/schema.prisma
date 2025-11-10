@@ -29,15 +29,18 @@ model User {
   hashedPassword String?
   role           UserRole
 
+  language String @default("en-US")
+
   tokens   Token[]
   sessions Session[]
 
   gravatar String?
 
   // Relations
-  studies        StudyResearcher[] // researcher memberships
-  participations ParticipantStudy[] // participant memberships
-  Study          Study[]
+  studies                StudyResearcher[] // researcher memberships
+  participations         ParticipantStudy[] // participant memberships
+  Study                  Study[]
+  notificationRecipients NotificationRecipient[]
 }
 
 model Session {
@@ -139,6 +142,32 @@ enum ResearcherRole {
   PI
   COLLABORATOR
   VIEWER
+}
+
+model Notification {
+  id           Int      @id @default(autoincrement())
+  createdAt    DateTime @default(now())
+  message      String
+  announcement Boolean  @default(false)
+  routeData    Json? // Flexible JSON field to store dynamic routing data
+
+  recipients NotificationRecipient[]
+}
+
+model NotificationRecipient {
+  notificationId Int
+  userId         Int
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  readAt         DateTime?
+  dismissedAt    DateTime?
+  pinned         Boolean   @default(false)
+
+  notification Notification @relation(fields: [notificationId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([notificationId, userId])
+  @@index([userId, readAt])
 }
 
 model StudyResearcher {

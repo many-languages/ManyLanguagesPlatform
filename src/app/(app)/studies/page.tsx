@@ -7,6 +7,8 @@ import { redirect } from "next/navigation"
 import { Prisma } from "@/db"
 import ShowArchivedToggle from "./components/client/ShowArchivedToggle"
 
+type SessionRole = "RESEARCHER" | "PARTICIPANT" | "ADMIN"
+
 const ITEMS_PER_PAGE = 1
 
 export const metadata = {
@@ -17,10 +19,12 @@ async function StudiesContent({
   page,
   userId,
   showArchived,
+  canManage,
 }: {
   page: number
   userId: number
   showArchived: boolean
+  canManage: boolean
 }) {
   // Base visibility: studies I own or participate in
   const baseWhere: Prisma.StudyWhereInput = {
@@ -43,9 +47,11 @@ async function StudiesContent({
 
   return (
     <>
-      <Link className="btn btn-primary mb-2" href={"/studies/new"}>
-        Create Study
-      </Link>
+      {canManage && (
+        <Link className="btn btn-primary mb-2" href={"/studies/new"}>
+          Create Study
+        </Link>
+      )}
       <StudyList studies={studies} showJoinButton={false} />
       <PaginationControls
         page={page}
@@ -68,13 +74,24 @@ export default async function StudiesPage({
   const { session } = await getBlitzContext()
   if (!session.userId) redirect("/login")
 
+  const role = (session.role ?? "PARTICIPANT") as SessionRole
+  const canManageStudies = role !== "PARTICIPANT"
+  const effectiveShowArchived = canManageStudies ? showArchived : false
+
   return (
     <main>
       <h1 className="text-3xl flex justify-center mb-2">My studies</h1>
-      <div className="flex justify-end">
-        <ShowArchivedToggle />
-      </div>
-      <StudiesContent page={page} userId={session.userId} showArchived={showArchived} />
+      {canManageStudies && (
+        <div className="flex justify-end">
+          <ShowArchivedToggle />
+        </div>
+      )}
+      <StudiesContent
+        page={page}
+        userId={session.userId}
+        showArchived={effectiveShowArchived}
+        canManage={canManageStudies}
+      />
     </main>
   )
 }

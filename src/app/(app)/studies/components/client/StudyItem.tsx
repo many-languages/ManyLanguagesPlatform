@@ -1,8 +1,8 @@
 import { Study } from "db"
 import CollapseCard from "../CollapseCard"
-import Link from "next/link"
-import { ArchiveBoxIcon } from "@heroicons/react/24/outline"
 import JoinStudyButton from "./JoinStudyButton"
+import { NavigationButton } from "@/src/app/components/NavigationButton"
+import { ArchiveBoxIcon } from "@heroicons/react/24/outline"
 
 interface StudyItemProps {
   study: Pick<
@@ -23,6 +23,13 @@ interface StudyItemProps {
 }
 
 export default function StudyItem({ study, showJoinButton }: StudyItemProps) {
+  const { jatosStudyId, jatosBatchId, jatosWorkerType } = study
+  const canJoinStudy =
+    Boolean(showJoinButton) &&
+    jatosStudyId !== null &&
+    jatosBatchId !== null &&
+    jatosWorkerType !== null
+
   return (
     <CollapseCard
       title={
@@ -35,15 +42,19 @@ export default function StudyItem({ study, showJoinButton }: StudyItemProps) {
       className="mb-4"
       actions={
         <>
-          <Link className="btn btn-primary" href={`/studies/${study.id}`}>
+          <NavigationButton
+            href={`/studies/${study.id}`}
+            pendingText="Opening..."
+            className="btn-primary"
+          >
             Open
-          </Link>
-          {showJoinButton && (
+          </NavigationButton>
+          {canJoinStudy && (
             <JoinStudyButton
               studyId={study.id}
-              jatosStudyId={study.jatosStudyId}
-              jatosBatchId={study.jatosBatchId!}
-              jatosWorkerType={study.jatosWorkerType}
+              jatosStudyId={jatosStudyId}
+              jatosBatchId={jatosBatchId}
+              jatosWorkerType={jatosWorkerType}
             />
           )}
         </>

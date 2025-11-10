@@ -13,6 +13,7 @@ import SaveExitButton from "../../../components/client/SaveExitButton"
 import type { EnrichedJatosStudyResult } from "@/src/types/jatos"
 import { FeedbackFormEditorRef } from "../../../../feedback/types"
 import FeedbackFormEditor from "../../../../feedback/components/client/FeedbackFormEditor"
+import { useNotificationMenuContext } from "@/src/app/(app)/notifications/context/NotificationMenuContext"
 
 interface Step4ContentProps {
   initialFeedbackTemplate?: {
@@ -34,6 +35,7 @@ export default function Step4Content({
   const { study, studyId } = useStudySetup()
   const feedbackEditorRef = useRef<FeedbackFormEditorRef>(null)
   const [updateStudyStatusMutation] = useMutation(updateStudyStatus)
+  const { refetch: refetchNotifications } = useNotificationMenuContext()
 
   const handleFinish = async () => {
     if (feedbackEditorRef.current) {
@@ -48,7 +50,8 @@ export default function Step4Content({
     if (study && isSetupComplete(study)) {
       try {
         await updateStudyStatusMutation({ studyId, status: "OPEN" })
-        router.refresh() // Refresh to get updated study data
+        await refetchNotifications()
+        router.replace(`/studies/${studyId}`)
         toast.success("Setup complete! Study is now open for participants.")
       } catch (error) {
         console.error("Failed to open study:", error)
@@ -56,7 +59,8 @@ export default function Step4Content({
       }
     }
 
-    router.push(`/studies/${studyId}`)
+    await refetchNotifications()
+    router.replace(`/studies/${studyId}`)
   }
 
   // Show warning if no test run data found

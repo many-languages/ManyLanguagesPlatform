@@ -1,0 +1,16 @@
+<div>
+  <p>
+    The setup for the study
+    <strong>{{studyTitle}}</strong>
+    is now complete.
+  </p>
+  {{#setupCompletedAt}}
+    <p>
+      Completed on
+      <strong>{{setupCompletedAt}}</strong>.
+    </p>
+  {{/setupCompletedAt}}
+  {{#nextStep}}
+    <p>{{nextStep}}</p>
+  {{/nextStep}}
+</div>

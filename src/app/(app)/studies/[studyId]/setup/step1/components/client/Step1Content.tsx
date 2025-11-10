@@ -50,7 +50,6 @@ export default function Step1Content({
         endDate: study.endDate?.toISOString().split("T")[0] ?? "",
         sampleSize: study.sampleSize,
         payment: study.payment ?? "",
-        ethicalPermission: study.ethicalPermission ?? "",
         length: study.length ?? "",
       }}
       onCancel={

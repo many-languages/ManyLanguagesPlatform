@@ -53,11 +53,6 @@ export default function StudyInformationForm({
           <DateField name="endDate" label="End Date" />
           <TextField name="sampleSize" label="Sample Size" placeholder="100" type="number" />
           <TextField name="payment" label="Payment" placeholder="e.g., $10 voucher" />
-          <TextField
-            name="ethicalPermission"
-            label="Ethical Permission"
-            placeholder="https://example.com/approval"
-          />
           <TextField name="length" label="Expected Duration" placeholder="30 minutes" />
 
           {/* Form Actions */}

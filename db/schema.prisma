@@ -96,13 +96,12 @@ model Study {
   description String
 
   // Study configuration
-  status            StudyStatus @default(CLOSED) // Whether study is open for datacollection (can be set manually)
-  startDate         DateTime // Expected startDate of data collection, study opens at startDate automatically
-  endDate           DateTime // Expected endDate of data collection, study closes at endDate automatically 
-  sampleSize        Int // Number of participants to be collected
-  payment           String // Description of payment method
-  ethicalPermission String // URL/link to ethical approval
-  length            String // e.g. "30 minutes", stored as text
+  status     StudyStatus @default(CLOSED) // Whether study is open for datacollection (can be set manually)
+  startDate  DateTime // Expected startDate of data collection, study opens at startDate automatically
+  endDate    DateTime // Expected endDate of data collection, study closes at endDate automatically 
+  sampleSize Int // Number of participants to be collected
+  payment    String // Description of payment method
+  length     String // e.g. "30 minutes", stored as text
 
   // JATOS integration
   jatosStudyId       Int? // ID returned from JATOS after import

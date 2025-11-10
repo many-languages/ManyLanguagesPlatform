@@ -44,7 +44,6 @@ export const StudyInformationFormSchema = z.object({
   endDate: z.string().min(1, "End date is required"),
   sampleSize: z.coerce.number().int().positive("Must be a positive number"),
   payment: z.string().min(1, "Payment description is required").trim(),
-  ethicalPermission: z.string().url("Must be a valid URL"),
   length: z.string().min(1, "Study length is required").trim(),
 })
 
@@ -56,7 +55,6 @@ export const CreateStudy = z.object({
   endDate: z.date().default(() => new Date()),
   sampleSize: z.number().default(0),
   payment: z.string().default(""),
-  ethicalPermission: z.string().default("https://example.com"),
   length: z.string().default(""),
 })
 

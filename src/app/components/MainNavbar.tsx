@@ -39,8 +39,14 @@ const MainNavbar = ({ currentUser }: MainNavbarProps) => {
   const [logoutMutation] = useMutation(logout)
   const router = useRouter()
 
+  const closeActiveDropdown = () => {
+    if (document.activeElement instanceof HTMLElement) {
+      document.activeElement.blur()
+    }
+  }
+
   return (
-    <div className="navbar bg-base-100 sticky shadow-sm border-b border-gray-300">
+    <div className="navbar bg-base-100 sticky top-0 z-50 shadow-sm border-b border-gray-300">
       {/* Title */}
       <div className="flex-1">
         <a className="btn btn-ghost text-xl">ManyLanguagesPlatform</a>
@@ -56,13 +62,19 @@ const MainNavbar = ({ currentUser }: MainNavbarProps) => {
             </NotificationMenuProvider>
           </li>
           <li>
-            <Link href={"/dashboard"}>Dashboard</Link>
+            <Link href={"/dashboard"} onClick={closeActiveDropdown}>
+              Dashboard
+            </Link>
           </li>
           <li>
-            <Link href={"/studies"}>My studies</Link>
+            <Link href={"/studies"} onClick={closeActiveDropdown}>
+              My studies
+            </Link>
           </li>
           <li>
-            <Link href={"/explore"}>Explore</Link>
+            <Link href={"/explore"} onClick={closeActiveDropdown}>
+              Explore
+            </Link>
           </li>
         </ul>
 
@@ -75,7 +87,12 @@ const MainNavbar = ({ currentUser }: MainNavbarProps) => {
           </label>
           <ul className="menu menu-sm dropdown-content mt-3 z-[1] p-2 shadow bg-base-300 rounded-box w-52">
             <li>
-              <Link className="justify-between" key="Profile" href="/profile">
+              <Link
+                className="justify-between"
+                key="Profile"
+                href="/profile"
+                onClick={closeActiveDropdown}
+              >
                 Profile
               </Link>
             </li>
@@ -84,6 +101,7 @@ const MainNavbar = ({ currentUser }: MainNavbarProps) => {
                 onClick={async () => {
                   await logoutMutation()
                   await router.push("/")
+                  closeActiveDropdown()
                 }}
               >
                 Logout

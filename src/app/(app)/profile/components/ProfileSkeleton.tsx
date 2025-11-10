@@ -1,4 +1,4 @@
-import Card from "../../components/Card"
+import Card from "@/src/app/components/Card"
 
 export default function ProfileSkeleton() {
   return (

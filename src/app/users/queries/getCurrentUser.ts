@@ -16,6 +16,7 @@ async function findCurrentUser(userId: number) {
       role: true,
       gravatar: true,
       createdAt: true,
+      language: true,
     },
   })
 

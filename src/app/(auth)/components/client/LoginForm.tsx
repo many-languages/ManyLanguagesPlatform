@@ -11,6 +11,7 @@ import { useMutation } from "@blitzjs/rpc"
 import { useSearchParams } from "next/navigation"
 import { useRouter } from "next/navigation"
 import type { Route } from "next"
+import { usePendingNavigation } from "@/src/app/hooks/usePendingNavigation"
 
 type LoginFormProps = {
   onSuccess?: (user: PromiseReturnType<typeof login>) => void
@@ -20,6 +21,7 @@ export const LoginForm = (props: LoginFormProps) => {
   const [loginMutation] = useMutation(login)
   const router = useRouter()
   const next = useSearchParams()?.get("next")
+  const { isPending: isNavigating, startNavigation } = usePendingNavigation()
 
   const defaultValues = useMemo(() => ({ email: "", password: "" }), [])
 
@@ -38,12 +40,14 @@ export const LoginForm = (props: LoginFormProps) => {
               return { [FORM_ERROR]: result.error }
             }
 
-            router.refresh()
-            if (next) {
-              router.push(next as Route)
-            } else {
-              router.push("/dashboard")
-            }
+            startNavigation(() => {
+              router.refresh()
+              if (next) {
+                router.push(next as Route)
+              } else {
+                router.push("/dashboard")
+              }
+            })
           } catch (error: any) {
             const errorMessage = error?.message || "An unexpected error occurred. Please try again."
             return { [FORM_ERROR]: errorMessage }
@@ -63,6 +67,7 @@ export const LoginForm = (props: LoginFormProps) => {
             submitText="Login"
             loadingText="Logging in..."
             className="btn btn-primary w-full"
+            isPending={isNavigating}
           />
 
           <FormErrorDisplay />

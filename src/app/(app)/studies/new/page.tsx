@@ -19,7 +19,6 @@ export default function NewStudy() {
         endDate: new Date(),
         sampleSize: 0,
         payment: "",
-        ethicalPermission: "",
         length: "",
       })
       router.push(`/studies/${study.id}/setup/step1`)

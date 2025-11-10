@@ -9,7 +9,7 @@ interface JatosInformationCardProps {
 export default function JatosInformationCard({ properties }: JatosInformationCardProps) {
   if (!properties) {
     return (
-      <Card title="JATOS Information">
+      <Card title="JATOS Information" collapsible className="mt-4">
         <EmptyState message="JATOS study properties could not be loaded." className="p-0 mt-2" />
       </Card>
     )
@@ -19,7 +19,7 @@ export default function JatosInformationCard({ properties }: JatosInformationCar
   const batches = properties.batches || []
 
   return (
-    <Card title="JATOS Information">
+    <Card title="JATOS Information" collapsible className="mt-4">
       <p className="italic mb-2">
         This card contains live information about the study instance on the JATOS server.
       </p>

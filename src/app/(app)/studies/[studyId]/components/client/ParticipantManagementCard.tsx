@@ -224,6 +224,8 @@ export default function ParticipantManagementCard({
     >
       <Card
         title="Participant Management"
+        className="mt-4"
+        collapsible
         actions={
           <div className="flex gap-2 justify-end">
             <ActionButton

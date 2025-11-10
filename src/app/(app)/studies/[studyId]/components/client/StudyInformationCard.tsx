@@ -13,9 +13,11 @@ export default function StudyInformationCard({ study, userRole }: StudyInformati
   return (
     <Card
       title="Study Information"
+      collapsible
+      className="mt-4"
       actions={
-        userRole === "RESEARCHER" && (
-          <div className="card-actions justify-end mt-4">
+        userRole === "RESEARCHER" ? (
+          <div className="flex flex-wrap justify-end gap-2">
             <Link
               className="btn btn-primary"
               href={`/studies/${study.id}/setup/step1?edit=true&returnTo=study`}
@@ -24,7 +26,7 @@ export default function StudyInformationCard({ study, userRole }: StudyInformati
             </Link>
             <ArchiveStudyButton studyId={study.id} isArchived={study.archived} />
           </div>
-        )
+        ) : undefined
       }
     >
       <p>
@@ -38,17 +40,6 @@ export default function StudyInformationCard({ study, userRole }: StudyInformati
       </p>
       <p>
         <span className="font-semibold">Payment:</span> {study.payment}
-      </p>
-      <p>
-        <span className="font-semibold">Ethical Permission:</span>{" "}
-        <a
-          href={study.ethicalPermission}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="link"
-        >
-          View
-        </a>
       </p>
       <p>
         <span className="font-semibold">Start Date:</span> {formatDate(study.startDate)}

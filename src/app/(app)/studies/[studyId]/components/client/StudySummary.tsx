@@ -15,7 +15,7 @@ export default function StudySummary({ metadata }: StudySummaryProps) {
 
     if (!summary) {
       return (
-        <div className="mt-6">
+        <div className="mt-4">
           <EmptyState
             message="No study results available yet. Summary statistics will appear once participants start completing the study."
             title="No Results"
@@ -26,7 +26,7 @@ export default function StudySummary({ metadata }: StudySummaryProps) {
     }
 
     return (
-      <div className="stats shadow bg-base-200 mt-6 w-full">
+      <div className="stats shadow bg-base-200 mt-4 w-full">
         <div className="stat">
           <div className="stat-title">Participants (Finished)</div>
           <div className="stat-value text-success">{summary.finished}</div>
@@ -62,7 +62,7 @@ export default function StudySummary({ metadata }: StudySummaryProps) {
     console.error("Error calculating study summary:", error)
 
     return (
-      <Alert variant="error" className="mt-6">
+      <Alert variant="error" className="mt-4">
         <p>
           Unable to calculate study summary statistics. This may be due to unexpected data format.
         </p>

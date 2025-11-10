@@ -31,7 +31,7 @@ export default function SetupProgressCard({ study }: SetupProgressCardProps) {
   }
 
   return (
-    <Card title="Setup Progress" collapsible={isComplete}>
+    <Card title="Setup Progress" collapsible={isComplete} className="mt-4">
       <StepIndicator
         completedSteps={completedStepsList}
         onClickStep={handleStepClick}

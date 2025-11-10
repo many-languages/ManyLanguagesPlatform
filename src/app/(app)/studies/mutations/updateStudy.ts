@@ -30,7 +30,6 @@ export async function updateStudy(
       endDate: new Date(data.endDate),
       sampleSize: data.sampleSize,
       payment: data.payment,
-      ethicalPermission: data.ethicalPermission,
       length: data.length,
       status: data.status,
       step1Completed,

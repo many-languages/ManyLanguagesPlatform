@@ -1,6 +1,7 @@
 "use client"
 
 import { useMemo } from "react"
+import clsx from "clsx"
 import MDEditor from "@uiw/react-md-editor"
 import Card from "@/src/app/components/Card"
 import { renderTemplate } from "../../utils/feedbackRenderer"
@@ -50,7 +51,7 @@ export default function FeedbackCard({
   }, [template?.content, enrichedResult, allEnrichedResults])
 
   return (
-    <Card title={title} className={className}>
+    <Card title={title} className={clsx("mt-4", className)} collapsible>
       <div data-color-mode="light" className={mdEditorClassName.preview}>
         <MDEditor.Markdown source={renderedContent} style={mdEditorStyles.preview} />
       </div>

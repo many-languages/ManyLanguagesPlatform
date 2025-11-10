@@ -166,7 +166,8 @@ export default function ResultsCard({
   return (
     <Card
       title="Results"
-      className="mt-6"
+      className="mt-4"
+      collapsible
       actions={
         <div className="flex gap-2">
           {/* Filter varibales by components */}

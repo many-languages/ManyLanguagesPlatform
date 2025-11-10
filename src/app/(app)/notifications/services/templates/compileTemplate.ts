@@ -1,8 +1,8 @@
-import handlebars from "handlebars"
+import Mustache from "mustache"
 
 import { getTemplateContent } from "./getTemplateContent"
 
-const templateCache = new Map<string, handlebars.TemplateDelegate>()
+const templateCache = new Map<string, string>()
 
 export const compileTemplate = async <T extends Record<string, any>>(
   templateId: string,
@@ -10,9 +10,9 @@ export const compileTemplate = async <T extends Record<string, any>>(
 ): Promise<string> => {
   if (!templateCache.has(templateId)) {
     const templateString = await getTemplateContent(templateId)
-    templateCache.set(templateId, handlebars.compile(templateString))
+    templateCache.set(templateId, templateString)
   }
 
   const template = templateCache.get(templateId)!
-  return template(data)
+  return Mustache.render(template, data)
 }

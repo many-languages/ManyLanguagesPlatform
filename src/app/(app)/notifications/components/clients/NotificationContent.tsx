@@ -1,6 +1,5 @@
 "use client"
 
-import { useMemo } from "react"
 import { InformationCircleIcon } from "@heroicons/react/24/outline"
 import { FormProvider, useForm } from "react-hook-form"
 
@@ -26,17 +25,11 @@ export const NotificationContent = ({ notifications }: NotificationContentProps)
 
   const selectedIds = formMethods.watch("selectedIds")
 
-  const titleSuffix = useMemo(() => {
-    if (selectedIds.length === 0) return ""
-    if (selectedIds.length === 1) return " (1 selected)"
-    return ` (${selectedIds.length} selected)`
-  }, [selectedIds])
-
   return (
     <main className="flex flex-col mx-auto w-full gap-6">
       <header className="flex flex-col items-center gap-2">
         <h1 className="flex items-center text-3xl">
-          Notifications{titleSuffix}
+          Notifications
           <InformationCircleIcon
             className="h-6 w-6 ml-2 text-info stroke-2"
             data-tooltip-id="dashboard-overview"

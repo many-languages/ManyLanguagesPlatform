@@ -2,6 +2,7 @@ import Link from "next/link"
 import DOMPurify from "dompurify"
 import { RouteData } from "../../types"
 import { isRouteData } from "../../utils/isRouteData"
+import { resolveRouteHref } from "../../utils/resolveRouteHref"
 
 interface NotificatioMessageProps {
   message: string
@@ -11,17 +12,14 @@ interface NotificatioMessageProps {
 export default function NotificatioMessage({ message, routeData }: NotificatioMessageProps) {
   const cleanMessage = DOMPurify.sanitize(message)
 
-  return isRouteData(routeData) ? (
-    <Link
-      href={{
-        pathname: routeData.path,
-        query: routeData.params,
-      }}
-      className="hover:underline text-primary"
-    >
-      <div dangerouslySetInnerHTML={{ __html: cleanMessage }}></div>
-    </Link>
-  ) : (
-    <div dangerouslySetInnerHTML={{ __html: cleanMessage }}></div>
-  )
+  if (isRouteData(routeData)) {
+    const href = resolveRouteHref(routeData)
+    return (
+      <Link href={href as any} className="hover:underline text-primary">
+        <div dangerouslySetInnerHTML={{ __html: cleanMessage }}></div>
+      </Link>
+    )
+  }
+
+  return <div dangerouslySetInnerHTML={{ __html: cleanMessage }}></div>
 }

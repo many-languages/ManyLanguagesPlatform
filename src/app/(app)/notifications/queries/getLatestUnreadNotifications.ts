@@ -1,49 +1,19 @@
 import { Ctx } from "blitz"
 import db from "db"
-import { cache } from "react"
-import { getBlitzContext } from "@/src/app/blitz-server"
 
-export type GetLatestUnreadNotificationsInput = {
-  take?: number
-  includeDismissed?: boolean
-}
-
-const DEFAULT_TAKE = 3
-
-async function findLatestUnreadNotifications(
-  userId: number,
-  input: GetLatestUnreadNotificationsInput = {}
-) {
-  const { includeDismissed = false, take = DEFAULT_TAKE } = input
+export default async function getLatestUnreadNotifications(_: unknown, ctx: Ctx) {
+  ctx.session.$authorize()
 
   return db.notificationRecipient.findMany({
     where: {
-      userId,
+      userId: ctx.session.userId!,
       readAt: null,
-      ...(includeDismissed ? {} : { dismissedAt: null }),
+      dismissedAt: null,
     },
     include: {
       notification: true,
     },
     orderBy: [{ pinned: "desc" }, { createdAt: "desc" }],
-    take,
+    take: 3,
   })
-}
-
-export const getLatestUnreadNotificationsRsc = cache(
-  async (input: GetLatestUnreadNotificationsInput = {}) => {
-    const { session } = await getBlitzContext()
-    if (!session.userId) return []
-
-    return findLatestUnreadNotifications(session.userId, input)
-  }
-)
-
-export default async function getLatestUnreadNotifications(
-  input: GetLatestUnreadNotificationsInput,
-  ctx: Ctx
-) {
-  ctx.session.$authorize()
-
-  return findLatestUnreadNotifications(ctx.session.userId, input)
 }

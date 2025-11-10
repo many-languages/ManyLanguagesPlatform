@@ -6,6 +6,7 @@ import toast from "react-hot-toast"
 
 import { markNotificationsRead, markNotificationsUnread } from "../../actions"
 import { NotificationWithRecipient } from "../../types"
+import { useNotificationMenuContext } from "../../context/NotificationMenuContext"
 
 type FormValues = {
   selectedIds: number[]
@@ -23,6 +24,7 @@ export const NotificationsBulkActions = ({ notifications }: NotificationsBulkAct
   } = useFormContext<FormValues>()
   const selectedIds = watch("selectedIds")
   const [isPending, startTransition] = useTransition()
+  const { refetch } = useNotificationMenuContext()
 
   const selectedNotifications = useMemo(
     () => notifications.filter((recipient) => selectedIds.includes(recipient.notificationId)),
@@ -45,6 +47,7 @@ export const NotificationsBulkActions = ({ notifications }: NotificationsBulkAct
     startTransition(async () => {
       try {
         await action(selectedIds)
+        await refetch()
         toast.success(`${count} notification${count === 1 ? "" : "s"} marked as ${verb}.`, {
           id: "notifications-bulk-action",
         })

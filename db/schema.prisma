@@ -96,7 +96,7 @@ model Study {
   description String
 
   // Study configuration
-  status            StudyStatus @default(OPEN) // Whether study is open for datacollection (can be set manually)
+  status            StudyStatus @default(CLOSED) // Whether study is open for datacollection (can be set manually)
   startDate         DateTime // Expected startDate of data collection, study opens at startDate automatically
   endDate           DateTime // Expected endDate of data collection, study closes at endDate automatically 
   sampleSize        Int // Number of participants to be collected

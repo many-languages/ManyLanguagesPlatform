@@ -9,6 +9,7 @@ import Table from "../../../../components/Table"
 import DateFormat from "../../../../components/DateFormat"
 import NotificationMessage from "./NotificationMessage"
 import ReadToggle from "./ReadToggle"
+import { PinToggle } from "./PinToggle"
 import { SelectCheckbox, SelectAllCheckbox } from "../../../../components/fields/SelectCheckbox"
 import { NotificationWithRecipient } from "../../types"
 import { parseRouteData } from "../../utils/parseRouteData"
@@ -63,15 +64,10 @@ export const NotificationTable = ({ notifications }: NotificationTableProps) => 
           />
         ),
       }),
-      columnHelper.accessor("pinned", {
+      columnHelper.display({
+        id: "pinned",
         header: "Pinned",
-        enableSorting: false,
-        cell: (info) =>
-          info.getValue() ? (
-            <StarIconSolid className="h-5 w-5 text-warning" aria-label="Pinned notification" />
-          ) : (
-            <StarIconOutline className="h-5 w-5 text-base-content/40" aria-label="Not pinned" />
-          ),
+        cell: (info) => <PinToggle recipient={info.row.original.recipient} />,
       }),
       columnHelper.display({
         id: "readToggle",

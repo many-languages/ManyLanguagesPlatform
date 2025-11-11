@@ -29,7 +29,7 @@ export default function StepIndicator({
   const currentStep = step ? step.id : null // null means no current step (e.g., on study page)
 
   return (
-    <ul className="steps mb-8 w-full">
+    <ul className="steps w-full">
       {steps.map((s) => {
         const isCompleted = completedSteps.includes(s.id)
         const isCurrent = currentStep !== null && currentStep === s.id
@@ -44,7 +44,8 @@ export default function StepIndicator({
               "step",
               (isCompleted || isUpToCurrent) && "step-primary", // Color completed steps OR steps up to current (for edge coloring)
               isCurrent && "step-secondary", // Highlight current step (overrides primary on node but edges remain colored)
-              isClickable && "cursor-pointer hover:opacity-80",
+              isClickable &&
+                "cursor-pointer hover:[&::after]:ring-3 hover:[&::after]:ring-secondary dark:hover:[&::after]:ring-secondary",
               editable && !isCompleted && "opacity-50 cursor-not-allowed"
             )}
             onClick={isClickable ? () => onClickStep(s.id) : undefined}

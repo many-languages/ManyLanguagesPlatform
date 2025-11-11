@@ -18,7 +18,7 @@ const Card = ({ title, children, actions, className, collapsible = false }: Card
         <input type="checkbox" className="peer" defaultChecked />
         <div className="collapse-title text-xl font-medium cursor-pointer">{title}</div>
         <div className="collapse-content">
-          <div className="card-body">
+          <div className="card-body gap-3 pt-0">
             {children}
             {actions && <div className="card-actions justify-end">{actions}</div>}
           </div>
@@ -32,7 +32,7 @@ const Card = ({ title, children, actions, className, collapsible = false }: Card
     <div
       className={clsx("card bg-base-200 base-content border-base-300 mt-2 shadow-sm", className)}
     >
-      <div className="card-body">
+      <div className="card-body gap-3">
         <div className="card-title">{title}</div>
         {children}
         {actions && <div className="card-actions justify-end">{actions}</div>}

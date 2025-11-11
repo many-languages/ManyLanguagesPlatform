@@ -4,6 +4,7 @@ import { useMemo } from "react"
 import clsx from "clsx"
 import MDEditor from "@uiw/react-md-editor"
 import Card from "@/src/app/components/Card"
+import { NavigationButton } from "@/src/app/components/NavigationButton"
 import { renderTemplate } from "../../utils/feedbackRenderer"
 import { EnrichedJatosStudyResult } from "@/src/types/jatos"
 import { mdEditorStyles, mdEditorClassName } from "../../styles/feedbackStyles"
@@ -51,7 +52,20 @@ export default function FeedbackCard({
   }, [template?.content, enrichedResult, allEnrichedResults])
 
   return (
-    <Card title={title} className={clsx("mt-4", className)} collapsible>
+    <Card
+      title={title}
+      className={clsx("mt-4", className)}
+      collapsible
+      actions={
+        <NavigationButton
+          href={`/studies/${studyId}/setup/step4`}
+          className="btn-primary"
+          pendingText="Opening…"
+        >
+          Edit
+        </NavigationButton>
+      }
+    >
       <div data-color-mode="light" className={mdEditorClassName.preview}>
         <MDEditor.Markdown source={renderedContent} style={mdEditorStyles.preview} />
       </div>

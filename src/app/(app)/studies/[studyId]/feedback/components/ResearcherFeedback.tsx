@@ -27,7 +27,7 @@ export default async function ResearcherFeedback({ studyId }: ResearcherFeedback
         studyId={studyId}
         enrichedResult={enrichedResult}
         template={template}
-        title="Feedback Preview (Test Results)"
+        title="Feedback Preview"
         allEnrichedResults={allTestResults}
       />
     )

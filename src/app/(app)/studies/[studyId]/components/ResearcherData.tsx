@@ -4,7 +4,6 @@ import { getStudyParticipantsRsc } from "../../queries/getStudyParticipants"
 import StudySummary from "./client/StudySummary"
 import ParticipantManagementCard from "./client/ParticipantManagementCard"
 import ResultsCardWrapper from "./ResultsCardWrapper"
-import JatosInformationCard from "./client/JatosInformationCard"
 import { Alert } from "@/src/app/components/Alert"
 import { isSetupComplete } from "../setup/utils/setupStatus"
 import { StudyWithRelations } from "../../queries/getStudy"
@@ -96,9 +95,6 @@ export default async function ResearcherData({ studyId, study }: ResearcherDataP
         properties={properties}
         studyId={studyId}
       />
-
-      {/* Information about the study fetched from JATOS */}
-      <JatosInformationCard properties={properties} />
 
       {/* Feedback preview with test results */}
       <ResearcherFeedback studyId={studyId} />

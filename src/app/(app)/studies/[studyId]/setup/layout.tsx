@@ -33,7 +33,7 @@ export default async function StudySetupLayout({
         <div className="max-w-4xl mx-auto mt-10">
           {/* Step indicator - client component detects current step from pathname */}
           <StepIndicator completedSteps={completedSteps} />
-          <div className="card bg-base-200 p-6 shadow-md">
+          <div className="card bg-base-200 p-6 shadow-md mt-4">
             {/* Suspense boundary for progressive loading of step-specific data */}
             <Suspense fallback={<SetupContentSkeleton />}>{children}</Suspense>
           </div>

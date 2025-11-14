@@ -34,7 +34,7 @@ export default async function Step4Page({ params }: { params: Promise<{ studyId:
 
   return (
     <>
-      <h2 className="text-lg font-semibold mb-4">Step 4 – Feedback</h2>
+      <h2 className="text-xl font-semibold mb-4 text-center">Step 4 – Feedback</h2>
       <Suspense fallback={<SetupContentSkeleton />}>
         <Step4ContentWrapper studyId={studyId} />
       </Suspense>

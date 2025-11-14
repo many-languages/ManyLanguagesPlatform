@@ -50,7 +50,7 @@ export default function JatosForm({
   )
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 max-w-2xl mx-auto">
       <h1 className="text-2xl font-bold">{formTitle}</h1>
 
       <Form

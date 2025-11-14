@@ -19,7 +19,7 @@ export const TextField = ({ name, label, error, className, ...props }: TextField
 
   return (
     <fieldset className="fieldset">
-      <label htmlFor={name} className="label">
+      <label htmlFor={name} className="label text-base font-medium">
         {label}
       </label>
       <input

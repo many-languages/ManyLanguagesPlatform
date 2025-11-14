@@ -34,7 +34,7 @@ export const SelectField = ({
 
   return (
     <fieldset className="fieldset">
-      <label htmlFor={name} className="label">
+      <label htmlFor={name} className="label text-base font-medium">
         {label}
       </label>
       <select

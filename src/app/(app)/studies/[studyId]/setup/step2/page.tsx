@@ -6,7 +6,7 @@ export default function Step2Page() {
     <>
       <div className="flex items-center justify-between mb-4">
         <SaveExitButton />
-        <h2 className="text-lg font-semibold text-center flex-1">Step 2 – JATOS setup</h2>
+        <h2 className="text-xl font-semibold text-center flex-1">Step 2 – JATOS setup</h2>
         <div className="w-32" /> {/* Spacer to balance the layout */}
       </div>
       <Step2Content />

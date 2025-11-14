@@ -11,7 +11,7 @@ export default async function Step1Page({
 
   return (
     <>
-      <h2 className="text-lg font-semibold mb-4 text-center">Step 1 – General information</h2>
+      <h2 className="text-xl font-semibold mb-4 text-center">Step 1 – General information</h2>
       <Step1Content isEditMode={isEditMode} returnTo={returnTo} />
     </>
   )

@@ -16,7 +16,6 @@ import deleteExistingJatosStudy from "@/src/lib/jatos/api/deleteExistingJatosStu
 import { uploadStudyFile } from "@/src/lib/jatos/api/uploadStudyFile"
 import { Alert } from "@/src/app/components/Alert"
 import { FORM_ERROR } from "@/src/app/components/Form"
-import SaveExitButton from "../../../components/client/SaveExitButton"
 import { generateAndSaveResearcherTestRunUrl } from "../../../../utils/generateResearcherTestRunUrl"
 
 export default function Step2Content() {
@@ -171,8 +170,6 @@ export default function Step2Content() {
           </div>
         </Alert>
       )}
-
-      <SaveExitButton />
 
       <JatosForm
         formTitle=""

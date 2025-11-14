@@ -4,6 +4,7 @@ import { useMutation } from "@blitzjs/rpc"
 import createStudy from "../mutations/createStudy"
 import { useRouter } from "next/navigation"
 import toast from "react-hot-toast"
+import { AsyncButton } from "@/src/app/components/AsyncButton"
 
 export default function NewStudy() {
   const router = useRouter()
@@ -30,9 +31,9 @@ export default function NewStudy() {
   return (
     <div className="flex flex-col items-center mt-20">
       <h1 className="text-2xl font-bold mb-6">Create new study</h1>
-      <button className="btn btn-primary" onClick={handleCreate}>
+      <AsyncButton onClick={handleCreate} loadingText="Creating..." className="btn btn-primary">
         Start setup
-      </button>
+      </AsyncButton>
     </div>
   )
 }

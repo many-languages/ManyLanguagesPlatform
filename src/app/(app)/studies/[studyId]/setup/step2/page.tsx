@@ -1,9 +1,14 @@
 import Step2Content from "./components/client/Step2Content"
+import SaveExitButton from "../components/client/SaveExitButton"
 
 export default function Step2Page() {
   return (
     <>
-      <h2 className="text-lg font-semibold mb-4 text-center">Step 2 – JATOS setup</h2>
+      <div className="flex items-center justify-between mb-4">
+        <SaveExitButton />
+        <h2 className="text-lg font-semibold text-center flex-1">Step 2 – JATOS setup</h2>
+        <div className="w-32" /> {/* Spacer to balance the layout */}
+      </div>
       <Step2Content />
     </>
   )

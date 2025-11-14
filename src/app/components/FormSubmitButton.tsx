@@ -1,6 +1,7 @@
 "use client"
 
 import { useFormContext } from "react-hook-form"
+import clsx from "clsx"
 
 interface FormSubmitButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   submitText: string
@@ -24,7 +25,7 @@ export function FormSubmitButton({
     <button
       type="submit"
       disabled={pending || disabled}
-      className={className}
+      className={clsx(pending && "loading", className)}
       aria-busy={pending}
       {...props}
     >

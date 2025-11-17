@@ -4,9 +4,9 @@ services:
     image: postgres:16-alpine
     restart: unless-stopped
     environment:
-      POSTGRES_USER: ${POSTGRES_USER:-blitz}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-devpass}
-      POSTGRES_DB: ${POSTGRES_DB:-manylanguagesplatform}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
       # Reduce logging verbosity - don't log healthcheck connections/disconnections
       POSTGRES_INITDB_ARGS: "-c log_connections=off -c log_disconnections=off -c log_min_messages=warning"
     command:
@@ -33,10 +33,10 @@ services:
     image: mysql:8.0
     restart: unless-stopped
     environment:
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-rootpass}
-      MYSQL_DATABASE: ${MYSQL_DATABASE:-jatos}
-      MYSQL_USER: ${MYSQL_USER:-jatos}
-      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-devpass}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
     volumes:
       - jatos-db-data:/var/lib/mysql
     healthcheck:
@@ -59,7 +59,7 @@ services:
       - jatos-study-data:/opt/jatos/study_assets_root
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.jatos.rule=Host(`${JATOS_DOMAIN:-jatos.localhost}`)"
+      - "traefik.http.routers.jatos.rule=Host(`${JATOS_DOMAIN}`)"
       - "traefik.http.routers.jatos.entrypoints=web"
       - "traefik.http.services.jatos.loadbalancer.server.port=9000"
     networks:
@@ -91,7 +91,7 @@ services:
         condition: service_started
     environment:
       JATOS_BASE: http://jatos:9000
-      JATOS_TOKEN: ${JATOS_TOKEN:-}
+      JATOS_TOKEN: ${JATOS_TOKEN}
     volumes:
       - ./scripts:/scripts:ro
     command:
@@ -129,16 +129,16 @@ services:
     env_file:
       - .env
     environment:
-      # Database - These override any values from .env file
-      DATABASE_URL: postgresql://${POSTGRES_USER:-blitz}:${POSTGRES_PASSWORD:-devpass}@postgres:5432/${POSTGRES_DB:-manylanguagesplatform}
+      # Database - Constructed from environment variables
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
 
       # JATOS configuration
       # Use internal Docker service name for JATOS
       JATOS_BASE: http://jatos:9000
-      JATOS_TOKEN: ${JATOS_TOKEN:-}
+      JATOS_TOKEN: ${JATOS_TOKEN}
 
       # Public JATOS URL for client-side (accessible from browser)
-      NEXT_PUBLIC_JATOS_BASE: ${NEXT_PUBLIC_JATOS_BASE:-http://jatos.localhost}
+      NEXT_PUBLIC_JATOS_BASE: ${NEXT_PUBLIC_JATOS_BASE}
 
       # Next.js
       NODE_ENV: development
@@ -148,7 +148,7 @@ services:
       NODE_OPTIONS: --max-old-space-size=3072 # 3GB heap (within 4GB container limit)
 
       # Blitz session secret
-      SESSION_SECRET_KEY: ${SESSION_SECRET_KEY:-dev-secret-key-change-in-production}
+      SESSION_SECRET_KEY: ${SESSION_SECRET_KEY}
     ports:
       - "3000:3000"
     volumes:
@@ -177,7 +177,7 @@ services:
         echo 'Running database migrations...' &&
         npx prisma migrate deploy &&
         echo '✅ Migrations completed successfully!' &&
-        echo "DATABASE_URL is set to: postgresql://${POSTGRES_USER:-blitz}:***@postgres:5432/${POSTGRES_DB:-manylanguagesplatform}" &&
+        echo "DATABASE_URL is set to: postgresql://${POSTGRES_USER}:***@postgres:5432/${POSTGRES_DB}" &&
         echo 'Starting development server...' &&
         npm run dev
 

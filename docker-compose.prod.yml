@@ -3,14 +3,19 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+    secrets:
+      - postgres_password
+      - session_secret_key
+      - jatos_token
     environment:
-      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      # Database - Non-sensitive values from .env
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_DB: ${POSTGRES_DB}
       JATOS_BASE: http://jatos:9000
-      JATOS_TOKEN: ${JATOS_TOKEN}
       NEXT_PUBLIC_JATOS_BASE: ${NEXT_PUBLIC_JATOS_BASE}
       NODE_ENV: production
       PORT: 3000
-      SESSION_SECRET_KEY: ${SESSION_SECRET_KEY}
+      # Sensitive values are read from secrets in the command below
     ports:
       - "3000:3000"
     volumes:
@@ -21,6 +26,11 @@ services:
       - -c
       - |
         set -e
+        # Read secrets from files and export as environment variables
+        export POSTGRES_PASSWORD=$$(cat /run/secrets/postgres_password)
+        export JATOS_TOKEN=$$(cat /run/secrets/jatos_token)
+        export SESSION_SECRET_KEY=$$(cat /run/secrets/session_secret_key)
+        export DATABASE_URL=postgresql://$$POSTGRES_USER:$$POSTGRES_PASSWORD@postgres:5432/$$POSTGRES_DB
         echo 'Generating Prisma client...' &&
         npx prisma generate &&
         echo 'Running database migrations...' &&
@@ -52,3 +62,45 @@ services:
       - "./deploy/jatos/certs:/certs:ro"
       - "./deploy/jatos/dynamic:/etc/traefik/dynamic:ro"
       - "/var/run/docker.sock:/var/run/docker.sock:ro"
+
+  # PostgreSQL with secrets
+  postgres:
+    secrets:
+      - postgres_password
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_DB: ${POSTGRES_DB}
+    command:
+      - sh
+      - -c
+      - |
+        export POSTGRES_PASSWORD=$$(cat /run/secrets/postgres_password)
+        exec postgres -c log_connections=off -c log_disconnections=off -c log_min_messages=warning
+
+  # JATOS MySQL database with secrets
+  jatos-db:
+    secrets:
+      - mysql_root_password
+      - mysql_password
+    environment:
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+    command:
+      - sh
+      - -c
+      - |
+        export MYSQL_ROOT_PASSWORD=$$(cat /run/secrets/mysql_root_password)
+        export MYSQL_PASSWORD=$$(cat /run/secrets/mysql_password)
+        exec /entrypoint.sh mysqld
+
+secrets:
+  postgres_password:
+    file: ./secrets/postgres_password.txt
+  session_secret_key:
+    file: ./secrets/session_secret_key.txt
+  jatos_token:
+    file: ./secrets/jatos_token.txt
+  mysql_root_password:
+    file: ./secrets/mysql_root_password.txt
+  mysql_password:
+    file: ./secrets/mysql_password.txt

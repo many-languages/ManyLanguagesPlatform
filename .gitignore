@@ -45,4 +45,8 @@ next-env.d.ts
 # env files in jatos deployment
 deploy/jatos/.env
 
+# Docker secrets (production)
+secrets/
+!secrets/README.md
+
 .cursor/

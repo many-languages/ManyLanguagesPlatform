@@ -8,6 +8,13 @@ This guide explains how to deploy the ManyLanguagesPlatform using Docker Compose
 - **MySQL** - Database for JATOS
 - **Traefik** - Reverse proxy for routing
 
+## Important Security Notes
+
+- 🔒 **Never commit `.env` files** - They are excluded from version control
+- 🔒 **Use `.env.example` as a template** - Copy it to `.env` and fill in your values
+- 🔒 **Production uses Docker secrets** - See [Production Deployment](#production-deployment) section
+- 🔒 **No default passwords** - All credentials must be explicitly set
+
 ## Prerequisites
 
 - Docker and Docker Compose installed
@@ -30,30 +37,9 @@ cd ManyLanguagesPlatform
 cp .env.example .env
 ```
 
-Edit `.env` and configure the following variables:
+Edit `.env` and configure all required variables. The `.env.example` file contains a template with all required environment variables. **Important:** Replace all placeholder values (especially those marked `CHANGE_ME_IN_PRODUCTION`) with secure values.
 
-```env
-# PostgreSQL for Blitz app
-POSTGRES_USER=blitz
-POSTGRES_PASSWORD=devpass
-POSTGRES_DB=manylanguagesplatform
-
-# MySQL for JATOS
-MYSQL_ROOT_PASSWORD=rootpass
-MYSQL_DATABASE=jatos
-MYSQL_USER=jatos
-MYSQL_PASSWORD=devpass
-
-# JATOS configuration
-JATOS_DOMAIN=jatos.localhost
-JATOS_TOKEN=  # Leave empty initially, see step 4
-
-# Public JATOS URL (accessible from browser)
-NEXT_PUBLIC_JATOS_BASE=http://jatos.localhost
-
-# Blitz session secret (change in production!)
-SESSION_SECRET_KEY=dev-secret-key-change-in-production
-```
+**Security Note:** The `.env` file is excluded from version control (via `.gitignore`). Never commit your `.env` file or share it publicly. For production deployments, see the [Production Deployment](#production-deployment) section which uses Docker secrets instead of `.env` files.
 
 ### 3. Start the services
 
@@ -168,22 +154,85 @@ Production mode includes:
 - No source code mounted
 - Production database
 - HTTPS support (if configured)
+- **Docker secrets** for secure credential management
 
-### Start production
+### Production Deployment
+
+Production deployments use **Docker secrets** instead of `.env` files for enhanced security. This ensures sensitive credentials are never stored in environment variables or committed to version control.
+
+#### 1. Create Docker Secrets
+
+Create the required secret files in the `secrets/` directory:
+
+```bash
+# Create secrets directory (if it doesn't exist)
+mkdir -p secrets
+
+# Generate strong passwords and create secret files
+echo -n "your-strong-postgres-password" > secrets/postgres_password.txt
+echo -n "your-strong-session-secret" > secrets/session_secret_key.txt
+echo -n "your-jatos-token" > secrets/jatos_token.txt
+echo -n "your-strong-mysql-root-password" > secrets/mysql_root_password.txt
+echo -n "your-strong-mysql-user-password" > secrets/mysql_password.txt
+
+# Set secure file permissions
+chmod 600 secrets/*.txt
+```
+
+**Important:**
+
+- Use **strong, unique passwords** for each secret
+- Never commit the `secrets/` directory to version control (it's in `.gitignore`)
+- See `secrets/README.md` for detailed instructions
+
+#### 2. Create Production Environment File
+
+Create a `.env` file with non-sensitive configuration values:
+
+```env
+# PostgreSQL Configuration (non-sensitive)
+POSTGRES_USER=blitz
+POSTGRES_DB=manylanguagesplatform
+
+# MySQL Configuration (non-sensitive)
+MYSQL_DATABASE=jatos
+MYSQL_USER=jatos
+
+# JATOS Configuration
+JATOS_DOMAIN=your-production-domain.com
+NEXT_PUBLIC_JATOS_BASE=https://your-production-domain.com
+
+# App Domain
+APP_DOMAIN=your-app-domain.com
+
+# Node Environment
+NODE_ENV=production
+PORT=3000
+```
+
+**Note:** Sensitive values (passwords, tokens, secrets) are stored in the `secrets/` directory, not in `.env`.
+
+#### 3. Start Production
 
 ```bash
 make prod
 ```
 
-### Production Configuration
+This will use `docker-compose.prod.yml` which reads secrets from the `secrets/` directory.
 
-For production, you should:
+### Production Configuration Checklist
 
-1. **Change all default passwords** in `.env`
-2. **Set strong `SESSION_SECRET_KEY`**
-3. **Configure proper `JATOS_DOMAIN`** for your domain
-4. **Set up SSL certificates** for HTTPS
-5. **Configure `NEXT_PUBLIC_JATOS_BASE`** to match your public JATOS URL
+For production, ensure:
+
+1. ✅ **All Docker secrets are created** with strong, unique values
+2. ✅ **File permissions are secure** (`chmod 600` on secret files)
+3. ✅ **`.env` file contains only non-sensitive values**
+4. ✅ **`JATOS_DOMAIN` is configured** for your production domain
+5. ✅ **SSL certificates are set up** for HTTPS
+6. ✅ **`NEXT_PUBLIC_JATOS_BASE` matches** your public JATOS URL (use HTTPS)
+7. ✅ **Database ports are not exposed** to the internet (remove port mappings in production)
+8. ✅ **Regular backups** are configured for databases
+9. ✅ **Secrets are rotated** periodically
 
 ## Service URLs
 
@@ -413,24 +462,60 @@ make clean
 
 ## Environment Variables Reference
 
-### Required Variables
+### Development (using `.env` file)
 
-- `JATOS_TOKEN` - JATOS API token (must be created manually)
-- `DATABASE_URL` - PostgreSQL connection string (auto-constructed in docker-compose)
-- `SESSION_SECRET_KEY` - Blitz session encryption key
+All environment variables are defined in `.env.example`. Copy this file to `.env` and fill in the values:
 
-### Optional Variables
+```bash
+cp .env.example .env
+```
 
-- `POSTGRES_USER` - PostgreSQL username (default: `blitz`)
-- `POSTGRES_PASSWORD` - PostgreSQL password (default: `devpass`)
-- `POSTGRES_DB` - PostgreSQL database name (default: `manylanguagesplatform`)
-- `MYSQL_ROOT_PASSWORD` - MySQL root password (default: `rootpass`)
-- `MYSQL_DATABASE` - MySQL database name (default: `jatos`)
-- `MYSQL_USER` - MySQL username (default: `jatos`)
-- `MYSQL_PASSWORD` - MySQL password (default: `devpass`)
+**Required Variables:**
+
+- `POSTGRES_USER` - PostgreSQL username
+- `POSTGRES_PASSWORD` - PostgreSQL password
+- `POSTGRES_DB` - PostgreSQL database name
+- `MYSQL_ROOT_PASSWORD` - MySQL root password
+- `MYSQL_DATABASE` - MySQL database name
+- `MYSQL_USER` - MySQL username
+- `MYSQL_PASSWORD` - MySQL password
+- `JATOS_TOKEN` - JATOS API token (created manually via JATOS UI)
+- `SESSION_SECRET_KEY` - Blitz session encryption key (use a strong random string)
+
+**Optional Variables:**
+
 - `JATOS_DOMAIN` - JATOS domain for Traefik routing (default: `jatos.localhost`)
 - `NEXT_PUBLIC_JATOS_BASE` - Public JATOS URL for browser access (default: `http://jatos.localhost`)
+- `APP_DOMAIN` - App domain for Traefik routing (default: `app.localhost`)
 - `NODE_ENV` - Node environment (default: `development`)
+- `PORT` - Application port (default: `3000`)
+
+**Note:** `DATABASE_URL` is automatically constructed from `POSTGRES_USER`, `POSTGRES_PASSWORD`, and `POSTGRES_DB`.
+
+### Production (using Docker Secrets)
+
+In production, sensitive values are stored as Docker secrets in the `secrets/` directory:
+
+**Docker Secrets (required):**
+
+- `secrets/postgres_password.txt` - PostgreSQL password
+- `secrets/session_secret_key.txt` - Blitz session encryption key
+- `secrets/jatos_token.txt` - JATOS API token
+- `secrets/mysql_root_password.txt` - MySQL root password
+- `secrets/mysql_password.txt` - MySQL user password
+
+**Environment Variables (non-sensitive, in `.env`):**
+
+- `POSTGRES_USER` - PostgreSQL username
+- `POSTGRES_DB` - PostgreSQL database name
+- `MYSQL_DATABASE` - MySQL database name
+- `MYSQL_USER` - MySQL username
+- `JATOS_DOMAIN` - JATOS domain
+- `NEXT_PUBLIC_JATOS_BASE` - Public JATOS URL
+- `APP_DOMAIN` - App domain
+- `NODE_ENV` - Set to `production`
+
+See `secrets/README.md` for detailed instructions on creating and managing secrets.
 
 ## Data Persistence
 
@@ -464,13 +549,33 @@ Services communicate through Docker's internal network:
 
 ## Security Considerations
 
-1. **Change all default passwords** in production
-2. **Use strong `SESSION_SECRET_KEY`** in production
-3. **Set up HTTPS** for production (configure Traefik with Let's Encrypt)
-4. **Limit database access** (don't expose PostgreSQL port in production)
-5. **Regularly update** Docker images
-6. **Backup databases** regularly
-7. **Rotate JATOS tokens** periodically
+### Development
+
+- ✅ Use `.env` file for local development (already in `.gitignore`)
+- ✅ Never commit `.env` file to version control
+- ✅ Use `.env.example` as a template (safe to commit)
+
+### Production
+
+1. **Use Docker secrets** instead of `.env` files for sensitive values
+2. **Set strong, unique passwords** for all secrets
+3. **Restrict file permissions** on secret files (`chmod 600`)
+4. **Never commit secrets** to version control (secrets directory is in `.gitignore`)
+5. **Set up HTTPS** for production (configure Traefik with Let's Encrypt)
+6. **Limit database access** (don't expose PostgreSQL/MySQL ports in production)
+7. **Regularly update** Docker images
+8. **Backup databases** regularly
+9. **Rotate secrets** periodically (passwords, tokens, session keys)
+10. **Use a secrets manager** for large-scale deployments (AWS Secrets Manager, HashiCorp Vault, etc.)
+
+### Best Practices
+
+- 🔒 **Never hardcode secrets** in docker-compose files or code
+- 🔒 **Use different passwords** for development and production
+- 🔒 **Generate strong passwords** using a password manager or generator
+- 🔒 **Store secrets securely** (encrypted backups, separate from code)
+- 🔒 **Monitor for exposed secrets** using tools like GitGuardian
+- 🔒 **Rotate credentials** after any potential exposure
 
 ## Advanced Configuration
 

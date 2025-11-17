@@ -1,0 +1,54 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      JATOS_BASE: http://jatos:9000
+      JATOS_TOKEN: ${JATOS_TOKEN}
+      NEXT_PUBLIC_JATOS_BASE: ${NEXT_PUBLIC_JATOS_BASE}
+      NODE_ENV: production
+      PORT: 3000
+      SESSION_SECRET_KEY: ${SESSION_SECRET_KEY}
+    ports:
+      - "3000:3000"
+    volumes:
+      # Don't mount source in production, only db for migrations
+      - ./db:/app/db:ro
+    command:
+      - sh
+      - -c
+      - |
+        set -e
+        echo 'Generating Prisma client...' &&
+        npx prisma generate &&
+        echo 'Running database migrations...' &&
+        npx prisma migrate deploy &&
+        echo '✅ Migrations completed successfully!' &&
+        echo 'Starting production server...' &&
+        npm start
+
+  jatos:
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.jatos.rule=Host(`${JATOS_DOMAIN}`)"
+      - "traefik.http.routers.jatos.entrypoints=websecure"
+      - "traefik.http.routers.jatos.tls=true"
+      - "traefik.http.services.jatos.loadbalancer.server.port=9000"
+
+  traefik:
+    command:
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+      - "--providers.file.directory=/etc/traefik/dynamic"
+      - "--providers.file.watch=true"
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - "./deploy/jatos/certs:/certs:ro"
+      - "./deploy/jatos/dynamic:/etc/traefik/dynamic:ro"
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"

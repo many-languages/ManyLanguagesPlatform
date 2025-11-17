@@ -6,6 +6,32 @@ This is a [Blitz.js](https://github.com/blitz-js/blitz) app.
 
 ## Getting Started
 
+### Docker Deployment (Recommended)
+
+The easiest way to get started is using Docker Compose, which includes:
+- Next.js/Blitz app
+- PostgreSQL database
+- JATOS study management server
+- MySQL database for JATOS
+- Traefik reverse proxy
+
+**Quick Start:**
+```bash
+# 1. Create .env file from template
+cp .env.example .env
+
+# 2. Edit .env and configure JATOS_TOKEN (see DEPLOYMENT.md)
+
+# 3. Start all services
+make dev
+
+# 4. Access the app at http://localhost:3000
+```
+
+For detailed deployment instructions, see [DEPLOYMENT.md](./DEPLOYMENT.md).
+
+### Local Development (Without Docker)
+
 Run your app in the development mode.
 
 ```
@@ -13,6 +39,11 @@ blitz dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+
+**Note:** For local development, you'll need to:
+- Set up PostgreSQL database
+- Set up JATOS server separately
+- Configure `DATABASE_URL` and `JATOS_BASE` environment variables
 
 ## Environment Variables
 

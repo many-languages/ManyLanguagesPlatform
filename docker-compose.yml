@@ -1,0 +1,191 @@
+services:
+  # PostgreSQL for Blitz app
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-blitz}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-devpass}
+      POSTGRES_DB: ${POSTGRES_DB:-manylanguagesplatform}
+      # Reduce logging verbosity - don't log healthcheck connections/disconnections
+      POSTGRES_INITDB_ARGS: "-c log_connections=off -c log_disconnections=off -c log_min_messages=warning"
+    command:
+      - postgres
+      - -c
+      - log_connections=off
+      - -c
+      - log_disconnections=off
+      - -c
+      - log_min_messages=warning
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    ports:
+      - "5433:5432" # Use 5433 on host to avoid conflict with local PostgreSQL
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      retries: 10
+      timeout: 5s
+      start_period: 5s
+
+  # JATOS MySQL database
+  jatos-db:
+    image: mysql:8.0
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-rootpass}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-jatos}
+      MYSQL_USER: ${MYSQL_USER:-jatos}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-devpass}
+    volumes:
+      - jatos-db-data:/var/lib/mysql
+    healthcheck:
+      test:
+        ["CMD-SHELL", "mysqladmin ping -h localhost -u$$MYSQL_USER -p$$MYSQL_PASSWORD || exit 1"]
+      interval: 5s
+      retries: 10
+      timeout: 5s
+      start_period: 10s
+
+  # JATOS application
+  jatos:
+    image: jatos/jatos:latest
+    depends_on:
+      jatos-db:
+        condition: service_healthy
+    restart: unless-stopped
+    volumes:
+      - ./deploy/jatos/jatos.conf:/opt/jatos/conf/jatos.conf:ro
+      - jatos-study-data:/opt/jatos/study_assets_root
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.jatos.rule=Host(`${JATOS_DOMAIN:-jatos.localhost}`)"
+      - "traefik.http.routers.jatos.entrypoints=web"
+      - "traefik.http.services.jatos.loadbalancer.server.port=9000"
+    networks:
+      - default
+    # Healthcheck removed - JATOS Java container may not have common networking tools
+    # Instead, we rely on depends_on with sufficient startup time
+    # The app will wait for JATOS to be ready before making API calls
+
+  # Traefik reverse proxy
+  traefik:
+    image: traefik:v2.11
+    restart: unless-stopped
+    command:
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
+    ports:
+      - "80:80"
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+    depends_on:
+      - jatos
+
+  # JATOS token validation service
+  jatos-token-validator:
+    image: node:20-alpine
+    depends_on:
+      jatos:
+        condition: service_started
+    environment:
+      JATOS_BASE: http://jatos:9000
+      JATOS_TOKEN: ${JATOS_TOKEN:-}
+    volumes:
+      - ./scripts:/scripts:ro
+    command:
+      - sh
+      - -c
+      - |
+        apk add --no-cache curl &&
+        echo 'Waiting for JATOS to be ready...' &&
+        sleep 30 &&
+        node /scripts/validate-jatos-token.js
+    restart: "no"
+    profiles:
+      - validation
+
+  # Next.js/Blitz application
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "wget --quiet --tries=1 --spider http://localhost:3000 || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    # Increase memory limits for Next.js dev server + large file operations
+    deploy:
+      resources:
+        limits:
+          memory: 4G # Increased from 2G
+        reservations:
+          memory: 1G # Increased from 512M
+    # Explicitly use .env file (if it exists) but Docker Compose environment variables take precedence
+    env_file:
+      - .env
+    environment:
+      # Database - These override any values from .env file
+      DATABASE_URL: postgresql://${POSTGRES_USER:-blitz}:${POSTGRES_PASSWORD:-devpass}@postgres:5432/${POSTGRES_DB:-manylanguagesplatform}
+
+      # JATOS configuration
+      # Use internal Docker service name for JATOS
+      JATOS_BASE: http://jatos:9000
+      JATOS_TOKEN: ${JATOS_TOKEN:-}
+
+      # Public JATOS URL for client-side (accessible from browser)
+      NEXT_PUBLIC_JATOS_BASE: ${NEXT_PUBLIC_JATOS_BASE:-http://jatos.localhost}
+
+      # Next.js
+      NODE_ENV: development
+      PORT: 3000
+
+      # Node.js memory settings - allow more heap space for large operations
+      NODE_OPTIONS: --max-old-space-size=3072 # 3GB heap (within 4GB container limit)
+
+      # Blitz session secret
+      SESSION_SECRET_KEY: ${SESSION_SECRET_KEY:-dev-secret-key-change-in-production}
+    ports:
+      - "3000:3000"
+    volumes:
+      # Mount source code for hot reload
+      - .:/app
+      - /app/node_modules
+      - /app/.next
+      - /app/.blitz
+      # Create an empty file to mask .env.local
+      - /dev/null:/app/.env.local:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+      jatos:
+        condition: service_started
+    command:
+      - sh
+      - -c
+      - |
+        echo 'Waiting for services to be ready...' &&
+        echo '✅ PostgreSQL is ready (verified via healthcheck)' &&
+        echo 'Waiting for JATOS to start (this may take 30-60 seconds)...' &&
+        sleep 45 &&
+        echo 'Generating Prisma client...' &&
+        npx prisma generate &&
+        echo 'Running database migrations...' &&
+        npx prisma migrate deploy &&
+        echo '✅ Migrations completed successfully!' &&
+        echo "DATABASE_URL is set to: postgresql://${POSTGRES_USER:-blitz}:***@postgres:5432/${POSTGRES_DB:-manylanguagesplatform}" &&
+        echo 'Starting development server...' &&
+        npm run dev
+
+volumes:
+  postgres-data:
+  jatos-db-data:
+  jatos-study-data:
+
+networks:
+  default:
+    driver: bridge

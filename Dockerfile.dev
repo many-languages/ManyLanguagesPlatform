@@ -1,0 +1,29 @@
+FROM node:20
+
+WORKDIR /app
+
+# Install wget for healthchecks
+RUN apt-get update && apt-get install -y wget && rm -rf /var/lib/apt/lists/*
+
+# Copy package files
+COPY package*.json ./
+
+# Install dependencies
+# Use --legacy-peer-deps to handle React 19 vs React 18 peer dependency conflicts
+RUN npm ci --legacy-peer-deps
+
+# Copy source code
+COPY . .
+
+# Generate Prisma client
+RUN npx prisma generate
+
+EXPOSE 3000
+
+ENV NODE_ENV development
+ENV PORT 3000
+# Set Node.js memory limit (can be overridden by docker-compose.yml)
+ENV NODE_OPTIONS --max-old-space-size=3072
+
+CMD ["npm", "run", "dev"]
+

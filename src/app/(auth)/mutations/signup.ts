@@ -3,9 +3,22 @@ import db, { UserRole } from "db"
 import { SecurePassword } from "@blitzjs/auth/secure-password"
 import { Signup } from "../validations"
 
+// Helper to add timeout to async operations
+function withTimeout<T>(promise: Promise<T>, timeoutMs: number, errorMessage: string): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<T>((_, reject) => setTimeout(() => reject(new Error(errorMessage)), timeoutMs)),
+  ])
+}
+
 export default resolver.pipe(resolver.zod(Signup), async ({ email, password, role }, ctx) => {
   try {
-    const hashedPassword = await SecurePassword.hash(password)
+    const hashedPassword = await withTimeout(
+      SecurePassword.hash(password),
+      10000, // 10 second timeout
+      "Password hashing timed out after 10 seconds"
+    )
+
     const user = await db.user.create({
       data: { email, hashedPassword, role },
     })

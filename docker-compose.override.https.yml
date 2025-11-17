@@ -1,0 +1,54 @@
+services:
+  # Next.js/Blitz application with HTTPS
+  app:
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.app.rule=Host(`${APP_DOMAIN:-app.localhost}`)"
+      - "traefik.http.routers.app.entrypoints=websecure"
+      - "traefik.http.routers.app.tls=true"
+      - "traefik.http.services.app.loadbalancer.server.port=3000"
+      - "traefik.docker.network=default" # Ensure it uses the right network
+    # Remove the healthcheck override - let it use the one from base config
+    # Keep direct port mapping for development (HTTPS via Traefik at https://app.localhost)
+    ports:
+      - "3000:3000"
+    environment:
+      # Update public URLs to use HTTPS
+      NEXT_PUBLIC_JATOS_BASE: ${NEXT_PUBLIC_JATOS_BASE:-https://jatos.localhost}
+    networks:
+      - default
+
+  # JATOS with HTTPS
+  jatos:
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.jatos.rule=Host(`${JATOS_DOMAIN:-jatos.localhost}`)"
+      - "traefik.http.routers.jatos.entrypoints=websecure"
+      - "traefik.http.routers.jatos.tls=true"
+      - "traefik.http.services.jatos.loadbalancer.server.port=9000"
+    networks:
+      - default
+
+  # Traefik with HTTPS support
+  traefik:
+    command:
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--providers.docker.watch=true"
+      - "--providers.docker.network=default"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+      - "--providers.file.directory=/etc/traefik/dynamic"
+      - "--providers.file.watch=true"
+      - "--log.level=DEBUG" # Add debug logging
+      - "--api.insecure=true" # Enable API for debugging
+    ports:
+      - "80:80"
+      - "443:443"
+      - "8080:8080" # Expose API port
+    volumes:
+      - "./certs:/certs:ro"
+      - "./dynamic:/etc/traefik/dynamic:ro"
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+    networks:
+      - default

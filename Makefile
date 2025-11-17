@@ -1,4 +1,7 @@
-.PHONY: dev prod stop logs clean build up down validate-token help prune prune-all
+.PHONY: dev dev-https prod stop logs clean build up down validate-token help prune prune-all certs
+
+# Use bash for better shell features
+SHELL := /bin/bash
 
 # Base compose file
 COMPOSE=docker compose -f docker-compose.yml
@@ -6,13 +9,15 @@ COMPOSE=docker compose -f docker-compose.yml
 # Default target
 help:
 	@echo "Usage:"
-	@echo "  make dev           Run entire stack (JATOS + Blitz app) in development mode"
+	@echo "  make dev           Run entire stack (JATOS + Blitz app) in development mode (HTTP)"
+	@echo "  make dev-https     Run entire stack in development mode with HTTPS (mkcert)"
 	@echo "  make prod          Run entire stack in production mode"
 	@echo "  make stop          Stop containers"
 	@echo "  make logs          Tail logs"
 	@echo "  make clean         Remove containers and volumes (⚠️  data loss!)"
 	@echo "  make build         Build application containers"
 	@echo "  make validate-token Validate JATOS token (requires JATOS_TOKEN in .env)"
+	@echo "  make certs          Generate SSL certificates for HTTPS (requires mkcert)"
 	@echo ""
 	@echo "For more information, see DEPLOYMENT.md"
 
@@ -78,6 +83,82 @@ dev:
 	@echo ""
 	@echo "📖 For more information, see DEPLOYMENT.md"
 	@echo ""
+
+# Development mode with HTTPS
+dev-https: certs
+	@echo "🚀 Starting development environment with HTTPS..."
+	@if [ ! -f .env ]; then \
+		echo "⚠️  .env file not found. Creating from template..."; \
+		cp .env.example .env 2>/dev/null || echo "Please create .env file manually. See .env.example for reference."; \
+	fi
+	@echo "📦 Starting Docker services with HTTPS..."
+	$(COMPOSE) -f docker-compose.yml -f docker-compose.override.https.yml up -d
+	@echo ""
+	@echo "⏳ Waiting for services to be ready..."
+	@sleep 10
+	@echo ""
+	@echo "✅ Services are starting!"
+	@echo ""
+	@echo "📋 Service URLs (HTTPS):"
+	@echo "   - Blitz app: https://app.localhost"
+	@echo "   - JATOS: https://jatos.localhost"
+	@echo ""
+	@echo "⚠️  Note: You may need to accept the self-signed certificate in your browser"
+	@echo "   (mkcert certificates are trusted locally)"
+	@echo ""
+	@echo "🔑 JATOS Token Setup (Required):"
+	@echo ""
+	@echo "   1. Wait for JATOS to be ready (30-60 seconds)"
+	@echo "      Check logs: make logs"
+	@echo ""
+	@echo "   2. Open JATOS UI in your browser:"
+	@echo "      https://jatos.localhost"
+	@echo "      (Accept the certificate warning if prompted)"
+	@echo ""
+	@echo "   3. Login with default credentials:"
+	@echo "      Username: admin"
+	@echo "      Password: admin"
+	@echo ""
+	@echo "   4. Navigate to your user profile:"
+	@echo "      Click your username in the top-right corner"
+	@echo ""
+	@echo "   5. Go to 'My API tokens' or 'API Tokens'"
+	@echo ""
+	@echo "   6. Click 'New Token' or 'Create Token'"
+	@echo ""
+	@echo "   7. Provide a name (e.g., 'docker-token') and set expiration"
+	@echo ""
+	@echo "   8. Click 'Generate' and copy the token"
+	@echo "      ⚠️  The token will only be shown once!"
+	@echo ""
+	@echo "   9. Add the token to your .env file:"
+	@echo "      JATOS_TOKEN=your-token-here"
+	@echo ""
+	@echo "  10. Update NEXT_PUBLIC_JATOS_BASE in .env:"
+	@echo "      NEXT_PUBLIC_JATOS_BASE=https://jatos.localhost"
+	@echo ""
+	@echo "  11. Restart the services:"
+	@echo "      make stop"
+	@echo "      make dev-https"
+	@echo ""
+	@echo "  12. Validate the token:"
+	@echo "      make validate-token"
+	@echo ""
+	@echo "📊 To view logs:"
+	@echo "   make logs"
+	@echo ""
+	@echo "🛑 To stop:"
+	@echo "   make stop"
+	@echo ""
+	@echo "📖 For more information, see DEPLOYMENT.md"
+	@echo ""
+
+# Generate SSL certificates
+certs: certs/localhost.pem certs/localhost-key.pem
+
+certs/localhost.pem certs/localhost-key.pem:
+	@echo "🔑 Generating SSL certificates..."
+	@./scripts/gen-certs.sh
 
 # Production mode
 prod:

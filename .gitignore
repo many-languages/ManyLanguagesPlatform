@@ -27,8 +27,7 @@ yarn-error.log*
 .pnpm-debug.log*
 
 # local env files
-.env*.local
-.env
+.env.local
 
 # vercel
 .vercel
@@ -46,3 +45,7 @@ next-env.d.ts
 deploy/jatos/.env
 
 .cursor/
+
+# Docker secrets (production)
+secrets/
+!secrets/README.md

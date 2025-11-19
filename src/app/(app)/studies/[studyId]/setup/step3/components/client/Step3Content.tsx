@@ -19,8 +19,8 @@ import { checkPilotStatusAction } from "../../actions/checkPilotStatus"
 import RunStudyButton from "./RunStudyButton"
 import TestLinkDisplay from "./TestLinkDisplay"
 import { Alert } from "@/src/app/components/Alert"
+import Card from "@/src/app/components/Card"
 import StepNavigation from "../../../components/client/StepNavigation"
-import SaveExitButton from "../../../components/client/SaveExitButton"
 
 export default function Step3Content() {
   const { study, studyId } = useStudySetup()
@@ -129,26 +129,34 @@ export default function Step3Content() {
 
   return (
     <>
-      <SaveExitButton />
+      {/* Instructions - collapsible card, open by default, full width */}
+      <Card title="How to test your study?" collapsible bgColor="bg-base-300" className="mb-6">
+        <ol className="list-decimal list-inside space-y-2 text-sm">
+          <li>Click "Run Study" below to open the survey in a new tab</li>
+          <li>Complete the entire survey as a test participant</li>
+          <li>Click "Check Pilot Status" to verify completion</li>
+        </ol>
+      </Card>
 
-      {!jatosRunUrl ? (
-        <>
-          {!study.jatosStudyId || !study.jatosBatchId ? (
-            <Alert variant="warning">
-              <p>Please complete Step 2 (JATOS setup) first.</p>
-            </Alert>
-          ) : (
-            <Alert variant="info">
-              <p>
-                Test link should be automatically generated. If it doesn't appear, please refresh
-                the page or contact support.
-              </p>
-            </Alert>
-          )}
-        </>
-      ) : (
-        <>
-          <div className="mb-4">
+      <div className="max-w-2xl mx-auto space-y-6">
+        {!jatosRunUrl ? (
+          <>
+            {!study.jatosStudyId || !study.jatosBatchId ? (
+              <Alert variant="warning">
+                <p>Please complete Step 2 (JATOS setup) first.</p>
+              </Alert>
+            ) : (
+              <Alert variant="info">
+                <p>
+                  Test link should be automatically generated. If it doesn't appear, please refresh
+                  the page or contact support.
+                </p>
+              </Alert>
+            )}
+          </>
+        ) : (
+          <>
+            {/* Test Link Section */}
             {study.jatosStudyId && study.jatosBatchId && (
               <TestLinkDisplay
                 runUrl={jatosRunUrl}
@@ -158,58 +166,66 @@ export default function Step3Content() {
                 onRegenerated={handleGenerated}
               />
             )}
-          </div>
-          <p className="mb-2 text-sm opacity-70">
-            Use the button below to run your imported study in JATOS.
-          </p>
-          <RunStudyButton runUrl={jatosRunUrl} />
 
-          {/* Check pilot status button - using useActionState */}
-          <form action={checkAction} className="mt-4">
-            <input type="hidden" name="jatosStudyUUID" value={study.jatosStudyUUID || ""} />
-            <button
-              type="submit"
-              className={`btn btn-sm btn-outline ${isPendingCheck ? "loading" : ""}`}
-              disabled={isPendingCheck || !study.jatosStudyUUID}
-            >
-              {isPendingCheck ? "Checking..." : "Check Pilot Status"}
-            </button>
-          </form>
+            {/* Actions Section */}
+            <div className="space-y-4">
+              <div className="flex justify-center">
+                <RunStudyButton runUrl={jatosRunUrl} />
+              </div>
 
-          {/* Display errors from useActionState if any */}
-          {checkState?.error && (
-            <Alert variant="error" className="mt-2">
-              <p>{checkState.error}</p>
-            </Alert>
-          )}
+              {/* Check pilot status button - using useActionState */}
+              <div className="flex justify-center">
+                <form action={checkAction}>
+                  <input type="hidden" name="jatosStudyUUID" value={study.jatosStudyUUID || ""} />
+                  <button
+                    type="submit"
+                    className={`btn btn-outline ${isPendingCheck ? "loading" : ""}`}
+                    disabled={isPendingCheck || !study.jatosStudyUUID}
+                  >
+                    {isPendingCheck ? "Checking..." : "Check Pilot Status"}
+                  </button>
+                </form>
+              </div>
 
-          {/* Status messages */}
+              {/* Display errors from useActionState if any */}
+              {checkState?.error && (
+                <Alert variant="error">
+                  <p>{checkState.error}</p>
+                </Alert>
+              )}
+            </div>
+          </>
+        )}
+      </div>
+
+      {/* Status messages - full width */}
+      {jatosRunUrl && (
+        <>
           {pilotCompleted === false && (
-            <Alert variant="warning" className="mt-4">
-              <p>Please complete the pilot study before proceeding to Step 4.</p>
-              <p className="text-sm">
-                1. Click "Run Study" above to open the survey
-                <br />
-                2. Complete the entire survey
-                <br />
-                3. Click "Check Pilot Status" to verify completion
+            <Alert variant="warning" className="mt-6">
+              <p className="font-semibold">Pilot study not completed</p>
+              <p className="text-sm mt-1">
+                Please complete the pilot study following the instructions above before proceeding
+                to Step 4.
               </p>
             </Alert>
           )}
 
           {pilotCompleted === true && (
-            <Alert variant="success" className="mt-4">
-              <p>✓ Pilot study completed! You can proceed to Step 4.</p>
+            <Alert variant="success" className="mt-6">
+              <p className="font-semibold">✓ Pilot study completed!</p>
+              <p className="text-sm mt-1">You can proceed to Step 4.</p>
             </Alert>
           )}
 
-          {pilotCompleted === null && jatosRunUrl && (
-            <Alert variant="info" className="mt-4">
+          {pilotCompleted === null && (
+            <Alert variant="info" className="mt-6">
               <p>After completing the pilot study, click "Check Pilot Status" to verify.</p>
             </Alert>
           )}
         </>
       )}
+
       <StepNavigation prev="step2" next="step4" disableNext={!jatosRunUrl || !pilotCompleted} />
     </>
   )

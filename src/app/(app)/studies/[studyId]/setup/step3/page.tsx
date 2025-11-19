@@ -1,14 +1,15 @@
-import { Suspense } from "react"
 import Step3Content from "./components/client/Step3Content"
-import SetupContentSkeleton from "../components/skeletons/SetupContentSkeleton"
+import SaveExitButton from "../components/client/SaveExitButton"
 
 export default function Step3Page() {
   return (
     <>
-      <h2 className="text-xl font-semibold mb-4 text-center">Step 3 – Test run</h2>
-      <Suspense fallback={<SetupContentSkeleton />}>
-        <Step3Content />
-      </Suspense>
+      <div className="flex items-center justify-between mb-4">
+        <SaveExitButton />
+        <h2 className="text-xl font-semibold text-center flex-1">Step 3 – Test run</h2>
+        <div className="w-32" /> {/* Spacer to balance the layout */}
+      </div>
+      <Step3Content />
     </>
   )
 }

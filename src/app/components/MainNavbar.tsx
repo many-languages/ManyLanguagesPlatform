@@ -8,6 +8,7 @@ import Gravatar from "react-gravatar"
 import logout from "../(auth)/mutations/logout"
 import NotificationsMenu from "../(app)/notifications/components/clients/NotificationMenu"
 import { NotificationMenuProvider } from "../(app)/notifications/context/NotificationMenuContext"
+import ThemeToggle from "./ThemeToggle"
 
 // User type from getCurrentUser query
 type CurrentUser = {
@@ -77,6 +78,9 @@ const MainNavbar = ({ currentUser }: MainNavbarProps) => {
             </Link>
           </li>
         </ul>
+
+        {/* Theme Toggle */}
+        <ThemeToggle />
 
         {/* Profile tab */}
         <div className="dropdown dropdown-end">

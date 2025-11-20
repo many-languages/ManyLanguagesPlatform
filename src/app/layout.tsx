@@ -1,6 +1,7 @@
 import "./global.css"
 import { Inter } from "next/font/google"
 import { BlitzProvider } from "./blitz-client"
+import { ThemeProvider } from "next-themes"
 
 const inter = Inter({ subsets: ["latin"] })
 
@@ -16,11 +17,13 @@ export const viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className="h-full">
+    <html lang="en" className="h-full" suppressHydrationWarning>
       <body className={`${inter.className} h-full`}>
-        <BlitzProvider>
-          <main className="min-h-screen flex flex-col">{children}</main>
-        </BlitzProvider>
+        <ThemeProvider attribute="data-theme" defaultTheme="light" enableSystem={false}>
+          <BlitzProvider>
+            <main className="min-h-screen flex flex-col">{children}</main>
+          </BlitzProvider>
+        </ThemeProvider>
       </body>
     </html>
   )

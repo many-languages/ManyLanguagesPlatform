@@ -1,11 +1,11 @@
 import StudyList from "./components/client/StudyList"
 import { getStudies } from "./queries/getStudies"
-import Link from "next/link"
 import PaginationControls from "./components/PaginationControls"
 import { getBlitzContext } from "../../blitz-server"
 import { redirect } from "next/navigation"
 import { Prisma } from "@/db"
 import ShowArchivedToggle from "./components/client/ShowArchivedToggle"
+import { NavigationButton } from "@/src/app/components/NavigationButton"
 
 type SessionRole = "RESEARCHER" | "PARTICIPANT" | "ADMIN"
 
@@ -47,11 +47,6 @@ async function StudiesContent({
 
   return (
     <>
-      {canManage && (
-        <Link className="btn btn-primary mb-2" href={"/studies/new"}>
-          Create Study
-        </Link>
-      )}
       <StudyList studies={studies} showJoinButton={false} />
       <PaginationControls
         page={page}
@@ -82,7 +77,14 @@ export default async function StudiesPage({
     <main>
       <h1 className="text-3xl flex justify-center mb-2">My studies</h1>
       {canManageStudies && (
-        <div className="flex justify-end">
+        <div className="flex justify-between items-center mb-6">
+          <NavigationButton
+            className="btn btn-secondary"
+            href={"/studies/new"}
+            pendingText="Creating"
+          >
+            Create Study
+          </NavigationButton>
           <ShowArchivedToggle />
         </div>
       )}

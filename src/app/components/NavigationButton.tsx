@@ -51,7 +51,6 @@ export function NavigationButton({
       type="button"
       onClick={handleClick}
       className={clsx("btn", className, {
-        loading: isPending,
         "pointer-events-none cursor-progress": isPending,
       })}
       disabled={disabled}
@@ -60,7 +59,14 @@ export function NavigationButton({
       aria-live="polite"
       {...props}
     >
-      {isPending ? pendingText ?? children : children}
+      {isPending ? (
+        <>
+          <span>{pendingText ?? children}</span>
+          <span className="loading loading-dots loading-xs ml-1"></span>
+        </>
+      ) : (
+        children
+      )}
     </button>
   )
 }

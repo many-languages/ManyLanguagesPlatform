@@ -1,7 +1,5 @@
-import { Suspense } from "react"
 import { notFound } from "next/navigation"
 import Step4Content from "./components/client/Step4Content"
-import SetupContentSkeleton from "../components/skeletons/SetupContentSkeleton"
 import SaveExitButton from "../components/client/SaveExitButton"
 import { getFeedbackTemplateRsc } from "../../feedback/queries/getFeedbackTemplate"
 import { getAllTestResultsRsc } from "@/src/app/(app)/studies/[studyId]/utils/getAllTestResults"
@@ -17,11 +15,18 @@ async function Step4ContentWrapper({ studyId }: { studyId: number }) {
   const latestTestResult = allTestResults.length > 0 ? allTestResults[0] : null
 
   return (
-    <Step4Content
-      initialFeedbackTemplate={feedbackTemplate}
-      enrichedResult={latestTestResult}
-      allTestResults={allTestResults}
-    />
+    <>
+      <div className="flex items-center justify-between mb-4">
+        <SaveExitButton />
+        <h2 className="text-xl font-semibold text-center flex-1">Step 4 – Feedback</h2>
+        <div className="w-32" /> {/* Spacer to balance the layout */}
+      </div>
+      <Step4Content
+        initialFeedbackTemplate={feedbackTemplate}
+        enrichedResult={latestTestResult}
+        allTestResults={allTestResults}
+      />
+    </>
   )
 }
 
@@ -33,16 +38,5 @@ export default async function Step4Page({ params }: { params: Promise<{ studyId:
     notFound()
   }
 
-  return (
-    <>
-      <div className="flex items-center justify-between mb-4">
-        <SaveExitButton />
-        <h2 className="text-xl font-semibold text-center flex-1">Step 4 – Feedback</h2>
-        <div className="w-32" /> {/* Spacer to balance the layout */}
-      </div>
-      <Suspense fallback={<SetupContentSkeleton />}>
-        <Step4ContentWrapper studyId={studyId} />
-      </Suspense>
-    </>
-  )
+  return <Step4ContentWrapper studyId={studyId} />
 }

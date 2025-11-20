@@ -9,7 +9,7 @@ import ShowArchivedToggle from "./components/client/ShowArchivedToggle"
 
 type SessionRole = "RESEARCHER" | "PARTICIPANT" | "ADMIN"
 
-const ITEMS_PER_PAGE = 1
+const ITEMS_PER_PAGE = 7
 
 export const metadata = {
   title: "My Studies",

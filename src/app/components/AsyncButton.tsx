@@ -60,12 +60,19 @@ export function AsyncButton({
 
   return (
     <button
-      className={`btn ${loading ? "loading" : ""} ${className || ""}`}
+      className={`btn ${className || ""}`}
       onClick={handleClick}
       disabled={loading || disabled}
       {...props}
     >
-      {loading ? loadingText || "Loading..." : children}
+      {loading ? (
+        <>
+          <span>{loadingText || "Loading..."}</span>
+          <span className="loading loading-dots loading-xs ml-1"></span>
+        </>
+      ) : (
+        children
+      )}
     </button>
   )
 }

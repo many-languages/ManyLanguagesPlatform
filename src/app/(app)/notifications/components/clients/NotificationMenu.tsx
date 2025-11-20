@@ -15,7 +15,7 @@ const NotificationsMenu = () => {
   }
 
   return (
-    <div className="dropdown dropdown-end">
+    <div className="dropdown dropdown-end hover:bg-transparent">
       <label tabIndex={0} className="btn btn-ghost btn-circle">
         <div className="indicator">
           <BellIcon className="w-5 h-5" data-tooltip-id="notifications-top-tooltip" />

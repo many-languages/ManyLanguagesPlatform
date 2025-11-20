@@ -5,15 +5,18 @@ import { useTheme } from "next-themes"
 import { useEffect, useState } from "react"
 
 export default function ThemeToggle() {
-  const { theme, setTheme } = useTheme()
+  const { theme, setTheme, resolvedTheme } = useTheme()
   const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
     setMounted(true)
   }, [])
 
+  // Use resolvedTheme which is the actual theme value after hydration
+  const currentTheme = resolvedTheme || theme || "light"
+
   if (!mounted) {
-    // Return a placeholder to prevent hydration mismatch
+    // Return placeholder matching the blocking script's default
     return (
       <button className="btn btn-ghost btn-circle" aria-label="Toggle theme">
         <MoonIcon className="h-5 w-5" />
@@ -22,16 +25,20 @@ export default function ThemeToggle() {
   }
 
   const toggleTheme = () => {
-    setTheme(theme === "light" ? "dark" : "light")
+    setTheme(currentTheme === "light" ? "dark" : "light")
   }
 
   return (
     <button
       onClick={toggleTheme}
       className="btn btn-ghost btn-circle"
-      aria-label={`Switch to ${theme === "light" ? "dark" : "light"} mode`}
+      aria-label={`Switch to ${currentTheme === "light" ? "dark" : "light"} mode`}
     >
-      {theme === "light" ? <MoonIcon className="h-5 w-5" /> : <SunIcon className="h-5 w-5" />}
+      {currentTheme === "light" ? (
+        <MoonIcon className="h-5 w-5" />
+      ) : (
+        <SunIcon className="h-5 w-5" />
+      )}
     </button>
   )
 }

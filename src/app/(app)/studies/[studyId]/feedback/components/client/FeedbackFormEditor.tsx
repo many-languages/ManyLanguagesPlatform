@@ -92,17 +92,14 @@ const FeedbackFormEditor = forwardRef<FeedbackFormEditorRef, FeedbackFormEditorP
     })
 
     return (
-      <div className="card bg-base-200 shadow-md p-6">
+      <>
         <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-4">
-            <h2 className="card-title text-lg">Participant Feedback Form</h2>
-            {templateSaved ? (
-              <span className="badge badge-success">✓ Template saved</span>
-            ) : (
-              <span className="badge badge-warning">⚠ Template not saved</span>
-            )}
-          </div>
-          <div className="flex gap-2 flex-wrap">
+          {templateSaved ? (
+            <span className="badge badge-success">✓ Template saved</span>
+          ) : (
+            <span className="badge badge-warning">⚠ Template not saved</span>
+          )}
+          <div className="flex items-center gap-2 flex-wrap">
             <VariableSelector
               enrichedResult={enrichedResult}
               onInsert={handleInsertVariable}
@@ -118,6 +115,9 @@ const FeedbackFormEditor = forwardRef<FeedbackFormEditorRef, FeedbackFormEditorP
               onClick={() => setShowConditionalBuilder(true)}
             >
               Add Condition
+            </button>
+            <button className="btn btn-sm btn-primary" onClick={handleSave} disabled={saving}>
+              {saving ? "Saving..." : initialTemplate ? "Update" : "Save"}
             </button>
           </div>
         </div>
@@ -180,7 +180,7 @@ const FeedbackFormEditor = forwardRef<FeedbackFormEditorRef, FeedbackFormEditorP
         {/* Markdown editor */}
         <div
           data-color-mode="light"
-          className={`rounded-lg overflow-hidden border border-base-300 ${mdEditorClassName.container}`}
+          className={`rounded-lg overflow-hidden border border-base-300 !bg-base-300 ${mdEditorClassName.container}`}
         >
           <MDEditor
             value={markdown}
@@ -190,9 +190,9 @@ const FeedbackFormEditor = forwardRef<FeedbackFormEditorRef, FeedbackFormEditorP
             }}
             height={300}
             preview="edit"
-            style={mdEditorStyles.container}
+            style={{ ...mdEditorStyles.container, backgroundColor: "hsl(var(--b3))" }}
             textareaProps={{
-              style: mdEditorStyles.textarea,
+              style: { ...mdEditorStyles.textarea, backgroundColor: "hsl(var(--b3))" },
             }}
           />
         </div>
@@ -203,16 +203,12 @@ const FeedbackFormEditor = forwardRef<FeedbackFormEditorRef, FeedbackFormEditorP
         {/* Preview */}
         <div className="divider">Preview</div>
         <div
-          className={`prose max-w-none bg-base-100 p-4 rounded-lg border border-base-300 ${mdEditorClassName.preview}`}
+          className={`prose max-w-none !bg-base-300 p-4 rounded-lg border border-base-300 ${mdEditorClassName.preview}`}
         >
-          <MDEditor.Markdown source={renderedPreview} style={mdEditorStyles.preview} />
-        </div>
-
-        {/* Save button */}
-        <div className="mt-4 flex justify-end">
-          <button className="btn btn-primary" onClick={handleSave} disabled={saving}>
-            {saving ? "Saving..." : initialTemplate ? "Update Template" : "Save Template"}
-          </button>
+          <MDEditor.Markdown
+            source={renderedPreview}
+            style={{ ...mdEditorStyles.preview, backgroundColor: "hsl(var(--b3))" }}
+          />
         </div>
 
         {/* Modals */}
@@ -223,7 +219,7 @@ const FeedbackFormEditor = forwardRef<FeedbackFormEditorRef, FeedbackFormEditorP
             onClose={() => setShowConditionalBuilder(false)}
           />
         )}
-      </div>
+      </>
     )
   }
 )

@@ -4,7 +4,8 @@ import { useState, useMemo } from "react"
 import { EnrichedJatosStudyResult } from "@/src/types/jatos"
 import { extractAllVariables } from "../../utils/extractVariable"
 import { SelectField } from "./shared"
-import { dslHelperClassName, dslHelperStyles } from "../../styles/feedbackStyles"
+import Card from "@/src/app/components/Card"
+import { dslHelperStyles } from "../../styles/feedbackStyles"
 
 interface DSLHelperProps {
   enrichedResult: EnrichedJatosStudyResult
@@ -21,7 +22,6 @@ interface Example {
  * Collapsible reference panel showing DSL syntax examples and available variables
  */
 export default function DSLHelper({ enrichedResult }: DSLHelperProps) {
-  const [isOpen, setIsOpen] = useState(false)
   const [searchTerm, setSearchTerm] = useState("")
   const [selectedCategory, setSelectedCategory] = useState<string>("all")
 
@@ -160,124 +160,107 @@ export default function DSLHelper({ enrichedResult }: DSLHelperProps) {
   }
 
   return (
-    <div
-      className={`collapse collapse-arrow ${dslHelperClassName.container}`}
-      style={dslHelperStyles.container}
-    >
-      <input type="checkbox" checked={isOpen} onChange={(e) => setIsOpen(e.target.checked)} />
-      <div className="collapse-title text-lg font-medium">📚 DSL Reference & Examples</div>
-      <div className="collapse-content">
-        <div className="space-y-4">
-          {/* Search and Filter */}
-          <div className="flex gap-2">
-            <input
-              type="text"
-              placeholder="Search examples..."
-              className="input input-bordered input-sm flex-1"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+    <Card title="📚 DSL Reference & Examples" collapsible bgColor="bg-base-300" className="mt-4">
+      <div className="space-y-4">
+        {/* Search and Filter */}
+        <div className="flex gap-2">
+          <input
+            type="text"
+            placeholder="Search examples..."
+            className="input input-bordered input-sm flex-1"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+          <div className="w-48">
+            <SelectField
+              value={selectedCategory}
+              onChange={setSelectedCategory}
+              options={categoryOptions}
+              selectClassName="select-sm"
             />
-            <div className="w-48">
-              <SelectField
-                value={selectedCategory}
-                onChange={setSelectedCategory}
-                options={categoryOptions}
-                selectClassName="select-sm"
-              />
-            </div>
           </div>
+        </div>
 
-          {/* Available Variables */}
-          {availableVariables.length > 0 && (
-            <div
-              className={`${dslHelperClassName.section} p-3 rounded-lg`}
-              style={dslHelperStyles.section}
-            >
-              <h4 className="font-semibold mb-2">Available Variables</h4>
-              <div className="flex flex-wrap gap-1">
-                {availableVariables.map((variable) => (
-                  <span
-                    key={variable.name}
-                    className="badge badge-outline text-xs cursor-pointer hover:badge-primary"
-                    onClick={() => copyToClipboard(`{{ var:${variable.name} }}`)}
-                    title={`Click to copy: {{ var:${variable.name} }}`}
-                  >
-                    {variable.name}
-                  </span>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Examples */}
-          <div className="space-y-3">
-            <h4 className="font-semibold">Examples</h4>
-            {filteredExamples.length === 0 ? (
-              <p className="text-sm opacity-70">No examples match your search.</p>
-            ) : (
-              filteredExamples.map((example, index) => (
-                <div
-                  key={index}
-                  className={`${dslHelperClassName.section} p-3 rounded-lg`}
-                  style={dslHelperStyles.section}
+        {/* Available Variables */}
+        {availableVariables.length > 0 && (
+          <div className="p-3 rounded-lg" style={dslHelperStyles.section}>
+            <h4 className="font-semibold mb-2">Available Variables</h4>
+            <div className="flex flex-wrap gap-1">
+              {availableVariables.map((variable) => (
+                <span
+                  key={variable.name}
+                  className="badge badge-outline text-xs cursor-pointer hover:badge-primary"
+                  onClick={() => copyToClipboard(`{{ var:${variable.name} }}`)}
+                  title={`Click to copy: {{ var:${variable.name} }}`}
                 >
-                  <div className="flex justify-between items-start mb-2">
-                    <h5 className="font-medium">{example.title}</h5>
-                    <span className="badge badge-sm badge-outline">{example.category}</span>
-                  </div>
-                  <code className="block bg-base-200 p-2 rounded text-sm mb-2 font-mono">
-                    {example.syntax}
-                  </code>
-                  <p className="text-sm opacity-80 mb-2">{example.description}</p>
-                  <button
-                    className="btn btn-xs btn-outline"
-                    onClick={() => copyToClipboard(example.syntax)}
-                  >
-                    Copy
-                  </button>
-                </div>
-              ))
-            )}
+                  {variable.name}
+                </span>
+              ))}
+            </div>
           </div>
+        )}
 
-          {/* Quick Reference */}
-          <div
-            className={`${dslHelperClassName.section} p-3 rounded-lg`}
-            style={dslHelperStyles.section}
-          >
-            <h4 className="font-semibold mb-2">Quick Reference</h4>
-            <div className="text-sm space-y-1">
-              <div>
-                <strong>Variables:</strong> <code>{`{{ var:name }}`}</code> (all values)
+        {/* Examples */}
+        <div className="space-y-3">
+          <h4 className="font-semibold">Examples</h4>
+          {filteredExamples.length === 0 ? (
+            <p className="text-sm opacity-70">No examples match your search.</p>
+          ) : (
+            filteredExamples.map((example, index) => (
+              <div key={index} className="p-3 rounded-lg" style={dslHelperStyles.section}>
+                <div className="flex justify-between items-start mb-2">
+                  <h5 className="font-medium">{example.title}</h5>
+                  <span className="badge badge-sm badge-outline">{example.category}</span>
+                </div>
+                <code className="block bg-base-100 p-2 rounded text-sm mb-2 font-mono">
+                  {example.syntax}
+                </code>
+                <p className="text-sm opacity-80 mb-2">{example.description}</p>
+                <button
+                  className="btn btn-xs btn-outline"
+                  onClick={() => copyToClipboard(example.syntax)}
+                >
+                  Copy
+                </button>
               </div>
-              <div>
-                <strong>Variable Modifiers:</strong> <code>{`{{ var:name:first }}`}</code>,{" "}
-                <code>{`{{ var:name:last }}`}</code>
-              </div>
-              <div>
-                <strong>Stats:</strong> <code>{`{{ stat:name.metric:scope }}`}</code>
-              </div>
-              <div>
-                <strong>Filters:</strong> <code>{`{{ stat:name.metric | where: condition }}`}</code>
-              </div>
-              <div>
-                <strong>Conditionals:</strong>{" "}
-                <code>{`{{#if condition }}text{{else}}text{{/if}}`}</code>
-              </div>
-              <div>
-                <strong>Scopes:</strong> <code>within</code> (current participant),{" "}
-                <code>across</code> (all participants)
-              </div>
-              <div>
-                <strong>Metrics:</strong> avg, median, sd, count
-              </div>
-              <div>
-                <strong>Operators:</strong> ==, !=, &gt;, &lt;, &gt;=, &lt;=, and, or, not
-              </div>
+            ))
+          )}
+        </div>
+
+        {/* Quick Reference */}
+        <div className="p-3 rounded-lg" style={dslHelperStyles.section}>
+          <h4 className="font-semibold mb-2">Quick Reference</h4>
+          <div className="text-sm space-y-1">
+            <div>
+              <strong>Variables:</strong> <code>{`{{ var:name }}`}</code> (all values)
+            </div>
+            <div>
+              <strong>Variable Modifiers:</strong> <code>{`{{ var:name:first }}`}</code>,{" "}
+              <code>{`{{ var:name:last }}`}</code>
+            </div>
+            <div>
+              <strong>Stats:</strong> <code>{`{{ stat:name.metric:scope }}`}</code>
+            </div>
+            <div>
+              <strong>Filters:</strong> <code>{`{{ stat:name.metric | where: condition }}`}</code>
+            </div>
+            <div>
+              <strong>Conditionals:</strong>{" "}
+              <code>{`{{#if condition }}text{{else}}text{{/if}}`}</code>
+            </div>
+            <div>
+              <strong>Scopes:</strong> <code>within</code> (current participant),{" "}
+              <code>across</code> (all participants)
+            </div>
+            <div>
+              <strong>Metrics:</strong> avg, median, sd, count
+            </div>
+            <div>
+              <strong>Operators:</strong> ==, !=, &gt;, &lt;, &gt;=, &lt;=, and, or, not
             </div>
           </div>
         </div>
       </div>
-    </div>
+    </Card>
   )
 }

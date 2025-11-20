@@ -9,7 +9,6 @@ import { isSetupComplete } from "../../../utils/setupStatus"
 import updateStudyStatus from "@/src/app/(app)/studies/mutations/updateStudyStatus"
 import StepNavigation from "../../../components/client/StepNavigation"
 import { Alert } from "@/src/app/components/Alert"
-import SaveExitButton from "../../../components/client/SaveExitButton"
 import type { EnrichedJatosStudyResult } from "@/src/types/jatos"
 import { FeedbackFormEditorRef } from "../../../../feedback/types"
 import FeedbackFormEditor from "../../../../feedback/components/client/FeedbackFormEditor"
@@ -65,18 +64,11 @@ export default function Step4Content({
 
   // Show warning if no test run data found
   if (!enrichedResult) {
-    return (
-      <>
-        <SaveExitButton />
-        <Alert variant="warning">No test run data found.</Alert>
-      </>
-    )
+    return <Alert variant="warning">No test run data found.</Alert>
   }
 
   return (
     <>
-      <SaveExitButton />
-
       <FeedbackFormEditor
         ref={feedbackEditorRef}
         enrichedResult={enrichedResult}

@@ -24,12 +24,59 @@
   color: hsl(var(--nc)) !important;
 }
 
+/* Ensure headings are visible in editor */
 .mdEditorContainer :global(.w-md-editor-text h1),
 .mdEditorContainer :global(.w-md-editor-text h2),
 .mdEditorContainer :global(.w-md-editor-text h3),
 .mdEditorContainer :global(.w-md-editor-text h4),
 .mdEditorContainer :global(.w-md-editor-text h5),
 .mdEditorContainer :global(.w-md-editor-text h6) {
+  color: hsl(var(--nc)) !important;
+}
+
+/* Target MDEditor's internal structure for headings */
+.mdEditorContainer :global(.w-md-editor) :global(h1),
+.mdEditorContainer :global(.w-md-editor) :global(h2),
+.mdEditorContainer :global(.w-md-editor) :global(h3),
+.mdEditorContainer :global(.w-md-editor) :global(h4),
+.mdEditorContainer :global(.w-md-editor) :global(h5),
+.mdEditorContainer :global(.w-md-editor) :global(h6) {
+  color: hsl(var(--nc)) !important;
+}
+
+/* Ensure headings in edit/preview mode are visible */
+.mdEditorContainer :global(.w-md-editor-text-edit) :global(h1),
+.mdEditorContainer :global(.w-md-editor-text-edit) :global(h2),
+.mdEditorContainer :global(.w-md-editor-text-edit) :global(h3),
+.mdEditorContainer :global(.w-md-editor-text-edit) :global(h4),
+.mdEditorContainer :global(.w-md-editor-text-edit) :global(h5),
+.mdEditorContainer :global(.w-md-editor-text-edit) :global(h6) {
+  color: hsl(var(--nc)) !important;
+}
+
+/* Additional comprehensive rules for MDEditor headings */
+.mdEditorContainer :global(.w-md-editor-text h1),
+.mdEditorContainer :global(.w-md-editor-text h2),
+.mdEditorContainer :global(.w-md-editor-text h3),
+.mdEditorContainer :global(.w-md-editor-text h4),
+.mdEditorContainer :global(.w-md-editor-text h5),
+.mdEditorContainer :global(.w-md-editor-text h6),
+.mdEditorContainer :global(.w-md-editor-text-edit h1),
+.mdEditorContainer :global(.w-md-editor-text-edit h2),
+.mdEditorContainer :global(.w-md-editor-text-edit h3),
+.mdEditorContainer :global(.w-md-editor-text-edit h4),
+.mdEditorContainer :global(.w-md-editor-text-edit h5),
+.mdEditorContainer :global(.w-md-editor-text-edit h6) {
+  color: hsl(var(--nc)) !important;
+}
+
+/* Catch-all for any headings in MDEditor */
+.mdEditorContainer :global(h1),
+.mdEditorContainer :global(h2),
+.mdEditorContainer :global(h3),
+.mdEditorContainer :global(h4),
+.mdEditorContainer :global(h5),
+.mdEditorContainer :global(h6) {
   color: hsl(var(--nc)) !important;
 }
 

@@ -31,8 +31,8 @@ export const SignupForm = (props: SignupFormProps) => {
   const defaultValues = useMemo(() => ({ email: "", password: "", role: UserRole.PARTICIPANT }), [])
 
   return (
-    <div className="space-y-6">
-      <h1 className="font-black text-xl">Create an Account</h1>
+    <div className="space-y-4">
+      <h1 className="font-black text-3xl">Create an Account</h1>
 
       <Form
         schema={Signup}
@@ -54,7 +54,7 @@ export const SignupForm = (props: SignupFormProps) => {
         }}
         className="space-y-4"
       >
-        <>
+        <div className="fieldset  bg-base-200 border-base-300 rounded-box w-md border p-4">
           <TextField name="email" label="Email" placeholder="Email" type="email" />
           <TextField name="password" label="Password" placeholder="Password" type="password" />
           <SelectField
@@ -66,12 +66,12 @@ export const SignupForm = (props: SignupFormProps) => {
 
           <FormSubmitButton
             submitText="Create Account"
-            loadingText="Creating Account..."
-            className="btn btn-primary w-full"
+            loadingText="Creating Account"
+            className="btn btn-primary w-full mt-6"
           />
 
           <FormErrorDisplay />
-        </>
+        </div>
       </Form>
 
       <div>

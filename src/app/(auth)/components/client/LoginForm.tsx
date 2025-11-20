@@ -1,7 +1,6 @@
 "use client"
 
 import { useMemo } from "react"
-import { PromiseReturnType } from "blitz"
 import Link from "next/link"
 import { TextField, FormSubmitButton, FormErrorDisplay } from "@/src/app/components/fields"
 import { Form, FORM_ERROR } from "@/src/app/components/Form"
@@ -22,8 +21,8 @@ export const LoginForm = () => {
   const defaultValues = useMemo(() => ({ email: "", password: "" }), [])
 
   return (
-    <div className="space-y-6">
-      <h1 className="font-black text-xl">Login</h1>
+    <div className="space-y-4">
+      <h1 className="font-black text-3xl">Login</h1>
 
       <Form
         schema={Login}
@@ -51,14 +50,12 @@ export const LoginForm = () => {
         }}
         className="space-y-4"
       >
-        <>
+        <div className="fieldset  bg-base-200 border-base-300 rounded-box w-md border p-4">
           <TextField name="email" label="Email" placeholder="Email" type="email" />
           <TextField name="password" label="Password" placeholder="Password" type="password" />
-
-          <div>
-            <Link href={"/forgot-password"}>Forgot your password?</Link>
-          </div>
-
+          <Link href={"/forgot-password"} className="mt-2 mb-6 block">
+            Forgot your password?
+          </Link>
           <FormSubmitButton
             submitText="Login"
             loadingText="Logging in"
@@ -67,7 +64,7 @@ export const LoginForm = () => {
           />
 
           <FormErrorDisplay />
-        </>
+        </div>
       </Form>
 
       <div>

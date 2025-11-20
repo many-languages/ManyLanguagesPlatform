@@ -61,7 +61,7 @@ export function ResetPasswordForm() {
 
             <FormSubmitButton
               submitText="Reset Password"
-              loadingText="Resetting..."
+              loadingText="Resetting"
               className="btn btn-primary w-full"
             />
 

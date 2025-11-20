@@ -1,6 +1,7 @@
 "use client"
 
 import { useMemo } from "react"
+import Link from "next/link"
 import { TextField, FormSubmitButton, FormErrorDisplay } from "@/src/app/components/fields"
 import { Form, FORM_ERROR } from "@/src/app/components/Form"
 import { ForgotPassword } from "../../validations"
@@ -14,8 +15,8 @@ export function ForgotPasswordForm() {
   const defaultValues = useMemo(() => ({ email: "" }), [])
 
   return (
-    <div className="space-y-6">
-      <h1>Forgot your password?</h1>
+    <div className="space-y-4">
+      <h1 className="font-black text-3xl">Forgot your password?</h1>
       <>
         {isSuccess ? (
           <div>
@@ -43,20 +44,24 @@ export function ForgotPasswordForm() {
             }}
             className="space-y-4"
           >
-            <>
+            <div className="fieldset  bg-base-200 border-base-300 rounded-box w-md border p-4">
               <TextField name="email" label="Email" placeholder="Email" type="email" />
 
               <FormSubmitButton
-                submitText="Send Reset Password Instructions"
-                loadingText="Sending..."
-                className="btn btn-primary w-full"
+                submitText="Send Reset Password"
+                loadingText="Sending"
+                className="btn btn-primary w-full mt-6"
               />
 
               <FormErrorDisplay />
-            </>
+            </div>
           </Form>
         )}
       </>
+
+      <div>
+        Or <Link href="/login">Login</Link>
+      </div>
     </div>
   )
 }

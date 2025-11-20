@@ -17,9 +17,10 @@ interface StudyListProps {
     | "archived"
   >[]
   showJoinButton?: boolean
+  showOpenButton?: boolean
 }
 
-export default function StudyList({ studies, showJoinButton }: StudyListProps) {
+export default function StudyList({ studies, showJoinButton, showOpenButton }: StudyListProps) {
   if (!studies || studies.length === 0) {
     return <p className="text-base-content/70 italic">No studies available at the moment.</p>
   }
@@ -27,7 +28,12 @@ export default function StudyList({ studies, showJoinButton }: StudyListProps) {
   return (
     <div className="space-y-4">
       {studies.map((study) => (
-        <StudyItem key={study.id} study={study} showJoinButton={showJoinButton} />
+        <StudyItem
+          key={study.id}
+          study={study}
+          showJoinButton={showJoinButton}
+          showOpenButton={showOpenButton}
+        />
       ))}
     </div>
   )

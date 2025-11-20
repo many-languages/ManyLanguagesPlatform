@@ -28,7 +28,7 @@ async function ExploreContent({ page, userId }: { page: number; userId: number }
 
   return (
     <>
-      <StudyList studies={studies} showJoinButton={true} />
+      <StudyList studies={studies} showJoinButton={true} showOpenButton={false} />
       <PaginationControls page={page} hasMore={hasMore} />
     </>
   )

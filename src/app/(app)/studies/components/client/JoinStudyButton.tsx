@@ -51,9 +51,9 @@ export default function JoinStudyButton({
   return (
     <AsyncButton
       onClick={handleJoin}
-      loadingText="Joining..."
+      loadingText="Joining"
       disabled={joined}
-      className={`${joined ? "btn-disabled" : "btn-secondary"}`}
+      className={`${joined ? "btn-disabled" : "btn-primary"}`}
     >
       {joined ? "Already Joined" : "Join Study"}
     </AsyncButton>

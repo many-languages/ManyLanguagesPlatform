@@ -20,9 +20,14 @@ interface StudyItemProps {
     | "archived"
   >
   showJoinButton?: boolean
+  showOpenButton?: boolean
 }
 
-export default function StudyItem({ study, showJoinButton }: StudyItemProps) {
+export default function StudyItem({
+  study,
+  showJoinButton,
+  showOpenButton = true,
+}: StudyItemProps) {
   const { jatosStudyId, jatosBatchId, jatosWorkerType } = study
   const canJoinStudy =
     Boolean(showJoinButton) &&
@@ -42,13 +47,15 @@ export default function StudyItem({ study, showJoinButton }: StudyItemProps) {
       className="mb-4"
       actions={
         <>
-          <NavigationButton
-            href={`/studies/${study.id}`}
-            pendingText="Opening..."
-            className="btn-primary"
-          >
-            Open
-          </NavigationButton>
+          {showOpenButton && (
+            <NavigationButton
+              href={`/studies/${study.id}`}
+              pendingText="Opening"
+              className="btn-primary"
+            >
+              Open
+            </NavigationButton>
+          )}
           {canJoinStudy && (
             <JoinStudyButton
               studyId={study.id}

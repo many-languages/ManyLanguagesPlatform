@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import Card from "@/src/app/components/Card"
 import StepIndicator from "./StepIndicator"
 import { Alert } from "@/src/app/components/Alert"
+import { NavigationButton } from "@/src/app/components/NavigationButton"
 import {
   getNextSetupStepUrl,
   getSetupProgress,
@@ -49,14 +50,13 @@ export default function SetupProgressCard({ study }: SetupProgressCardProps) {
         <Alert variant="warning" className="mt-4">
           <p className="mb-2">Complete all steps to open your study for participants.</p>
           {incompleteStep && (
-            <button
+            <NavigationButton
               className="btn btn-sm btn-primary"
-              onClick={() => {
-                router.push(getNextSetupStepUrl(study.id, study) as Route)
-              }}
+              href={getNextSetupStepUrl(study.id, study) as Route}
+              pendingText="Loading..."
             >
               Continue Setup
-            </button>
+            </NavigationButton>
           )}
         </Alert>
       )}

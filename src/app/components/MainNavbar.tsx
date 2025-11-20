@@ -8,6 +8,7 @@ import logout from "../(auth)/mutations/logout"
 import NotificationsMenu from "../(app)/notifications/components/clients/NotificationMenu"
 import { NotificationMenuProvider } from "../(app)/notifications/context/NotificationMenuContext"
 import ThemeToggle from "./ThemeToggle"
+import md5 from "md5"
 
 // User type from getCurrentUser query
 type CurrentUser = {
@@ -27,9 +28,8 @@ interface MainNavbarProps {
 
 // Helper function to generate Gravatar URL
 function getGravatarUrl(email: string, size: number = 40): string {
-  // Simple MD5-like hash (for production, consider using crypto.subtle or a library)
-  // For now, using Gravatar's default URL format
-  const hash = email.toLowerCase().trim()
+  const normalizedEmail = email.toLowerCase().trim()
+  const hash = md5(normalizedEmail)
   return `https://www.gravatar.com/avatar/${hash}?s=${size}&d=retro&r=pg`
 }
 

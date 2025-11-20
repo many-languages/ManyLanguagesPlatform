@@ -7,7 +7,10 @@ import ResultsCardWrapper from "./ResultsCardWrapper"
 import { Alert } from "@/src/app/components/Alert"
 import { isSetupComplete } from "../setup/utils/setupStatus"
 import { StudyWithRelations } from "../../queries/getStudy"
-import ResearcherFeedback from "../feedback/components/ResearcherFeedback"
+import ResearcherFeedbackData from "../feedback/components/ResearcherFeedbackData"
+import StudyInformationCard from "./client/StudyInformationCard"
+import { NavigationButton } from "@/src/app/components/NavigationButton"
+import ArchiveStudyButton from "../../components/client/ArchiveStudyButton"
 
 interface ResearcherDataProps {
   studyId: number
@@ -80,8 +83,25 @@ export default async function ResearcherData({ studyId, study }: ResearcherDataP
     )
   }
 
+  // Build actions for researcher
+  const researcherActions = (
+    <div className="flex flex-wrap justify-end gap-2">
+      <NavigationButton
+        href={`/studies/${study.id}/setup/step1?edit=true&returnTo=study`}
+        className="btn-primary"
+        pendingText="Opening"
+      >
+        Edit
+      </NavigationButton>
+      <ArchiveStudyButton studyId={study.id} isArchived={study.archived} />
+    </div>
+  )
+
   return (
     <>
+      {/* Study information */}
+      <StudyInformationCard study={study} userRole="RESEARCHER" actions={researcherActions} />
+
       {/* Summary statistics of the study */}
       {metadata && <StudySummary metadata={metadata} />}
 
@@ -97,7 +117,7 @@ export default async function ResearcherData({ studyId, study }: ResearcherDataP
       />
 
       {/* Feedback preview with test results */}
-      <ResearcherFeedback studyId={studyId} />
+      <ResearcherFeedbackData studyId={studyId} />
     </>
   )
 }

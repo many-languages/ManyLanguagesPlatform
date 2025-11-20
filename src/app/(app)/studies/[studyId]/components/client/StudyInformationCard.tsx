@@ -8,16 +8,23 @@ import {
   CurrencyDollarIcon,
   UsersIcon,
 } from "@heroicons/react/24/outline"
+import { CheckCircleIcon } from "@heroicons/react/24/solid"
 import { StudyWithRelations } from "../../../queries/getStudy"
-import ArchiveStudyButton from "../../../components/client/ArchiveStudyButton"
-import { NavigationButton } from "@/src/app/components/NavigationButton"
+import { ReactNode } from "react"
 
 interface StudyInformationCardProps {
   study: StudyWithRelations
   userRole: "RESEARCHER" | "PARTICIPANT"
+  isPayed?: boolean
+  actions?: ReactNode
 }
 
-export default function StudyInformationCard({ study, userRole }: StudyInformationCardProps) {
+export default function StudyInformationCard({
+  study,
+  userRole,
+  isPayed,
+  actions,
+}: StudyInformationCardProps) {
   const statsItems = [
     {
       label: "Sample Size",
@@ -56,47 +63,53 @@ export default function StudyInformationCard({ study, userRole }: StudyInformati
       ? "multiple run"
       : study.jatosWorkerType || "—"
 
+  const dataCollectionMethodTooltip =
+    study.jatosWorkerType === "SINGLE"
+      ? "Participant can complete the study once"
+      : study.jatosWorkerType === "MULTIPLE"
+      ? "Participant can complete the study multiple times"
+      : undefined
+
   return (
-    <Card
-      title="Study Information"
-      collapsible
-      className="mt-4"
-      actions={
-        userRole === "RESEARCHER" ? (
-          <div className="flex flex-wrap justify-end gap-2">
-            <NavigationButton
-              href={`/studies/${study.id}/setup/step1?edit=true&returnTo=study`}
-              className="btn-primary"
-              pendingText="Opening…"
-            >
-              Edit
-            </NavigationButton>
-            <ArchiveStudyButton studyId={study.id} isArchived={study.archived} />
-          </div>
-        ) : undefined
-      }
-    >
+    <Card title="Study Information" collapsible className="mt-4" actions={actions}>
       <div className="space-y-4">
         <p className="text-base leading-relaxed text-base-content">
           {study.description?.trim().length ? study.description : "—"}
         </p>
 
         <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6">
-          {statsItems.map(({ label, value, icon: Icon }) => (
-            <div key={label} className="flex items-start gap-3 rounded-lg bg-base-200/60 p-4">
-              <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary">
-                <Icon className="h-5 w-5" aria-hidden="true" />
-              </span>
-              <div>
-                <div className="text-sm font-medium text-base-content/70">{label}</div>
-                <div className="text-base font-semibold leading-tight text-base-content">
-                  {value}
+          {statsItems.map(({ label, value, icon: Icon }) => {
+            const isPaymentField = label === "Payment"
+            const showPaymentBadge = isPaymentField && userRole === "PARTICIPANT" && isPayed
+
+            return (
+              <div key={label} className="flex items-start gap-3 rounded-lg bg-base-200/60 p-4">
+                <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary">
+                  <Icon className="h-5 w-5" aria-hidden="true" />
+                </span>
+                <div className="flex-1">
+                  <div className="flex items-center gap-2">
+                    <div className="text-sm font-medium text-base-content/70">{label}</div>
+                    {showPaymentBadge && (
+                      <span className="badge badge-success badge-sm" title="Payment received">
+                        <CheckCircleIcon className="h-3 w-3" />
+                      </span>
+                    )}
+                  </div>
+                  <div className="text-base font-semibold leading-tight text-base-content">
+                    {value}
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            )
+          })}
 
-          <div className="flex items-start gap-3 rounded-lg bg-base-200/60 p-4">
+          <div
+            className={`flex items-start gap-3 rounded-lg bg-base-200/60 p-4 ${
+              dataCollectionMethodTooltip ? "tooltip tooltip-top" : ""
+            }`}
+            data-tip={dataCollectionMethodTooltip}
+          >
             <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary">
               <CircleStackIcon className="h-5 w-5" aria-hidden="true" />
             </span>

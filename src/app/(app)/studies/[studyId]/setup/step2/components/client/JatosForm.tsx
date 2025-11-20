@@ -80,7 +80,7 @@ export default function JatosForm({
             )}
             <FormSubmitButton
               submitText={submitText}
-              loadingText="Uploading..."
+              loadingText="Uploading"
               className="btn btn-primary"
             />
           </div>

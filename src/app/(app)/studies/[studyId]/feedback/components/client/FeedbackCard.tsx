@@ -1,10 +1,13 @@
 "use client"
 
 import { useMemo } from "react"
+import type React from "react"
 import clsx from "clsx"
 import MDEditor from "@uiw/react-md-editor"
 import Card from "@/src/app/components/Card"
 import { NavigationButton } from "@/src/app/components/NavigationButton"
+import { EmptyState } from "@/src/app/components/EmptyState"
+import RefreshFeedbackButton from "./RefreshFeedbackButton"
 import { renderTemplate } from "../../utils/feedbackRenderer"
 import { EnrichedJatosStudyResult } from "@/src/types/jatos"
 import { mdEditorStyles, mdEditorClassName } from "../../styles/feedbackStyles"
@@ -21,6 +24,8 @@ interface FeedbackCardProps {
   title?: string
   className?: string
   allEnrichedResults?: EnrichedJatosStudyResult[]
+  onRefresh?: () => Promise<void> | void
+  showEditButton?: boolean
 }
 
 export default function FeedbackCard({
@@ -30,6 +35,8 @@ export default function FeedbackCard({
   title = "Feedback",
   className,
   allEnrichedResults,
+  onRefresh,
+  showEditButton = false,
 }: FeedbackCardProps) {
   const renderedContent = useMemo(() => {
     if (!template?.content) {
@@ -51,24 +58,35 @@ export default function FeedbackCard({
     }
   }, [template?.content, enrichedResult, allEnrichedResults])
 
-  return (
-    <Card
-      title={title}
-      className={clsx("mt-4", className)}
-      collapsible
-      actions={
+  // Build actions: refresh button (if onRefresh provided) + edit button (if showEditButton)
+  const hasActions = onRefresh || showEditButton
+  const actions = hasActions ? (
+    <div className="flex gap-2">
+      {onRefresh && <RefreshFeedbackButton onRefresh={onRefresh} />}
+      {showEditButton && (
         <NavigationButton
           href={`/studies/${studyId}/setup/step4`}
           className="btn-primary"
-          pendingText="Opening…"
+          pendingText="Opening"
         >
           Edit
         </NavigationButton>
-      }
-    >
-      <div data-color-mode="light" className={mdEditorClassName.preview}>
-        <MDEditor.Markdown source={renderedContent} style={mdEditorStyles.preview} />
-      </div>
+      )}
+    </div>
+  ) : undefined
+
+  return (
+    <Card title={title} className={clsx("mt-4", className)} collapsible actions={actions}>
+      {!enrichedResult ? (
+        <EmptyState
+          message="Complete the study to see your personalized feedback here."
+          title="No Feedback Yet"
+        />
+      ) : (
+        <div data-color-mode="light" className={mdEditorClassName.preview}>
+          <MDEditor.Markdown source={renderedContent} style={mdEditorStyles.preview} />
+        </div>
+      )}
     </Card>
   )
 }

@@ -53,7 +53,7 @@ export default function SetupProgressCard({ study }: SetupProgressCardProps) {
             <NavigationButton
               className="btn btn-sm btn-primary"
               href={getNextSetupStepUrl(study.id, study) as Route}
-              pendingText="Loading..."
+              pendingText="Loading"
             >
               Continue Setup
             </NavigationButton>

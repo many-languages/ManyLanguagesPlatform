@@ -6,7 +6,6 @@ import ResearcherData from "./components/ResearcherData"
 import ParticipantData from "./components/ParticipantData"
 import SetupProgressCard from "./setup/components/client/SetupProgressCard"
 import StudyHeader from "./components/StudyHeader"
-import StudyInformationCard from "./components/client/StudyInformationCard"
 
 export default async function StudyPage({ params }: { params: Promise<{ studyId: string }> }) {
   const { studyId: studyIdRaw } = await params
@@ -35,9 +34,6 @@ export default async function StudyPage({ params }: { params: Promise<{ studyId:
 
         {/* Setup Progress Card for researchers */}
         {userRole === "RESEARCHER" && <SetupProgressCard study={study} />}
-
-        {/* Study information */}
-        <StudyInformationCard study={study} userRole={userRole} />
 
         {/* Researcher-specific data - progressive loading via Suspense */}
         {userRole === "RESEARCHER" && (

@@ -1,10 +1,12 @@
 import { getStudyParticipantRsc } from "../../queries/getStudyParticipant"
-import RunStudyButton from "../setup/step3/components/client/RunStudyButton"
 import { Alert } from "@/src/app/components/Alert"
-import { LoadingMessage } from "@/src/app/components/LoadingStates"
 import { isSetupComplete } from "../setup/utils/setupStatus"
 import { StudyWithRelations } from "../../queries/getStudy"
-import ParticipantFeedback from "../feedback/components/ParticipantFeedback"
+import ParticipantFeedbackData from "../feedback/components/ParticipantFeedbackData"
+import { checkParticipantCompletionAction } from "../feedback/actions/checkParticipantCompletion"
+import { CheckCircleIcon } from "@heroicons/react/24/solid"
+import StudyInformationCard from "./client/StudyInformationCard"
+import RunStudyButton from "../setup/step3/components/client/RunStudyButton"
 
 interface ParticipantDataProps {
   studyId: number
@@ -33,10 +35,50 @@ export default async function ParticipantData({ studyId, study }: ParticipantDat
       )
     }
 
+    // Check if participant has completed the study
+    const completionCheck = await checkParticipantCompletionAction(
+      studyId,
+      participant.pseudonym,
+      study.jatosStudyId!
+    )
+
+    const isCompleted = completionCheck.success && completionCheck.completed
+    const isSingleRunStudy = study.jatosWorkerType === "SINGLE"
+
+    // Hide button if study is completed and it's a SINGLE run study
+    const shouldShowButton = !(isCompleted && isSingleRunStudy)
+
+    // Build actions for participant
+    const participantActions = shouldShowButton ? (
+      <div className="flex justify-center">
+        <RunStudyButton runUrl={participant.jatosRunUrl} isActive={participant.active} />
+      </div>
+    ) : undefined
+
     return (
       <>
-        <RunStudyButton runUrl={participant.jatosRunUrl} isActive={participant.active} />
-        <ParticipantFeedback studyId={studyId} />
+        {/* Study information */}
+        <StudyInformationCard
+          study={study}
+          userRole="PARTICIPANT"
+          isPayed={participant.payed}
+          actions={participantActions}
+        />
+
+        {/* Completion message for SINGLE run studies */}
+        {isCompleted && isSingleRunStudy && (
+          <div className="flex flex-col items-center justify-center mt-4 p-6 rounded-lg bg-success/10 border border-success/20">
+            <CheckCircleIcon className="h-12 w-12 text-success mb-3" />
+            <h3 className="text-lg font-semibold text-success mb-1">Study Completed</h3>
+            <p className="text-sm text-base-content/70">Thank you for your participation!</p>
+          </div>
+        )}
+
+        <ParticipantFeedbackData
+          studyId={studyId}
+          pseudonym={participant.pseudonym}
+          jatosStudyId={study.jatosStudyId!}
+        />
       </>
     )
   } catch (error: any) {

@@ -50,7 +50,10 @@ export function NavigationButton({
     <button
       type="button"
       onClick={handleClick}
-      className={clsx("btn", className, { "pointer-events-none cursor-progress": isPending })}
+      className={clsx("btn", className, {
+        loading: isPending,
+        "pointer-events-none cursor-progress": isPending,
+      })}
       disabled={disabled}
       aria-busy={isPending}
       aria-disabled={isPending || disabled}

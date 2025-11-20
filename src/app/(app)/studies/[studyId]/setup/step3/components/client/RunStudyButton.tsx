@@ -16,7 +16,7 @@ export default function RunStudyButton({ runUrl, isActive = true }: RunStudyButt
 
   if (!runUrl) {
     return (
-      <button className="btn btn-disabled mt-4" disabled>
+      <button className="btn btn-disabled btn-lg" disabled>
         No study link available
       </button>
     )
@@ -32,7 +32,7 @@ export default function RunStudyButton({ runUrl, isActive = true }: RunStudyButt
         onClick={handleRunStudy}
         loadingText="Starting..."
         disabled={!isActive}
-        className="btn btn-primary mt-4"
+        className="btn btn-primary btn-lg"
       >
         Run Study
       </AsyncButton>

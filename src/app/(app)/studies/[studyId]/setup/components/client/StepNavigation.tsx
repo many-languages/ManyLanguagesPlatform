@@ -11,6 +11,7 @@ interface StepNavigationProps {
   prevLabel?: string
   nextLabel?: string
   onNext?: () => void | Promise<void> // Custom next handler
+  nextTooltip?: string // Tooltip message when Next button is disabled
 }
 
 export default function StepNavigation({
@@ -20,6 +21,7 @@ export default function StepNavigation({
   prevLabel = "Back",
   nextLabel = "Next",
   onNext,
+  nextTooltip,
 }: StepNavigationProps) {
   const { studyId } = useStudySetup()
   const router = useRouter()
@@ -46,20 +48,25 @@ export default function StepNavigation({
       )}
 
       {next ? (
-        <button
-          className={`btn btn-primary ${disableNext ? "btn-disabled" : ""}`}
-          onClick={async () => {
-            if (disableNext) return
-            if (onNext) {
-              await onNext()
-            } else {
-              handleNav(next)
-            }
-          }}
-          disabled={disableNext}
+        <div
+          className="tooltip tooltip-top"
+          data-tip={disableNext && nextTooltip ? nextTooltip : undefined}
         >
-          {nextLabel}
-        </button>
+          <button
+            className={`btn btn-primary ${disableNext ? "btn-disabled" : ""}`}
+            onClick={async () => {
+              if (disableNext) return
+              if (onNext) {
+                await onNext()
+              } else {
+                handleNav(next)
+              }
+            }}
+            disabled={disableNext}
+          >
+            {nextLabel}
+          </button>
+        </div>
       ) : (
         <div />
       )}

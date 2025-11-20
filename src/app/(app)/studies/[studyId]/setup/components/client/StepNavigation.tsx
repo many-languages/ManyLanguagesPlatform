@@ -1,7 +1,8 @@
 "use client"
 
-import { useRouter } from "next/navigation"
 import { useStudySetup } from "./StudySetupProvider"
+import { NavigationButton } from "@/src/app/components/NavigationButton"
+import { AsyncButton } from "@/src/app/components/AsyncButton"
 import type { Route } from "next"
 
 interface StepNavigationProps {
@@ -24,25 +25,21 @@ export default function StepNavigation({
   nextTooltip,
 }: StepNavigationProps) {
   const { studyId } = useStudySetup()
-  const router = useRouter()
 
-  const handleNav = (step: string | undefined) => {
-    if (!studyId || !step) return
-
+  const getHref = (step: string): Route => {
     // Handle special case for final step navigation to study page
     if (step === "study") {
-      router.push(`/studies/${studyId}` as Route)
-    } else {
-      router.push(`/studies/${studyId}/setup/${step}` as Route)
+      return `/studies/${studyId}` as Route
     }
+    return `/studies/${studyId}/setup/${step}` as Route
   }
 
   return (
     <div className="flex justify-between items-center mt-6">
       {prev ? (
-        <button className="btn btn-secondary" onClick={() => handleNav(prev)}>
+        <NavigationButton href={getHref(prev)} className="btn btn-secondary">
           {prevLabel}
-        </button>
+        </NavigationButton>
       ) : (
         <div /> // placeholder keeps spacing consistent
       )}
@@ -52,20 +49,27 @@ export default function StepNavigation({
           className="tooltip tooltip-top"
           data-tip={disableNext && nextTooltip ? nextTooltip : undefined}
         >
-          <button
-            className={`btn btn-primary ${disableNext ? "btn-disabled" : ""}`}
-            onClick={async () => {
-              if (disableNext) return
-              if (onNext) {
+          {onNext ? (
+            <AsyncButton
+              onClick={async () => {
+                if (disableNext) return
                 await onNext()
-              } else {
-                handleNav(next)
-              }
-            }}
-            disabled={disableNext}
-          >
-            {nextLabel}
-          </button>
+              }}
+              loadingText={nextLabel}
+              disabled={disableNext}
+              className={`btn btn-primary ${disableNext ? "btn-disabled" : ""}`}
+            >
+              {nextLabel}
+            </AsyncButton>
+          ) : (
+            <NavigationButton
+              href={getHref(next)}
+              className={`btn btn-primary ${disableNext ? "btn-disabled" : ""}`}
+              disabled={disableNext}
+            >
+              {nextLabel}
+            </NavigationButton>
+          )}
         </div>
       ) : (
         <div />

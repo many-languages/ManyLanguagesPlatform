@@ -1,6 +1,7 @@
 "use client"
 
 import type { ReactNode } from "react"
+import { useRouter } from "next/navigation"
 import toast from "react-hot-toast"
 import { generateAndSaveResearcherTestRunUrl } from "../../../../utils/generateResearcherTestRunUrl"
 import { AsyncButton } from "@/src/app/components/AsyncButton"
@@ -9,7 +10,7 @@ interface GenerateTestLinkButtonProps {
   studyResearcherId: number
   jatosStudyId: number
   jatosBatchId: number
-  onGenerated?: (runUrl: string) => void
+  onGenerated?: (runUrl: string) => void // Optional callback for additional actions
   label?: string
   className?: string
   children?: ReactNode
@@ -24,6 +25,8 @@ export default function GenerateTestLinkButton({
   className = "btn btn-primary",
   children,
 }: GenerateTestLinkButtonProps) {
+  const router = useRouter()
+
   const handleGenerate = async () => {
     try {
       const runUrl = await generateAndSaveResearcherTestRunUrl({
@@ -33,7 +36,8 @@ export default function GenerateTestLinkButton({
       })
 
       toast.success("Test link generated successfully!")
-      onGenerated?.(runUrl)
+      router.refresh() // Refresh to get the new test link data
+      onGenerated?.(runUrl) // Optional callback for additional actions
     } catch (error) {
       console.error("Failed to generate test link:", error)
       toast.error(

@@ -7,9 +7,16 @@ interface FileFieldProps {
   label: string
   accept?: string
   error?: string
+  className?: string
 }
 
-export const FileField = ({ name, label, accept = ".jzip,.zip", error }: FileFieldProps) => {
+export const FileField = ({
+  name,
+  label,
+  accept = ".jzip,.zip",
+  className,
+  error,
+}: FileFieldProps) => {
   const {
     control,
     formState: { isSubmitting, errors },
@@ -32,7 +39,9 @@ export const FileField = ({ name, label, accept = ".jzip,.zip", error }: FileFie
             type="file"
             accept={accept}
             disabled={isSubmitting}
-            className={`file-input file-input-bordered ${fieldError ? "file-input-error" : ""}`}
+            className={`file-input file-input-bordered ${fieldError ? "file-input-error" : ""} ${
+              className || ""
+            }`}
             onChange={(e) => field.onChange(e.target.files?.[0] || null)}
             aria-invalid={fieldError ? true : false}
             aria-describedby={fieldError ? `${name}-error` : undefined}

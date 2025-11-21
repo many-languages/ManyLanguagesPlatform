@@ -15,11 +15,9 @@ import { clsx } from "clsx"
 type StudyInformationFormValues = z.infer<typeof StudyInformationFormSchema>
 
 type StudyInformationFormProps = {
-  formTitle: string
   submitText: string
   onCancel?: () => void
   cancelText?: string
-  actionsClassName?: string
   /** Handles submission, must return void or errors */
   onSubmit: (values: StudyInformationFormValues) => Promise<void | { FORM_ERROR?: string }>
   defaultValues?: Partial<StudyInformationFormValues>
@@ -29,52 +27,64 @@ export default function StudyInformationForm({
   onCancel,
   cancelText,
   submitText,
-  formTitle,
   defaultValues,
   onSubmit,
-  actionsClassName,
 }: StudyInformationFormProps) {
   const memoizedDefaultValues = useMemo(() => defaultValues, [defaultValues])
 
   return (
-    <div className="space-y-6 max-w-2xl mx-auto">
-      <h1 className="text-2xl font-bold">{formTitle}</h1>
-
-      <Form
-        schema={StudyInformationFormSchema}
-        onSubmit={onSubmit}
-        defaultValues={memoizedDefaultValues}
-        className="space-y-4"
-      >
-        <>
-          <TextField name="title" label="Title" placeholder="Study title" />
-          <TextField name="description" label="Description" placeholder="Short description" />
-          <DateField name="startDate" label="Start Date" />
-          <DateField name="endDate" label="End Date" />
-          <TextField name="sampleSize" label="Sample Size" placeholder="100" type="number" />
-          <TextField name="payment" label="Payment" placeholder="e.g., $10 voucher" />
-          <TextField name="length" label="Expected Duration" placeholder="30 minutes" />
-
-          {/* Form Actions */}
-          <div className={clsx("flex gap-2 pt-4", actionsClassName || "justify-end")}>
-            {cancelText && onCancel ? (
-              <button type="button" className="btn btn-secondary" onClick={onCancel}>
-                {cancelText}
-              </button>
-            ) : (
-              <div /> // placeholder to keep submit button on right when no cancel
-            )}
-            <FormSubmitButton
-              submitText={submitText}
-              loadingText="Saving..."
-              className="btn btn-primary"
-            />
-          </div>
-
-          {/* Global Form Error */}
-          <FormErrorDisplay />
-        </>
-      </Form>
-    </div>
+    <Form
+      schema={StudyInformationFormSchema}
+      onSubmit={onSubmit}
+      defaultValues={memoizedDefaultValues}
+    >
+      <div className="mx-auto w-full max-w-lg flex flex-col space-y-6">
+        <TextField name="title" label="Title" placeholder="Study title" className="w-full" />
+        <TextField
+          name="description"
+          label="Description"
+          placeholder="Short description"
+          className="w-full"
+        />
+        <DateField name="startDate" label="Start Date" className="w-full" />
+        <DateField name="endDate" label="End Date" className="w-full" />
+        <TextField
+          name="sampleSize"
+          label="Sample Size"
+          placeholder="100"
+          type="number"
+          className="w-full"
+        />
+        <TextField
+          name="payment"
+          label="Payment"
+          placeholder="e.g., $10 voucher"
+          className="w-full"
+        />
+        <TextField
+          name="length"
+          label="Expected Duration"
+          placeholder="30 minutes"
+          className="w-full"
+        />
+        {/* Global Form Error */}
+        <FormErrorDisplay />
+      </div>
+      {/* Form Actions */}
+      <div className="mx-auto flex w-full gap-2 pt-4 justify-between">
+        {cancelText && onCancel ? (
+          <button type="button" className="btn btn-secondary" onClick={onCancel}>
+            {cancelText}
+          </button>
+        ) : (
+          <div /> // placeholder to keep submit button on right when no cancel
+        )}
+        <FormSubmitButton
+          submitText={submitText}
+          loadingText="Saving..."
+          className="btn btn-primary"
+        />
+      </div>
+    </Form>
   )
 }

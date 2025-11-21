@@ -172,7 +172,6 @@ export default function Step2Content() {
       )}
 
       <JatosForm
-        formTitle=""
         submitText="Save and continue"
         cancelText="Back"
         onCancel={() => router.push(`/studies/${study.id}/setup/step1`)}

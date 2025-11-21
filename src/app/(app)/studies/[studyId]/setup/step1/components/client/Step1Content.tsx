@@ -40,9 +40,7 @@ export default function Step1Content({
 
   return (
     <StudyInformationForm
-      formTitle=""
       submitText={isEditMode ? "Update Study" : "Save and continue"}
-      actionsClassName="justify-between"
       defaultValues={{
         title: study.title || "",
         description: study.description || "",

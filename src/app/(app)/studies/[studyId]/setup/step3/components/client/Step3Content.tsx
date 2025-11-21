@@ -11,6 +11,7 @@ import { checkPilotStatusAction } from "../../actions/checkPilotStatus"
 import Step3Instructions from "./Step3Instructions"
 import Step3Actions from "./Step3Actions"
 import StepNavigation from "../../../components/client/StepNavigation"
+import { useWindowResumeCheck } from "@/src/hooks/useWindowResumeCheck"
 
 export default function Step3Content() {
   const { study } = useStudySetup()
@@ -94,6 +95,7 @@ export default function Step3Content() {
   // Auto-check pilot status on mount when jatosRunUrl is available
   // Only check if not already marked as completed in database (catches edge cases like user forgetting to check before closing browser)
   const hasCheckedOnMount = useRef(false) // Track if we've auto-checked
+  const [resumeCheckActive, setResumeCheckActive] = useState(false)
   useEffect(() => {
     if (
       jatosRunUrl &&
@@ -102,9 +104,17 @@ export default function Step3Content() {
       !study.step3Completed
     ) {
       hasCheckedOnMount.current = true
+      setResumeCheckActive(true)
       checkPilotStatus(false) // Don't show toasts on auto-check
     }
   }, [jatosRunUrl, study?.jatosStudyUUID, study.step3Completed, checkPilotStatus])
+
+  const handlePilotStatusResume = useCallback(() => checkPilotStatus(false), [checkPilotStatus])
+
+  useWindowResumeCheck({
+    enabled: resumeCheckActive && Boolean(jatosRunUrl && study?.jatosStudyUUID && !pilotCompleted),
+    onResume: handlePilotStatusResume,
+  })
 
   if (!researcherId) {
     return <p className="text-error">You are not assigned as a researcher to this study.</p>

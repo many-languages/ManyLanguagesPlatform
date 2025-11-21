@@ -53,33 +53,39 @@ export default function Step3Actions({
   }
 
   return (
-    <div className="max-w-2xl mx-auto space-y-6">
+    <div className="max-w-3xl mx-auto space-y-6 w-full">
       {/* Actions Section - Generate Test Link (if completed), Run Study and Check Status */}
-      <div className="flex justify-center items-center gap-0">
+      <div className="flex flex-wrap items-center justify-center gap-4 w-full">
         {pilotCompleted === true && jatosStudyId && jatosBatchId && (
           <>
-            <GenerateTestLinkButton
-              studyResearcherId={researcherId}
-              jatosStudyId={jatosStudyId}
-              jatosBatchId={jatosBatchId}
-              label="Generate Test Link"
-              className="btn btn-accent btn-lg"
-            >
-              <ArrowPathIcon className="h-4 w-4" />
-            </GenerateTestLinkButton>
-            <div className="divider divider-horizontal"></div>
+            <div className="flex-shrink-0">
+              <GenerateTestLinkButton
+                studyResearcherId={researcherId}
+                jatosStudyId={jatosStudyId}
+                jatosBatchId={jatosBatchId}
+                label="Generate Test Link"
+                className="btn btn-accent btn-lg whitespace-nowrap"
+              >
+                <ArrowPathIcon className="h-4 w-4" />
+              </GenerateTestLinkButton>
+            </div>
+            <div className="divider divider-horizontal hidden lg:flex" />
           </>
         )}
-        <RunStudyButton runUrl={jatosRunUrl} />
-        <div className="divider divider-horizontal"></div>
-        <AsyncButton
-          onClick={onCheckStatus}
-          loadingText="Checking..."
-          disabled={!jatosStudyUUID}
-          className="btn btn-secondary btn-lg"
-        >
-          Check Pilot Status
-        </AsyncButton>
+        <div className="flex-shrink-0">
+          <RunStudyButton runUrl={jatosRunUrl} />
+        </div>
+        <div className="divider divider-horizontal hidden lg:flex" />
+        <div className="flex-shrink-0">
+          <AsyncButton
+            onClick={onCheckStatus}
+            loadingText="Checking..."
+            disabled={!jatosStudyUUID}
+            className="btn btn-secondary btn-lg whitespace-nowrap"
+          >
+            Check Pilot Status
+          </AsyncButton>
+        </div>
       </div>
     </div>
   )

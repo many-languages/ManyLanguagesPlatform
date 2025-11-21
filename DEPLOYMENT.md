@@ -506,6 +506,49 @@ services:
 
 **Note:** The default PostgreSQL port is 5433 on the host to avoid conflicts with local PostgreSQL. Inside Docker, services always connect to `postgres:5432`.
 
+## Email delivery (Mailhog + Postmark)
+
+- **Development**: set `EMAIL_ENABLED=true` when running `make dev` (or `make dev-https`) to start the optional Mailhog container. All emails are caught at [http://localhost:8025](http://localhost:8025). Leave the flag unset to skip email entirely during development.
+- **Production**: configure Postmark credentials (`EMAIL_FROM_ADDRESS`, `POSTMARK_SERVER_TOKEN`, optional `POSTMARK_MESSAGE_STREAM`) in your `.env` before `make prod`. The app automatically switches to the Postmark API when `EMAIL_PROVIDER=postmark`.
+- All email configuration lives in `integrations/email.ts`, and callers should use the exported `sendEmail` helper (see `mailers/forgotPasswordMailer.ts` for an example).
+- Common variables:
+
+```
+EMAIL_ENABLED=false
+EMAIL_PROVIDER=mailhog|postmark|smtp
+EMAIL_FROM_ADDRESS="ManyLanguages Platform <noreply@example.com>"
+SMTP_HOST=mailhog
+SMTP_PORT=1025
+SMTP_USER=
+SMTP_PASSWORD=
+SMTP_SECURE=false
+POSTMARK_SERVER_TOKEN=
+POSTMARK_MESSAGE_STREAM=outbound
+```
+
+### Running Mailhog standalone
+
+If you prefer to run the app with `npm run dev` (outside Docker) while still testing emails, you can start only the Mailhog service:
+
+```bash
+# Option 1: use docker compose with the mail profile
+EMAIL_ENABLED=true docker compose --profile mail up mailhog
+
+# Option 2: plain docker run
+docker run --rm -p 1025:1025 -p 8025:8025 mailhog/mailhog:v1.0.1
+```
+
+Then configure your local `.env` (or shell) with:
+
+```
+EMAIL_ENABLED=true
+EMAIL_PROVIDER=mailhog
+SMTP_HOST=localhost
+SMTP_PORT=1025
+```
+
+Mailhog’s UI is available at http://localhost:8025, showing every email your app sends without actually delivering them to real inboxes.
+
 ## Support
 
 For issues or questions:

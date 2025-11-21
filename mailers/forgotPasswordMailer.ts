@@ -1,9 +1,4 @@
-/* TODO - You need to add a mailer integration in `integrations/` and import here.
- *
- * The integration file can be very simple. Instantiate the email client
- * and then export it. That way you can import here and anywhere else
- * and use it straight away.
- */
+import { sendEmail } from "@/integrations/email"
 
 type ResetPasswordMailer = {
   to: string
@@ -15,31 +10,21 @@ export function forgotPasswordMailer({ to, token }: ResetPasswordMailer) {
   const origin = process.env.APP_ORIGIN || process.env.BLITZ_DEV_SERVER_ORIGIN
   const resetUrl = `${origin}/reset-password?token=${token}`
 
-  const msg = {
-    from: "TODO@example.com",
-    to,
-    subject: "Your Password Reset Instructions",
-    html: `
+  const html = `
       <h1>Reset Your Password</h1>
-      <h3>NOTE: You must set up a production email integration in mailers/forgotPasswordMailer.ts</h3>
-
-      <a href="${resetUrl}">
-        Click here to set a new password
-      </a>
-    `,
-  }
+      <p>Use the link below to set a new password for your account.</p>
+      <p>This link expires in 4 hours.</p>
+      <a href="${resetUrl}">Set a new password</a>
+    `
 
   return {
     async send() {
-      if (process.env.NODE_ENV === "production") {
-        // TODO - send the production email, like this:
-        // await postmark.sendEmail(msg)
-        throw new Error("No production email implementation in mailers/forgotPasswordMailer")
-      } else {
-        // Preview email in the browser
-        const previewEmail = (await import("preview-email")).default
-        await previewEmail(msg)
-      }
+      await sendEmail({
+        to,
+        subject: "Your password reset instructions",
+        html,
+        text: `Reset your password: ${resetUrl}`,
+      })
     },
   }
 }

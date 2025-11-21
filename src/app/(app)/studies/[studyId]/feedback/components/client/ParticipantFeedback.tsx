@@ -5,6 +5,7 @@ import FeedbackCard from "./FeedbackCard"
 import { checkParticipantCompletionAction } from "../../actions/checkParticipantCompletion"
 import { fetchParticipantFeedbackAction } from "../../actions/fetchParticipantFeedback"
 import type { EnrichedJatosStudyResult } from "@/src/types/jatos"
+import { useWindowResumeCheck } from "@/src/hooks/useWindowResumeCheck"
 
 interface ParticipantFeedbackProps {
   studyId: number
@@ -117,28 +118,14 @@ export default function ParticipantFeedback({
   }, [studyId, pseudonym, jatosStudyId, startTransition])
 
   // Smart auto-checking: Only set up event listeners if no results exist yet
-  useEffect(() => {
-    // Only auto-check if we don't have results yet
-    if (enrichedResult) return
+  const handleResumeCheck = useCallback(() => {
+    return checkCompletionStatus(false)
+  }, [checkCompletionStatus])
 
-    const handleFocus = () => {
-      checkCompletionStatus(false) // Silent lightweight check on focus
-    }
-
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === "visible") {
-        checkCompletionStatus(false) // Silent lightweight check on visibility
-      }
-    }
-
-    window.addEventListener("focus", handleFocus)
-    document.addEventListener("visibilitychange", handleVisibilityChange)
-
-    return () => {
-      window.removeEventListener("focus", handleFocus)
-      document.removeEventListener("visibilitychange", handleVisibilityChange)
-    }
-  }, [enrichedResult, checkCompletionStatus]) // Include checkCompletionStatus in dependencies
+  useWindowResumeCheck({
+    enabled: !enrichedResult,
+    onResume: handleResumeCheck,
+  })
 
   if (!template) return null
 

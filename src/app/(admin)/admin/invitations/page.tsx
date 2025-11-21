@@ -4,8 +4,12 @@ export const metadata = {
 
 import Card from "@/src/app/components/Card"
 import { AdminInviteForm } from "./components/AdminInviteForm"
+import AdminInviteManagementCard from "./components/AdminInviteManagementCard"
+import { getAdminInvitesRsc } from "./queries/getAdminInvites"
 
-export default function AdminInvitesPage() {
+export default async function AdminInvitesPage() {
+  const invites = await getAdminInvitesRsc()
+
   return (
     <section className="space-y-6">
       <header className="space-y-2">
@@ -20,9 +24,7 @@ export default function AdminInvitesPage() {
         <AdminInviteForm />
       </Card>
 
-      <Card title="Pending invites" bgColor="bg-base-100">
-        <p className="text-base-content/70">Wire this to Prisma to list outstanding tokens.</p>
-      </Card>
+      <AdminInviteManagementCard invites={invites} />
     </section>
   )
 }

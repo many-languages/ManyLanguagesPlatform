@@ -96,7 +96,7 @@ export function AdminInviteForm() {
               ) : (
                 <div className="alert alert-neutral shadow-sm">
                   <div>
-                    <p className="font-medium">No invite yet</p>
+                    <p className="font-medium">No new admin invites</p>
                     <p className="text-sm text-base-content/70">
                       Generate an invite to preview the token and shareable link.
                     </p>

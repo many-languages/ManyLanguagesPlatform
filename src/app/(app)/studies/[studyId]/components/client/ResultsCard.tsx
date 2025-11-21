@@ -201,7 +201,7 @@ export default function ResultsCard({
         {!loading && !error && !enrichedResults.length && <EmptyState message="No results found" />}
         {/* Show results in the table */}
         {!loading && !error && tableData.length > 0 && (
-          <div className="flex-1 min-h-0 overflow-auto max-w-full border border-base-300 rounded-lg">
+          <div className="flex-1 min-h-0 overflow-auto max-w-full">
             <div className="min-w-max">
               <Table columns={columns} data={tableData} addPagination={true} />
             </div>

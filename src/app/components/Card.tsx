@@ -39,7 +39,7 @@ const Card = ({
     return (
       <div
         className={clsx(
-          "card base-content border mt-2 shadow-sm rounded-box border-base-300",
+          "card base-content border mt-2 shadow-sm rounded-box border-base-300 card-no-outline",
           bgColor,
           className
         )}

@@ -26,3 +26,11 @@ i {
 * {
   box-sizing: border-box;
 }
+
+.card:not(.card-no-outline):has(> :checked) {
+  outline: 2px solid currentColor;
+}
+
+.card.card-no-outline:has(> :checked) {
+  outline: none;
+}

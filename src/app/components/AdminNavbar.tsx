@@ -64,6 +64,11 @@ export default function AdminNavbar({ currentUser }: AdminNavbarProps) {
             </Link>
           </li>
           <li>
+            <Link href={"/admin/invitations"} onClick={closeActiveDropdown}>
+              Invites
+            </Link>
+          </li>
+          <li>
             <Link href={"/studies"} onClick={closeActiveDropdown}>
               Studies
             </Link>

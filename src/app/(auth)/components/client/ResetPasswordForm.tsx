@@ -25,8 +25,8 @@ export function ResetPasswordForm() {
   )
 
   return (
-    <div className="space-y-6">
-      <h1 className="mb-4 font-black text-xl">Set a New Password</h1>
+    <div className="space-y-4">
+      <h1 className="font-black text-3xl">Set a New Password</h1>
 
       {isSuccess ? (
         <div>
@@ -55,9 +55,14 @@ export function ResetPasswordForm() {
           }}
           className="space-y-4"
         >
-          <>
-            <TextField name="password" label="New Password" type="password" />
-            <TextField name="passwordConfirmation" label="Confirm New Password" type="password" />
+          <div className="fieldset bg-base-200 border-base-300 rounded-box w-md border p-4">
+            <TextField name="password" label="New Password" type="password" className="w-full" />
+            <TextField
+              name="passwordConfirmation"
+              label="Confirm New Password"
+              type="password"
+              className="w-full"
+            />
 
             <FormSubmitButton
               submitText="Reset Password"
@@ -66,9 +71,13 @@ export function ResetPasswordForm() {
             />
 
             <FormErrorDisplay />
-          </>
+          </div>
         </Form>
       )}
+
+      <div>
+        Or <Link href="/login">Login</Link>
+      </div>
     </div>
   )
 }

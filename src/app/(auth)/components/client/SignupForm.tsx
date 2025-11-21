@@ -55,13 +55,26 @@ export const SignupForm = (props: SignupFormProps) => {
         className="space-y-4"
       >
         <div className="fieldset  bg-base-200 border-base-300 rounded-box w-md border p-4">
-          <TextField name="email" label="Email" placeholder="Email" type="email" />
-          <TextField name="password" label="Password" placeholder="Password" type="password" />
+          <TextField
+            name="email"
+            label="Email"
+            placeholder="Email"
+            type="email"
+            className="w-full"
+          />
+          <TextField
+            name="password"
+            label="Password"
+            placeholder="Password"
+            type="password"
+            className="w-full"
+          />
           <SelectField
             name="role"
             label="Role"
             options={RoleOptions}
             placeholder="Select your role"
+            className="w-full"
           />
 
           <FormSubmitButton

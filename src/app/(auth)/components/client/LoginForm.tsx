@@ -50,9 +50,21 @@ export const LoginForm = () => {
         }}
         className="space-y-4"
       >
-        <div className="fieldset  bg-base-200 border-base-300 rounded-box w-md border p-4">
-          <TextField name="email" label="Email" placeholder="Email" type="email" />
-          <TextField name="password" label="Password" placeholder="Password" type="password" />
+        <div className="fieldset bg-base-200 border-base-300 rounded-box w-md border p-4">
+          <TextField
+            name="email"
+            label="Email"
+            placeholder="Email"
+            type="email"
+            className="w-full"
+          />
+          <TextField
+            name="password"
+            label="Password"
+            placeholder="Password"
+            type="password"
+            className="w-full"
+          />
           <Link href={"/forgot-password"} className="mt-2 mb-6 block">
             Forgot your password?
           </Link>

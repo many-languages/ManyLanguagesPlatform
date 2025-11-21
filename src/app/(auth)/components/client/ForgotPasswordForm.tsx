@@ -45,7 +45,13 @@ export function ForgotPasswordForm() {
             className="space-y-4"
           >
             <div className="fieldset  bg-base-200 border-base-300 rounded-box w-md border p-4">
-              <TextField name="email" label="Email" placeholder="Email" type="email" />
+              <TextField
+                name="email"
+                label="Email"
+                placeholder="Email"
+                type="email"
+                className="w-full"
+              />
 
               <FormSubmitButton
                 submitText="Send Reset Password"

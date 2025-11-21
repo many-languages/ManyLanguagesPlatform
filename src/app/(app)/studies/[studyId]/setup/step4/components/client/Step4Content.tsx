@@ -37,16 +37,26 @@ export default function Step4Content({
   const { refetch: refetchNotifications } = useNotificationMenuContext()
 
   const handleFinish = async () => {
+    let templateSavedDuringFinish = false
+
     if (feedbackEditorRef.current) {
       const isSaved = feedbackEditorRef.current.isTemplateSaved()
       if (!isSaved) {
         // Auto-save template before finishing
         await feedbackEditorRef.current.saveTemplate()
+        templateSavedDuringFinish = true
       }
     }
 
+    const canAutoOpen =
+      !!study &&
+      study.step1Completed &&
+      study.step2Completed &&
+      study.step3Completed &&
+      (study.step4Completed || templateSavedDuringFinish || !!initialFeedbackTemplate)
+
     // Check if setup is now complete and auto-open study
-    if (study && isSetupComplete(study)) {
+    if (canAutoOpen) {
       try {
         await updateStudyStatusMutation({ studyId, status: "OPEN" })
         await refetchNotifications()

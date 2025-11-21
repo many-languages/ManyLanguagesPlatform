@@ -31,7 +31,7 @@ export default function NewStudy() {
   return (
     <div className="flex flex-col items-center mt-20">
       <h1 className="text-2xl font-bold mb-6">Create new study</h1>
-      <AsyncButton onClick={handleCreate} loadingText="Creating..." className="btn btn-primary">
+      <AsyncButton onClick={handleCreate} loadingText="Creating" className="btn btn-primary">
         Start setup
       </AsyncButton>
     </div>

@@ -168,6 +168,7 @@ export default function ResultsCard({
       title="Results"
       className="mt-4"
       collapsible
+      bodyClassName="flex flex-col gap-3 max-h-[70vh] min-h-0 overflow-hidden"
       actions={
         <div className="flex gap-2">
           {/* Filter varibales by components */}
@@ -190,21 +191,23 @@ export default function ResultsCard({
         </div>
       }
     >
-      {loading && <LoadingMessage message="Loading results..." />}
-      {error && (
-        <Alert variant="error" className="mt-3">
-          <p>{error}</p>
-        </Alert>
-      )}
-      {!loading && !error && !enrichedResults.length && <EmptyState message="No results found" />}
-      {/* Show results in the table */}
-      {!loading && !error && tableData.length > 0 && (
-        <div className="overflow-auto max-w-full border border-base-300 rounded-lg mt-3">
-          <div className="min-w-max">
-            <Table columns={columns} data={tableData} addPagination={true} />
+      <div className="flex flex-col flex-1 min-h-0 gap-3">
+        {loading && <LoadingMessage message="Loading results..." />}
+        {error && (
+          <Alert variant="error" className="mt-3">
+            <p>{error}</p>
+          </Alert>
+        )}
+        {!loading && !error && !enrichedResults.length && <EmptyState message="No results found" />}
+        {/* Show results in the table */}
+        {!loading && !error && tableData.length > 0 && (
+          <div className="flex-1 min-h-0 overflow-auto max-w-full border border-base-300 rounded-lg">
+            <div className="min-w-max">
+              <Table columns={columns} data={tableData} addPagination={true} />
+            </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </Card>
   )
 }

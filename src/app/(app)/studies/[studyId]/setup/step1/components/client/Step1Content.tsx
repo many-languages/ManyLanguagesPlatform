@@ -7,7 +7,7 @@ import { FORM_ERROR } from "@/src/app/components/Form"
 import toast from "react-hot-toast"
 import { useStudySetup } from "../../../components/client/StudySetupProvider"
 import updateStudy from "@/src/app/(app)/studies/mutations/updateStudy"
-import StudyInformationForm from "@/src/app/(app)/studies/components/client/StudyInformationForm"
+import StudyInformationForm from "@/src/app/(app)/studies/[studyId]/setup/step1/components/client/StudyInformationForm"
 import { getPostStepNavigationUrl } from "../../../utils/setupStatus"
 
 interface Step1ContentProps {

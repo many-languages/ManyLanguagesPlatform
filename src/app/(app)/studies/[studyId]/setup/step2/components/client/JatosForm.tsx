@@ -10,7 +10,6 @@ import {
   FormSubmitButton,
   FormErrorDisplay,
 } from "@/src/app/components/fields"
-import { clsx } from "clsx"
 
 type JatosFormValues = z.infer<typeof JatosFormSchema>
 

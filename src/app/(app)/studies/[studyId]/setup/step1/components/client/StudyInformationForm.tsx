@@ -8,9 +8,8 @@ import {
   FormSubmitButton,
   FormErrorDisplay,
 } from "@/src/app/components/fields"
-import { StudyInformationFormSchema } from "../../validations"
+import { StudyInformationFormSchema } from "../../../../../validations"
 import { z } from "zod"
-import { clsx } from "clsx"
 
 type StudyInformationFormValues = z.infer<typeof StudyInformationFormSchema>
 

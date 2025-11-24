@@ -7,6 +7,9 @@ import { getAuthorizedSession } from "@/src/app/(auth)/utils/getAuthorizedSessio
 
 const getStudies = resolver.pipe(resolver.authorize("ADMIN"), async () => {
   return db.study.findMany({
+    include: {
+      FeedbackTemplate: true,
+    },
     orderBy: { createdAt: "desc" },
   })
 })
@@ -18,6 +21,9 @@ export async function getStudiesRsc() {
   }
 
   return db.study.findMany({
+    include: {
+      FeedbackTemplate: true,
+    },
     orderBy: { createdAt: "desc" },
   })
 }

@@ -6,13 +6,19 @@ import Form from "@/src/app/components/Form"
 import CheckboxFieldTable from "@/src/app/(app)/studies/components/CheckboxFieldTable"
 import { FormErrorDisplay } from "@/src/app/components/FormErrorDisplay"
 import { AdminStudySchema, AdminStudyFormValues } from "../validations"
-import { Study } from "db"
+import { Study, FeedbackTemplate } from "db"
 import { useFormContext } from "react-hook-form"
 import { useRouter } from "next/navigation"
 import { useMutation } from "@blitzjs/rpc"
 import toast from "react-hot-toast"
 import enableDataCollection from "../mutations/enableDataCollection"
 import disableDataCollection from "../mutations/disableDataCollection"
+import Modal from "@/src/app/components/Modal"
+import MDEditor from "@uiw/react-md-editor"
+
+type StudyWithFeedbackTemplate = Study & {
+  FeedbackTemplate: FeedbackTemplate[] | null
+}
 
 function getSetupStatus(study: Study): string {
   const { step1Completed, step2Completed, step3Completed, step4Completed } = study
@@ -31,7 +37,72 @@ function getSetupStatus(study: Study): string {
   return "Not started"
 }
 
-export default function AdminStudyManagementCard({ studies }: { studies: Study[] }) {
+function FeedbackTemplateButton({
+  feedbackTemplate,
+  studyId,
+  studyTitle,
+}: {
+  feedbackTemplate: { content: string } | null
+  studyId: number
+  studyTitle: string
+}) {
+  const [isOpen, setIsOpen] = useState(false)
+
+  if (!feedbackTemplate) {
+    return <span className="text-base-content/50">Not available</span>
+  }
+
+  return (
+    <>
+      <button
+        type="button"
+        className="btn btn-sm btn-outline btn-primary"
+        onClick={() => setIsOpen(true)}
+      >
+        View Template
+      </button>
+      <FeedbackTemplateModal
+        open={isOpen}
+        onClose={() => setIsOpen(false)}
+        content={feedbackTemplate.content}
+        studyTitle={studyTitle}
+      />
+    </>
+  )
+}
+
+function FeedbackTemplateModal({
+  open,
+  onClose,
+  content,
+  studyTitle,
+}: {
+  open: boolean
+  onClose: () => void
+  content: string
+  studyTitle: string
+}) {
+  return (
+    <Modal open={open} size="max-w-4xl">
+      <div className="flex flex-col h-full">
+        <div className="flex items-center justify-end mb-4 pb-4 border-b">
+          <button type="button" className="btn btn-sm btn-circle btn-ghost" onClick={onClose}>
+            ✕
+          </button>
+        </div>
+        <div className="flex-1 overflow-auto" data-color-mode="light">
+          <MDEditor.Markdown source={content} />
+        </div>
+      </div>
+    </Modal>
+  )
+}
+
+export default function AdminStudyManagementCard({
+  studies,
+}: {
+  studies: StudyWithFeedbackTemplate[]
+}) {
   const rows = useMemo(() => {
     return studies.map((study) => {
       const created = study.createdAt ? new Date(study.createdAt) : null
@@ -43,6 +114,7 @@ export default function AdminStudyManagementCard({ studies }: { studies: Study[]
         createdAt: created?.toLocaleString() ?? "NA",
         setupStatus: getSetupStatus(study),
         dataCollectionStatus: study.status,
+        feedbackTemplate: study.FeedbackTemplate?.[0] || null,
       }
     })
   }, [studies])
@@ -86,6 +158,21 @@ export default function AdminStudyManagementCard({ studies }: { studies: Study[]
         },
       },
       {
+        id: "feedbackTemplate",
+        header: "Feedback Template",
+        cell: ({ row }: any) => {
+          const feedbackTemplate = row.original.feedbackTemplate
+          const studyId = row.original.id
+          return (
+            <FeedbackTemplateButton
+              feedbackTemplate={feedbackTemplate}
+              studyId={studyId}
+              studyTitle={row.original.label}
+            />
+          )
+        },
+      },
+      {
         id: "createdAt",
         header: "Created",
         accessorKey: "createdAt",
@@ -101,7 +188,7 @@ export default function AdminStudyManagementCard({ studies }: { studies: Study[]
       onSubmit={async () => {}}
     >
       <Card
-        title="Study Management"
+        title=""
         bgColor="bg-base-100"
         className="mt-4"
         actions={<StudyActions studies={studies} />}
@@ -118,7 +205,7 @@ export default function AdminStudyManagementCard({ studies }: { studies: Study[]
   )
 }
 
-function StudyActions({ studies }: { studies: Study[] }) {
+function StudyActions({ studies }: { studies: StudyWithFeedbackTemplate[] }) {
   const router = useRouter()
   const { watch, setValue, trigger } = useFormContext<AdminStudyFormValues>()
   const [enableMutation] = useMutation(enableDataCollection)

@@ -41,6 +41,7 @@ model User {
   participations         ParticipantStudy[] // participant memberships
   Study                  Study[]
   notificationRecipients NotificationRecipient[]
+  AdminInvite            AdminInvite[]
 }
 
 model Session {
@@ -226,4 +227,20 @@ model FeedbackTemplate {
   updatedAt DateTime @updatedAt
 
   study Study @relation(fields: [studyId], references: [id])
+}
+
+model AdminInvite {
+  id             Int       @id @default(autoincrement())
+  token          String    @unique // random, single-use, stored server-side only
+  email          String
+  expiresAt      DateTime
+  redeemedAt     DateTime?
+  revokedAt      DateTime?
+  reminderSentAt DateTime? // Track when reminder email was last sent
+  createdAt      DateTime  @default(now())
+  createdById    Int?
+  createdBy      User?     @relation(fields: [createdById], references: [id], onDelete: SetNull)
+
+  @@index([email])
+  @@index([expiresAt])
 }

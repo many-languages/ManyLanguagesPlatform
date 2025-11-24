@@ -1,4 +1,5 @@
 import { Suspense } from "react"
+import { redirect } from "next/navigation"
 import { Toaster } from "react-hot-toast"
 import { getBlitzContext } from "../blitz-server"
 import { getCurrentUserRsc } from "../users/queries/getCurrentUser"
@@ -8,6 +9,9 @@ import { NotificationMenuRootProvider } from "./notifications/context/Notificati
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const { session } = await getBlitzContext()
+  if (session.role === "ADMIN") {
+    redirect("/admin")
+  }
   const currentUser = session.userId ? await getCurrentUserRsc().catch(() => null) : null
 
   return (

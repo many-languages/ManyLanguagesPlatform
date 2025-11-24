@@ -11,7 +11,7 @@ import { checkPilotStatusAction } from "../../actions/checkPilotStatus"
 import Step3Instructions from "./Step3Instructions"
 import Step3Actions from "./Step3Actions"
 import StepNavigation from "../../../components/client/StepNavigation"
-import { useWindowResumeCheck } from "@/src/hooks/useWindowResumeCheck"
+import { useWindowResumeCheck } from "@/src/app/hooks/useWindowResumeCheck"
 
 export default function Step3Content() {
   const { study } = useStudySetup()

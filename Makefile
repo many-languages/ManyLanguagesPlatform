@@ -6,6 +6,14 @@ SHELL := /bin/bash
 # Base compose file
 COMPOSE=docker compose -f docker-compose.yml
 
+# Optional mail services
+EMAIL_ENABLED ?= false
+ifeq ($(EMAIL_ENABLED),true)
+MAIL_PROFILE_FLAG=--profile mail
+else
+MAIL_PROFILE_FLAG=
+endif
+
 # Default target
 help:
 	@echo "Usage:"
@@ -19,6 +27,9 @@ help:
 	@echo "  make validate-token Validate JATOS token (requires JATOS_TOKEN in .env)"
 	@echo "  make certs          Generate SSL certificates for HTTPS (requires mkcert)"
 	@echo ""
+	@echo "Environment toggles:"
+	@echo "  EMAIL_ENABLED=true make dev    Enable Mailhog + SMTP during dev"
+	@echo ""
 	@echo "For more information, see DEPLOYMENT.md"
 
 # Development mode
@@ -29,7 +40,7 @@ dev:
 		cp .env.example .env 2>/dev/null || echo "Please create .env file manually. See .env.example for reference."; \
 	fi
 	@echo "📦 Starting Docker services..."
-	$(COMPOSE) up -d
+	$(COMPOSE) $(MAIL_PROFILE_FLAG) up -d
 	@echo ""
 	@echo "⏳ Waiting for services to be ready..."
 	@sleep 10
@@ -92,7 +103,7 @@ dev-https: certs
 		cp .env.example .env 2>/dev/null || echo "Please create .env file manually. See .env.example for reference."; \
 	fi
 	@echo "📦 Starting Docker services with HTTPS..."
-	$(COMPOSE) -f docker-compose.yml -f docker-compose.override.https.yml up -d
+	$(COMPOSE) -f docker-compose.yml -f docker-compose.override.https.yml $(MAIL_PROFILE_FLAG) up -d
 	@echo ""
 	@echo "⏳ Waiting for services to be ready..."
 	@sleep 10

@@ -11,9 +11,16 @@ export const studySetupCompletedSchema = z.object({
   nextStep: z.string().optional(),
 })
 
+export const dataCollectionStatusChangedSchema = z.object({
+  studyTitle: z.string(),
+  status: z.enum(["enabled", "disabled"]),
+  changedAt: z.string().optional(),
+})
+
 export const templateSchemaMap: Record<string, z.ZodSchema<any>> = {
   dataCollectionStarted: dataCollectionStartedSchema,
   studySetupCompleted: studySetupCompletedSchema,
+  dataCollectionStatusChanged: dataCollectionStatusChangedSchema,
 }
 
 export const getTemplateSchema = (templateId: string) => {

@@ -5,6 +5,7 @@ import { randomBytes, createHash } from "crypto"
 import db from "db"
 import { getAuthorizedSession } from "@/src/app/(auth)/utils/getAuthorizedSession"
 import { createAdminInviteInputSchema } from "../validations"
+import { adminInvitationMailer } from "mailers/adminInvitationMailer"
 
 const hashToken = (token: string) => createHash("sha256").update(token).digest("hex")
 
@@ -26,6 +27,13 @@ export default resolver.pipe(
         createdById: session.userId || undefined,
       },
     })
+
+    // Send invitation email
+    await adminInvitationMailer({
+      to: email,
+      token: plainToken,
+      expiresAt,
+    }).send()
 
     return {
       id: invite.id,

@@ -60,7 +60,7 @@ export default function AdminNavbar({ currentUser }: AdminNavbarProps) {
         <ul className="menu menu-horizontal items-center gap-1">
           <li>
             <Link href={"/admin"} onClick={closeActiveDropdown}>
-              Overview
+              Dashboard
             </Link>
           </li>
           <li>
@@ -69,13 +69,8 @@ export default function AdminNavbar({ currentUser }: AdminNavbarProps) {
             </Link>
           </li>
           <li>
-            <Link href={"/studies"} onClick={closeActiveDropdown}>
+            <Link href={"/admin/studies"} onClick={closeActiveDropdown}>
               Studies
-            </Link>
-          </li>
-          <li>
-            <Link href={"/dashboard"} onClick={closeActiveDropdown}>
-              Dashboard
             </Link>
           </li>
         </ul>

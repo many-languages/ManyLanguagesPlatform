@@ -51,7 +51,7 @@ export default function AdminNavbar({ currentUser }: AdminNavbarProps) {
     <div className="navbar bg-base-100 sticky top-0 z-50 shadow-sm border-b border-primary/40 min-h-0 py-2">
       <div className="flex-1 gap-3 items-center">
         <Link className="btn btn-ghost text-xl" href="/admin" onClick={closeActiveDropdown}>
-          Admin Console
+          ManyLanguagesPlatform
         </Link>
         <span className="badge badge-primary badge-outline uppercase tracking-wide">Admin</span>
       </div>

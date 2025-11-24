@@ -105,7 +105,7 @@ export default function AdminInviteManagementCard({ invites }: { invites: Invite
       onSubmit={async () => {}}
     >
       <Card
-        title="Admin Invite Management"
+        title="Invite Management"
         bgColor="bg-base-100"
         className="mt-4"
         actions={<InviteActions />}

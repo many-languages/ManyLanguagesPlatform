@@ -22,6 +22,7 @@ export const SelectField = ({
   placeholder = "Please select an option",
   error,
   className,
+  disabled,
   ...props
 }: SelectFieldProps) => {
   const {
@@ -41,7 +42,7 @@ export const SelectField = ({
         id={name}
         {...register(name)}
         {...props}
-        disabled={isSubmitting}
+        disabled={isSubmitting || disabled}
         className={`select select-bordered ${fieldError ? "select-error" : ""} ${className || ""}`}
         aria-invalid={fieldError ? true : false}
         aria-describedby={fieldError ? `${name}-error` : undefined}

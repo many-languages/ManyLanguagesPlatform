@@ -11,6 +11,7 @@ const inviteSelect = {
   expiresAt: true,
   redeemedAt: true,
   revokedAt: true,
+  reminderSentAt: true,
   createdAt: true,
   createdById: true,
 } as const

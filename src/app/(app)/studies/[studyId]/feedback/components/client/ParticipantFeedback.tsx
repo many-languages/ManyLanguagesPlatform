@@ -5,7 +5,7 @@ import FeedbackCard from "./FeedbackCard"
 import { checkParticipantCompletionAction } from "../../actions/checkParticipantCompletion"
 import { fetchParticipantFeedbackAction } from "../../actions/fetchParticipantFeedback"
 import type { EnrichedJatosStudyResult } from "@/src/types/jatos"
-import { useWindowResumeCheck } from "@/src/hooks/useWindowResumeCheck"
+import { useWindowResumeCheck } from "@/src/app/hooks/useWindowResumeCheck"
 
 interface ParticipantFeedbackProps {
   studyId: number

@@ -7,6 +7,7 @@ import CheckboxFieldTable from "@/src/app/(app)/studies/components/CheckboxField
 import { FormErrorDisplay } from "@/src/app/components/FormErrorDisplay"
 import { AdminInviteSchema, AdminInviteFormValues } from "../validations"
 import revokeAdminInvites from "../mutations/revokeAdminInvites"
+import sendAdminInviteReminders from "../mutations/sendAdminInviteReminders"
 import { useFormContext } from "react-hook-form"
 import { useRouter } from "next/navigation"
 import { useMutation } from "@blitzjs/rpc"
@@ -19,6 +20,7 @@ type InviteLite = {
   expiresAt: Date
   redeemedAt: Date | null
   revokedAt: Date | null
+  reminderSentAt: Date | null
 }
 
 export default function AdminInviteManagementCard({ invites }: { invites: InviteLite[] }) {
@@ -28,6 +30,7 @@ export default function AdminInviteManagementCard({ invites }: { invites: Invite
       const created = invite.createdAt ? new Date(invite.createdAt) : null
       const redeemed = invite.redeemedAt ? new Date(invite.redeemedAt) : null
       const revoked = invite.revokedAt ? new Date(invite.revokedAt) : null
+      const reminderSent = invite.reminderSentAt ? new Date(invite.reminderSentAt) : null
 
       let status: "pending" | "redeemed" | "revoked" | "expired" = "pending"
       if (revoked) status = "revoked"
@@ -39,6 +42,7 @@ export default function AdminInviteManagementCard({ invites }: { invites: Invite
         label: invite.email,
         createdAt: created?.toLocaleString() ?? "—",
         expiresAt: expires?.toLocaleString() ?? "—",
+        reminderSentAt: reminderSent?.toLocaleString() ?? "No reminder sent yet",
         status,
       }
     })
@@ -60,6 +64,19 @@ export default function AdminInviteManagementCard({ invites }: { invites: Invite
         id: "expiresAt",
         header: "Expires",
         accessorKey: "expiresAt",
+      },
+      {
+        id: "reminderSentAt",
+        header: "Last Reminder",
+        accessorKey: "reminderSentAt",
+        cell: ({ row }: any) => {
+          const reminderSent = row.original.reminderSentAt as string
+          return (
+            <span className={reminderSent === "No reminder sent yet" ? "text-base-content/50" : ""}>
+              {reminderSent}
+            </span>
+          )
+        },
       },
       {
         id: "status",
@@ -109,14 +126,16 @@ function InviteActions() {
   const router = useRouter()
   const { watch, setValue, trigger } = useFormContext<AdminInviteFormValues>()
   const [revokeMutation] = useMutation(revokeAdminInvites)
-  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [sendReminderMutation] = useMutation(sendAdminInviteReminders)
+  const [isRevoking, setIsRevoking] = useState(false)
+  const [isSendingReminder, setIsSendingReminder] = useState(false)
 
   const handleRevoke = async () => {
     const ids = watch("selectedInviteIds")
     const valid = await trigger("selectedInviteIds")
     if (!valid) return
     try {
-      setIsSubmitting(true)
+      setIsRevoking(true)
       const result = await revokeMutation({ inviteIds: ids })
       toast.success(`Revoked ${result.revoked} invite(s)`)
       setValue("selectedInviteIds", [])
@@ -125,9 +144,51 @@ function InviteActions() {
       const message = error instanceof Error ? error.message : "Failed to revoke invites."
       toast.error(message)
     } finally {
-      setIsSubmitting(false)
+      setIsRevoking(false)
     }
   }
+
+  const handleSendReminder = async () => {
+    const ids = watch("selectedInviteIds")
+    const valid = await trigger("selectedInviteIds")
+    if (!valid) return
+    try {
+      setIsSendingReminder(true)
+      const result = await sendReminderMutation({ inviteIds: ids })
+
+      // Show appropriate messages based on results
+      if (result.sent > 0) {
+        toast.success(`Sent ${result.sent} reminder(s)`)
+      }
+
+      if (result.skipped > 0) {
+        const reasons = result.skippedEmails.map((s) => `${s.email} (${s.reason})`).join(", ")
+        toast.error(`Skipped ${result.skipped} invite(s): ${reasons}`, { duration: 5000 })
+      }
+
+      if (result.failed > 0) {
+        toast.error(
+          `Failed to send ${result.failed} reminder(s): ${result.failedEmails.join(", ")}`,
+          { duration: 5000 }
+        )
+      }
+
+      if (result.sent === 0 && result.skipped > 0 && result.failed === 0) {
+        // All invites were skipped, no need to refresh
+        return
+      }
+
+      setValue("selectedInviteIds", [])
+      router.refresh()
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Failed to send reminders."
+      toast.error(message)
+    } finally {
+      setIsSendingReminder(false)
+    }
+  }
+
+  const isSubmitting = isRevoking || isSendingReminder
 
   return (
     <div className="flex gap-2 justify-end">
@@ -137,10 +198,15 @@ function InviteActions() {
         disabled={isSubmitting}
         onClick={handleRevoke}
       >
-        {isSubmitting ? "Revoking..." : "Revoke invite"}
+        {isRevoking ? "Revoking..." : "Revoke invite"}
       </button>
-      <button type="button" className="btn btn-secondary btn-outline" disabled>
-        Send reminder email
+      <button
+        type="button"
+        className="btn btn-secondary btn-outline"
+        disabled={isSubmitting}
+        onClick={handleSendReminder}
+      >
+        {isSendingReminder ? "Sending..." : "Send reminder email"}
       </button>
     </div>
   )

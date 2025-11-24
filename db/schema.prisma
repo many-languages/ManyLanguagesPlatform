@@ -230,15 +230,16 @@ model FeedbackTemplate {
 }
 
 model AdminInvite {
-  id          Int       @id @default(autoincrement())
-  token       String    @unique // random, single-use, stored server-side only
-  email       String
-  expiresAt   DateTime
-  redeemedAt  DateTime?
-  revokedAt   DateTime?
-  createdAt   DateTime  @default(now())
-  createdById Int?
-  createdBy   User?     @relation(fields: [createdById], references: [id], onDelete: SetNull)
+  id             Int       @id @default(autoincrement())
+  token          String    @unique // random, single-use, stored server-side only
+  email          String
+  expiresAt      DateTime
+  redeemedAt     DateTime?
+  revokedAt      DateTime?
+  reminderSentAt DateTime? // Track when reminder email was last sent
+  createdAt      DateTime  @default(now())
+  createdById    Int?
+  createdBy      User?     @relation(fields: [createdById], references: [id], onDelete: SetNull)
 
   @@index([email])
   @@index([expiresAt])

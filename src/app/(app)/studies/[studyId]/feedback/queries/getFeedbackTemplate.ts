@@ -1,13 +1,12 @@
 import { resolver } from "@blitzjs/rpc"
 import db from "db"
 import { cache } from "react"
-import { getBlitzContext } from "@/src/app/blitz-server"
 import { GetFeedbackTemplateSchema } from "../validations"
+import { verifyResearcherStudyAccess } from "../../utils/verifyResearchersStudyAccess"
 
 // Server-side helper for RSCs
 export const getFeedbackTemplateRsc = cache(async (studyId: number) => {
-  const { session } = await getBlitzContext()
-  if (!session.userId) throw new Error("Not authenticated")
+  await verifyResearcherStudyAccess(studyId)
 
   // Get the most recent feedback template for this study
   // If you want to support multiple templates, you can return all of them

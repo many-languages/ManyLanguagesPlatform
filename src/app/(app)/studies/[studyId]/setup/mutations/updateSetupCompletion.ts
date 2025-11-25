@@ -1,6 +1,7 @@
 import { resolver } from "@blitzjs/rpc"
 import db from "db"
 import { z } from "zod"
+import { verifyResearcherStudyAccess } from "../../utils/verifyResearchersStudyAccess"
 
 const UpdateSetupCompletion = z.object({
   studyId: z.number(),
@@ -18,13 +19,7 @@ export default resolver.pipe(
     const { studyId, ...completionFlags } = input
 
     // Authorization check - ensure user is a researcher on this study
-    const researcher = await db.studyResearcher.findFirst({
-      where: { studyId, userId: ctx.session.userId! },
-    })
-
-    if (!researcher) {
-      throw new Error("You are not authorized to modify this study.")
-    }
+    await verifyResearcherStudyAccess(studyId)
 
     // Build update data object with only provided flags
     const updateData: {

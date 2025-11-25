@@ -1,7 +1,7 @@
 import { resolver } from "@blitzjs/rpc"
 import db from "db"
-import { getBlitzContext } from "@/src/app/blitz-server"
 import { z } from "zod"
+import { verifyResearcherStudyAccess } from "../../utils/verifyResearchersStudyAccess"
 
 const UpdateVariableCodebook = z.object({
   studyId: z.number(),
@@ -23,17 +23,7 @@ export async function updateVariableCodebookRsc(input: {
     personalData: boolean
   }>
 }) {
-  const { session } = await getBlitzContext()
-  if (!session.userId) throw new Error("Not authenticated")
-
-  // Verify the user is a researcher on this study
-  const researcher = await db.studyResearcher.findFirst({
-    where: { studyId: input.studyId, userId: session.userId },
-  })
-
-  if (!researcher) {
-    throw new Error("You are not authorized to update variables for this study.")
-  }
+  await verifyResearcherStudyAccess(input.studyId)
 
   // Verify all variables belong to this study
   const variableIds = input.variables.map((v) => v.id)

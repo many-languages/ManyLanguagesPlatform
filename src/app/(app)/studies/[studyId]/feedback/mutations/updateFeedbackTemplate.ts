@@ -1,17 +1,14 @@
 import { resolver } from "@blitzjs/rpc"
 import db from "db"
-import { getBlitzContext } from "@/src/app/blitz-server"
 import { UpdateFeedbackTemplateSchema } from "../validations"
 import type { FeedbackTemplate } from "../types"
+import { verifyResearcherStudyAccess } from "../../utils/verifyResearchersStudyAccess"
 
 // Server-side helper for RSCs
 export async function updateFeedbackTemplateRsc(input: {
   id: number
   content: string
 }): Promise<FeedbackTemplate> {
-  const { session } = await getBlitzContext()
-  if (!session.userId) throw new Error("Not authenticated")
-
   // Get the template to check studyId
   const existingTemplate = await db.feedbackTemplate.findUnique({
     where: { id: input.id },
@@ -23,13 +20,7 @@ export async function updateFeedbackTemplateRsc(input: {
   }
 
   // Verify the user is a researcher on this study
-  const researcher = await db.studyResearcher.findFirst({
-    where: { studyId: existingTemplate.studyId, userId: session.userId },
-  })
-
-  if (!researcher) {
-    throw new Error("You are not authorized to update feedback templates for this study.")
-  }
+  await verifyResearcherStudyAccess(existingTemplate.studyId)
 
   const template = await db.feedbackTemplate.update({
     where: { id: input.id },

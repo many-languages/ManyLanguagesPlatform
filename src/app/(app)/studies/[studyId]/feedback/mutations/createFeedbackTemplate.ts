@@ -1,25 +1,15 @@
 import { resolver } from "@blitzjs/rpc"
 import db from "db"
-import { getBlitzContext } from "@/src/app/blitz-server"
 import { CreateFeedbackTemplateSchema } from "../validations"
 import type { FeedbackTemplate } from "../types"
+import { verifyResearcherStudyAccess } from "../../utils/verifyResearchersStudyAccess"
 
 // Server-side helper for RSCs
 export async function createFeedbackTemplateRsc(input: {
   studyId: number
   content: string
 }): Promise<FeedbackTemplate> {
-  const { session } = await getBlitzContext()
-  if (!session.userId) throw new Error("Not authenticated")
-
-  // Verify the user is a researcher on this study
-  const researcher = await db.studyResearcher.findFirst({
-    where: { studyId: input.studyId, userId: session.userId },
-  })
-
-  if (!researcher) {
-    throw new Error("You are not authorized to create feedback templates for this study.")
-  }
+  await verifyResearcherStudyAccess(input.studyId)
 
   const template = await db.feedbackTemplate.create({ data: input })
 

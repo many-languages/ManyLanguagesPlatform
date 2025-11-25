@@ -2,7 +2,7 @@ import { resolver } from "@blitzjs/rpc"
 import db from "db"
 import { z } from "zod"
 import { cache } from "react"
-import { getBlitzContext } from "@/src/app/blitz-server"
+import { verifyResearcherStudyAccess } from "../../utils/verifyResearchersStudyAccess"
 
 const GetSetupCompletion = z.object({
   studyId: z.number(),
@@ -10,8 +10,7 @@ const GetSetupCompletion = z.object({
 
 // Server-side helper for RSCs
 export const getSetupCompletionRsc = cache(async (studyId: number) => {
-  const { session } = await getBlitzContext()
-  if (!session.userId) throw new Error("Not authenticated")
+  await verifyResearcherStudyAccess(studyId)
 
   const study = await db.study.findUnique({
     where: { id: studyId },
@@ -36,21 +35,6 @@ export default resolver.pipe(
   resolver.zod(GetSetupCompletion),
   resolver.authorize("RESEARCHER"),
   async ({ studyId }) => {
-    const study = await db.study.findUnique({
-      where: { id: studyId },
-      select: {
-        step1Completed: true,
-        step2Completed: true,
-        step3Completed: true,
-        step4Completed: true,
-        step5Completed: true,
-      },
-    })
-
-    if (!study) {
-      throw new Error("Study not found")
-    }
-
-    return study
+    return getSetupCompletionRsc(studyId) // Reuse the cached RSC function
   }
 )

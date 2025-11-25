@@ -4,14 +4,13 @@ import { matchJatosDataToMetadata } from "@/src/lib/jatos/api/matchJatosDataToMe
 import { parseJatosZip } from "@/src/lib/jatos/api/parseJatosZip"
 import { cache } from "react"
 import db from "db"
-import { getBlitzContext } from "@/src/app/blitz-server"
 import type { EnrichedJatosStudyResult, JatosStudyResult } from "@/src/types/jatos"
+import { verifyResearcherStudyAccess } from "./verifyResearchersStudyAccess"
 
 // Server-side helper to get all test results for a study
 export const getAllTestResultsRsc = cache(
   async (studyId: number): Promise<EnrichedJatosStudyResult[]> => {
-    const { session } = await getBlitzContext()
-    if (!session.userId) throw new Error("Not authenticated")
+    await verifyResearcherStudyAccess(studyId)
 
     const study = await db.study.findUnique({
       where: { id: studyId },

@@ -1,6 +1,7 @@
 import { resolver } from "@blitzjs/rpc"
 import db from "db"
 import { ImportJatosSchema } from "../../../validations"
+import { verifyResearcherStudyAccess } from "../../utils/verifyResearchersStudyAccess"
 
 export default resolver.pipe(
   resolver.zod(ImportJatosSchema),
@@ -9,13 +10,7 @@ export default resolver.pipe(
     const { studyId, jatosWorkerType, jatosStudyId, jatosStudyUUID, jatosFileName } = input
 
     // Authorization check
-    const researcher = await db.studyResearcher.findFirst({
-      where: { studyId, userId: ctx.session.userId! },
-    })
-
-    if (!researcher) {
-      throw new Error("You are not authorized to modify this study.")
-    }
+    await verifyResearcherStudyAccess(studyId)
 
     // Check if JATOS is being changed (not first upload)
     const existingStudy = await db.study.findUnique({

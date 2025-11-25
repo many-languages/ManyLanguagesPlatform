@@ -1,5 +1,8 @@
 import type { EnrichedJatosStudyResult } from "@/src/types/jatos"
 
+// Re-export variable types from shared variables module
+export type { ExtractedVariable, AvailableVariable, AvailableField } from "../../variables/types"
+
 // Template Types
 export interface FeedbackTemplate {
   id: number
@@ -12,27 +15,6 @@ export interface FeedbackTemplate {
 export interface FeedbackTemplateInput {
   studyId: number
   content: string
-}
-
-// Variable Types
-export interface ExtractedVariable {
-  variableName: string
-  exampleValue: string
-  type: "primitive" | "object" | "array"
-  occurrences: number
-  dataStructure: "array" | "object"
-}
-
-export interface AvailableVariable {
-  name: string
-  type: "string" | "number" | "boolean"
-  example: any
-}
-
-export interface AvailableField {
-  name: string
-  type: "string" | "number" | "boolean"
-  example?: any
 }
 
 // Rendering Types

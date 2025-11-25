@@ -4,9 +4,9 @@ import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { useMutation } from "@blitzjs/rpc"
 import { toast } from "react-hot-toast"
-import { useStudySetup } from "../../../components/client/StudySetupProvider"
+import { useStudySetup } from "../../../setup/components/client/StudySetupProvider"
 import updateVariableCodebook from "../../mutations/updateVariableCodebook"
-import StepNavigation from "../../../components/client/StepNavigation"
+import StepNavigation from "../../../setup/components/client/StepNavigation"
 import { Alert } from "@/src/app/components/Alert"
 import { AsyncButton } from "@/src/app/components/AsyncButton"
 
@@ -20,7 +20,7 @@ interface VariableCodebookEntry {
   personalData: boolean
 }
 
-interface Step4ContentProps {
+interface CodebookContentProps {
   initialVariables: Array<{
     id: number
     name: string
@@ -32,7 +32,7 @@ interface Step4ContentProps {
   }>
 }
 
-export default function Step4Content({ initialVariables }: Step4ContentProps) {
+export default function CodebookContent({ initialVariables }: CodebookContentProps) {
   const router = useRouter()
   const { study, studyId } = useStudySetup()
   const [variables, setVariables] = useState<VariableCodebookEntry[]>([])

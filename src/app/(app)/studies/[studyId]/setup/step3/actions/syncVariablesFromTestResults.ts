@@ -1,8 +1,8 @@
 "use server"
 
 import { getAllTestResultsRsc } from "@/src/app/(app)/studies/[studyId]/utils/getAllTestResults"
-import { syncStudyVariablesRsc } from "@/src/app/(app)/studies/[studyId]/feedback/mutations/syncStudyVariables"
-import { extractAllVariables } from "@/src/app/(app)/studies/[studyId]/feedback/utils/extractVariable"
+import { syncStudyVariablesRsc } from "@/src/app/(app)/studies/[studyId]/variables/mutations/syncStudyVariables"
+import { extractAllVariables } from "@/src/app/(app)/studies/[studyId]/variables/utils/extractVariable"
 
 /**
  * Server Action to sync variables from test results when step 3 is completed.

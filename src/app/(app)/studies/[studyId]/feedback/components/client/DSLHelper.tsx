@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from "react"
 import { EnrichedJatosStudyResult } from "@/src/types/jatos"
-import { extractAllVariables } from "../../utils/extractVariable"
+import { extractAllVariables } from "../../../variables/utils/extractVariable"
 import { SelectField } from "./shared"
 import Card from "@/src/app/components/Card"
 import { dslHelperStyles } from "../../styles/feedbackStyles"

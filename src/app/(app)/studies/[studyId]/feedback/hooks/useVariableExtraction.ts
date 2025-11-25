@@ -5,7 +5,7 @@ import {
   extractVariables,
   extractAllVariables,
   extractAvailableFields,
-} from "../utils/extractVariable"
+} from "../../variables/utils/extractVariable"
 import type { EnrichedJatosStudyResult } from "@/src/types/jatos"
 
 export interface UseVariableExtractionOptions {

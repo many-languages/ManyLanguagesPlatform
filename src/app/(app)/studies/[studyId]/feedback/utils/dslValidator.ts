@@ -1,5 +1,5 @@
 import { EnrichedJatosStudyResult } from "@/src/types/jatos"
-import { extractAvailableFields, extractAllVariables } from "./extractVariable"
+import { extractAvailableFields, extractAllVariables } from "../../variables/utils/extractVariable"
 
 export interface DSLError {
   type: "variable" | "stat" | "conditional" | "filter" | "syntax"

@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation"
-import Step4Content from "./components/client/Step4Content"
+import CodebookContent from "../../codebook/components/client/CodebookContent"
 import SaveExitButton from "../components/client/SaveExitButton"
-import { getStudyVariablesRsc } from "./queries/getStudyVariables"
+import { getStudyVariablesRsc } from "../../variables/queries/getStudyVariables"
 import { syncVariablesFromTestResultsAction } from "../step3/actions/syncVariablesFromTestResults"
 import db from "db"
 
@@ -30,7 +30,7 @@ async function Step4ContentWrapper({ studyId }: { studyId: number }) {
         <h2 className="text-xl font-semibold text-center flex-1">Step 4 – Codebook</h2>
         <div className="w-32" /> {/* Spacer to balance the layout */}
       </div>
-      <Step4Content initialVariables={variables} />
+      <CodebookContent initialVariables={variables} />
     </>
   )
 }

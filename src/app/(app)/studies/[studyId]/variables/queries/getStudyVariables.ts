@@ -1,6 +1,7 @@
 import db from "db"
 import { resolver } from "@blitzjs/rpc"
 import { z } from "zod"
+import { cache } from "react"
 import { verifyResearcherStudyAccess } from "../../utils/verifyResearchersStudyAccess"
 
 const GetStudyVariables = z.object({
@@ -8,7 +9,7 @@ const GetStudyVariables = z.object({
 })
 
 // Server-side helper for RSCs
-export async function getStudyVariablesRsc(studyId: number) {
+export const getStudyVariablesRsc = cache(async (studyId: number) => {
   await verifyResearcherStudyAccess(studyId)
 
   // Get all variables for this study, ordered by name
@@ -18,7 +19,7 @@ export async function getStudyVariablesRsc(studyId: number) {
   })
 
   return variables
-}
+})
 
 // Blitz RPC for client usage
 export default resolver.pipe(

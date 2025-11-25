@@ -133,7 +133,8 @@ model Study {
   step1Completed Boolean @default(false) // General information completed (title + description)
   step2Completed Boolean @default(false) // JATOS study imported (jatosStudyId + jatosStudyUUID exist)
   step3Completed Boolean @default(false) // Test run completed (pilot test finished + test data available)
-  step4Completed Boolean @default(false) // Feedback template created (FeedbackTemplate exists)
+  step4Completed Boolean @default(false) // Codebook completed (variable descriptions and personal data flags annotated)
+  step5Completed Boolean @default(false) // Feedback template created (FeedbackTemplate exists)
 
   @@index([archived, createdAt])
 }
@@ -187,13 +188,15 @@ model StudyResearcher {
 }
 
 model StudyVariable {
-  id        Int      @id @default(autoincrement())
-  studyId   Int
-  name      String // e.g. "score" or "reaction_time"
-  label     String? // optional human-readable label
-  type      String? // e.g. "number", "string", "boolean"
-  example   String? // optional example value from trial run
-  createdAt DateTime @default(now())
+  id           Int      @id @default(autoincrement())
+  studyId      Int
+  name         String // e.g. "score" or "reaction_time"
+  label        String? // optional human-readable label
+  type         String? // e.g. "number", "string", "boolean"
+  example      String? // optional example value from trial run
+  description  String? // codebook description of the variable
+  personalData Boolean  @default(false) // whether this variable contains personal data
+  createdAt    DateTime @default(now())
 
   study Study @relation(fields: [studyId], references: [id])
 

@@ -65,7 +65,7 @@ export default function FeedbackCard({
       {onRefresh && <RefreshFeedbackButton onRefresh={onRefresh} />}
       {showEditButton && (
         <NavigationButton
-          href={`/studies/${studyId}/setup/step4`}
+          href={`/studies/${studyId}/setup/step5`}
           className="btn-primary"
           pendingText="Opening"
         >

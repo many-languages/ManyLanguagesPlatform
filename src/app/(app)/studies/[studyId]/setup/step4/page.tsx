@@ -1,31 +1,36 @@
 import { notFound } from "next/navigation"
-import Step4Content from "./components/client/Step4Content"
+import CodebookContent from "../../codebook/components/client/CodebookContent"
 import SaveExitButton from "../components/client/SaveExitButton"
-import { getFeedbackTemplateRsc } from "../../feedback/queries/getFeedbackTemplate"
-import { getAllTestResultsRsc } from "@/src/app/(app)/studies/[studyId]/utils/getAllTestResults"
+import { getStudyVariablesRsc } from "../../variables/queries/getStudyVariables"
+import { syncVariablesFromTestResultsAction } from "../step3/actions/syncVariablesFromTestResults"
+import db from "db"
 
 async function Step4ContentWrapper({ studyId }: { studyId: number }) {
-  // Fetch feedback template server-side
-  const feedbackTemplate = await getFeedbackTemplateRsc(studyId)
+  // Check if step 3 is completed
+  const study = await db.study.findUnique({
+    where: { id: studyId },
+    select: { step3Completed: true },
+  })
 
-  // Fetch all test results
-  const allTestResults = await getAllTestResultsRsc(studyId)
-
-  // Select the latest test result (first one since sorted by id descending)
-  const latestTestResult = allTestResults.length > 0 ? allTestResults[0] : null
+  // If step 3 is completed but no variables exist, try to sync them
+  let variables = await getStudyVariablesRsc(studyId)
+  if (study?.step3Completed && variables.length === 0) {
+    // Try to sync variables from test results
+    const syncResult = await syncVariablesFromTestResultsAction(studyId)
+    if (syncResult.success) {
+      // Refetch variables after syncing
+      variables = await getStudyVariablesRsc(studyId)
+    }
+  }
 
   return (
     <>
       <div className="flex items-center justify-between mb-4">
         <SaveExitButton />
-        <h2 className="text-xl font-semibold text-center flex-1">Step 4 – Feedback</h2>
+        <h2 className="text-xl font-semibold text-center flex-1">Step 4 – Codebook</h2>
         <div className="w-32" /> {/* Spacer to balance the layout */}
       </div>
-      <Step4Content
-        initialFeedbackTemplate={feedbackTemplate}
-        enrichedResult={latestTestResult}
-        allTestResults={allTestResults}
-      />
+      <CodebookContent initialVariables={variables} />
     </>
   )
 }

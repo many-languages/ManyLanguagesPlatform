@@ -3,7 +3,7 @@ export const metadata = {
 }
 
 import AdminStudyManagementCard from "./components/AdminStudyManagementCard"
-import { getStudiesRsc } from "./queries/getStudies"
+import { getStudiesRsc } from "./queries/getAdminStudies"
 
 export default async function AdminStudiesPage() {
   const studies = await getStudiesRsc()

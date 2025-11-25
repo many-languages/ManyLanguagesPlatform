@@ -30,7 +30,7 @@ export default function Step1Content({
     }
     if (returnTo?.startsWith("step")) {
       const stepNum = parseInt(returnTo.replace("step", ""), 10)
-      if (!isNaN(stepNum) && stepNum >= 1 && stepNum <= 4) {
+      if (!isNaN(stepNum) && stepNum >= 1 && stepNum <= 5) {
         return getPostStepNavigationUrl(studyId, 1, stepNum, study)
       }
     }

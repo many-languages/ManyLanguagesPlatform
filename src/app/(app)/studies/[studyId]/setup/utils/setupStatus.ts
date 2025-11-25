@@ -16,7 +16,8 @@ export function isSetupComplete(study: StudyWithRelations | StudyWithMinimalRela
     study.step1Completed &&
     study.step2Completed &&
     study.step3Completed &&
-    study.step4Completed
+    study.step4Completed &&
+    study.step5Completed
   )
 }
 
@@ -31,11 +32,12 @@ export function getIncompleteStep(
   if (!study.step2Completed) return 2
   if (!study.step3Completed) return 3
   if (!study.step4Completed) return 4
+  if (!study.step5Completed) return 5
   return null // All complete
 }
 
 /**
- * Returns an array of completed step numbers (1-4)
+ * Returns an array of completed step numbers (1-5)
  * Uses DB fields as source of truth
  */
 export function getCompletedSteps(study: StudyWithRelations | StudyWithMinimalRelations): number[] {
@@ -45,6 +47,7 @@ export function getCompletedSteps(study: StudyWithRelations | StudyWithMinimalRe
   if (study.step2Completed) completed.push(2)
   if (study.step3Completed) completed.push(3)
   if (study.step4Completed) completed.push(4)
+  if (study.step5Completed) completed.push(5)
 
   return completed
 }
@@ -61,10 +64,10 @@ export function getSetupProgress(study: StudyWithRelations | StudyWithMinimalRel
   return {
     isComplete,
     incompleteStep,
-    totalSteps: 4,
+    totalSteps: 5,
     completedSteps: completedSteps.length,
     completedStepsList: completedSteps,
-    progressPercentage: (completedSteps.length / 4) * 100,
+    progressPercentage: (completedSteps.length / 5) * 100,
   }
 }
 
@@ -86,7 +89,7 @@ export function getNextSetupStepUrl(
 /**
  * Returns the navigation URL after completing a setup step
  * @param studyId - The study ID
- * @param currentStep - The step number that was just completed (1-4)
+ * @param currentStep - The step number that was just completed (1-5)
  * @param returnTo - Navigation target: "study" to return to study page, "next" to go to next step, or a specific step number
  * @param study - Optional study object to determine next incomplete step when returnTo is "next"
  */
@@ -101,7 +104,7 @@ export function getPostStepNavigationUrl(
   }
 
   if (typeof returnTo === "number") {
-    if (returnTo < 1 || returnTo > 4) {
+    if (returnTo < 1 || returnTo > 5) {
       // Invalid step number, default to study page
       return `/studies/${studyId}`
     }
@@ -116,7 +119,7 @@ export function getPostStepNavigationUrl(
 
   // Default to next step if study not provided
   const nextStep = currentStep + 1
-  if (nextStep > 4) {
+  if (nextStep > 5) {
     return `/studies/${studyId}` // All steps complete, go to study page
   }
   return `/studies/${studyId}/setup/step${nextStep}`

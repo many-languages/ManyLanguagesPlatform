@@ -8,6 +8,7 @@ import { useMutation } from "@blitzjs/rpc"
 import { useStudySetup } from "../../../components/client/StudySetupProvider"
 import updateSetupCompletion from "../../../mutations/updateSetupCompletion"
 import { checkPilotStatusAction } from "../../actions/checkPilotStatus"
+import { syncVariablesFromTestResultsAction } from "../../actions/syncVariablesFromTestResults"
 import Step3Instructions from "./Step3Instructions"
 import Step3Actions from "./Step3Actions"
 import StepNavigation from "../../../components/client/StepNavigation"
@@ -31,9 +32,18 @@ export default function Step3Content() {
   // Pilot completion state - initialize from database to prevent flicker
   const [pilotCompleted, setPilotCompleted] = useState<boolean | null>(study.step3Completed ?? null)
 
-  // Separate function to update completion
+  // Separate function to update completion and sync variables
   const updateCompletion = useCallback(async () => {
     try {
+      // First sync variables from test results
+      const syncResult = await syncVariablesFromTestResultsAction(study.id)
+
+      if (!syncResult.success && syncResult.error) {
+        console.warn("Failed to sync variables:", syncResult.error)
+        // Continue anyway - variables might sync later or user can trigger manually
+      }
+
+      // Then update step 3 completion
       await updateSetupCompletionMutation({
         studyId: study.id,
         step3Completed: true,

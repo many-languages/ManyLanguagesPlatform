@@ -1,6 +1,7 @@
 import { resolver } from "@blitzjs/rpc"
 import db from "db"
 import { z } from "zod"
+import { verifyResearcherStudyAccess } from "../../utils/verifyResearchersStudyAccess"
 
 const UpdateSetupCompletion = z.object({
   studyId: z.number(),
@@ -8,6 +9,7 @@ const UpdateSetupCompletion = z.object({
   step2Completed: z.boolean().optional(),
   step3Completed: z.boolean().optional(),
   step4Completed: z.boolean().optional(),
+  step5Completed: z.boolean().optional(),
 })
 
 export default resolver.pipe(
@@ -17,13 +19,7 @@ export default resolver.pipe(
     const { studyId, ...completionFlags } = input
 
     // Authorization check - ensure user is a researcher on this study
-    const researcher = await db.studyResearcher.findFirst({
-      where: { studyId, userId: ctx.session.userId! },
-    })
-
-    if (!researcher) {
-      throw new Error("You are not authorized to modify this study.")
-    }
+    await verifyResearcherStudyAccess(studyId)
 
     // Build update data object with only provided flags
     const updateData: {
@@ -31,6 +27,7 @@ export default resolver.pipe(
       step2Completed?: boolean
       step3Completed?: boolean
       step4Completed?: boolean
+      step5Completed?: boolean
     } = {}
 
     if (completionFlags.step1Completed !== undefined) {
@@ -45,6 +42,9 @@ export default resolver.pipe(
     if (completionFlags.step4Completed !== undefined) {
       updateData.step4Completed = completionFlags.step4Completed
     }
+    if (completionFlags.step5Completed !== undefined) {
+      updateData.step5Completed = completionFlags.step5Completed
+    }
 
     // Update study with completion flags
     const study = await db.study.update({
@@ -55,6 +55,7 @@ export default resolver.pipe(
         step2Completed: true,
         step3Completed: true,
         step4Completed: true,
+        step5Completed: true,
       },
     })
 

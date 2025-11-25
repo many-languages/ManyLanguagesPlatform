@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from "react"
 import { EnrichedJatosStudyResult } from "@/src/types/jatos"
-import { extractAvailableFields } from "../../utils/extractVariable"
+import { extractAvailableFields } from "../../../variables/utils/extractVariable"
 import { SelectField, SyntaxPreview } from "./shared"
 
 interface FilterBuilderProps {

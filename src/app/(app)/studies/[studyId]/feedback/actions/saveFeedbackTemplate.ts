@@ -2,8 +2,8 @@
 
 import { createFeedbackTemplateRsc } from "../mutations/createFeedbackTemplate"
 import { updateFeedbackTemplateRsc } from "../mutations/updateFeedbackTemplate"
-import { syncStudyVariablesRsc } from "../mutations/syncStudyVariables"
-import { extractVariables } from "../utils/extractVariable"
+import { syncStudyVariablesRsc } from "../../variables/mutations/syncStudyVariables"
+import { extractVariables } from "../../variables/utils/extractVariable"
 import type { EnrichedJatosStudyResult } from "@/src/types/jatos"
 import type { FeedbackTemplate } from "../types"
 

@@ -43,10 +43,10 @@ export async function updateFeedbackTemplateRsc(input: {
     },
   })
 
-  // Mark step 4 as complete after successful update
+  // Mark step 5 as complete after successful update
   await db.study.update({
     where: { id: template.studyId },
-    data: { step4Completed: true },
+    data: { step5Completed: true },
   })
 
   return template

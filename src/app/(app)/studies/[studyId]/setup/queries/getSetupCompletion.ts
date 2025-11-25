@@ -20,6 +20,7 @@ export const getSetupCompletionRsc = cache(async (studyId: number) => {
       step2Completed: true,
       step3Completed: true,
       step4Completed: true,
+      step5Completed: true,
     },
   })
 
@@ -42,6 +43,7 @@ export default resolver.pipe(
         step2Completed: true,
         step3Completed: true,
         step4Completed: true,
+        step5Completed: true,
       },
     })
 

@@ -1,101 +1,197 @@
 "use client"
 
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { useRef } from "react"
-import { useStudySetup } from "../../../components/client/StudySetupProvider"
 import { useMutation } from "@blitzjs/rpc"
 import { toast } from "react-hot-toast"
-import { isSetupComplete } from "../../../utils/setupStatus"
-import updateStudyStatus from "@/src/app/(app)/studies/mutations/updateStudyStatus"
+import { useStudySetup } from "../../../components/client/StudySetupProvider"
+import updateVariableCodebook from "../../mutations/updateVariableCodebook"
 import StepNavigation from "../../../components/client/StepNavigation"
 import { Alert } from "@/src/app/components/Alert"
-import type { EnrichedJatosStudyResult } from "@/src/types/jatos"
-import { FeedbackFormEditorRef } from "../../../../feedback/types"
-import FeedbackFormEditor from "../../../../feedback/components/client/FeedbackFormEditor"
-import { useNotificationMenuContext } from "@/src/app/(app)/notifications/context/NotificationMenuContext"
+import { AsyncButton } from "@/src/app/components/AsyncButton"
 
-interface Step4ContentProps {
-  initialFeedbackTemplate?: {
-    id: number
-    content: string
-    createdAt: Date
-    updatedAt: Date
-  } | null
-  enrichedResult: EnrichedJatosStudyResult | null
-  allTestResults: EnrichedJatosStudyResult[]
+interface VariableCodebookEntry {
+  id: number
+  name: string
+  label: string | null
+  type: string | null
+  example: string | null
+  description: string | null
+  personalData: boolean
 }
 
-export default function Step4Content({
-  initialFeedbackTemplate = null,
-  enrichedResult,
-  allTestResults,
-}: Step4ContentProps) {
+interface Step4ContentProps {
+  initialVariables: Array<{
+    id: number
+    name: string
+    label: string | null
+    type: string | null
+    example: string | null
+    description: string | null
+    personalData: boolean
+  }>
+}
+
+export default function Step4Content({ initialVariables }: Step4ContentProps) {
   const router = useRouter()
   const { study, studyId } = useStudySetup()
-  const feedbackEditorRef = useRef<FeedbackFormEditorRef>(null)
-  const [updateStudyStatusMutation] = useMutation(updateStudyStatus)
-  const { refetch: refetchNotifications } = useNotificationMenuContext()
+  const [variables, setVariables] = useState<VariableCodebookEntry[]>([])
+  const [isSaving, setIsSaving] = useState(false)
+  const [updateVariableCodebookMutation] = useMutation(updateVariableCodebook)
 
-  const handleFinish = async () => {
-    let templateSavedDuringFinish = false
+  useEffect(() => {
+    setVariables(
+      initialVariables.map((v) => ({
+        id: v.id,
+        name: v.name,
+        label: v.label,
+        type: v.type,
+        example: v.example,
+        description: v.description ?? "",
+        personalData: v.personalData ?? false,
+      }))
+    )
+  }, [initialVariables])
 
-    if (feedbackEditorRef.current) {
-      const isSaved = feedbackEditorRef.current.isTemplateSaved()
-      if (!isSaved) {
-        // Auto-save template before finishing
-        await feedbackEditorRef.current.saveTemplate()
-        templateSavedDuringFinish = true
-      }
-    }
-
-    const canAutoOpen =
-      !!study &&
-      study.step1Completed &&
-      study.step2Completed &&
-      study.step3Completed &&
-      (study.step4Completed || templateSavedDuringFinish || !!initialFeedbackTemplate)
-
-    // Check if setup is now complete and auto-open study
-    if (canAutoOpen) {
-      try {
-        await updateStudyStatusMutation({ studyId, status: "OPEN" })
-        await refetchNotifications()
-        router.replace(`/studies/${studyId}`)
-        toast.success("Setup complete! Study is now open for participants.")
-      } catch (error) {
-        console.error("Failed to open study:", error)
-        toast.error("Setup complete, but failed to open study automatically.")
-      }
-    }
-
-    await refetchNotifications()
-    router.replace(`/studies/${studyId}`)
+  const updateVariable = (
+    id: number,
+    field: keyof VariableCodebookEntry,
+    value: string | boolean
+  ) => {
+    setVariables((prev) => prev.map((v) => (v.id === id ? { ...v, [field]: value } : v)))
   }
 
-  // Show warning if no test run data found
-  if (!enrichedResult) {
-    return <Alert variant="warning">No test run data found.</Alert>
+  const handleSave = async () => {
+    if (variables.length === 0) {
+      toast.error("No variables found. Please complete step 3 first.")
+      return
+    }
+
+    // Validate that all variables have descriptions
+    const missingDescriptions = variables.filter(
+      (v) => !v.description || v.description.trim() === ""
+    )
+
+    if (missingDescriptions.length > 0) {
+      toast.error(
+        `Please add descriptions for all variables. Missing: ${missingDescriptions
+          .map((v) => v.name)
+          .join(", ")}`
+      )
+      return
+    }
+
+    setIsSaving(true)
+    try {
+      await updateVariableCodebookMutation({
+        studyId,
+        variables: variables.map((v) => ({
+          id: v.id,
+          description: v.description,
+          personalData: v.personalData,
+        })),
+      })
+      toast.success("Codebook saved successfully!")
+      router.refresh()
+    } catch (error: any) {
+      toast.error(error.message || "Failed to save codebook")
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
+  if (variables.length === 0) {
+    return (
+      <Alert variant="warning">
+        No variables found. Please complete step 3 (Test run) first to extract variables from your
+        test data.
+      </Alert>
+    )
   }
 
   return (
     <>
-      <FeedbackFormEditor
-        ref={feedbackEditorRef}
-        enrichedResult={enrichedResult}
-        initialTemplate={initialFeedbackTemplate}
-        studyId={studyId}
-        allTestResults={allTestResults}
-        onTemplateSaved={() => {
-          // Refresh to get updated study data (step4Completed will be updated)
-          router.refresh()
-        }}
-      />
+      <div className="mb-6">
+        <p className="text-sm text-base-content/70 mb-4">
+          Please provide a description for each variable in your data to create a codebook. Mark
+          variables that contain or may contain personal data of participants.
+        </p>
+
+        <div className="space-y-4">
+          {variables.map((variable) => (
+            <div key={variable.id} className="card bg-base-200 p-4">
+              <div className="flex flex-col gap-4">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex-1">
+                    <h3 className="font-semibold text-lg">{variable.name}</h3>
+                    {variable.label && (
+                      <p className="text-sm text-base-content/70">Label: {variable.label}</p>
+                    )}
+                    {variable.type && (
+                      <p className="text-sm text-base-content/70">Type: {variable.type}</p>
+                    )}
+                    {variable.example && (
+                      <p className="text-sm text-base-content/70">
+                        Example: <code className="text-xs">{variable.example}</code>
+                      </p>
+                    )}
+                  </div>
+                  <label className="label cursor-pointer gap-2">
+                    <span className="label-text text-sm">Personal data</span>
+                    <input
+                      type="checkbox"
+                      className="checkbox checkbox-primary"
+                      checked={variable.personalData}
+                      onChange={(e) =>
+                        updateVariable(variable.id, "personalData", e.target.checked)
+                      }
+                    />
+                  </label>
+                </div>
+
+                <div>
+                  <label className="label">
+                    <span className="label-text font-medium">Description *</span>
+                  </label>
+                  <textarea
+                    className="textarea textarea-bordered w-full"
+                    rows={3}
+                    placeholder="Describe what this variable measures or represents..."
+                    value={variable.description}
+                    onChange={(e) => updateVariable(variable.id, "description", e.target.value)}
+                  />
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="flex justify-end mb-4">
+        <AsyncButton
+          onClick={handleSave}
+          loadingText="Saving..."
+          disabled={isSaving}
+          className="btn btn-primary"
+        >
+          Save Codebook
+        </AsyncButton>
+      </div>
+
       <StepNavigation
         prev="step3"
-        next="study"
-        nextLabel="Finish Setup"
-        onNext={handleFinish}
-        disableNext={false} // Always enabled since we auto-save
+        next="step5"
+        disableNext={
+          !study.step4Completed ||
+          variables.some((v) => !v.description || v.description.trim() === "")
+        }
+        nextTooltip={
+          variables.some((v) => !v.description || v.description.trim() === "")
+            ? "Please add descriptions for all variables and save before proceeding"
+            : !study.step4Completed
+            ? "Please save the codebook before proceeding"
+            : undefined
+        }
       />
     </>
   )

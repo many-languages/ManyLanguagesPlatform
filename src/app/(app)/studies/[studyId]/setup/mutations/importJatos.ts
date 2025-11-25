@@ -2,9 +2,6 @@ import { resolver } from "@blitzjs/rpc"
 import db from "db"
 import { ImportJatosSchema } from "../../../validations"
 
-const DUP_MSG =
-  "A study with this uuid has been already uploaded to our servers. Please change the uuid in the .jas file in your .jzip folder and try again."
-
 export default resolver.pipe(
   resolver.zod(ImportJatosSchema),
   resolver.authorize("RESEARCHER"),
@@ -52,18 +49,19 @@ export default resolver.pipe(
       })
 
       // If JATOS changed, invalidate Step 3 (clear test run URLs)
-      // Step 4 FeedbackTemplate is preserved but will be marked incomplete
+      // Step 4 (Codebook) and Step 5 (FeedbackTemplate) are preserved but will be marked incomplete
       if (isChangingJatos) {
         await db.studyResearcher.updateMany({
           where: { studyId },
           data: { jatosRunUrl: null },
         })
-        // Invalidate step 3 and step 4 completion status
+        // Invalidate step 3, step 4, and step 5 completion status
         await db.study.update({
           where: { id: studyId },
           data: {
             step3Completed: false,
             step4Completed: false,
+            step5Completed: false,
           },
         })
       }

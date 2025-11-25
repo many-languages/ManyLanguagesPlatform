@@ -5,7 +5,7 @@ import { AuthorizationError } from "blitz"
 import db from "db"
 import { getAuthorizedSession } from "@/src/app/(auth)/utils/getAuthorizedSession"
 
-const getStudies = resolver.pipe(resolver.authorize("ADMIN"), async () => {
+const getAdminStudies = resolver.pipe(resolver.authorize("ADMIN"), async () => {
   return db.study.findMany({
     include: {
       FeedbackTemplate: true,
@@ -28,4 +28,4 @@ export async function getStudiesRsc() {
   })
 }
 
-export default getStudies
+export default getAdminStudies

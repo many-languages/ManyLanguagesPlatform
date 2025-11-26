@@ -6,6 +6,7 @@ export interface ExtractedVariable {
   type: "primitive" | "object" | "array"
   occurrences: number
   dataStructure: "array" | "object"
+  allValues: any[] // All values found for this variable
 }
 
 export interface AvailableVariable {

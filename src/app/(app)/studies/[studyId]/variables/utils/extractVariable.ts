@@ -60,18 +60,29 @@ export function extractVariables(enrichedResult: EnrichedJatosStudyResult): Extr
             if (EXCLUDED_FIELDS.has(key)) return
 
             if (!variableMap.has(key)) {
+              // Only set example value if it's not null or undefined
+              const exampleValue =
+                value !== null && value !== undefined ? formatExampleValue(value) : "null"
               variableMap.set(key, {
                 variableName: key,
-                exampleValue: formatExampleValue(value),
+                exampleValue,
                 type: getValueType(value),
                 occurrences: 1,
                 dataStructure: "array",
+                allValues: [value], // Store all values
               })
             } else {
               const existing = variableMap.get(key)!
               existing.occurrences++
-              // Update example value to show a more recent occurrence
-              if (existing.occurrences <= 3) {
+              existing.allValues.push(value) // Add value to array
+              // Update example value if:
+              // 1. Current example is "null" and we found a non-null value, OR
+              // 2. Occurrences <= 3 and we found a non-null value
+              if (
+                value !== null &&
+                value !== undefined &&
+                (existing.exampleValue === "null" || existing.occurrences <= 3)
+              ) {
                 existing.exampleValue = formatExampleValue(value)
               }
             }
@@ -83,12 +94,16 @@ export function extractVariables(enrichedResult: EnrichedJatosStudyResult): Extr
       Object.entries(data).forEach(([key, value]) => {
         if (EXCLUDED_FIELDS.has(key)) return
 
+        // Only set example value if it's not null or undefined
+        const exampleValue =
+          value !== null && value !== undefined ? formatExampleValue(value) : "null"
         variableMap.set(key, {
           variableName: key,
-          exampleValue: formatExampleValue(value),
+          exampleValue,
           type: getValueType(value),
           occurrences: 1,
           dataStructure: "object",
+          allValues: [value], // Store all values
         })
       })
     }

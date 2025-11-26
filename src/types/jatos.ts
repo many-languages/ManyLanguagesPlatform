@@ -1,3 +1,5 @@
+import type { FormatDetectionResult } from "@/src/lib/jatos/parsers/formatDetector"
+
 export interface JatosFileInfo {
   filename: string
   size: number
@@ -65,6 +67,8 @@ export interface JatosMetadata {
 export interface EnrichedJatosComponentResult extends JatosComponentResult {
   dataContent: string | null
   parsedData?: any
+  detectedFormat?: FormatDetectionResult
+  parseError?: string
 }
 
 // Extended version of JatosStudyResult that uses the enriched components

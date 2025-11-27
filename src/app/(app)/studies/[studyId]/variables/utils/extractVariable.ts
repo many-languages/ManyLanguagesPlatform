@@ -1,5 +1,6 @@
 import type { EnrichedJatosStudyResult } from "@/src/types/jatos"
 import type { ExtractedVariable, AvailableVariable, AvailableField } from "../types"
+import { extractNestedPaths, extractNestedPathsFromMultiple } from "./nestedStructureExtractor"
 
 // Constants
 export const EXCLUDED_FIELDS = new Set([
@@ -41,6 +42,15 @@ export function formatExampleValue(value: any): string {
   return str.length > 50 ? str.substring(0, 50) + "..." : str
 }
 
+// Utility: Convert nested path type to ExtractedVariable type
+function convertNestedPathTypeToExtractedType(
+  nestedType: "string" | "number" | "boolean" | "object" | "array" | "null"
+): "primitive" | "object" | "array" {
+  if (nestedType === "array") return "array"
+  if (nestedType === "object") return "object"
+  return "primitive" // string, number, boolean, null all map to primitive
+}
+
 /**
  * Extract variables from enriched JATOS result with full metadata
  * Used by VariableSelector component
@@ -59,31 +69,137 @@ export function extractVariables(enrichedResult: EnrichedJatosStudyResult): Extr
           Object.entries(trial).forEach(([key, value]) => {
             if (EXCLUDED_FIELDS.has(key)) return
 
-            if (!variableMap.has(key)) {
-              // Only set example value if it's not null or undefined
-              const exampleValue =
-                value !== null && value !== undefined ? formatExampleValue(value) : "null"
-              variableMap.set(key, {
-                variableName: key,
-                exampleValue,
-                type: getValueType(value),
-                occurrences: 1,
-                dataStructure: "array",
-                allValues: [value], // Store all values
+            // Check if value is an object or array that should be extracted
+            const valueType = getValueType(value)
+            if (
+              valueType === "object" &&
+              value !== null &&
+              typeof value === "object" &&
+              !Array.isArray(value)
+            ) {
+              // Extract nested paths from the object
+              const nestedPaths = extractNestedPaths(value, key)
+
+              nestedPaths.forEach((nestedPath) => {
+                if (!variableMap.has(nestedPath.path)) {
+                  const exampleValue =
+                    nestedPath.exampleValue !== null && nestedPath.exampleValue !== undefined
+                      ? formatExampleValue(nestedPath.exampleValue)
+                      : "null"
+                  variableMap.set(nestedPath.path, {
+                    variableName: nestedPath.path,
+                    exampleValue,
+                    type: convertNestedPathTypeToExtractedType(nestedPath.type),
+                    occurrences: 1,
+                    dataStructure: "array",
+                    allValues: [nestedPath.exampleValue],
+                  })
+                } else {
+                  const existing = variableMap.get(nestedPath.path)!
+                  existing.occurrences++
+                  existing.allValues.push(nestedPath.exampleValue)
+                  // Update example value if needed
+                  if (
+                    nestedPath.exampleValue !== null &&
+                    nestedPath.exampleValue !== undefined &&
+                    (existing.exampleValue === "null" || existing.occurrences <= 3)
+                  ) {
+                    existing.exampleValue = formatExampleValue(nestedPath.exampleValue)
+                  }
+                }
               })
+            } else if (valueType === "array" && Array.isArray(value) && value.length > 0) {
+              // For arrays, check if they contain objects - if so, extract nested paths
+              const hasObjects = value.some(
+                (item) => typeof item === "object" && item !== null && !Array.isArray(item)
+              )
+
+              if (hasObjects) {
+                // Extract nested paths from array items
+                const nestedPaths = extractNestedPathsFromMultiple(value, key)
+
+                nestedPaths.forEach((nestedPath) => {
+                  if (!variableMap.has(nestedPath.path)) {
+                    const exampleValue =
+                      nestedPath.exampleValue !== null && nestedPath.exampleValue !== undefined
+                        ? formatExampleValue(nestedPath.exampleValue)
+                        : "null"
+                    variableMap.set(nestedPath.path, {
+                      variableName: nestedPath.path,
+                      exampleValue,
+                      type: convertNestedPathTypeToExtractedType(nestedPath.type),
+                      occurrences: 1,
+                      dataStructure: "array",
+                      allValues: [nestedPath.exampleValue],
+                    })
+                  } else {
+                    const existing = variableMap.get(nestedPath.path)!
+                    existing.occurrences++
+                    existing.allValues.push(nestedPath.exampleValue)
+                    // Update example value if needed
+                    if (
+                      nestedPath.exampleValue !== null &&
+                      nestedPath.exampleValue !== undefined &&
+                      (existing.exampleValue === "null" || existing.occurrences <= 3)
+                    ) {
+                      existing.exampleValue = formatExampleValue(nestedPath.exampleValue)
+                    }
+                  }
+                })
+              } else {
+                // Array of primitives - handle as before
+                if (!variableMap.has(key)) {
+                  const exampleValue =
+                    value !== null && value !== undefined ? formatExampleValue(value) : "null"
+                  variableMap.set(key, {
+                    variableName: key,
+                    exampleValue,
+                    type: "array",
+                    occurrences: 1,
+                    dataStructure: "array",
+                    allValues: [value],
+                  })
+                } else {
+                  const existing = variableMap.get(key)!
+                  existing.occurrences++
+                  existing.allValues.push(value)
+                  if (
+                    value !== null &&
+                    value !== undefined &&
+                    (existing.exampleValue === "null" || existing.occurrences <= 3)
+                  ) {
+                    existing.exampleValue = formatExampleValue(value)
+                  }
+                }
+              }
             } else {
-              const existing = variableMap.get(key)!
-              existing.occurrences++
-              existing.allValues.push(value) // Add value to array
-              // Update example value if:
-              // 1. Current example is "null" and we found a non-null value, OR
-              // 2. Occurrences <= 3 and we found a non-null value
-              if (
-                value !== null &&
-                value !== undefined &&
-                (existing.exampleValue === "null" || existing.occurrences <= 3)
-              ) {
-                existing.exampleValue = formatExampleValue(value)
+              // Primitive value - handle as before
+              if (!variableMap.has(key)) {
+                // Only set example value if it's not null or undefined
+                const exampleValue =
+                  value !== null && value !== undefined ? formatExampleValue(value) : "null"
+                variableMap.set(key, {
+                  variableName: key,
+                  exampleValue,
+                  type: getValueType(value),
+                  occurrences: 1,
+                  dataStructure: "array",
+                  allValues: [value], // Store all values
+                })
+              } else {
+                const existing = variableMap.get(key)!
+                existing.occurrences++
+                existing.allValues.push(value) // Add value to array
+                // Update example value if:
+                // 1. Current example is "null" and we found a non-null value, OR
+                // 2. Occurrences <= 3 and we found a non-null value
+                if (
+                  value !== null &&
+                  value !== undefined &&
+                  (existing.exampleValue === "null" || existing.occurrences <= 3)
+                ) {
+                  existing.exampleValue = formatExampleValue(value)
+                }
               }
             }
           })
@@ -94,17 +210,100 @@ export function extractVariables(enrichedResult: EnrichedJatosStudyResult): Extr
       Object.entries(data).forEach(([key, value]) => {
         if (EXCLUDED_FIELDS.has(key)) return
 
-        // Only set example value if it's not null or undefined
-        const exampleValue =
-          value !== null && value !== undefined ? formatExampleValue(value) : "null"
-        variableMap.set(key, {
-          variableName: key,
-          exampleValue,
-          type: getValueType(value),
-          occurrences: 1,
-          dataStructure: "object",
-          allValues: [value], // Store all values
-        })
+        const valueType = getValueType(value)
+
+        // If value is an object or array, extract nested paths
+        if (
+          valueType === "object" &&
+          value !== null &&
+          typeof value === "object" &&
+          !Array.isArray(value)
+        ) {
+          // Extract nested paths from the object
+          const nestedPaths = extractNestedPaths(value, key)
+
+          nestedPaths.forEach((nestedPath) => {
+            if (!variableMap.has(nestedPath.path)) {
+              const exampleValue =
+                nestedPath.exampleValue !== null && nestedPath.exampleValue !== undefined
+                  ? formatExampleValue(nestedPath.exampleValue)
+                  : "null"
+              variableMap.set(nestedPath.path, {
+                variableName: nestedPath.path,
+                exampleValue,
+                type:
+                  nestedPath.type === "null"
+                    ? "primitive"
+                    : nestedPath.type === "array"
+                    ? "array"
+                    : nestedPath.type === "object"
+                    ? "object"
+                    : "primitive",
+                occurrences: 1,
+                dataStructure: "object",
+                allValues: [nestedPath.exampleValue],
+              })
+            }
+          })
+        } else if (valueType === "array" && Array.isArray(value) && value.length > 0) {
+          // For arrays, check if they contain objects
+          const hasObjects = value.some(
+            (item) => typeof item === "object" && item !== null && !Array.isArray(item)
+          )
+
+          if (hasObjects) {
+            // Extract nested paths from array items
+            const nestedPaths = extractNestedPathsFromMultiple(value, key)
+
+            nestedPaths.forEach((nestedPath) => {
+              if (!variableMap.has(nestedPath.path)) {
+                const exampleValue =
+                  nestedPath.exampleValue !== null && nestedPath.exampleValue !== undefined
+                    ? formatExampleValue(nestedPath.exampleValue)
+                    : "null"
+                variableMap.set(nestedPath.path, {
+                  variableName: nestedPath.path,
+                  exampleValue,
+                  type:
+                    nestedPath.type === "null"
+                      ? "primitive"
+                      : nestedPath.type === "array"
+                      ? "array"
+                      : nestedPath.type === "object"
+                      ? "object"
+                      : "primitive",
+                  occurrences: 1,
+                  dataStructure: "object",
+                  allValues: [nestedPath.exampleValue],
+                })
+              }
+            })
+          } else {
+            // Array of primitives - store as is
+            const exampleValue =
+              value !== null && value !== undefined ? formatExampleValue(value) : "null"
+            variableMap.set(key, {
+              variableName: key,
+              exampleValue,
+              type: "array",
+              occurrences: 1,
+              dataStructure: "object",
+              allValues: [value],
+            })
+          }
+        } else {
+          // Primitive value - store as is
+          const exampleValue =
+            value !== null && value !== undefined ? formatExampleValue(value) : "null"
+          variableMap.set(key, {
+            variableName: key,
+            exampleValue,
+            type: getValueType(value),
+            occurrences: 1,
+            dataStructure: "object",
+            allValues: [value],
+          })
+        }
       })
     }
   })

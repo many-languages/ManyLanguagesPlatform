@@ -4,7 +4,6 @@ import type { ValidationData } from "../../utils/getValidationData"
 import MetadataViewer from "./MetadataViewer"
 import StudyPropertiesViewer from "./StudyPropertiesViewer"
 import VariableExtractionPreview from "./VariableExtractionPreview"
-import RawDataViewer from "./RawDataViewer"
 import ComponentResultExplorer from "./ComponentResultExplorer"
 import { useState } from "react"
 
@@ -88,7 +87,7 @@ export default function DebugContent({ validationData }: DebugContentProps) {
       {selectedResult && (
         <div className="space-y-6">
           {/* Result Header */}
-          <div className="card bg-base-200 p-4 border-l-4 border-primary">
+          <div className="card bg-base-200 p-4">
             <h3 className="text-lg font-semibold mb-2">
               Test Result #{selectedResult.id} - {selectedResult.studyCode}
             </h3>
@@ -118,9 +117,6 @@ export default function DebugContent({ validationData }: DebugContentProps) {
               console.log("Selected component:", componentId)
             }}
           />
-
-          {/* Raw Data Viewer */}
-          <RawDataViewer enrichedResult={selectedResult} />
 
           {/* Variable Extraction Preview */}
           <VariableExtractionPreview enrichedResult={selectedResult} />

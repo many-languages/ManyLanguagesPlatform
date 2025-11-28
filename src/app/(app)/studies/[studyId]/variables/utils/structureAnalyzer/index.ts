@@ -129,3 +129,8 @@ export {
   generateRecommendations,
   buildVariableGroups,
 } from "./generateStructureSummary"
+export {
+  analyzeOriginalStructure,
+  type OriginalStructureAnalysis,
+  type ComponentStructureAnalysis,
+} from "./analyzeOriginalStructure"

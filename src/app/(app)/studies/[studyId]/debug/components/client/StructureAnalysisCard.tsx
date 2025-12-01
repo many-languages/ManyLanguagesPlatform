@@ -1,16 +1,16 @@
 "use client"
 
 import type { EnrichedJatosStudyResult } from "@/src/types/jatos"
-import type {
-  OriginalStructureAnalysis,
-  ComponentStructureAnalysis,
-} from "../../../variables/utils/structureAnalyzer/analyzeOriginalStructure"
+import type { OriginalStructureAnalysis } from "../../../variables/utils/structureAnalyzer/analyzeOriginalStructure"
 import type { NestedPath } from "../../../variables/utils/nestedStructureExtractor"
-import { extractNestedPaths } from "../../../variables/utils/nestedStructureExtractor"
+import {
+  getExtractedPathsForComponent,
+  aggregatePathsByParentKey,
+} from "../../../variables/utils/componentPathExtractor"
 import Card from "@/src/app/components/Card"
-import { useState, useMemo, useEffect } from "react"
-import { Prism as SyntaxHighlighter } from "react-syntax-highlighter"
-import { oneLight, vscDarkPlus } from "react-syntax-highlighter/dist/esm/styles/prism"
+import JsonSyntaxHighlighter from "@/src/app/components/JsonSyntaxHighlighter"
+import { Alert } from "@/src/app/components/Alert"
+import { useState, useMemo } from "react"
 
 interface StructureAnalysisCardProps {
   enrichedResult: EnrichedJatosStudyResult
@@ -21,7 +21,6 @@ export default function StructureAnalysisCard({
   enrichedResult,
   originalStructureAnalysis,
 }: StructureAnalysisCardProps) {
-  const [isDark, setIsDark] = useState(false)
   const [analysisTab, setAnalysisTab] = useState<"overview" | "components">("overview")
   const [selectedComponentId, setSelectedComponentId] = useState<number | "all" | null>(
     enrichedResult.componentResults.find((c) => c.dataContent)?.componentId ?? "all"
@@ -32,138 +31,16 @@ export default function StructureAnalysisCard({
     componentId: number
   } | null>(null)
 
-  // Detect theme from document
-  useEffect(() => {
-    const checkTheme = () => {
-      const theme = document.documentElement.getAttribute("data-theme")
-      setIsDark(
-        theme === "dark" || (!theme && window.matchMedia("(prefers-color-scheme: dark)").matches)
-      )
-    }
-
-    checkTheme()
-    const observer = new MutationObserver(checkTheme)
-    observer.observe(document.documentElement, {
-      attributes: true,
-      attributeFilter: ["data-theme"],
-    })
-
-    return () => observer.disconnect()
-  }, [])
-
-  // Helper to get extracted paths for object-type keys in a component
-  const getExtractedPathsForComponent = (
-    parsedData: any,
-    componentAnalysis: ComponentStructureAnalysis | undefined
-  ): Map<string, NestedPath[]> => {
-    const extractedPathsByKey = new Map<string, NestedPath[]>()
-
-    if (!parsedData || !componentAnalysis) return extractedPathsByKey
-
-    // Find all object-type top-level keys
-    const objectKeys = componentAnalysis.topLevelKeys.filter(
-      (key) => componentAnalysis.topLevelKeyTypes.get(key) === "object"
-    )
-
-    if (objectKeys.length === 0) return extractedPathsByKey
-
-    // Extract nested paths from each object key
-    objectKeys.forEach((objectKey) => {
-      let objectValue: any = null
-
-      if (
-        componentAnalysis.structureType === "array" &&
-        Array.isArray(parsedData) &&
-        parsedData.length > 0
-      ) {
-        // For array structures, get the value from first item
-        const firstItem = parsedData[0]
-        objectValue = firstItem?.[objectKey]
-      } else if (
-        componentAnalysis.structureType === "object" &&
-        typeof parsedData === "object" &&
-        parsedData !== null
-      ) {
-        objectValue = parsedData[objectKey]
-      }
-
-      // Only extract if it's actually an object (not array, not null)
-      if (objectValue && typeof objectValue === "object" && !Array.isArray(objectValue)) {
-        const nestedPaths = extractNestedPaths(objectValue, objectKey)
-        // Filter to include all paths that start with this object key (excluding the key itself)
-        const allNestedPaths = nestedPaths.filter(
-          (path) => path.path !== objectKey && path.path.startsWith(`${objectKey}.`)
-        )
-
-        // Deduplicate paths by path string to avoid duplicate keys in React
-        const uniquePathsMap = new Map<string, NestedPath>()
-        allNestedPaths.forEach((path) => {
-          if (!uniquePathsMap.has(path.path)) {
-            uniquePathsMap.set(path.path, path)
-          }
-        })
-
-        const uniquePaths = Array.from(uniquePathsMap.values())
-
-        if (uniquePaths.length > 0) {
-          extractedPathsByKey.set(objectKey, uniquePaths)
-        }
-      }
-    })
-
-    return extractedPathsByKey
-  }
-
   // Collect all extracted paths from all components for the overview
-  const allExtractedPathsByParentKey = useMemo(() => {
-    const pathsByParentKey = new Map<string, Array<{ path: NestedPath; componentId: number }>>()
-
-    enrichedResult.componentResults.forEach((component) => {
-      const componentAnalysis = originalStructureAnalysis.components.find(
-        (c) => c.componentId === component.componentId
-      )
-      const extractedPathsByKey = getExtractedPathsForComponent(
-        component.parsedData,
-        componentAnalysis
-      )
-
-      // Group paths by their parent key (first part of the path)
-      extractedPathsByKey.forEach((paths, parentKey) => {
-        paths.forEach((path) => {
-          if (!pathsByParentKey.has(parentKey)) {
-            pathsByParentKey.set(parentKey, [])
-          }
-          pathsByParentKey.get(parentKey)!.push({
-            path,
-            componentId: component.componentId,
-          })
-        })
-      })
-    })
-
-    // Deduplicate paths by path string across all components
-    const deduplicated = new Map<string, Array<{ path: NestedPath; componentId: number }>>()
-    pathsByParentKey.forEach((pathsWithComponents, parentKey) => {
-      const uniquePaths = new Map<string, { path: NestedPath; componentId: number }>()
-      pathsWithComponents.forEach(({ path, componentId }) => {
-        if (!uniquePaths.has(path.path)) {
-          uniquePaths.set(path.path, { path, componentId })
-        }
-      })
-      if (uniquePaths.size > 0) {
-        deduplicated.set(parentKey, Array.from(uniquePaths.values()))
-      }
-    })
-
-    return deduplicated
-  }, [enrichedResult, originalStructureAnalysis])
+  const allExtractedPathsByParentKey = useMemo(
+    () => aggregatePathsByParentKey(enrichedResult, originalStructureAnalysis),
+    [enrichedResult, originalStructureAnalysis]
+  )
 
   // Helper function to render component data
   const renderComponentData = (component: (typeof enrichedResult.componentResults)[0]) => {
     const format = component.detectedFormat?.format
     const parsedData = component.parsedData
-    const isHighlighted =
-      highlightedPath?.componentId === component.componentId && highlightedPath?.path
 
     // JSON: Pretty-print with syntax highlighting
     if (format === "json" && parsedData) {
@@ -173,35 +50,7 @@ export default function StructureAnalysisCard({
           id={`raw-data-component-${component.componentId}`}
           className="max-h-96 overflow-auto rounded-lg border border-base-300 scroll-mt-4"
         >
-          <SyntaxHighlighter
-            language="json"
-            style={isDark ? vscDarkPlus : oneLight}
-            customStyle={{
-              margin: 0,
-              borderRadius: "0.5rem",
-              fontSize: "0.875rem",
-              userSelect: "text",
-              WebkitUserSelect: "text",
-            }}
-            codeTagProps={{
-              style: {
-                fontFamily:
-                  "ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace",
-                userSelect: "text",
-                WebkitUserSelect: "text",
-              },
-            }}
-            PreTag={({ children, ...props }) => (
-              <pre
-                {...props}
-                style={{ ...props.style, userSelect: "text", WebkitUserSelect: "text" }}
-              >
-                {children}
-              </pre>
-            )}
-          >
-            {jsonString}
-          </SyntaxHighlighter>
+          <JsonSyntaxHighlighter code={jsonString} language="json" />
         </div>
       )
     }
@@ -209,11 +58,7 @@ export default function StructureAnalysisCard({
     // CSV/TSV: Display as a table
     if ((format === "csv" || format === "tsv") && parsedData && Array.isArray(parsedData)) {
       if (parsedData.length === 0) {
-        return (
-          <div className="alert alert-info">
-            <span>No data rows found</span>
-          </div>
-        )
+        return <Alert variant="info">No data rows found</Alert>
       }
 
       const headers = Object.keys(parsedData[0] || {})
@@ -281,24 +126,7 @@ export default function StructureAnalysisCard({
         id={`raw-data-component-${component.componentId}`}
         className="max-h-96 overflow-auto rounded-lg border border-base-300 scroll-mt-4"
       >
-        <SyntaxHighlighter
-          language="text"
-          style={isDark ? vscDarkPlus : oneLight}
-          customStyle={{
-            margin: 0,
-            borderRadius: "0.5rem",
-            fontSize: "0.875rem",
-          }}
-          codeTagProps={{
-            style: {
-              fontFamily:
-                "ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace",
-              whiteSpace: "pre-wrap",
-            },
-          }}
-        >
-          {component.dataContent || ""}
-        </SyntaxHighlighter>
+        <JsonSyntaxHighlighter code={component.dataContent || ""} language="text" />
       </div>
     )
   }
@@ -802,11 +630,9 @@ export default function StructureAnalysisCard({
                     })()}
 
                     {component.parseError && (
-                      <div className="alert alert-warning mb-3">
-                        <span>
-                          <strong>Parse Error:</strong> {component.parseError}
-                        </span>
-                      </div>
+                      <Alert variant="warning" className="mb-3" title="Parse Error">
+                        {component.parseError}
+                      </Alert>
                     )}
 
                     {renderComponentData(component)}
@@ -826,9 +652,7 @@ export default function StructureAnalysisCard({
 
               if (!selectedComponent || !selectedComponent.dataContent) {
                 return (
-                  <div className="alert alert-info">
-                    <span>Please select a component with data to view details</span>
-                  </div>
+                  <Alert variant="info">Please select a component with data to view details</Alert>
                 )
               }
 
@@ -997,11 +821,9 @@ export default function StructureAnalysisCard({
                   })()}
 
                   {selectedComponent.parseError && (
-                    <div className="alert alert-warning mb-3">
-                      <span>
-                        <strong>Parse Error:</strong> {selectedComponent.parseError}
-                      </span>
-                    </div>
+                    <Alert variant="warning" className="mb-3" title="Parse Error">
+                      {selectedComponent.parseError}
+                    </Alert>
                   )}
 
                   {renderComponentData(selectedComponent)}
@@ -1009,9 +831,7 @@ export default function StructureAnalysisCard({
               )
             })()
           ) : (
-            <div className="alert alert-info">
-              <span>Please select a component to view details</span>
-            </div>
+            <Alert variant="info">Please select a component to view details</Alert>
           )}
         </div>
       )}

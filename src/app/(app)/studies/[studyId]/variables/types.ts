@@ -37,11 +37,5 @@ export interface ExtractionResult {
 export interface AvailableVariable {
   name: string
   type: "string" | "number" | "boolean"
-  example: any
-}
-
-export interface AvailableField {
-  name: string
-  type: "string" | "number" | "boolean"
   example?: any
 }

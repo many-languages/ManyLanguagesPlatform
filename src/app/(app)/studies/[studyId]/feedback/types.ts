@@ -1,7 +1,7 @@
 import type { EnrichedJatosStudyResult } from "@/src/types/jatos"
 
 // Re-export variable types from shared variables module
-export type { ExtractedVariable, AvailableVariable, AvailableField } from "../../variables/types"
+export type { ExtractedVariable, AvailableVariable } from "../../variables/types"
 
 // Template Types
 export interface FeedbackTemplate {

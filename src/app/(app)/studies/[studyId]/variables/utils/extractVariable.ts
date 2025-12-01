@@ -2,12 +2,11 @@ import type { EnrichedJatosStudyResult } from "@/src/types/jatos"
 import type {
   ExtractedVariable,
   AvailableVariable,
-  AvailableField,
   SkippedValue,
   SkippedReason,
   ExtractionResult,
 } from "../types"
-import { extractNestedPaths, extractNestedPathsFromMultiple } from "./nestedStructureExtractor"
+import { extractNestedPaths } from "./nestedStructureExtractor"
 
 // Constants
 export const EXCLUDED_FIELDS = new Set([
@@ -47,15 +46,6 @@ export function formatExampleValue(value: any): string {
 
   const str = String(value)
   return str.length > 50 ? str.substring(0, 50) + "..." : str
-}
-
-// Utility: Convert nested path type to ExtractedVariable type
-function convertNestedPathTypeToExtractedType(
-  nestedType: "string" | "number" | "boolean" | "object" | "array" | "null"
-): "primitive" | "object" | "array" {
-  if (nestedType === "array") return "array"
-  if (nestedType === "object") return "object"
-  return "primitive" // string, number, boolean, null all map to primitive
 }
 
 /**
@@ -439,10 +429,17 @@ export function extractVariables(enrichedResult: EnrichedJatosStudyResult): Extr
 }
 
 /**
- * Extract all variables from enriched JATOS result
- * Used by StatsSelector component
+ * Extract available variables from enriched JATOS result
+ * Used by StatsSelector, FilterBuilder, ConditionalBuilder, and dslValidator
  */
-export function extractAllVariables(enrichedResult: EnrichedJatosStudyResult): AvailableVariable[] {
+export function extractAvailableVariables(
+  enrichedResult: EnrichedJatosStudyResult,
+  options?: {
+    includeExcluded?: boolean
+    includeExample?: boolean
+  }
+): AvailableVariable[] {
+  const { includeExcluded = false, includeExample = false } = options || {}
   const variableMap = new Map<string, AvailableVariable>()
 
   enrichedResult.componentResults.forEach((component) => {
@@ -454,61 +451,10 @@ export function extractAllVariables(enrichedResult: EnrichedJatosStudyResult): A
       data.forEach((trial) => {
         if (typeof trial === "object" && trial !== null) {
           Object.entries(trial).forEach(([key, value]) => {
-            if (EXCLUDED_FIELDS.has(key)) return
+            if (!includeExcluded && EXCLUDED_FIELDS.has(key)) return
 
             if (!variableMap.has(key)) {
               variableMap.set(key, {
-                name: key,
-                type: getFieldType(value),
-                example: value,
-              })
-            }
-          })
-        }
-      })
-    } else if (typeof data === "object") {
-      // SurveyJS-style: single object with responses
-      Object.entries(data).forEach(([key, value]) => {
-        if (EXCLUDED_FIELDS.has(key)) return
-
-        variableMap.set(key, {
-          name: key,
-          type: getFieldType(value),
-          example: value,
-        })
-      })
-    }
-  })
-
-  return Array.from(variableMap.values()).sort((a, b) => a.name.localeCompare(b.name))
-}
-
-/**
- * Extract available fields from enriched result
- * Used by FilterBuilder, ConditionalBuilder, and dslValidator
- */
-export function extractAvailableFields(
-  enrichedResult: EnrichedJatosStudyResult,
-  options?: {
-    includeExcluded?: boolean
-    includeExample?: boolean
-  }
-): AvailableField[] {
-  const { includeExcluded = false, includeExample = false } = options || {}
-  const fieldMap = new Map<string, AvailableField>()
-
-  enrichedResult.componentResults.forEach((component) => {
-    const data = component.parsedData ?? null
-    if (!data) return
-
-    if (Array.isArray(data)) {
-      data.forEach((trial) => {
-        if (typeof trial === "object" && trial !== null) {
-          Object.entries(trial).forEach(([key, value]) => {
-            if (!includeExcluded && EXCLUDED_FIELDS.has(key)) return
-
-            if (!fieldMap.has(key)) {
-              fieldMap.set(key, {
                 name: key,
                 type: getFieldType(value),
                 ...(includeExample && { example: value }),
@@ -518,10 +464,11 @@ export function extractAvailableFields(
         }
       })
     } else if (typeof data === "object") {
+      // SurveyJS-style: single object with responses
       Object.entries(data).forEach(([key, value]) => {
         if (!includeExcluded && EXCLUDED_FIELDS.has(key)) return
 
-        fieldMap.set(key, {
+        variableMap.set(key, {
           name: key,
           type: getFieldType(value),
           ...(includeExample && { example: value }),
@@ -530,5 +477,5 @@ export function extractAvailableFields(
     }
   })
 
-  return Array.from(fieldMap.values()).sort((a, b) => a.name.localeCompare(b.name))
+  return Array.from(variableMap.values()).sort((a, b) => a.name.localeCompare(b.name))
 }

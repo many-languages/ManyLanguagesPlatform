@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from "react"
 import { EnrichedJatosStudyResult } from "@/src/types/jatos"
-import { extractAllVariables } from "../../../variables/utils/extractVariable"
+import { extractAvailableVariables } from "../../../variables/utils/extractVariable"
 import { SelectField } from "./shared"
 import Card from "@/src/app/components/Card"
 import { dslHelperStyles } from "../../styles/feedbackStyles"
@@ -131,7 +131,7 @@ export default function DSLHelper({ enrichedResult }: DSLHelperProps) {
     },
   ]
 
-  const availableVariables = extractAllVariables(enrichedResult)
+  const availableVariables = extractAvailableVariables(enrichedResult, { includeExample: true })
 
   const categoryOptions = useMemo(
     () => [

@@ -2,7 +2,7 @@
 
 import { getAllTestResultsRsc } from "@/src/app/(app)/studies/[studyId]/utils/getAllTestResults"
 import { syncStudyVariablesRsc } from "@/src/app/(app)/studies/[studyId]/variables/mutations/syncStudyVariables"
-import { extractAllVariables } from "@/src/app/(app)/studies/[studyId]/variables/utils/extractVariable"
+import { extractAvailableVariables } from "@/src/app/(app)/studies/[studyId]/variables/utils/extractVariable"
 
 /**
  * Server Action to sync variables from test results when step 3 is completed.
@@ -26,8 +26,8 @@ export async function syncVariablesFromTestResultsAction(
     // Use the latest test result (first one since sorted by id descending)
     const latestTestResult = testResults[0]
 
-    // Extract variables from the test result
-    const extractedVariables = extractAllVariables(latestTestResult)
+    // Extract variables from the test result (with examples for syncing)
+    const extractedVariables = extractAvailableVariables(latestTestResult, { includeExample: true })
 
     if (extractedVariables.length === 0) {
       return {

@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from "react"
 import { EnrichedJatosStudyResult } from "@/src/types/jatos"
-import { extractAvailableFields } from "../../../variables/utils/extractVariable"
+import { extractAvailableVariables } from "../../../variables/utils/extractVariable"
 import { SelectField, SyntaxPreview } from "./shared"
 
 interface FilterBuilderProps {
@@ -46,7 +46,7 @@ export default function FilterBuilder({ enrichedResult, onInsert, onClose }: Fil
     { field: "", operator: "==", value: "" },
   ])
 
-  const availableFields = extractAvailableFields(enrichedResult)
+  const availableFields = extractAvailableVariables(enrichedResult)
 
   const fieldOptions = useMemo(
     () =>

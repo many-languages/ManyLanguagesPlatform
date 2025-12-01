@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useMemo } from "react"
 import { EnrichedJatosStudyResult } from "@/src/types/jatos"
 import VariableSelector from "./VariableSelector"
 import StatsSelector from "./StatsSelector"
-import { extractAvailableFields } from "../../../variables/utils/extractVariable"
+import { extractAvailableVariables } from "../../../variables/utils/extractVariable"
 import { SelectField, FilterButtonWithDisplay, SyntaxPreview } from "./shared"
 
 interface ConditionalBuilderProps {
@@ -42,7 +42,7 @@ export default function ConditionalBuilder({
   const [focusedTextArea, setFocusedTextArea] = useState<"then" | "else">("then")
   const [currentFilterClause, setCurrentFilterClause] = useState("")
 
-  const availableFields = extractAvailableFields(enrichedResult, { includeExample: true })
+  const availableFields = extractAvailableVariables(enrichedResult, { includeExample: true })
 
   // Get available variables for the condition builder
   const getAvailableVariables = useCallback(() => {

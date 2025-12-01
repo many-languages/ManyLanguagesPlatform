@@ -3,7 +3,7 @@
 import { useState, useMemo } from "react"
 import { EnrichedJatosStudyResult } from "@/src/types/jatos"
 import FilterBuilder from "./FilterBuilder"
-import { extractAllVariables } from "../../../variables/utils/extractVariable"
+import { extractAvailableVariables } from "../../../variables/utils/extractVariable"
 import { SelectField, FilterButtonWithDisplay, SyntaxPreview } from "./shared"
 
 interface StatsSelectorProps {
@@ -30,7 +30,7 @@ export default function StatsSelector({ enrichedResult, onInsert, markdown }: St
   const [showFilterBuilder, setShowFilterBuilder] = useState(false)
   const [currentFilterClause, setCurrentFilterClause] = useState("")
 
-  const availableVariables = extractAllVariables(enrichedResult)
+  const availableVariables = extractAvailableVariables(enrichedResult, { includeExample: true })
 
   const variableOptions = useMemo(
     () =>

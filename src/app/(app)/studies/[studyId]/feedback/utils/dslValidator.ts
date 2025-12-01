@@ -1,5 +1,5 @@
 import { EnrichedJatosStudyResult } from "@/src/types/jatos"
-import { extractAvailableFields, extractAllVariables } from "../../variables/utils/extractVariable"
+import { extractAvailableVariables } from "../../variables/utils/extractVariable"
 
 export interface DSLError {
   type: "variable" | "stat" | "conditional" | "filter" | "syntax"
@@ -23,9 +23,8 @@ export function validateDSL(
 ): ValidationResult {
   const errors: DSLError[] = []
 
-  // Get available variables and fields from service
+  // Get available variables from service
   const availableVariables = extractAvailableVariables(enrichedResult)
-  const availableFields = extractAvailableFields(enrichedResult)
 
   // Validate variables: {{ var:name:modifier | where: condition }}
   const varRegex =
@@ -325,10 +324,10 @@ function validateMalformedSyntax(template: string): DSLError[] {
 }
 
 /**
- * Extracts available variables from enriched result
+ * Extracts available variable names from enriched result
  * Uses variable service to get variable names
  */
-function extractAvailableVariables(enrichedResult: EnrichedJatosStudyResult): string[] {
-  const variables = extractAllVariables(enrichedResult)
+function getAvailableVariableNames(enrichedResult: EnrichedJatosStudyResult): string[] {
+  const variables = extractAvailableVariables(enrichedResult)
   return variables.map((v) => v.name)
 }

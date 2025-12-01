@@ -13,7 +13,7 @@ import db from "db"
 export interface ValidationData {
   metadata: JatosMetadata
   testResults: EnrichedJatosStudyResult[]
-  properties: JatosStudyProperties | null
+  properties: JatosStudyProperties
   study: {
     id: number
     jatosStudyId: number | null
@@ -46,22 +46,18 @@ export const getValidationDataRsc = cache(async (studyId: number): Promise<Valid
     throw new Error("Study does not have a JATOS study ID")
   }
 
+  if (!study.jatosStudyUUID) {
+    throw new Error("Study does not have a JATOS study UUID")
+  }
+
   // Fetch metadata
   const metadata = await getResultsMetadata({ studyIds: [study.jatosStudyId] })
 
   // Fetch test results (enriched with data)
   const testResults = await getAllTestResultsRsc(studyId)
 
-  // Fetch study properties (if UUID is available)
-  let properties: JatosStudyProperties | null = null
-  if (study.jatosStudyUUID) {
-    try {
-      properties = await getStudyProperties(study.jatosStudyUUID)
-    } catch (error) {
-      console.error("Failed to fetch study properties:", error)
-      // Continue without properties rather than failing the whole request
-    }
-  }
+  // Fetch study properties
+  const properties = await getStudyProperties(study.jatosStudyUUID)
 
   return {
     metadata,

@@ -48,7 +48,7 @@ export async function saveFeedbackTemplateAction(
       })
 
   // Sync variables to database
-  const variables = extractVariables(enrichedResult)
+  const variables = extractVariables(enrichedResult).variables
   await syncStudyVariablesRsc({
     studyId,
     variables: variables.map((v) => ({

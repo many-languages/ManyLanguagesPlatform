@@ -1,5 +1,12 @@
 import type { EnrichedJatosStudyResult } from "@/src/types/jatos"
-import type { ExtractedVariable, AvailableVariable, AvailableField } from "../types"
+import type {
+  ExtractedVariable,
+  AvailableVariable,
+  AvailableField,
+  SkippedValue,
+  SkippedReason,
+  ExtractionResult,
+} from "../types"
 import { extractNestedPaths, extractNestedPathsFromMultiple } from "./nestedStructureExtractor"
 
 // Constants
@@ -52,265 +59,383 @@ function convertNestedPathTypeToExtractedType(
 }
 
 /**
- * Extract variables from enriched JATOS result with full metadata
- * Used by VariableSelector component
+ * Extract variables from CSV data - treat columns as variables
  */
-export function extractVariables(enrichedResult: EnrichedJatosStudyResult): ExtractedVariable[] {
+function extractFromCsv(
+  parsedData: any[],
+  dataStructure: "array" | "object"
+): {
+  variables: Map<string, ExtractedVariable>
+  skippedValues: SkippedValue[]
+  warnings: string[]
+} {
   const variableMap = new Map<string, ExtractedVariable>()
+  const skippedValues: SkippedValue[] = []
+  const warnings: string[] = []
 
-  enrichedResult.componentResults.forEach((component) => {
-    const data = component.parsedData ?? null
-    if (!data) return
+  if (!Array.isArray(parsedData) || parsedData.length === 0) {
+    warnings.push("CSV data is empty or invalid")
+    return { variables: variableMap, skippedValues, warnings }
+  }
 
-    if (Array.isArray(data)) {
-      // jsPsych-style: array of trial objects
-      data.forEach((trial) => {
-        if (typeof trial === "object" && trial !== null) {
-          Object.entries(trial).forEach(([key, value]) => {
-            if (EXCLUDED_FIELDS.has(key)) return
+  // Get column names from first row
+  const firstRow = parsedData[0]
+  if (typeof firstRow !== "object" || firstRow === null) {
+    warnings.push("CSV first row is not an object - cannot extract column variables")
+    return { variables: variableMap, skippedValues, warnings }
+  }
 
-            // Check if value is an object or array that should be extracted
-            const valueType = getValueType(value)
-            if (
-              valueType === "object" &&
-              value !== null &&
-              typeof value === "object" &&
-              !Array.isArray(value)
-            ) {
-              // Extract nested paths from the object
-              const nestedPaths = extractNestedPaths(value, key)
+  const columnNames = Object.keys(firstRow)
 
-              nestedPaths.forEach((nestedPath) => {
-                if (!variableMap.has(nestedPath.path)) {
-                  const exampleValue =
-                    nestedPath.exampleValue !== null && nestedPath.exampleValue !== undefined
-                      ? formatExampleValue(nestedPath.exampleValue)
-                      : "null"
-                  variableMap.set(nestedPath.path, {
-                    variableName: nestedPath.path,
-                    exampleValue,
-                    type: convertNestedPathTypeToExtractedType(nestedPath.type),
-                    occurrences: 1,
-                    dataStructure: "array",
-                    allValues: [nestedPath.exampleValue],
-                  })
-                } else {
-                  const existing = variableMap.get(nestedPath.path)!
-                  existing.occurrences++
-                  existing.allValues.push(nestedPath.exampleValue)
-                  // Update example value if needed
-                  if (
-                    nestedPath.exampleValue !== null &&
-                    nestedPath.exampleValue !== undefined &&
-                    (existing.exampleValue === "null" || existing.occurrences <= 3)
-                  ) {
-                    existing.exampleValue = formatExampleValue(nestedPath.exampleValue)
-                  }
-                }
-              })
-            } else if (valueType === "array" && Array.isArray(value) && value.length > 0) {
-              // For arrays, check if they contain objects - if so, extract nested paths
-              const hasObjects = value.some(
-                (item) => typeof item === "object" && item !== null && !Array.isArray(item)
-              )
+  if (columnNames.length === 0) {
+    warnings.push("CSV has no columns")
+    return { variables: variableMap, skippedValues, warnings }
+  }
 
-              if (hasObjects) {
-                // Extract nested paths from array items
-                const nestedPaths = extractNestedPathsFromMultiple(value, key)
+  // Extract each column as a variable
+  columnNames.forEach((columnName) => {
+    if (EXCLUDED_FIELDS.has(columnName)) return
 
-                nestedPaths.forEach((nestedPath) => {
-                  if (!variableMap.has(nestedPath.path)) {
-                    const exampleValue =
-                      nestedPath.exampleValue !== null && nestedPath.exampleValue !== undefined
-                        ? formatExampleValue(nestedPath.exampleValue)
-                        : "null"
-                    variableMap.set(nestedPath.path, {
-                      variableName: nestedPath.path,
-                      exampleValue,
-                      type: convertNestedPathTypeToExtractedType(nestedPath.type),
-                      occurrences: 1,
-                      dataStructure: "array",
-                      allValues: [nestedPath.exampleValue],
-                    })
-                  } else {
-                    const existing = variableMap.get(nestedPath.path)!
-                    existing.occurrences++
-                    existing.allValues.push(nestedPath.exampleValue)
-                    // Update example value if needed
-                    if (
-                      nestedPath.exampleValue !== null &&
-                      nestedPath.exampleValue !== undefined &&
-                      (existing.exampleValue === "null" || existing.occurrences <= 3)
-                    ) {
-                      existing.exampleValue = formatExampleValue(nestedPath.exampleValue)
-                    }
-                  }
-                })
-              } else {
-                // Array of primitives - handle as before
-                if (!variableMap.has(key)) {
-                  const exampleValue =
-                    value !== null && value !== undefined ? formatExampleValue(value) : "null"
-                  variableMap.set(key, {
-                    variableName: key,
-                    exampleValue,
-                    type: "array",
-                    occurrences: 1,
-                    dataStructure: "array",
-                    allValues: [value],
-                  })
-                } else {
-                  const existing = variableMap.get(key)!
-                  existing.occurrences++
-                  existing.allValues.push(value)
-                  if (
-                    value !== null &&
-                    value !== undefined &&
-                    (existing.exampleValue === "null" || existing.occurrences <= 3)
-                  ) {
-                    existing.exampleValue = formatExampleValue(value)
-                  }
-                }
-              }
-            } else {
-              // Primitive value - handle as before
-              if (!variableMap.has(key)) {
-                // Only set example value if it's not null or undefined
-                const exampleValue =
-                  value !== null && value !== undefined ? formatExampleValue(value) : "null"
-                variableMap.set(key, {
-                  variableName: key,
-                  exampleValue,
-                  type: getValueType(value),
-                  occurrences: 1,
-                  dataStructure: "array",
-                  allValues: [value], // Store all values
-                })
-              } else {
-                const existing = variableMap.get(key)!
-                existing.occurrences++
-                existing.allValues.push(value) // Add value to array
-                // Update example value if:
-                // 1. Current example is "null" and we found a non-null value, OR
-                // 2. Occurrences <= 3 and we found a non-null value
-                if (
-                  value !== null &&
-                  value !== undefined &&
-                  (existing.exampleValue === "null" || existing.occurrences <= 3)
-                ) {
-                  existing.exampleValue = formatExampleValue(value)
-                }
-              }
-            }
-          })
-        }
-      })
-    } else if (typeof data === "object") {
-      // SurveyJS-style: single object with responses
-      Object.entries(data).forEach(([key, value]) => {
-        if (EXCLUDED_FIELDS.has(key)) return
+    const columnValues: any[] = []
+    parsedData.forEach((row) => {
+      if (row && typeof row === "object" && columnName in row) {
+        columnValues.push(row[columnName])
+      }
+    })
 
-        const valueType = getValueType(value)
+    // Find first non-null, non-undefined value for example
+    const exampleValue = columnValues.find((v) => v !== null && v !== undefined)
 
-        // If value is an object or array, extract nested paths
-        if (
-          valueType === "object" &&
-          value !== null &&
-          typeof value === "object" &&
-          !Array.isArray(value)
-        ) {
-          // Extract nested paths from the object
-          const nestedPaths = extractNestedPaths(value, key)
+    // Determine variable type
+    const hasObjects = columnValues.some(
+      (v) => v !== null && typeof v === "object" && !Array.isArray(v)
+    )
+    const hasArrays = columnValues.some(Array.isArray)
+    const hasPrimitives = columnValues.some(
+      (v) => v === null || v === undefined || (typeof v !== "object" && !Array.isArray(v))
+    )
 
-          nestedPaths.forEach((nestedPath) => {
-            if (!variableMap.has(nestedPath.path)) {
-              const exampleValue =
-                nestedPath.exampleValue !== null && nestedPath.exampleValue !== undefined
-                  ? formatExampleValue(nestedPath.exampleValue)
-                  : "null"
-              variableMap.set(nestedPath.path, {
-                variableName: nestedPath.path,
-                exampleValue,
-                type:
-                  nestedPath.type === "null"
-                    ? "primitive"
-                    : nestedPath.type === "array"
-                    ? "array"
-                    : nestedPath.type === "object"
-                    ? "object"
-                    : "primitive",
-                occurrences: 1,
-                dataStructure: "object",
-                allValues: [nestedPath.exampleValue],
-              })
-            }
-          })
-        } else if (valueType === "array" && Array.isArray(value) && value.length > 0) {
-          // For arrays, check if they contain objects
-          const hasObjects = value.some(
-            (item) => typeof item === "object" && item !== null && !Array.isArray(item)
-          )
+    let variableType: "primitive" | "object" | "array"
+    if (hasArrays) {
+      variableType = "array"
+    } else if (hasObjects) {
+      variableType = "object"
+    } else {
+      variableType = "primitive"
+    }
 
-          if (hasObjects) {
-            // Extract nested paths from array items
-            const nestedPaths = extractNestedPathsFromMultiple(value, key)
+    variableMap.set(columnName, {
+      variableName: columnName,
+      exampleValue: exampleValue !== undefined ? formatExampleValue(exampleValue) : "null",
+      type: variableType,
+      occurrences: columnValues.length,
+      dataStructure,
+      allValues: columnValues,
+    })
+  })
 
-            nestedPaths.forEach((nestedPath) => {
-              if (!variableMap.has(nestedPath.path)) {
-                const exampleValue =
-                  nestedPath.exampleValue !== null && nestedPath.exampleValue !== undefined
-                    ? formatExampleValue(nestedPath.exampleValue)
-                    : "null"
-                variableMap.set(nestedPath.path, {
-                  variableName: nestedPath.path,
-                  exampleValue,
-                  type:
-                    nestedPath.type === "null"
-                      ? "primitive"
-                      : nestedPath.type === "array"
-                      ? "array"
-                      : nestedPath.type === "object"
-                      ? "object"
-                      : "primitive",
-                  occurrences: 1,
-                  dataStructure: "object",
-                  allValues: [nestedPath.exampleValue],
-                })
-              }
+  return { variables: variableMap, skippedValues, warnings }
+}
+
+/**
+ * Unified recursive extraction for JSON data
+ * Arrays are containers, objects are deconstructed, primitives are extracted if named
+ */
+function extractFromJsonRecursive(
+  value: any,
+  basePath: string = "",
+  variableMap: Map<string, ExtractedVariable>,
+  skippedValues: SkippedValue[],
+  warnings: string[],
+  dataStructure: "array" | "object",
+  maxDepth: number = 20
+): void {
+  if (maxDepth <= 0) return
+
+  if (Array.isArray(value)) {
+    if (basePath) {
+      // Named array - extract the array itself as a variable
+      if (!variableMap.has(basePath)) {
+        variableMap.set(basePath, {
+          variableName: basePath,
+          exampleValue: formatExampleValue(value),
+          type: "array",
+          occurrences: 1,
+          dataStructure,
+          allValues: [value],
+        })
+      } else {
+        const existing = variableMap.get(basePath)!
+        existing.occurrences++
+        existing.allValues.push(value)
+      }
+
+      // Check array content types
+      const hasObjects = value.some(
+        (item) => typeof item === "object" && item !== null && !Array.isArray(item)
+      )
+      const hasPrimitives = value.some((item) => typeof item !== "object" || item === null)
+      const hasNestedArrays = value.some(Array.isArray)
+      const isMixedWithObjects = hasObjects && hasPrimitives
+      const isMixedWithArrays = hasNestedArrays && hasPrimitives
+      const isArrayOfArrays = hasNestedArrays && !hasObjects && !hasPrimitives
+
+      // Add warnings for problematic but non-fatal array structures
+      if (isMixedWithArrays) {
+        // Mixed array with primitives and nested arrays - WARNING (don't skip)
+        warnings.push(
+          `Mixed array '${basePath}' contains both primitives and nested arrays - all content returned as-is`
+        )
+      } else if (isArrayOfArrays) {
+        // Array of arrays - WARNING (don't skip)
+        warnings.push(`Array '${basePath}' contains nested arrays - all content returned as-is`)
+      }
+
+      if (hasObjects) {
+        // Array contains objects - recurse into them to extract nested structures
+        value.forEach((item) => {
+          if (typeof item === "object" && item !== null && !Array.isArray(item)) {
+            // Object in array - recurse with wildcard notation
+            extractFromJsonRecursive(
+              item,
+              `${basePath}[*]`,
+              variableMap,
+              skippedValues,
+              warnings,
+              dataStructure,
+              maxDepth - 1
+            )
+          } else if (isMixedWithObjects && (typeof item !== "object" || item === null)) {
+            // Primitive in mixed array (array has both objects and primitives) - ERROR: skip as faulty
+            skippedValues.push({
+              value: item,
+              path: basePath,
+              reason: "primitive_in_mixed_array",
+              severity: "error",
+              context: `Primitive value in mixed array '${basePath}' - array contains both objects and primitives, primitives cannot be cleanly extracted`,
             })
-          } else {
-            // Array of primitives - store as is
-            const exampleValue =
-              value !== null && value !== undefined ? formatExampleValue(value) : "null"
-            variableMap.set(key, {
-              variableName: key,
-              exampleValue,
-              type: "array",
-              occurrences: 1,
-              dataStructure: "object",
-              allValues: [value],
+          } else if (Array.isArray(item) && isMixedWithObjects) {
+            // Nested array in mixed array with objects - ERROR: skip as faulty
+            skippedValues.push({
+              value: item,
+              path: basePath,
+              reason: "mixed_array_with_nested_arrays",
+              severity: "error",
+              context: `Nested array in mixed array '${basePath}' - array contains both objects and nested arrays, nested arrays cannot be cleanly extracted`,
             })
           }
+        })
+      }
+      // If array only contains primitives/nested arrays (not mixed), no recursion needed - array is the variable
+    } else {
+      // Root-level array - process items
+      value.forEach((item) => {
+        if (typeof item === "object" && item !== null && !Array.isArray(item)) {
+          // Object - recurse
+          extractFromJsonRecursive(
+            item,
+            "",
+            variableMap,
+            skippedValues,
+            warnings,
+            dataStructure,
+            maxDepth - 1
+          )
         } else {
-          // Primitive value - store as is
-          const exampleValue =
-            value !== null && value !== undefined ? formatExampleValue(value) : "null"
-          variableMap.set(key, {
-            variableName: key,
-            exampleValue,
-            type: getValueType(value),
-            occurrences: 1,
-            dataStructure: "object",
-            allValues: [value],
+          // Unnamed primitive or nested array - skip but record
+          skippedValues.push({
+            value: item,
+            path: "",
+            reason: "unnamed_primitive_in_root_array",
+            severity: "error",
+            context:
+              "Unnamed value at root level in array - cannot extract as variable without a key",
           })
         }
       })
     }
+  } else if (typeof value === "object" && value !== null) {
+    // Object - deconstruct recursively
+    Object.entries(value).forEach(([key, val]) => {
+      if (EXCLUDED_FIELDS.has(key)) return
+
+      const newPath = basePath ? `${basePath}.${key}` : key
+      extractFromJsonRecursive(
+        val,
+        newPath,
+        variableMap,
+        skippedValues,
+        warnings,
+        dataStructure,
+        maxDepth - 1
+      )
+    })
+  } else {
+    // Primitive
+    if (basePath) {
+      // Named primitive - extract as variable
+      const existing = variableMap.get(basePath)
+      if (!existing) {
+        variableMap.set(basePath, {
+          variableName: basePath,
+          exampleValue: formatExampleValue(value),
+          type: getValueType(value),
+          occurrences: 1,
+          dataStructure,
+          allValues: [value],
+        })
+      } else {
+        existing.occurrences++
+        existing.allValues.push(value)
+        // Update example value if needed
+        if (
+          value !== null &&
+          value !== undefined &&
+          (existing.exampleValue === "null" || existing.occurrences <= 3)
+        ) {
+          existing.exampleValue = formatExampleValue(value)
+        }
+      }
+    } else {
+      // Root-level primitive without key - skip but record
+      skippedValues.push({
+        value: value,
+        path: "",
+        reason: "unnamed_primitive_at_root",
+        severity: "error",
+        context: "Unnamed primitive at root level - cannot extract as variable without a key",
+      })
+    }
+  }
+}
+
+/**
+ * Extract variables from a single component based on format
+ */
+function extractFromComponent(component: {
+  parsedData?: any
+  detectedFormat?: { format: string }
+  parseError?: string
+  dataContent?: string | null
+}): ExtractionResult {
+  const variableMap = new Map<string, ExtractedVariable>()
+  const skippedValues: SkippedValue[] = []
+  const warnings: string[] = []
+
+  // Check for parse errors
+  if (component.parseError) {
+    warnings.push(`Parse error: ${component.parseError}`)
+    skippedValues.push({
+      value: component.dataContent || null,
+      path: "",
+      reason: "parse_error",
+      severity: "error",
+      context: `Failed to parse data: ${component.parseError}`,
+    })
+    return { variables: [], skippedValues, warnings }
+  }
+
+  const format = component.detectedFormat?.format
+  const parsedData = component.parsedData
+
+  // Route based on format
+  if (format === "csv" || format === "tsv") {
+    // CSV/TSV: Extract columns as variables
+    if (Array.isArray(parsedData)) {
+      const result = extractFromCsv(parsedData, "array")
+      result.variables.forEach((variable, key) => {
+        // Merge with existing variables from other components
+        const existing = variableMap.get(key)
+        if (existing) {
+          existing.occurrences += variable.occurrences
+          existing.allValues.push(...variable.allValues)
+        } else {
+          variableMap.set(key, variable)
+        }
+      })
+      skippedValues.push(...result.skippedValues)
+      warnings.push(...result.warnings)
+    } else {
+      warnings.push("CSV/TSV data is not an array after parsing")
+    }
+  } else if (format === "json") {
+    // JSON: Use unified recursive extraction
+    if (parsedData !== undefined && parsedData !== null) {
+      const dataStructure: "array" | "object" = Array.isArray(parsedData) ? "array" : "object"
+      extractFromJsonRecursive(parsedData, "", variableMap, skippedValues, warnings, dataStructure)
+    } else {
+      warnings.push("JSON data is null or undefined")
+    }
+  } else if (format === "text") {
+    // Text: Cannot process, return as-is with warning
+    warnings.push(
+      "Text format data cannot be processed for variable extraction - data is unstructured"
+    )
+    skippedValues.push({
+      value: component.dataContent || null,
+      path: "",
+      reason: "text_format_not_supported",
+      severity: "error",
+      context: "Text format data is not structured and cannot be extracted as variables",
+    })
+  } else {
+    warnings.push(`Unknown format: ${format || "undefined"}`)
+  }
+
+  return {
+    variables: Array.from(variableMap.values()).sort((a, b) =>
+      a.variableName.localeCompare(b.variableName)
+    ),
+    skippedValues,
+    warnings,
+  }
+}
+
+/**
+ * Extract variables from enriched JATOS result with full details
+ * Uses unified recursive strategy based on data format
+ * Returns variables, skipped values, and warnings
+ */
+export function extractVariables(enrichedResult: EnrichedJatosStudyResult): ExtractionResult {
+  const allVariables = new Map<string, ExtractedVariable>()
+  const allSkippedValues: SkippedValue[] = []
+  const allWarnings: string[] = []
+
+  enrichedResult.componentResults.forEach((component) => {
+    if (!component.parsedData && !component.dataContent) return
+
+    const componentResult = extractFromComponent(component)
+
+    // Merge variables from this component
+    componentResult.variables.forEach((variable) => {
+      const existing = allVariables.get(variable.variableName)
+      if (existing) {
+        existing.occurrences += variable.occurrences
+        existing.allValues.push(...variable.allValues)
+        // Update example value if needed
+        if (
+          variable.exampleValue !== "null" &&
+          (existing.exampleValue === "null" || existing.occurrences <= 3)
+        ) {
+          existing.exampleValue = variable.exampleValue
+        }
+      } else {
+        allVariables.set(variable.variableName, { ...variable })
+      }
+    })
+
+    // Collect skipped values and warnings
+    allSkippedValues.push(...componentResult.skippedValues)
+    allWarnings.push(...componentResult.warnings)
   })
 
-  return Array.from(variableMap.values()).sort((a, b) =>
-    a.variableName.localeCompare(b.variableName)
-  )
+  return {
+    variables: Array.from(allVariables.values()).sort((a, b) =>
+      a.variableName.localeCompare(b.variableName)
+    ),
+    skippedValues: allSkippedValues,
+    warnings: allWarnings,
+  }
 }
 
 /**

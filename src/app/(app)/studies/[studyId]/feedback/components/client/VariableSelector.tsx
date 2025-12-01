@@ -28,7 +28,7 @@ export default function VariableSelector({
   const [showFilterBuilder, setShowFilterBuilder] = useState(false)
   const [currentFilterClause, setCurrentFilterClause] = useState("")
 
-  const variables = extractVariables(enrichedResult)
+  const variables = extractVariables(enrichedResult).variables
 
   const variableOptions = useMemo(
     () =>

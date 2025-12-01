@@ -16,7 +16,7 @@ export interface UseVariableExtractionOptions {
 export function useVariableExtraction(options: UseVariableExtractionOptions) {
   const { enrichedResult, includeExample = false } = options
 
-  const variables = useMemo(() => extractVariables(enrichedResult), [enrichedResult])
+  const variables = useMemo(() => extractVariables(enrichedResult).variables, [enrichedResult])
 
   const allVariables = useMemo(() => extractAllVariables(enrichedResult), [enrichedResult])
 

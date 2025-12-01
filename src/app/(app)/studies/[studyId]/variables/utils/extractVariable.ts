@@ -1,25 +1,6 @@
 import type { EnrichedJatosStudyResult } from "@/src/types/jatos"
-import type {
-  ExtractedVariable,
-  AvailableVariable,
-  SkippedValue,
-  SkippedReason,
-  ExtractionResult,
-} from "../types"
-import { extractNestedPaths } from "./nestedStructureExtractor"
-
-// Constants
-export const EXCLUDED_FIELDS = new Set([
-  "trial_type",
-  "trial_index",
-  "time_elapsed",
-  "internal_node_id",
-  "success",
-  "timeout",
-  "failed_images",
-  "failed_audio",
-  "failed_video",
-])
+import type { ExtractedVariable, AvailableVariable, SkippedValue, ExtractionResult } from "../types"
+import { analyzeArrayContent } from "./shared/arrayPatternDetection"
 
 // Utility: Get field type
 export function getFieldType(value: any): "string" | "number" | "boolean" {
@@ -84,8 +65,6 @@ function extractFromCsv(
 
   // Extract each column as a variable
   columnNames.forEach((columnName) => {
-    if (EXCLUDED_FIELDS.has(columnName)) return
-
     const columnValues: any[] = []
     parsedData.forEach((row) => {
       if (row && typeof row === "object" && columnName in row) {
@@ -160,15 +139,16 @@ function extractFromJsonRecursive(
         existing.allValues.push(value)
       }
 
-      // Check array content types
-      const hasObjects = value.some(
-        (item) => typeof item === "object" && item !== null && !Array.isArray(item)
-      )
-      const hasPrimitives = value.some((item) => typeof item !== "object" || item === null)
-      const hasNestedArrays = value.some(Array.isArray)
-      const isMixedWithObjects = hasObjects && hasPrimitives
-      const isMixedWithArrays = hasNestedArrays && hasPrimitives
-      const isArrayOfArrays = hasNestedArrays && !hasObjects && !hasPrimitives
+      // Check array content types using shared utility
+      const arrayAnalysis = analyzeArrayContent(value)
+      const {
+        hasObjects,
+        hasPrimitives,
+        hasNestedArrays,
+        isMixedWithObjects,
+        isMixedWithArrays,
+        isArrayOfArrays,
+      } = arrayAnalysis
 
       // Add warnings for problematic but non-fatal array structures
       if (isMixedWithArrays) {
@@ -218,37 +198,92 @@ function extractFromJsonRecursive(
       }
       // If array only contains primitives/nested arrays (not mixed), no recursion needed - array is the variable
     } else {
-      // Root-level array - process items
-      value.forEach((item) => {
-        if (typeof item === "object" && item !== null && !Array.isArray(item)) {
-          // Object - recurse
-          extractFromJsonRecursive(
-            item,
-            "",
-            variableMap,
-            skippedValues,
-            warnings,
-            dataStructure,
-            maxDepth - 1
-          )
-        } else {
-          // Unnamed primitive or nested array - skip but record
-          skippedValues.push({
-            value: item,
-            path: "",
-            reason: "unnamed_primitive_in_root_array",
-            severity: "error",
-            context:
-              "Unnamed value at root level in array - cannot extract as variable without a key",
+      // Root-level array - collect all unique keys from all objects first
+      if (
+        value.length > 0 &&
+        typeof value[0] === "object" &&
+        value[0] !== null &&
+        !Array.isArray(value[0])
+      ) {
+        // Array of objects - collect all unique keys across all objects
+        const allKeys = new Set<string>()
+        value.forEach((item) => {
+          if (typeof item === "object" && item !== null && !Array.isArray(item)) {
+            Object.keys(item).forEach((key) => {
+              allKeys.add(key)
+            })
+          }
+        })
+
+        // Extract each key as a variable with all its values
+        allKeys.forEach((key) => {
+          const keyValues: any[] = []
+          value.forEach((item) => {
+            if (typeof item === "object" && item !== null && !Array.isArray(item) && key in item) {
+              keyValues.push(item[key])
+            }
           })
-        }
-      })
+
+          if (keyValues.length > 0) {
+            const exampleValue = keyValues.find((v) => v !== null && v !== undefined)
+            const variableType = getValueType(exampleValue !== undefined ? exampleValue : null)
+
+            const existing = variableMap.get(key)
+            if (!existing) {
+              variableMap.set(key, {
+                variableName: key,
+                exampleValue:
+                  exampleValue !== undefined ? formatExampleValue(exampleValue) : "null",
+                type: variableType,
+                occurrences: keyValues.length,
+                dataStructure,
+                allValues: keyValues,
+              })
+            } else {
+              existing.occurrences += keyValues.length
+              existing.allValues.push(...keyValues)
+              // Update example value if needed
+              if (
+                exampleValue !== undefined &&
+                exampleValue !== null &&
+                (existing.exampleValue === "null" || existing.occurrences <= 3)
+              ) {
+                existing.exampleValue = formatExampleValue(exampleValue)
+              }
+            }
+          }
+        })
+      } else {
+        // Array of primitives or other types - process normally
+        value.forEach((item) => {
+          if (typeof item === "object" && item !== null && !Array.isArray(item)) {
+            // Object - recurse
+            extractFromJsonRecursive(
+              item,
+              "",
+              variableMap,
+              skippedValues,
+              warnings,
+              dataStructure,
+              maxDepth - 1
+            )
+          } else {
+            // Unnamed primitive or nested array - skip but record
+            skippedValues.push({
+              value: item,
+              path: "",
+              reason: "unnamed_primitive_in_root_array",
+              severity: "error",
+              context:
+                "Unnamed value at root level in array - cannot extract as variable without a key",
+            })
+          }
+        })
+      }
     }
   } else if (typeof value === "object" && value !== null) {
     // Object - deconstruct recursively
     Object.entries(value).forEach(([key, val]) => {
-      if (EXCLUDED_FIELDS.has(key)) return
-
       const newPath = basePath ? `${basePath}.${key}` : key
       extractFromJsonRecursive(
         val,
@@ -435,11 +470,10 @@ export function extractVariables(enrichedResult: EnrichedJatosStudyResult): Extr
 export function extractAvailableVariables(
   enrichedResult: EnrichedJatosStudyResult,
   options?: {
-    includeExcluded?: boolean
     includeExample?: boolean
   }
 ): AvailableVariable[] {
-  const { includeExcluded = false, includeExample = false } = options || {}
+  const { includeExample = false } = options || {}
   const variableMap = new Map<string, AvailableVariable>()
 
   enrichedResult.componentResults.forEach((component) => {
@@ -451,8 +485,6 @@ export function extractAvailableVariables(
       data.forEach((trial) => {
         if (typeof trial === "object" && trial !== null) {
           Object.entries(trial).forEach(([key, value]) => {
-            if (!includeExcluded && EXCLUDED_FIELDS.has(key)) return
-
             if (!variableMap.has(key)) {
               variableMap.set(key, {
                 name: key,
@@ -466,8 +498,6 @@ export function extractAvailableVariables(
     } else if (typeof data === "object") {
       // SurveyJS-style: single object with responses
       Object.entries(data).forEach(([key, value]) => {
-        if (!includeExcluded && EXCLUDED_FIELDS.has(key)) return
-
         variableMap.set(key, {
           name: key,
           type: getFieldType(value),

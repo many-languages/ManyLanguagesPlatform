@@ -3,10 +3,13 @@
 import type { EnrichedJatosStudyResult } from "@/src/types/jatos"
 import type { OriginalStructureAnalysis } from "../../../variables/utils/structureAnalyzer/analyzeOriginalStructure"
 import type { NestedPath } from "../../../variables/utils/nestedStructureExtractor"
+import type { ExtractionResult } from "../../../variables/types"
 import {
   getExtractedPathsForComponent,
   aggregatePathsByParentKey,
 } from "../../../variables/utils/componentPathExtractor"
+import ConsistencyAnalysis from "./ConsistencyAnalysis"
+import DataQualityAnalysis from "./DataQualityAnalysis"
 import Card from "@/src/app/components/Card"
 import JsonSyntaxHighlighter from "@/src/app/components/JsonSyntaxHighlighter"
 import { Alert } from "@/src/app/components/Alert"
@@ -14,14 +17,18 @@ import { useState, useMemo } from "react"
 
 interface StructureAnalysisCardProps {
   enrichedResult: EnrichedJatosStudyResult
-  originalStructureAnalysis: OriginalStructureAnalysis // Changed from ComponentStructureAnalysis
+  originalStructureAnalysis: OriginalStructureAnalysis
+  extractionResult?: ExtractionResult // Optional - for showing extraction issues alongside recommendations
 }
 
 export default function StructureAnalysisCard({
   enrichedResult,
   originalStructureAnalysis,
+  extractionResult,
 }: StructureAnalysisCardProps) {
-  const [analysisTab, setAnalysisTab] = useState<"overview" | "components">("overview")
+  const [analysisTab, setAnalysisTab] = useState<
+    "overview" | "components" | "consistency" | "dataQuality"
+  >("overview")
   const [selectedComponentId, setSelectedComponentId] = useState<number | "all" | null>(
     enrichedResult.componentResults.find((c) => c.dataContent)?.componentId ?? "all"
   )
@@ -215,6 +222,29 @@ export default function StructureAnalysisCard({
         >
           Components ({originalStructureAnalysis.components.length})
         </button>
+        <button
+          className={`tab ${analysisTab === "consistency" ? "tab-active" : ""}`}
+          onClick={() => setAnalysisTab("consistency")}
+        >
+          Consistency
+        </button>
+        <button
+          className={`tab ${analysisTab === "dataQuality" ? "tab-active" : ""}`}
+          onClick={() => setAnalysisTab("dataQuality")}
+        >
+          Data Quality
+          {originalStructureAnalysis.validation.dataQualityIssues.filter(
+            (i) => i.severity === "error"
+          ).length > 0 && (
+            <span className="badge badge-error badge-sm ml-2">
+              {
+                originalStructureAnalysis.validation.dataQualityIssues.filter(
+                  (i) => i.severity === "error"
+                ).length
+              }
+            </span>
+          )}
+        </button>
       </div>
 
       {/* Overview Tab */}
@@ -245,19 +275,6 @@ export default function StructureAnalysisCard({
                 extracted from {originalStructureAnalysis.statistics.componentsWithData} components
                 with data
               </div>
-            </div>
-          </div>
-
-          {/* Structure Characteristics */}
-          <div className="card bg-base-200 p-4">
-            <h3 className="font-semibold mb-3">Structure Characteristics</h3>
-            <div className="flex flex-wrap gap-2">
-              {originalStructureAnalysis.characteristics.hasNestedObjects && (
-                <span className="badge badge-lg badge-warning">Has Nested Objects</span>
-              )}
-              {originalStructureAnalysis.characteristics.hasArrays && (
-                <span className="badge badge-lg">Contains Arrays</span>
-              )}
             </div>
           </div>
 
@@ -339,6 +356,17 @@ export default function StructureAnalysisCard({
                   )
                 })}
               </div>
+              <div className="mt-3 pt-3 border-t border-base-300">
+                <div className="text-xs text-muted-content">
+                  <button
+                    className="link link-primary text-xs"
+                    onClick={() => setAnalysisTab("components")}
+                  >
+                    View Components tab →
+                  </button>{" "}
+                  to see where variables are extracted from
+                </div>
+              </div>
             </div>
           )}
 
@@ -419,7 +447,127 @@ export default function StructureAnalysisCard({
               )}
             </div>
           )}
+
+          {/* Detected Patterns */}
+          {originalStructureAnalysis.patterns.length > 0 && (
+            <div className="card bg-base-200 p-4">
+              <h3 className="font-semibold mb-3">Detected Patterns</h3>
+              <div className="space-y-2">
+                {originalStructureAnalysis.patterns.map((pattern, idx) => (
+                  <div key={idx} className="flex items-start gap-2">
+                    <span className="badge badge-sm">{pattern.type.replace(/_/g, " ")}</span>
+                    <div className="flex-1">
+                      <div className="text-sm">{pattern.description}</div>
+                      <div className="text-xs text-muted-content mt-1">
+                        Confidence: {(pattern.confidence * 100).toFixed(0)}%
+                      </div>
+                      {pattern.exampleComponents.length > 0 && (
+                        <div className="flex flex-wrap gap-1 mt-1">
+                          {pattern.exampleComponents.slice(0, 3).map((compId, pIdx) => (
+                            <span key={pIdx} className="badge badge-xs font-mono">
+                              Component {compId}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Consistency Status */}
+          <div className="card bg-base-200 p-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span
+                  className={`badge badge-lg ${
+                    originalStructureAnalysis.consistency.isConsistent
+                      ? "badge-success"
+                      : "badge-warning"
+                  }`}
+                >
+                  {originalStructureAnalysis.consistency.isConsistent
+                    ? "Consistent"
+                    : "Inconsistent"}
+                </span>
+                {originalStructureAnalysis.validation.consistencyIssues.length > 0 && (
+                  <span className="text-sm text-muted-content">
+                    {originalStructureAnalysis.validation.consistencyIssues.length} issue(s) found
+                  </span>
+                )}
+              </div>
+              <button
+                className="link link-primary text-xs"
+                onClick={() => setAnalysisTab("consistency")}
+              >
+                View Consistency tab →
+              </button>
+            </div>
+          </div>
+
+          {/* Data Quality Issues Summary - only show if issues present */}
+          {originalStructureAnalysis.validation.dataQualityIssues.length > 0 && (
+            <div className="card bg-base-200 p-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span
+                    className={`badge badge-lg ${
+                      originalStructureAnalysis.validation.dataQualityIssues.filter(
+                        (i) => i.severity === "error"
+                      ).length === 0
+                        ? "badge-success"
+                        : "badge-error"
+                    }`}
+                  >
+                    {originalStructureAnalysis.validation.dataQualityIssues.filter(
+                      (i) => i.severity === "error"
+                    ).length === 0
+                      ? "Valid"
+                      : "Issues Found"}
+                  </span>
+                  <span className="text-sm text-muted-content">
+                    {
+                      originalStructureAnalysis.validation.dataQualityIssues.filter(
+                        (i) => i.severity === "error"
+                      ).length
+                    }{" "}
+                    error(s),{" "}
+                    {
+                      originalStructureAnalysis.validation.dataQualityIssues.filter(
+                        (i) => i.severity === "warning"
+                      ).length
+                    }{" "}
+                    warning(s)
+                  </span>
+                </div>
+                <button
+                  className="link link-primary text-xs"
+                  onClick={() => setAnalysisTab("dataQuality")}
+                >
+                  View Data Quality tab →
+                </button>
+              </div>
+            </div>
+          )}
         </div>
+      )}
+
+      {/* Consistency Tab */}
+      {analysisTab === "consistency" && (
+        <ConsistencyAnalysis
+          enrichedResult={enrichedResult}
+          originalStructureAnalysis={originalStructureAnalysis}
+        />
+      )}
+
+      {/* Data Quality Tab */}
+      {analysisTab === "dataQuality" && (
+        <DataQualityAnalysis
+          originalStructureAnalysis={originalStructureAnalysis}
+          extractionResult={extractionResult}
+        />
       )}
 
       {/* Components Tab */}

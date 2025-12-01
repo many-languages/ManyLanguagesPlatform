@@ -56,14 +56,15 @@ const Table = <TData,>({
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     getFacetedUniqueValues: getFacetedUniqueValues(),
-    getPaginationRowModel: getPaginationRowModel(),
+    ...(addPagination ? { getPaginationRowModel: getPaginationRowModel() } : {}),
     getFacetedMinMaxValues: getFacetedMinMaxValues(),
     state: {
       sorting: sorting,
     },
     initialState: {
       pagination: {
-        pageSize: 5,
+        // When pagination is disabled, set page size to show all rows
+        pageSize: addPagination ? 5 : Number.MAX_SAFE_INTEGER,
       },
     },
     onSortingChange: setSorting,

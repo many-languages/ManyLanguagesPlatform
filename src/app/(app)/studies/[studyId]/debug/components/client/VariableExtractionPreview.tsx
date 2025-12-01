@@ -132,6 +132,7 @@ export default function VariableExtractionPreview({
       <StructureAnalysisCard
         enrichedResult={enrichedResult}
         originalStructureAnalysis={originalStructureAnalysis}
+        extractionResult={extractionResult}
       />
 
       {/* Variable Extraction Preview Card */}

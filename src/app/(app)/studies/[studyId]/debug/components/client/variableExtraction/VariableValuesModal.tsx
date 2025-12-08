@@ -2,7 +2,7 @@
 
 import Modal from "@/src/app/components/Modal"
 import JsonSyntaxHighlighter from "@/src/app/components/JsonSyntaxHighlighter"
-import type { ExtractedVariable } from "../../../variables/types"
+import type { ExtractedVariable } from "../../../../variables/types"
 import { formatValue } from "@/src/lib/utils/formatValue"
 import { formatJson } from "@/src/lib/utils/formatJson"
 

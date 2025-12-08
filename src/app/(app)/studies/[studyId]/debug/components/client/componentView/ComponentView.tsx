@@ -1,13 +1,13 @@
 "use client"
 
 import type { EnrichedJatosStudyResult } from "@/src/types/jatos"
-import type { OriginalStructureAnalysis } from "../../../variables/utils/structureAnalyzer/analyzeOriginalStructure"
-import type { ExtractedVariable } from "../../../variables/types"
+import type { OriginalStructureAnalysis } from "../../../../variables/utils/structureAnalyzer/analyzeOriginalStructure"
+import type { ExtractedVariable } from "../../../../variables/types"
 import { Alert } from "@/src/app/components/Alert"
 import ComponentDataViewer from "./ComponentDataViewer"
-import PathBadge from "./PathBadge"
-import { getExtractedVariablesForComponent } from "../../../variables/utils/componentPathExtractor"
-import { scrollToComponentData } from "../../utils/pathHighlighting"
+import PathBadge from "../structureAnalysis/PathBadge"
+import { getExtractedVariablesForComponent } from "../../../../variables/utils/componentPathExtractor"
+import { scrollToComponentData } from "../../../utils/pathHighlighting"
 
 type ComponentResult = EnrichedJatosStudyResult["componentResults"][number]
 

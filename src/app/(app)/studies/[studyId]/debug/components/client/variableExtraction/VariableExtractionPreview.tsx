@@ -1,10 +1,10 @@
 "use client"
 
 import type { EnrichedJatosStudyResult } from "@/src/types/jatos"
-import { extractVariables } from "../../../variables/utils/extractVariable"
-import { analyzeOriginalStructure } from "../../../variables/utils/structureAnalyzer/analyzeOriginalStructure"
+import { extractVariables } from "../../../../variables/utils/extractVariable"
+import { analyzeOriginalStructure } from "../../../../variables/utils/structureAnalyzer/analyzeOriginalStructure"
 import Card from "@/src/app/components/Card"
-import StructureAnalysisCard from "./StructureAnalysisCard"
+import StructureAnalysisCard from "../structureAnalysis/StructureAnalysisCard"
 import VariableStats from "./VariableStats"
 import VariableTable from "./VariableTable"
 import WarningsList from "./WarningsList"

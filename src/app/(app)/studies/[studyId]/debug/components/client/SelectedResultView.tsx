@@ -2,8 +2,8 @@
 
 import type { EnrichedJatosStudyResult } from "@/src/types/jatos"
 import Card from "@/src/app/components/Card"
-import ComponentResultExplorer from "./ComponentResultExplorer"
-import VariableExtractionPreview from "./VariableExtractionPreview"
+import ComponentResultExplorer from "./componentView/ComponentResultExplorer"
+import VariableExtractionPreview from "./variableExtraction/VariableExtractionPreview"
 
 interface SelectedResultViewProps {
   selectedResult: EnrichedJatosStudyResult

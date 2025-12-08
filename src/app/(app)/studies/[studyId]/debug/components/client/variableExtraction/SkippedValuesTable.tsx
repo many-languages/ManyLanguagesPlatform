@@ -1,7 +1,7 @@
 "use client"
 
 import { useMemo } from "react"
-import type { SkippedValue } from "../../../variables/types"
+import type { SkippedValue } from "../../../../variables/types"
 import type { ColumnDef } from "@tanstack/react-table"
 import Table from "@/src/app/components/Table"
 import { formatJson } from "@/src/lib/utils/formatJson"

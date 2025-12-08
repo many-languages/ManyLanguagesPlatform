@@ -1,7 +1,7 @@
 "use client"
 
-import { getTypeBadgeClass, getPathTypeBadgeClass } from "../../utils/badgeHelpers"
-import { scrollToComponentData } from "../../utils/pathHighlighting"
+import { getTypeBadgeClass, getPathTypeBadgeClass } from "../../../utils/badgeHelpers"
+import { scrollToComponentData } from "../../../utils/pathHighlighting"
 
 interface PathBadgeProps {
   path: string

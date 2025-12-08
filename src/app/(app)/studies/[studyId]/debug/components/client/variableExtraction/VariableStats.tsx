@@ -1,6 +1,6 @@
 "use client"
 
-import type { ExtractedVariable } from "../../../variables/types"
+import type { ExtractedVariable } from "../../../../variables/types"
 
 interface VariableStatsProps {
   extractedVariables: ExtractedVariable[]

@@ -1,11 +1,11 @@
 "use client"
 
 import { useMemo, useState } from "react"
-import type { ExtractedVariable } from "../../../variables/types"
+import type { ExtractedVariable } from "../../../../variables/types"
 import type { ColumnDef } from "@tanstack/react-table"
 import Table from "@/src/app/components/Table"
 import VariableValuesModal from "./VariableValuesModal"
-import { getTypeBadgeClass } from "../../utils/badgeHelpers"
+import { getTypeBadgeClass } from "../../../utils/badgeHelpers"
 
 interface VariableTableProps {
   extractedVariables: ExtractedVariable[]

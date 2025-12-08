@@ -1,9 +1,9 @@
 "use client"
 
 import type { EnrichedJatosStudyResult } from "@/src/types/jatos"
-import type { OriginalStructureAnalysis } from "../../../variables/utils/structureAnalyzer/analyzeOriginalStructure"
-import type { ExtractedVariable } from "../../../variables/types"
-import { aggregateVariablesByParentKey } from "../../../variables/utils/componentPathExtractor"
+import type { OriginalStructureAnalysis } from "../../../../variables/utils/structureAnalyzer/analyzeOriginalStructure"
+import type { ExtractedVariable } from "../../../../variables/types"
+import { aggregateVariablesByParentKey } from "../../../../variables/utils/componentPathExtractor"
 import Card from "@/src/app/components/Card"
 import { useState, useMemo } from "react"
 import { formatJson } from "@/src/lib/utils/formatJson"

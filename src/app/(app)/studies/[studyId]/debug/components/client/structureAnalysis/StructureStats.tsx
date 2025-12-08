@@ -1,6 +1,6 @@
 "use client"
 
-import type { OriginalStructureAnalysis } from "../../../variables/utils/structureAnalyzer/analyzeOriginalStructure"
+import type { OriginalStructureAnalysis } from "../../../../variables/utils/structureAnalyzer/analyzeOriginalStructure"
 
 interface StructureStatsProps {
   originalStructureAnalysis: OriginalStructureAnalysis

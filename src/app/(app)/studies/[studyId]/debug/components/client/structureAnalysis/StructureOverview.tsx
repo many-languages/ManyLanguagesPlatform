@@ -1,12 +1,12 @@
 "use client"
 
 import type { EnrichedJatosStudyResult } from "@/src/types/jatos"
-import type { OriginalStructureAnalysis } from "../../../variables/utils/structureAnalyzer/analyzeOriginalStructure"
+import type { OriginalStructureAnalysis } from "../../../../variables/utils/structureAnalyzer/analyzeOriginalStructure"
 import StructureStats from "./StructureStats"
 import TopLevelGroups from "./TopLevelGroups"
 import ExtractedVariablesOverview from "./ExtractedVariablesOverview"
 import DetectedPatterns from "./DetectedPatterns"
-import { scrollToComponentData } from "../../utils/pathHighlighting"
+import { scrollToComponentData } from "../../../utils/pathHighlighting"
 
 // Simple type for path display
 type PathDisplay = {

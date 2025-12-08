@@ -1,11 +1,11 @@
 "use client"
 
 import type { EnrichedJatosStudyResult } from "@/src/types/jatos"
-import type { OriginalStructureAnalysis } from "../../../variables/utils/structureAnalyzer/analyzeOriginalStructure"
-import type { ExtractedVariable } from "../../../variables/types"
+import type { OriginalStructureAnalysis } from "../../../../variables/utils/structureAnalyzer/analyzeOriginalStructure"
+import type { ExtractedVariable } from "../../../../variables/types"
 import { Alert } from "@/src/app/components/Alert"
-import ComponentView from "./ComponentView"
-import ComponentSelector from "./ComponentSelector"
+import ComponentView from "../componentView/ComponentView"
+import ComponentSelector from "../componentView/ComponentSelector"
 
 interface StructureComponentsProps {
   enrichedResult: EnrichedJatosStudyResult

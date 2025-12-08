@@ -1,137 +1,125 @@
 /**
  * Component Path Extractor
- * Extracts nested paths from component data based on structure analysis
+ * Helper functions for grouping extracted variables by component and parent key
  * Used for displaying extracted variables from object-type keys in components
  */
 
-import type { EnrichedJatosStudyResult } from "@/src/types/jatos"
 import type {
   ComponentStructureAnalysis,
   OriginalStructureAnalysis,
 } from "./structureAnalyzer/analyzeOriginalStructure"
-import type { NestedPath } from "./nestedStructureExtractor"
-import { extractNestedPaths } from "./nestedStructureExtractor"
+import type { ExtractedVariable } from "../types"
 
 /**
- * Extract nested paths from object-type keys in a component's parsed data
- * Based on the component's structure analysis
+ * Aggregate extracted variables from all components, grouped by parent key
+ * Uses ExtractedVariable instead of re-extracting paths
  *
- * @param parsedData The parsed data from the component
- * @param componentAnalysis The structure analysis for this component
- * @returns Map of parent keys to their nested paths
+ * @param extractedVariables The extracted variables from extractVariables()
+ * @param originalStructureAnalysis The structure analysis for all components
+ * @returns Map of parent keys to arrays of variables with their component IDs
  */
-export function getExtractedPathsForComponent(
-  parsedData: any,
-  componentAnalysis: ComponentStructureAnalysis | undefined
-): Map<string, NestedPath[]> {
-  const extractedPathsByKey = new Map<string, NestedPath[]>()
+export function aggregateVariablesByParentKey(
+  extractedVariables: ExtractedVariable[],
+  originalStructureAnalysis: OriginalStructureAnalysis
+): Map<string, Array<{ variable: ExtractedVariable; componentId: number }>> {
+  const variablesByParentKey = new Map<
+    string,
+    Array<{ variable: ExtractedVariable; componentId: number }>
+  >()
 
-  if (!parsedData || !componentAnalysis) return extractedPathsByKey
+  // Get all object-type top-level keys across all components
+  const objectKeys = new Set<string>()
+  originalStructureAnalysis.components.forEach((component) => {
+    component.topLevelKeys.forEach((key) => {
+      if (component.topLevelKeyTypes.get(key) === "object") {
+        objectKeys.add(key)
+      }
+    })
+  })
+
+  // Filter variables that are nested under object-type keys
+  extractedVariables.forEach((variable) => {
+    // Check if variable path starts with any object key
+    for (const objectKey of objectKeys) {
+      if (
+        variable.variableName.startsWith(`${objectKey}.`) ||
+        variable.variableName.startsWith(`${objectKey}[*].`)
+      ) {
+        // This variable is nested under this object key
+        // Add it for each componentId it appears in
+        variable.componentIds.forEach((componentId) => {
+          if (!variablesByParentKey.has(objectKey)) {
+            variablesByParentKey.set(objectKey, [])
+          }
+          variablesByParentKey.get(objectKey)!.push({
+            variable,
+            componentId,
+          })
+        })
+        break // Only add once per variable
+      }
+    }
+  })
+
+  // Deduplicate by variableName and componentId
+  const deduplicated = new Map<
+    string,
+    Array<{ variable: ExtractedVariable; componentId: number }>
+  >()
+  variablesByParentKey.forEach((variablesWithComponents, parentKey) => {
+    const uniqueVariables = new Map<string, { variable: ExtractedVariable; componentId: number }>()
+    variablesWithComponents.forEach(({ variable, componentId }) => {
+      const key = `${variable.variableName}-${componentId}`
+      if (!uniqueVariables.has(key)) {
+        uniqueVariables.set(key, { variable, componentId })
+      }
+    })
+    if (uniqueVariables.size > 0) {
+      deduplicated.set(parentKey, Array.from(uniqueVariables.values()))
+    }
+  })
+
+  return deduplicated
+}
+
+/**
+ * Get extracted variables for a specific component, filtered to nested paths from object-type keys
+ *
+ * @param extractedVariables All extracted variables
+ * @param componentId The component ID to filter for
+ * @param componentAnalysis The structure analysis for this component
+ * @returns Map of parent keys to their nested variables
+ */
+export function getExtractedVariablesForComponent(
+  extractedVariables: ExtractedVariable[],
+  componentId: number,
+  componentAnalysis: ComponentStructureAnalysis | undefined
+): Map<string, ExtractedVariable[]> {
+  const extractedVariablesByKey = new Map<string, ExtractedVariable[]>()
+
+  if (!componentAnalysis) return extractedVariablesByKey
 
   // Find all object-type top-level keys
   const objectKeys = componentAnalysis.topLevelKeys.filter(
     (key) => componentAnalysis.topLevelKeyTypes.get(key) === "object"
   )
 
-  if (objectKeys.length === 0) return extractedPathsByKey
+  if (objectKeys.length === 0) return extractedVariablesByKey
 
-  // Extract nested paths from each object key
+  // Filter variables that belong to this component and are nested under object keys
   objectKeys.forEach((objectKey) => {
-    let objectValue: any = null
-
-    if (
-      componentAnalysis.structureType === "array" &&
-      Array.isArray(parsedData) &&
-      parsedData.length > 0
-    ) {
-      // For array structures, get the value from first item
-      const firstItem = parsedData[0]
-      objectValue = firstItem?.[objectKey]
-    } else if (
-      componentAnalysis.structureType === "object" &&
-      typeof parsedData === "object" &&
-      parsedData !== null
-    ) {
-      objectValue = parsedData[objectKey]
-    }
-
-    // Only extract if it's actually an object (not array, not null)
-    if (objectValue && typeof objectValue === "object" && !Array.isArray(objectValue)) {
-      const nestedPaths = extractNestedPaths(objectValue, objectKey)
-      // Filter to include all paths that start with this object key (excluding the key itself)
-      const allNestedPaths = nestedPaths.filter(
-        (path) => path.path !== objectKey && path.path.startsWith(`${objectKey}.`)
-      )
-
-      // Deduplicate paths by path string to avoid duplicate keys in React
-      const uniquePathsMap = new Map<string, NestedPath>()
-      allNestedPaths.forEach((path) => {
-        if (!uniquePathsMap.has(path.path)) {
-          uniquePathsMap.set(path.path, path)
-        }
-      })
-
-      const uniquePaths = Array.from(uniquePathsMap.values())
-
-      if (uniquePaths.length > 0) {
-        extractedPathsByKey.set(objectKey, uniquePaths)
-      }
-    }
-  })
-
-  return extractedPathsByKey
-}
-
-/**
- * Aggregate extracted paths from all components, grouped by parent key
- * Deduplicates paths across components
- *
- * @param enrichedResult The enriched JATOS study result
- * @param originalStructureAnalysis The structure analysis for all components
- * @returns Map of parent keys to arrays of paths with their component IDs
- */
-export function aggregatePathsByParentKey(
-  enrichedResult: EnrichedJatosStudyResult,
-  originalStructureAnalysis: OriginalStructureAnalysis
-): Map<string, Array<{ path: NestedPath; componentId: number }>> {
-  const pathsByParentKey = new Map<string, Array<{ path: NestedPath; componentId: number }>>()
-
-  enrichedResult.componentResults.forEach((component) => {
-    const componentAnalysis = originalStructureAnalysis.components.find(
-      (c) => c.componentId === component.componentId
-    )
-    const extractedPathsByKey = getExtractedPathsForComponent(
-      component.parsedData,
-      componentAnalysis
+    const nestedVariables = extractedVariables.filter(
+      (variable) =>
+        variable.componentIds.includes(componentId) &&
+        (variable.variableName.startsWith(`${objectKey}.`) ||
+          variable.variableName.startsWith(`${objectKey}[*].`)) &&
+        variable.variableName !== objectKey
     )
 
-    // Group paths by their parent key (first part of the path)
-    extractedPathsByKey.forEach((paths, parentKey) => {
-      paths.forEach((path) => {
-        if (!pathsByParentKey.has(parentKey)) {
-          pathsByParentKey.set(parentKey, [])
-        }
-        pathsByParentKey.get(parentKey)!.push({
-          path,
-          componentId: component.componentId,
-        })
-      })
-    })
-  })
-
-  // Deduplicate paths by path string across all components
-  const deduplicated = new Map<string, Array<{ path: NestedPath; componentId: number }>>()
-  pathsByParentKey.forEach((pathsWithComponents, parentKey) => {
-    const uniquePaths = new Map<string, { path: NestedPath; componentId: number }>()
-    pathsWithComponents.forEach(({ path, componentId }) => {
-      if (!uniquePaths.has(path.path)) {
-        uniquePaths.set(path.path, { path, componentId })
-      }
-    })
-    if (uniquePaths.size > 0) {
-      deduplicated.set(parentKey, Array.from(uniquePaths.values()))
+    if (nestedVariables.length > 0) {
+      extractedVariablesByKey.set(objectKey, nestedVariables)
     }
   })
 
-  return deduplicated
+  return extractedVariablesByKey
 }

@@ -10,23 +10,11 @@ import {
   type ComponentStructureAnalysis,
 } from "./analyzeComponentStructure"
 import {
-  analyzeOriginalConsistency,
-  type OriginalConsistencyReport,
-} from "./analyzeOriginalConsistency"
-import {
   identifyOriginalPatterns,
   analyzeOriginalArrayPatterns,
   deriveOverallStructureType,
   type OriginalDetectedPattern,
 } from "./detectOriginalPatterns"
-import {
-  validateOriginalStructure,
-  type OriginalValidationResult,
-} from "./validateOriginalStructure"
-import {
-  generateOriginalRecommendations,
-  type OriginalRecommendation,
-} from "./generateOriginalRecommendations"
 import { calculateOriginalStatistics, type OriginalStatistics } from "./calculateOriginalStatistics"
 
 // Re-export ComponentStructureAnalysis for external use
@@ -45,12 +33,9 @@ export interface OriginalStructureAnalysis {
   // Map of top-level key names to their types
   topLevelKeyTypes: Map<string, "primitive" | "array" | "object">
 
-  // Enhanced analysis
-  consistency: OriginalConsistencyReport
+  // Pattern detection
   patterns: OriginalDetectedPattern[]
   arrayPatterns: ReturnType<typeof analyzeOriginalArrayPatterns>
-  validation: OriginalValidationResult
-  recommendations: OriginalRecommendation[]
 }
 
 /**
@@ -113,32 +98,16 @@ export function analyzeOriginalStructure(
   // Determine overall structure type from patterns
   const structureType = deriveOverallStructureType(components)
 
-  // Run enhanced analyses (consistency will be recalculated in UI with selected components)
-  // Don't run cross-component checks by default - let UI handle selection
-  const consistency = analyzeOriginalConsistency(enrichedResult, components, [])
+  // Run pattern detection
   const patterns = identifyOriginalPatterns(components)
-  const arrayPatterns = analyzeOriginalArrayPatterns(enrichedResult, components)
-  const validation = validateOriginalStructure(enrichedResult, components)
-  const recommendations = generateOriginalRecommendations(
-    components,
-    {
-      maxNestingDepth: statistics.maxNestingDepth,
-      componentsWithData: statistics.componentsWithData,
-    },
-    consistency,
-    validation,
-    patterns
-  )
+  const arrayPatterns = analyzeOriginalArrayPatterns(components)
 
   return {
     structureType,
     components,
     statistics,
     topLevelKeyTypes: keyTypeMap,
-    consistency,
     patterns,
     arrayPatterns,
-    validation,
-    recommendations,
   }
 }

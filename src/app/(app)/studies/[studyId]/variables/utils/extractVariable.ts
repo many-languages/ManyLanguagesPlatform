@@ -1,6 +1,6 @@
 import type { EnrichedJatosStudyResult } from "@/src/types/jatos"
 import type { ExtractedVariable, AvailableVariable, SkippedValue, ExtractionResult } from "../types"
-import { analyzeArrayContent } from "./shared/arrayPatternDetection"
+import { analyzeArrayContent } from "./arrayPatternDetection"
 
 // Utility: Get field type
 export function getFieldType(value: any): "string" | "number" | "boolean" {
@@ -34,7 +34,8 @@ export function formatExampleValue(value: any): string {
  */
 function extractFromCsv(
   parsedData: any[],
-  dataStructure: "array" | "object"
+  dataStructure: "array" | "object",
+  componentId: number
 ): {
   variables: Map<string, ExtractedVariable>
   skippedValues: SkippedValue[]
@@ -100,6 +101,7 @@ function extractFromCsv(
       occurrences: columnValues.length,
       dataStructure,
       allValues: columnValues,
+      componentIds: [componentId],
     })
   })
 
@@ -117,7 +119,8 @@ function extractFromJsonRecursive(
   skippedValues: SkippedValue[],
   warnings: string[],
   dataStructure: "array" | "object",
-  maxDepth: number = 20
+  maxDepth: number = 20,
+  componentId: number
 ): void {
   if (maxDepth <= 0) return
 
@@ -132,6 +135,7 @@ function extractFromJsonRecursive(
           occurrences: 1,
           dataStructure,
           allValues: [value],
+          componentIds: [componentId],
         })
       } else {
         const existing = variableMap.get(basePath)!
@@ -141,14 +145,7 @@ function extractFromJsonRecursive(
 
       // Check array content types using shared utility
       const arrayAnalysis = analyzeArrayContent(value)
-      const {
-        hasObjects,
-        hasPrimitives,
-        hasNestedArrays,
-        isMixedWithObjects,
-        isMixedWithArrays,
-        isArrayOfArrays,
-      } = arrayAnalysis
+      const { hasObjects, isMixedWithObjects, isMixedWithArrays, isArrayOfArrays } = arrayAnalysis
 
       // Add warnings for problematic but non-fatal array structures
       if (isMixedWithArrays) {
@@ -173,7 +170,8 @@ function extractFromJsonRecursive(
               skippedValues,
               warnings,
               dataStructure,
-              maxDepth - 1
+              maxDepth - 1,
+              componentId
             )
           } else if (isMixedWithObjects && (typeof item !== "object" || item === null)) {
             // Primitive in mixed array (array has both objects and primitives) - ERROR: skip as faulty
@@ -238,6 +236,7 @@ function extractFromJsonRecursive(
                 occurrences: keyValues.length,
                 dataStructure,
                 allValues: keyValues,
+                componentIds: [componentId],
               })
             } else {
               existing.occurrences += keyValues.length
@@ -265,7 +264,8 @@ function extractFromJsonRecursive(
               skippedValues,
               warnings,
               dataStructure,
-              maxDepth - 1
+              maxDepth - 1,
+              componentId
             )
           } else {
             // Unnamed primitive or nested array - skip but record
@@ -292,7 +292,8 @@ function extractFromJsonRecursive(
         skippedValues,
         warnings,
         dataStructure,
-        maxDepth - 1
+        maxDepth - 1,
+        componentId
       )
     })
   } else {
@@ -308,6 +309,7 @@ function extractFromJsonRecursive(
           occurrences: 1,
           dataStructure,
           allValues: [value],
+          componentIds: [componentId],
         })
       } else {
         existing.occurrences++
@@ -337,12 +339,15 @@ function extractFromJsonRecursive(
 /**
  * Extract variables from a single component based on format
  */
-function extractFromComponent(component: {
-  parsedData?: any
-  detectedFormat?: { format: string }
-  parseError?: string
-  dataContent?: string | null
-}): ExtractionResult {
+function extractFromComponent(
+  component: {
+    parsedData?: any
+    detectedFormat?: { format: string }
+    parseError?: string
+    dataContent?: string | null
+  },
+  componentId: number
+): ExtractionResult {
   const variableMap = new Map<string, ExtractedVariable>()
   const skippedValues: SkippedValue[] = []
   const warnings: string[] = []
@@ -367,7 +372,7 @@ function extractFromComponent(component: {
   if (format === "csv" || format === "tsv") {
     // CSV/TSV: Extract columns as variables
     if (Array.isArray(parsedData)) {
-      const result = extractFromCsv(parsedData, "array")
+      const result = extractFromCsv(parsedData, "array", componentId)
       result.variables.forEach((variable, key) => {
         // Merge with existing variables from other components
         const existing = variableMap.get(key)
@@ -387,7 +392,16 @@ function extractFromComponent(component: {
     // JSON: Use unified recursive extraction
     if (parsedData !== undefined && parsedData !== null) {
       const dataStructure: "array" | "object" = Array.isArray(parsedData) ? "array" : "object"
-      extractFromJsonRecursive(parsedData, "", variableMap, skippedValues, warnings, dataStructure)
+      extractFromJsonRecursive(
+        parsedData,
+        "",
+        variableMap,
+        skippedValues,
+        warnings,
+        dataStructure,
+        20,
+        componentId
+      )
     } else {
       warnings.push("JSON data is null or undefined")
     }
@@ -429,7 +443,7 @@ export function extractVariables(enrichedResult: EnrichedJatosStudyResult): Extr
   enrichedResult.componentResults.forEach((component) => {
     if (!component.parsedData && !component.dataContent) return
 
-    const componentResult = extractFromComponent(component)
+    const componentResult = extractFromComponent(component, component.componentId)
 
     // Merge variables from this component
     componentResult.variables.forEach((variable) => {
@@ -437,6 +451,10 @@ export function extractVariables(enrichedResult: EnrichedJatosStudyResult): Extr
       if (existing) {
         existing.occurrences += variable.occurrences
         existing.allValues.push(...variable.allValues)
+        // Merge componentIds
+        if (!existing.componentIds.includes(component.componentId)) {
+          existing.componentIds.push(component.componentId)
+        }
         // Update example value if needed
         if (
           variable.exampleValue !== "null" &&

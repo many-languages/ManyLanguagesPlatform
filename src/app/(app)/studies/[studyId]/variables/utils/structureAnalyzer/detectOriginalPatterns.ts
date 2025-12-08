@@ -3,9 +3,7 @@
  * Detects patterns in the raw data structure before extraction
  */
 
-import { analyzeArrayContent } from "../shared/arrayPatternDetection"
 import type { ComponentStructureAnalysis } from "./analyzeOriginalStructure"
-import type { EnrichedJatosStudyResult } from "@/src/types/jatos"
 
 /**
  * Derive overall structure type from component structures
@@ -119,10 +117,7 @@ export function identifyOriginalPatterns(
  * Analyze array patterns in original structure
  * Returns descriptive information about array components (not checks)
  */
-export function analyzeOriginalArrayPatterns(
-  enrichedResult: EnrichedJatosStudyResult,
-  components: ComponentStructureAnalysis[]
-): {
+export function analyzeOriginalArrayPatterns(components: ComponentStructureAnalysis[]): {
   hasArrayPatterns: boolean
   arrayComponents: ComponentStructureAnalysis[]
 } {

@@ -7,6 +7,7 @@ export interface ExtractedVariable {
   occurrences: number
   dataStructure: "array" | "object"
   allValues: any[] // All values found for this variable
+  componentIds: number[] // Component IDs where this variable was found
 }
 
 export type ValidationSeverity = "error" | "warning"

@@ -21,6 +21,7 @@ export default function VariableExtractionPreview({
   // Extract variables with full details
   const extractionResult = useMemo(() => extractVariables(enrichedResult), [enrichedResult])
   const extractedVariables = extractionResult.variables
+  // Create original structure analysis
   const originalStructureAnalysis = useMemo(
     () => analyzeOriginalStructure(enrichedResult),
     [enrichedResult]

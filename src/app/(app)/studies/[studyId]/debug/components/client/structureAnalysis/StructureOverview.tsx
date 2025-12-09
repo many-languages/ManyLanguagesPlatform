@@ -2,19 +2,12 @@
 
 import type { EnrichedJatosStudyResult } from "@/src/types/jatos"
 import type { OriginalStructureAnalysis } from "../../../../variables/utils/structureAnalyzer/analyzeOriginalStructure"
+import type { PathDisplay } from "../../../types"
 import StructureStats from "./StructureStats"
 import TopLevelGroups from "./TopLevelGroups"
 import ExtractedVariablesOverview from "./ExtractedVariablesOverview"
 import DetectedPatterns from "./DetectedPatterns"
 import { scrollToComponentData } from "../../../utils/pathHighlighting"
-
-// Simple type for path display
-type PathDisplay = {
-  path: string
-  type: "string" | "number" | "boolean" | "object" | "array" | "null"
-  exampleValue: any
-  depth: number
-}
 
 interface StructureOverviewProps {
   enrichedResult: EnrichedJatosStudyResult

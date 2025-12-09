@@ -1,14 +1,7 @@
 "use client"
 
+import type { PathDisplay } from "../../../types"
 import PathBadge from "./PathBadge"
-
-// Simple type for path display
-type PathDisplay = {
-  path: string
-  type: "string" | "number" | "boolean" | "object" | "array" | "null"
-  exampleValue: any
-  depth: number
-}
 
 interface ExtractedVariablesOverviewProps {
   allExtractedPathsByParentKey: Map<string, Array<{ path: PathDisplay; componentId: number }>>

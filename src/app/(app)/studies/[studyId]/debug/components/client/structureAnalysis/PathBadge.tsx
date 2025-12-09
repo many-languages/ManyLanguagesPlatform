@@ -26,7 +26,9 @@ export default function PathBadge({
   const badgeClass =
     type === "primitive" || type === "array" || type === "object"
       ? getTypeBadgeClass(type)
-      : getPathTypeBadgeClass(type)
+      : getPathTypeBadgeClass(
+          type as "string" | "number" | "boolean" | "null" | "array" | "object" | "primitive"
+        )
 
   // Check if this path is highlighted
   const isHighlighted =

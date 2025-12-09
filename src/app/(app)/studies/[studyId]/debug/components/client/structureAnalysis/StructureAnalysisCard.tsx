@@ -3,6 +3,7 @@
 import type { EnrichedJatosStudyResult } from "@/src/types/jatos"
 import type { OriginalStructureAnalysis } from "../../../../variables/utils/structureAnalyzer/analyzeOriginalStructure"
 import type { ExtractedVariable } from "../../../../variables/types"
+import type { PathDisplay } from "../../../types"
 import { aggregateVariablesByParentKey } from "../../../../variables/utils/componentPathExtractor"
 import Card from "@/src/app/components/Card"
 import { useState, useMemo } from "react"
@@ -14,14 +15,6 @@ interface StructureAnalysisCardProps {
   enrichedResult: EnrichedJatosStudyResult
   originalStructureAnalysis: OriginalStructureAnalysis
   extractedVariables: ExtractedVariable[]
-}
-
-// Simple type for path display (replaces NestedPath)
-type PathDisplay = {
-  path: string
-  type: "string" | "number" | "boolean" | "object" | "array" | "null"
-  exampleValue: any
-  depth: number
 }
 
 export default function StructureAnalysisCard({

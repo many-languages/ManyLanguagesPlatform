@@ -4,7 +4,6 @@ import type { EnrichedJatosStudyResult } from "@/src/types/jatos"
 import type { OriginalStructureAnalysis } from "../../../../variables/utils/structureAnalyzer/analyzeOriginalStructure"
 import type { ExtractedVariable } from "../../../../variables/types"
 import type { PathDisplay } from "../../../types"
-import { aggregateVariablesByParentKey } from "../../../../variables/utils/componentPathExtractor"
 import Card from "@/src/app/components/Card"
 import { useState, useMemo } from "react"
 import StructureOverview from "./StructureOverview"
@@ -31,11 +30,27 @@ export default function StructureAnalysisCard({
   } | null>(null)
 
   // Collect all extracted paths from all components for the overview
+  // Group by parentKey from extractionMetadata (no structure analysis needed)
   const allExtractedPathsByParentKey = useMemo(() => {
-    const variablesByParentKey = aggregateVariablesByParentKey(
-      extractedVariables,
-      originalStructureAnalysis
-    )
+    const variablesByParentKey = new Map<
+      string,
+      Array<{ variable: ExtractedVariable; componentId: number }>
+    >()
+
+    // Group variables by their parentKey from extractionMetadata
+    extractedVariables.forEach((variable) => {
+      const parentKey = variable.extractionMetadata?.parentKey
+      if (!parentKey) return // Skip top-level variables (they don't have a parent)
+
+      // Add for each componentId this variable appears in
+      variable.componentIds.forEach((componentId) => {
+        if (!variablesByParentKey.has(parentKey)) {
+          variablesByParentKey.set(parentKey, [])
+        }
+        variablesByParentKey.get(parentKey)!.push({ variable, componentId })
+      })
+    })
+
     // Convert to the format expected by the UI
     const converted = new Map<string, Array<{ path: PathDisplay; componentId: number }>>()
     variablesByParentKey.forEach((variablesWithComponents, parentKey) => {
@@ -44,17 +59,16 @@ export default function StructureAnalysisCard({
         variablesWithComponents.map(({ variable, componentId }) => ({
           path: {
             path: variable.variableName,
-            type: (variable.type === "primitive" ? "string" : variable.type) as PathDisplay["type"],
+            type: variable.type as PathDisplay["type"],
             exampleValue: variable.allValues[0] || null,
-            depth:
-              variable.variableName.split(".").length + variable.variableName.split("[").length - 1,
+            depth: variable.extractionMetadata?.depth ?? PathModel.getDepth(variable.variableName),
           },
           componentId,
         }))
       )
     })
     return converted
-  }, [extractedVariables, originalStructureAnalysis])
+  }, [extractedVariables])
 
   return (
     <Card title="Structure Analysis" collapsible defaultOpen={true}>

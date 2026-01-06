@@ -6,7 +6,6 @@ import type { ExtractedVariable } from "../../../../variables/types"
 import { Alert } from "@/src/app/components/Alert"
 import ComponentDataViewer from "./ComponentDataViewer"
 import PathBadge from "../structureAnalysis/PathBadge"
-import { getExtractedVariablesForComponent } from "../../../../variables/utils/componentPathExtractor"
 import { scrollToComponentData } from "../../../utils/pathHighlighting"
 
 type ComponentResult = EnrichedJatosStudyResult["componentResults"][number]
@@ -31,29 +30,26 @@ export default function ComponentView({
     scrollToComponentData(componentId, 100)
   }
 
-  // Get extracted variables for this component
-  const extractedVariablesByKey = getExtractedVariablesForComponent(
-    extractedVariables,
-    component.componentId,
-    componentAnalysis
+  // Get extracted variables for this component that have a parentKey (nested under objects)
+  // Use extractionMetadata.parentKey instead of structure analysis
+  const nestedVariables = extractedVariables.filter(
+    (variable) =>
+      variable.componentIds.includes(component.componentId) &&
+      variable.extractionMetadata?.parentKey !== null &&
+      variable.extractionMetadata?.parentKey !== undefined
   )
 
-  // Collect all unique variables from all object keys
+  // Collect all unique variables
   const variablesMap = new Map<string, ExtractedVariable>()
-  Array.from(extractedVariablesByKey.values())
-    .flat()
-    .forEach((variable) => {
-      if (!variablesMap.has(variable.variableName)) {
-        variablesMap.set(variable.variableName, variable)
-      }
-    })
+  nestedVariables.forEach((variable) => {
+    if (!variablesMap.has(variable.variableName)) {
+      variablesMap.set(variable.variableName, variable)
+    }
+  })
 
   const allExtractedPaths = Array.from(variablesMap.values()).map((variable) => ({
     path: variable.variableName,
-    type: (variable.type === "primitive" ? "string" : variable.type) as
-      | "string"
-      | "array"
-      | "object",
+    type: variable.type as "string" | "number" | "boolean" | "array" | "object",
   }))
 
   const highlightedPathForComponent =

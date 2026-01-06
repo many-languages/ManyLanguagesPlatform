@@ -3,7 +3,7 @@
 import { useState, useMemo } from "react"
 import { EnrichedJatosStudyResult } from "@/src/types/jatos"
 import FilterBuilder from "./FilterBuilder"
-import { extractAvailableVariables } from "../../../variables/utils/extractVariable"
+import { extractVariables } from "../../../variables/utils/extractVariable"
 import { SelectField, FilterButtonWithDisplay, SyntaxPreview } from "./shared"
 
 interface StatsSelectorProps {
@@ -30,15 +30,16 @@ export default function StatsSelector({ enrichedResult, onInsert, markdown }: St
   const [showFilterBuilder, setShowFilterBuilder] = useState(false)
   const [currentFilterClause, setCurrentFilterClause] = useState("")
 
-  const availableVariables = extractAvailableVariables(enrichedResult, { includeExample: true })
+  const extractionResult = extractVariables(enrichedResult)
+  const variables = extractionResult.variables
 
   const variableOptions = useMemo(
     () =>
-      availableVariables.map((v) => ({
-        value: v.name,
-        label: `${v.name} (${v.type})`,
+      variables.map((v) => ({
+        value: v.variableName,
+        label: `${v.variableName} (${v.type})`,
       })),
-    [availableVariables]
+    [variables]
   )
 
   const getAvailableMetrics = (variableType: string) => {
@@ -48,6 +49,8 @@ export default function StatsSelector({ enrichedResult, onInsert, markdown }: St
       case "boolean":
         return METRICS.filter((metric) => metric.key === "count")
       case "string":
+      case "array":
+      case "object":
         return METRICS.filter((metric) => metric.key === "count")
       default:
         return METRICS.filter((metric) => metric.key === "count")
@@ -56,9 +59,9 @@ export default function StatsSelector({ enrichedResult, onInsert, markdown }: St
 
   const currentVariableType = useMemo(() => {
     return selectedVariable
-      ? availableVariables.find((v) => v.name === selectedVariable)?.type || "string"
+      ? variables.find((v) => v.variableName === selectedVariable)?.type || "string"
       : "string"
-  }, [selectedVariable, availableVariables])
+  }, [selectedVariable, variables])
 
   const metricOptions = useMemo(
     () =>
@@ -117,7 +120,7 @@ export default function StatsSelector({ enrichedResult, onInsert, markdown }: St
               setSelectedVariable(value)
               if (value) {
                 const variableType =
-                  availableVariables.find((v) => v.name === value)?.type || "string"
+                  variables.find((v) => v.variableName === value)?.type || "string"
                 const availableMetrics = getAvailableMetrics(variableType)
                 if (availableMetrics.length > 0) {
                   setSelectedMetric(availableMetrics[0].key)

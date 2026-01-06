@@ -1,7 +1,7 @@
 "use client"
 
 import { useMemo } from "react"
-import { extractVariables, extractAvailableVariables } from "../../variables/utils/extractVariable"
+import { extractVariables } from "../../variables/utils/extractVariable"
 import type { EnrichedJatosStudyResult } from "@/src/types/jatos"
 
 export interface UseVariableExtractionOptions {
@@ -10,17 +10,12 @@ export interface UseVariableExtractionOptions {
 }
 
 export function useVariableExtraction(options: UseVariableExtractionOptions) {
-  const { enrichedResult, includeExample = false } = options
+  const { enrichedResult } = options
 
-  const variables = useMemo(() => extractVariables(enrichedResult).variables, [enrichedResult])
-
-  const availableVariables = useMemo(
-    () => extractAvailableVariables(enrichedResult, { includeExample }),
-    [enrichedResult, includeExample]
-  )
+  const extractionResult = useMemo(() => extractVariables(enrichedResult), [enrichedResult])
+  const variables = extractionResult.variables
 
   return {
     variables,
-    availableVariables,
   }
 }

@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useMemo } from "react"
 import { EnrichedJatosStudyResult } from "@/src/types/jatos"
 import VariableSelector from "./VariableSelector"
 import StatsSelector from "./StatsSelector"
-import { extractAvailableVariables } from "../../../variables/utils/extractVariable"
+import { extractVariables } from "../../../variables/utils/extractVariable"
 import { SelectField, FilterButtonWithDisplay, SyntaxPreview } from "./shared"
 
 interface ConditionalBuilderProps {
@@ -42,15 +42,16 @@ export default function ConditionalBuilder({
   const [focusedTextArea, setFocusedTextArea] = useState<"then" | "else">("then")
   const [currentFilterClause, setCurrentFilterClause] = useState("")
 
-  const availableFields = extractAvailableVariables(enrichedResult, { includeExample: true })
+  const extractionResult = extractVariables(enrichedResult)
+  const variables = extractionResult.variables
 
   // Get available variables for the condition builder
   const getAvailableVariables = useCallback(() => {
-    return availableFields.map((field) => ({
-      name: field.name,
-      type: field.type,
+    return variables.map((v) => ({
+      name: v.variableName,
+      type: v.type,
     }))
-  }, [availableFields])
+  }, [variables])
 
   const variableOptions = useMemo(
     () =>
@@ -93,7 +94,10 @@ export default function ConditionalBuilder({
 
   // Get available operators based on variable type
   const getAvailableOperators = useCallback((variableType: string) => {
-    return OPERATORS.filter((op) => op.types.includes(variableType))
+    // For arrays/objects, treat as string for operator selection
+    const effectiveType =
+      variableType === "array" || variableType === "object" ? "string" : variableType
+    return OPERATORS.filter((op) => op.types.includes(effectiveType))
   }, [])
 
   // Get current variable type for operator filtering
@@ -205,8 +209,8 @@ export default function ConditionalBuilder({
   }
 
   const selectedFieldType = (fieldName: string) => {
-    const field = availableFields.find((f) => f.name === fieldName)
-    return field?.type || "string"
+    const variable = variables.find((v) => v.variableName === fieldName)
+    return variable?.type || "string"
   }
 
   return (

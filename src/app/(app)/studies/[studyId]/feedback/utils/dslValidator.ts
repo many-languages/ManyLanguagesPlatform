@@ -1,5 +1,5 @@
 import { EnrichedJatosStudyResult } from "@/src/types/jatos"
-import { extractAvailableVariables } from "../../variables/utils/extractVariable"
+import { extractVariables } from "../../variables/utils/extractVariable"
 
 export interface DSLError {
   type: "variable" | "stat" | "conditional" | "filter" | "syntax"
@@ -23,8 +23,9 @@ export function validateDSL(
 ): ValidationResult {
   const errors: DSLError[] = []
 
-  // Get available variables from service
-  const availableVariables = extractAvailableVariables(enrichedResult)
+  // Get available variables
+  const extractionResult = extractVariables(enrichedResult)
+  const variableNames = new Set(extractionResult.variables.map((v) => v.variableName))
 
   // Validate variables: {{ var:name:modifier | where: condition }}
   const varRegex =
@@ -36,7 +37,7 @@ export function validateDSL(
     const end = start + fullMatch.length
 
     // Check if variable exists
-    if (!availableVariables.includes(varName)) {
+    if (!variableNames.has(varName)) {
       errors.push({
         type: "variable",
         message: `Variable '${varName}' does not exist in the data`,
@@ -78,7 +79,7 @@ export function validateDSL(
     const end = start + fullMatch.length
 
     // Check if variable exists
-    if (!availableVariables.includes(varName)) {
+    if (!variableNames.has(varName)) {
       errors.push({
         type: "stat",
         message: `Variable '${varName}' does not exist in the data`,
@@ -325,9 +326,8 @@ function validateMalformedSyntax(template: string): DSLError[] {
 
 /**
  * Extracts available variable names from enriched result
- * Uses variable service to get variable names
  */
 function getAvailableVariableNames(enrichedResult: EnrichedJatosStudyResult): string[] {
-  const variables = extractAvailableVariables(enrichedResult)
-  return variables.map((v) => v.name)
+  const extractionResult = extractVariables(enrichedResult)
+  return extractionResult.variables.map((v) => v.variableName)
 }

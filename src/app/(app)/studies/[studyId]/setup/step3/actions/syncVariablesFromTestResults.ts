@@ -2,7 +2,7 @@
 
 import { getAllTestResultsRsc } from "@/src/app/(app)/studies/[studyId]/utils/getAllTestResults"
 import { syncStudyVariablesRsc } from "@/src/app/(app)/studies/[studyId]/variables/mutations/syncStudyVariables"
-import { extractAvailableVariables } from "@/src/app/(app)/studies/[studyId]/variables/utils/extractVariable"
+import { extractVariables } from "@/src/app/(app)/studies/[studyId]/variables/utils/extractVariable"
 
 /**
  * Server Action to sync variables from test results when step 3 is completed.
@@ -26,10 +26,10 @@ export async function syncVariablesFromTestResultsAction(
     // Use the latest test result (first one since sorted by id descending)
     const latestTestResult = testResults[0]
 
-    // Extract variables from the test result (with examples for syncing)
-    const extractedVariables = extractAvailableVariables(latestTestResult, { includeExample: true })
+    // Extract variables from the test result
+    const extractionResult = extractVariables(latestTestResult)
 
-    if (extractedVariables.length === 0) {
+    if (extractionResult.variables.length === 0) {
       return {
         success: false,
         variableCount: 0,
@@ -37,20 +37,25 @@ export async function syncVariablesFromTestResultsAction(
       }
     }
 
-    // Sync variables to database
+    // Sync variables to database (only primitives for now, arrays/objects can be added later)
+    const primitiveVariables = extractionResult.variables.filter(
+      (v) => v.type === "string" || v.type === "number" || v.type === "boolean"
+    )
+
     await syncStudyVariablesRsc({
       studyId,
-      variables: extractedVariables.map((v) => ({
-        name: v.name,
-        label: v.name,
-        type: v.type, // Already "string" | "number" | "boolean"
-        example: typeof v.example === "string" ? v.example : JSON.stringify(v.example),
+      variables: primitiveVariables.map((v) => ({
+        name: v.variableName,
+        label: v.variableName,
+        type: v.type as "string" | "number" | "boolean",
+        example:
+          typeof v.exampleValue === "string" ? v.exampleValue : JSON.stringify(v.allValues[0]),
       })),
     })
 
     return {
       success: true,
-      variableCount: extractedVariables.length,
+      variableCount: primitiveVariables.length,
     }
   } catch (error) {
     console.error("Failed to sync variables from test results:", error)

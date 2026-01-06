@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from "react"
 import { EnrichedJatosStudyResult } from "@/src/types/jatos"
-import { extractAvailableVariables } from "../../../variables/utils/extractVariable"
+import { extractVariables } from "../../../variables/utils/extractVariable"
 import { SelectField } from "./shared"
 import Card from "@/src/app/components/Card"
 import { dslHelperStyles } from "../../styles/feedbackStyles"
@@ -131,7 +131,8 @@ export default function DSLHelper({ enrichedResult }: DSLHelperProps) {
     },
   ]
 
-  const availableVariables = extractAvailableVariables(enrichedResult, { includeExample: true })
+  const extractionResult = extractVariables(enrichedResult)
+  const variables = extractionResult.variables
 
   const categoryOptions = useMemo(
     () => [
@@ -182,18 +183,18 @@ export default function DSLHelper({ enrichedResult }: DSLHelperProps) {
         </div>
 
         {/* Available Variables */}
-        {availableVariables.length > 0 && (
+        {variables.length > 0 && (
           <div className="p-3 rounded-lg" style={dslHelperStyles.section}>
             <h4 className="font-semibold mb-2">Available Variables</h4>
             <div className="flex flex-wrap gap-1">
-              {availableVariables.map((variable) => (
+              {variables.map((variable) => (
                 <span
-                  key={variable.name}
+                  key={variable.variableName}
                   className="badge badge-outline text-xs cursor-pointer hover:badge-primary"
-                  onClick={() => copyToClipboard(`{{ var:${variable.name} }}`)}
-                  title={`Click to copy: {{ var:${variable.name} }}`}
+                  onClick={() => copyToClipboard(`{{ var:${variable.variableName} }}`)}
+                  title={`Click to copy: {{ var:${variable.variableName} }}`}
                 >
-                  {variable.name}
+                  {variable.variableName}
                 </span>
               ))}
             </div>

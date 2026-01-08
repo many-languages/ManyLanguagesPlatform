@@ -95,23 +95,18 @@ function escapeQuotedKey(key: string): string {
 
 /**
  * Convert a concrete JsonPath to a provenance string, e.g.:
- * trials[17].rt
- * ["weird.key"][0].rt
+ * $trials[17].rt
+ * $["weird.key"][0].rt
+ * Always prefixed with $ to indicate root
  */
 export function toSourcePath(path: JsonPath, opts?: RenderOptions): string {
   const o = { ...DEFAULT_RENDER, ...opts }
   if (path.length === 0) return o.rootToken
 
-  let out = ""
+  let out = o.rootToken
   for (const seg of path) {
     if (seg.kind === "key") {
-      if (!out) {
-        // first segment
-        out += renderKey(seg.key, o)
-      } else {
-        // subsequent key segments
-        out += renderKeyWithDot(seg.key, o)
-      }
+      out += renderKeyWithDot(seg.key, o)
     } else {
       out += `[${seg.index}]`
     }
@@ -121,18 +116,18 @@ export function toSourcePath(path: JsonPath, opts?: RenderOptions): string {
 
 /**
  * Convert a concrete JsonPath to a variable grouping key where indices are wildcarded, e.g.:
- * trials[*].rt
- * responses[*].items[*].choice
+ * $trials[*].rt
+ * $responses[*].items[*].choice
+ * Always prefixed with $ to indicate root
  */
 export function toVariableKey(path: JsonPath, opts?: RenderOptions): string {
   const o = { ...DEFAULT_RENDER, ...opts }
   if (path.length === 0) return o.rootToken
 
-  let out = ""
+  let out = o.rootToken
   for (const seg of path) {
     if (seg.kind === "key") {
-      if (!out) out += renderKey(seg.key, o)
-      else out += renderKeyWithDot(seg.key, o)
+      out += renderKeyWithDot(seg.key, o)
     } else {
       out += `[*]`
     }
@@ -140,10 +135,24 @@ export function toVariableKey(path: JsonPath, opts?: RenderOptions): string {
   return out
 }
 
-function renderKey(key: string, o: Required<RenderOptions>): string {
-  if (!o.quoteUnsafeKeys) return key
-  if (isSimpleIdentifier(key)) return key
-  return `["${escapeQuotedKey(key)}"]`
+/**
+ * Convert a JsonPath to a structural breadcrumb (keyPath).
+ * This is the sequence of object keys and [*] for arrays that describes
+ * where in the JSON tree a value lives, independent of indices.
+ *
+ * Example: trials[3].stimulus.color -> ["trials", "*", "stimulus", "color"]
+ */
+export function toKeyPath(path: JsonPath): string[] {
+  const keyPath: string[] = []
+  for (const seg of path) {
+    if (seg.kind === "key") {
+      keyPath.push(seg.key)
+    } else {
+      // Array index - represent as "*" in the structural breadcrumb
+      keyPath.push("*")
+    }
+  }
+  return keyPath
 }
 
 function renderKeyWithDot(key: string, o: Required<RenderOptions>): string {

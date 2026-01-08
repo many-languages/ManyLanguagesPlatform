@@ -11,6 +11,7 @@ interface PathBadgeProps {
   size?: "sm" | "lg"
   onClick?: (path: string, componentId: number) => void
   tooltipType?: string
+  unshownObservationsCount?: number // Number of observations not shown (for variables)
 }
 
 export default function PathBadge({
@@ -21,6 +22,7 @@ export default function PathBadge({
   size = "sm",
   onClick,
   tooltipType,
+  unshownObservationsCount,
 }: PathBadgeProps) {
   // Determine badge class based on type
   const badgeClass =
@@ -41,6 +43,12 @@ export default function PathBadge({
       ? "primitive"
       : type)
 
+  // Build tooltip message
+  let tooltipMessage = `Type: ${displayTooltipType} - Click to highlight in raw data`
+  if (unshownObservationsCount !== undefined && unshownObservationsCount > 0) {
+    tooltipMessage += `\n${unshownObservationsCount} more observation(s) not highlighted`
+  }
+
   const handleClick = () => {
     if (onClick) {
       onClick(path, componentId)
@@ -55,7 +63,7 @@ export default function PathBadge({
       className={`badge ${badgeClass} badge-${size} font-mono cursor-pointer hover:opacity-80 transition-opacity ${
         isHighlighted ? "ring-2 ring-info ring-offset-2" : ""
       }`}
-      title={`Type: ${displayTooltipType} - Click to highlight in raw data`}
+      title={tooltipMessage}
       onClick={handleClick}
     >
       {path}

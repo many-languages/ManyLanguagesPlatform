@@ -1,7 +1,7 @@
-import type { NewExtractionResult, ExtractionObservation } from "../types"
+import type { NewExtractionResult, ExtractionObservation, RowKeyEntry, ScopeKeys } from "../types"
 import type { JsonPath } from "./path"
 import { Path } from "./path"
-import { toSourcePath } from "./path"
+import { toSourcePath, toVariableKey } from "./path"
 import { ContextManager } from "./contextManager"
 import { DiagnosticEngine } from "./diagnostics"
 import { shouldEmit } from "./extractionPolicy"
@@ -12,9 +12,10 @@ export interface WalkerOptions {
   maxNodes?: number
   maxObservations?: number
   componentId: number
+  scopeKeys?: Partial<ScopeKeys> // Optional scope keys (componentId is required, others optional)
 }
 
-const DEFAULT_OPTIONS: Required<Omit<WalkerOptions, "componentId">> = {
+const DEFAULT_OPTIONS: Required<Omit<WalkerOptions, "componentId" | "scopeKeys">> = {
   maxDepth: 10,
   maxNodes: 10000,
   maxObservations: 50000,
@@ -24,11 +25,20 @@ const DEFAULT_OPTIONS: Required<Omit<WalkerOptions, "componentId">> = {
  * Walker - deterministic DFS traversal of JSON data
  * Extracts observations with full provenance and context tracking
  */
-export function walk(data: any, options: WalkerOptions): NewExtractionResult {
+export function walk(
+  data: any,
+  options: WalkerOptions,
+  diagnosticEngine: DiagnosticEngine
+): NewExtractionResult {
   const opts = { ...DEFAULT_OPTIONS, ...options }
   const contextManager = new ContextManager()
-  const diagnosticEngine = new DiagnosticEngine(opts.maxObservations)
   const observations: ExtractionObservation[] = []
+
+  // Build scopeKeys from options (componentId is required, others optional)
+  const scopeKeys: ScopeKeys = {
+    ...(opts.scopeKeys || {}),
+    componentId: opts.componentId,
+  }
 
   // Recursive walk function
   function walkRecursive(value: any, path: JsonPath, depth: number): void {
@@ -54,8 +64,9 @@ export function walk(data: any, options: WalkerOptions): NewExtractionResult {
 
     // Check if we should emit this value
     if (shouldEmit(value)) {
-      const context = contextManager.getContext()
-      const observation = emitObservation(path, value, context, opts.componentId)
+      // Get the current rowKey from contextManager
+      const rowKey = contextManager.getRowKey()
+      const observation = emitObservation(path, value, rowKey, scopeKeys)
       observations.push(observation)
       diagnosticEngine.recordObservation(observation)
       // Don't recurse into emitted values
@@ -64,13 +75,19 @@ export function walk(data: any, options: WalkerOptions): NewExtractionResult {
 
     // Recurse based on type
     if (Array.isArray(value)) {
-      // Array of objects or mixed: iterate with context tracking
+      // Array of objects or mixed: iterate with rowKey tracking
+      // Get the path to the array (before the index) to compute arrayId
+      const arrayPath = path // Current path is the path to the array itself
+      const arrayId = toVariableKey(arrayPath) // e.g., "trials[*]" or "trials[*].responses[*]"
+
       value.forEach((item, index) => {
-        // Get the parent key for context (last key segment before array)
-        const parentKey = Path.lastKey(path) || "item"
-        contextManager.push(parentKey, index, depth + 1)
+        // Push rowKey frame for this array instance
+        contextManager.push({ arrayId, index })
+
         const itemPath = Path.index(path, index)
         walkRecursive(item, itemPath, depth + 1)
+
+        // Pop rowKey frame when leaving this array element
         contextManager.pop()
       })
     } else if (typeof value === "object" && value !== null) {
@@ -92,13 +109,14 @@ export function walk(data: any, options: WalkerOptions): NewExtractionResult {
   // Start walking from root
   walkRecursive(data, Path.root(), 0)
 
-  // Get final diagnostics and stats
-  const diagnostics = diagnosticEngine.getDiagnostics()
+  // Get final stats
   const stats = diagnosticEngine.getStats()
 
   return {
     observations,
-    diagnostics,
+    componentDiagnostics: new Map(),
+    runDiagnostics: [],
     stats,
+    diagnosticEngine, // Return the shared engine
   }
 }

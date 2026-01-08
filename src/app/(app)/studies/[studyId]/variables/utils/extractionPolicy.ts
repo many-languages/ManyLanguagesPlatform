@@ -5,8 +5,8 @@ import { isPrimitive, isArrayOfPrimitives, isNestedArray } from "./typeGuards"
  *
  * Rules:
  * - Primitive → emit (return true)
- * - Array of primitives → emit (return true)
- * - Nested arrays (array containing arrays) → emit as-is (return true)
+ * - Array of primitives → recurse (return false) - emit each element individually with rowKey tracking
+ * - Nested arrays (array containing arrays) → recurse (return false) - emit each element individually with rowKey tracking
  * - Objects → recurse only (return false)
  * - Arrays of objects → recurse only (return false)
  */
@@ -23,14 +23,14 @@ export function shouldEmit(value: any): boolean {
       return true
     }
 
-    // Array of primitives: emit
+    // Array of primitives: recurse to emit each element individually
     if (isArrayOfPrimitives(value)) {
-      return true
+      return false
     }
 
-    // Nested arrays (array containing arrays): emit as-is
+    // Nested arrays (array containing arrays): recurse to emit each element individually
     if (isNestedArray(value)) {
-      return true
+      return false
     }
 
     // Array of objects: recurse only (don't emit the array itself)

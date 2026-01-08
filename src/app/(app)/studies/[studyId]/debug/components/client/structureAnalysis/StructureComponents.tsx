@@ -4,7 +4,7 @@ import type { EnrichedJatosStudyResult } from "@/src/types/jatos"
 import type { OriginalStructureAnalysis } from "../../../../variables/utils/structureAnalyzer/analyzeOriginalStructure"
 import type { ExtractedVariable } from "../../../../variables/types"
 import { Alert } from "@/src/app/components/Alert"
-import { useMemo, useCallback } from "react"
+import { useMemo, useCallback, useEffect } from "react"
 import { formatJson } from "@/src/lib/utils/formatJson"
 import ComponentView from "../componentView/ComponentView"
 import ComponentSelector from "../componentView/ComponentSelector"
@@ -30,6 +30,12 @@ export default function StructureComponents({
   onHighlightPath,
 }: StructureComponentsProps) {
   const componentsWithData = enrichedResult.componentResults.filter((c) => c.dataContent)
+
+  // Log all extracted variable names
+  useEffect(() => {
+    const variableNames = extractedVariables.map((v) => v.variableName).join(", ")
+    console.log("Extracted Variables:", variableNames)
+  }, [extractedVariables])
 
   // Define the copy logic in the parent component
   const getTextToCopy = useCallback(() => {

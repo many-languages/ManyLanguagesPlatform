@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react"
 import type { ExtractedVariable } from "../../../../variables/types"
+import type { ObservationStore } from "../../../../variables/utils/observationStore"
 import type { ColumnDef } from "@tanstack/react-table"
 import Table from "@/src/app/components/Table"
 import VariableValuesModal from "./VariableValuesModal"
@@ -9,9 +10,13 @@ import { getTypeBadgeClass } from "../../../utils/badgeHelpers"
 
 interface VariableTableProps {
   extractedVariables: ExtractedVariable[]
+  observationStore: ObservationStore
 }
 
-export default function VariableTable({ extractedVariables }: VariableTableProps) {
+export default function VariableTable({
+  extractedVariables,
+  observationStore,
+}: VariableTableProps) {
   const [selectedVariable, setSelectedVariable] = useState<ExtractedVariable | null>(null)
 
   const handleShowValues = (variable: ExtractedVariable) => {
@@ -52,11 +57,22 @@ export default function VariableTable({ extractedVariables }: VariableTableProps
       {
         accessorKey: "exampleValue",
         header: "Example Value",
-        cell: ({ row }) => (
-          <span className="font-mono text-xs max-w-xs truncate block">
-            {row.original.exampleValue}
-          </span>
-        ),
+        cell: ({ row }) => {
+          const exampleValue = row.original.examples[0]?.value
+          let parsed: any = null
+          if (exampleValue) {
+            try {
+              parsed = JSON.parse(exampleValue)
+            } catch {
+              parsed = exampleValue
+            }
+          }
+          return (
+            <span className="font-mono text-xs max-w-xs truncate block">
+              {parsed !== null ? String(parsed) : ""}
+            </span>
+          )
+        },
       },
       {
         id: "allValues",
@@ -95,7 +111,11 @@ export default function VariableTable({ extractedVariables }: VariableTableProps
           }}
         />
       </div>
-      <VariableValuesModal selectedVariable={selectedVariable} onClose={handleCloseModal} />
+      <VariableValuesModal
+        selectedVariable={selectedVariable}
+        observationStore={observationStore}
+        onClose={handleCloseModal}
+      />
     </>
   )
 }

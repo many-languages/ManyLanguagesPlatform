@@ -30,13 +30,9 @@ export default function ComponentView({
     scrollToComponentData(componentId, 100)
   }
 
-  // Get extracted variables for this component that have a parentKey (nested under objects)
-  // Use extractionMetadata.parentKey instead of structure analysis
+  // Get extracted variables for this component that are nested (not top-level)
   const nestedVariables = extractedVariables.filter(
-    (variable) =>
-      variable.componentIds.includes(component.componentId) &&
-      variable.extractionMetadata?.parentKey !== null &&
-      variable.extractionMetadata?.parentKey !== undefined
+    (variable) => variable.componentIds.includes(component.componentId) && !variable.isTopLevel
   )
 
   // Collect all unique variables

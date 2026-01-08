@@ -51,12 +51,23 @@ export async function saveFeedbackTemplateAction(
   const variables = extractVariables(enrichedResult).variables
   await syncStudyVariablesRsc({
     studyId,
-    variables: variables.map((v) => ({
-      name: v.variableName,
-      label: v.variableName,
-      type: v.type,
-      example: v.exampleValue,
-    })),
+    variables: variables.map((v) => {
+      const exampleValue = v.examples[0]?.value
+      let parsed: any = null
+      if (exampleValue) {
+        try {
+          parsed = JSON.parse(exampleValue)
+        } catch {
+          parsed = exampleValue
+        }
+      }
+      return {
+        name: v.variableName,
+        label: v.variableName,
+        type: v.type,
+        example: typeof parsed === "string" ? parsed : JSON.stringify(parsed),
+      }
+    }),
   })
 
   return {

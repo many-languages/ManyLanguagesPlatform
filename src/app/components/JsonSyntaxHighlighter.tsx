@@ -8,7 +8,8 @@ interface JsonSyntaxHighlighterProps {
   code: string
   language?: string
   className?: string
-  highlightPath?: string // Path to highlight (e.g., "name", "user.name", "items[*].value")
+  highlightPath?: string // Deprecated - use highlightPaths instead. Path to highlight (e.g., "name", "user.name", "items[*].value")
+  highlightPaths?: string[] // Array of paths to highlight
 }
 
 export default function JsonSyntaxHighlighter({
@@ -16,8 +17,12 @@ export default function JsonSyntaxHighlighter({
   language = "json",
   className,
   highlightPath,
+  highlightPaths,
 }: JsonSyntaxHighlighterProps) {
-  console.log("[JsonSyntaxHighlighter] Component rendered with highlightPath:", highlightPath)
+  // Normalize to array of paths (prioritize highlightPaths over highlightPath for backward compatibility)
+  const pathsToHighlight = highlightPaths ?? (highlightPath ? [highlightPath] : [])
+
+  console.log("[JsonSyntaxHighlighter] Component rendered with highlightPaths:", pathsToHighlight)
 
   // Detect theme from document
   const [isDark, setIsDark] = useState(false)
@@ -147,15 +152,15 @@ export default function JsonSyntaxHighlighter({
   }
 
   /**
-   * Find line numbers for a given path in the JSON
+   * Find line numbers for a single path in the JSON
    * Returns an array of line numbers (can be multiple for [*] paths)
    */
-  const findLineNumbers = useMemo(() => {
-    if (!highlightPath || language !== "json") return []
+  const findLineNumbersForPath = (path: string): number[] => {
+    if (!path || language !== "json") return []
 
     try {
       const parsed = JSON.parse(code)
-      const pathSegments = parsePath(highlightPath)
+      const pathSegments = parsePath(path)
 
       // Check if path contains [*] - if so, we need to find all occurrences
       const hasWildcard = pathSegments.includes("[*]")
@@ -237,7 +242,7 @@ export default function JsonSyntaxHighlighter({
         const navigationResult = navigateToPath(parsed, pathSegments)
 
         if (!navigationResult) {
-          console.log("[JsonSyntaxHighlighter] Path does not exist in JSON:", highlightPath)
+          console.log("[JsonSyntaxHighlighter] Path does not exist in JSON:", path)
           return []
         }
 
@@ -300,12 +305,7 @@ export default function JsonSyntaxHighlighter({
               }
 
               if (contextValid) {
-                console.log(
-                  "[JsonSyntaxHighlighter] Found line:",
-                  i + 1,
-                  "for path:",
-                  highlightPath
-                )
+                console.log("[JsonSyntaxHighlighter] Found line:", i + 1, "for path:", path)
                 return [i + 1]
               }
             } else {
@@ -330,15 +330,35 @@ export default function JsonSyntaxHighlighter({
     }
 
     return []
-  }, [highlightPath, code, lines, language])
+  }
+
+  /**
+   * Find line numbers for all paths in the JSON
+   * Returns union of all line numbers from all paths
+   */
+  const findLineNumbers = useMemo(() => {
+    if (pathsToHighlight.length === 0 || language !== "json") return []
+
+    // Get line numbers for each path and union them (remove duplicates)
+    const allLineNumbers = new Set<number>()
+    pathsToHighlight.forEach((path) => {
+      const lineNums = findLineNumbersForPath(path)
+      lineNums.forEach((lineNum) => allLineNumbers.add(lineNum))
+    })
+
+    return Array.from(allLineNumbers).sort((a, b) => a - b)
+  }, [pathsToHighlight, code, lines, language])
 
   // Use a ref to access the container element
   const containerRef = useRef<HTMLDivElement>(null)
 
   // Add global styles for the highlighted line class
   useEffect(() => {
-    console.log("[JsonSyntaxHighlighter] Setting up global styles, highlightPath:", highlightPath)
-    if (!highlightPath) return
+    console.log(
+      "[JsonSyntaxHighlighter] Setting up global styles, highlightPaths:",
+      pathsToHighlight
+    )
+    if (pathsToHighlight.length === 0) return
 
     const styleId = "json-highlighted-line-styles"
     let styleElement = document.getElementById(styleId) as HTMLStyleElement
@@ -363,11 +383,11 @@ export default function JsonSyntaxHighlighter({
     return () => {
       // Don't remove the style element, as it might be used by other instances
     }
-  }, [highlightPath, isDark])
+  }, [pathsToHighlight, isDark])
 
   // Apply highlighting after render using DOM manipulation
   useEffect(() => {
-    if (!highlightPath || findLineNumbers.length === 0 || !containerRef.current) {
+    if (pathsToHighlight.length === 0 || findLineNumbers.length === 0 || !containerRef.current) {
       if (findLineNumbers.length === 0) {
         console.log("[JsonSyntaxHighlighter] No target line numbers found")
       }
@@ -439,10 +459,16 @@ export default function JsonSyntaxHighlighter({
     }, 150)
 
     return () => clearTimeout(timeoutId)
-  }, [highlightPath, findLineNumbers, isDark])
+  }, [pathsToHighlight, findLineNumbers, isDark])
 
   return (
-    <div className={className} data-highlight-path={highlightPath} ref={containerRef}>
+    <div
+      className={className}
+      data-highlight-paths={
+        pathsToHighlight.length > 0 ? JSON.stringify(pathsToHighlight) : undefined
+      }
+      ref={containerRef}
+    >
       <SyntaxHighlighter
         language={language}
         style={isDark ? vscDarkPlus : oneLight}

@@ -1,16 +1,19 @@
 "use client"
 
 import type { PathDisplay } from "../../../types"
+import type { ExtractedVariable } from "../../../../variables/types"
 import PathBadge from "./PathBadge"
 
 interface ExtractedVariablesOverviewProps {
   allExtractedPathsByParentKey: Map<string, Array<{ path: PathDisplay; componentId: number }>>
+  extractedVariables: ExtractedVariable[]
   highlightedPath?: { path: string; componentId: number } | null
   onPathClick: (path: string, componentId: number) => void
 }
 
 export default function ExtractedVariablesOverview({
   allExtractedPathsByParentKey,
+  extractedVariables,
   highlightedPath,
   onPathClick,
 }: ExtractedVariablesOverviewProps) {
@@ -39,6 +42,14 @@ export default function ExtractedVariablesOverview({
                   path.type === "null"
                     ? "primitive"
                     : path.type
+
+                // Find variable to get unshown count for tooltip
+                const variable = extractedVariables.find((v) => v.variableName === path.path)
+                const unshownCount =
+                  variable && variable.examples.length > 0
+                    ? variable.occurrences - variable.examples.length
+                    : undefined
+
                 return (
                   <PathBadge
                     key={`${path.path}-${componentId}`}
@@ -48,6 +59,7 @@ export default function ExtractedVariablesOverview({
                     highlightedPath={highlightedPath}
                     size="sm"
                     tooltipType={tooltipType}
+                    unshownObservationsCount={unshownCount}
                     onClick={onPathClick}
                   />
                 )

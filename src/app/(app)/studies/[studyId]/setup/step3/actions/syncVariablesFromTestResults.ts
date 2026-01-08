@@ -48,8 +48,7 @@ export async function syncVariablesFromTestResultsAction(
         name: v.variableName,
         label: v.variableName,
         type: v.type as "string" | "number" | "boolean",
-        example:
-          typeof v.exampleValue === "string" ? v.exampleValue : JSON.stringify(v.allValues[0]),
+        example: v.examples[0]?.value || "",
       })),
     })
 

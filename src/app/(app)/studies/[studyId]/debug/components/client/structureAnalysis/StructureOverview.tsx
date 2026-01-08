@@ -2,6 +2,7 @@
 
 import type { EnrichedJatosStudyResult } from "@/src/types/jatos"
 import type { OriginalStructureAnalysis } from "../../../../variables/utils/structureAnalyzer/analyzeOriginalStructure"
+import type { ExtractedVariable } from "../../../../variables/types"
 import type { PathDisplay } from "../../../types"
 import StructureStats from "./StructureStats"
 import TopLevelGroups from "./TopLevelGroups"
@@ -13,6 +14,7 @@ interface StructureOverviewProps {
   enrichedResult: EnrichedJatosStudyResult
   originalStructureAnalysis: OriginalStructureAnalysis
   allExtractedPathsByParentKey: Map<string, Array<{ path: PathDisplay; componentId: number }>>
+  extractedVariables: ExtractedVariable[]
   highlightedPath?: { path: string; componentId: number } | null
   onSwitchToComponents: () => void
   onSelectComponent: (componentId: number) => void
@@ -23,6 +25,7 @@ export default function StructureOverview({
   enrichedResult,
   originalStructureAnalysis,
   allExtractedPathsByParentKey,
+  extractedVariables,
   highlightedPath,
   onSwitchToComponents,
   onSelectComponent,
@@ -48,6 +51,7 @@ export default function StructureOverview({
 
       <ExtractedVariablesOverview
         allExtractedPathsByParentKey={allExtractedPathsByParentKey}
+        extractedVariables={extractedVariables}
         highlightedPath={highlightedPath}
         onPathClick={handlePathClick}
       />

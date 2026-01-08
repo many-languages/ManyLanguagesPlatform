@@ -1,21 +1,40 @@
 "use client"
 
+import { useMemo } from "react"
 import Modal from "@/src/app/components/Modal"
 import JsonSyntaxHighlighter from "@/src/app/components/JsonSyntaxHighlighter"
 import type { ExtractedVariable } from "../../../../variables/types"
+import type { ObservationStore } from "../../../../variables/utils/observationStore"
 import { formatValue } from "@/src/lib/utils/formatValue"
 import { formatJson } from "@/src/lib/utils/formatJson"
 
 interface VariableValuesModalProps {
   selectedVariable: ExtractedVariable | null
+  observationStore: ObservationStore
   onClose: () => void
 }
 
 export default function VariableValuesModal({
   selectedVariable,
+  observationStore,
   onClose,
 }: VariableValuesModalProps) {
   const isOpen = selectedVariable !== null
+
+  // Get all values from observation store
+  const allValues = useMemo(() => {
+    if (!selectedVariable) return []
+    const valueJsonStrings = Array.from(
+      observationStore.iterateValueJsonByVariableKey(selectedVariable.variableKey)
+    )
+    return valueJsonStrings.map((json) => {
+      try {
+        return JSON.parse(json)
+      } catch {
+        return null
+      }
+    })
+  }, [selectedVariable, observationStore])
 
   return (
     <Modal open={isOpen} size="max-w-4xl">
@@ -35,7 +54,7 @@ export default function VariableValuesModal({
         </div>
 
         <div className="max-h-[60vh] overflow-auto space-y-4">
-          {selectedVariable?.allValues.map((value, index) => {
+          {allValues.map((value, index) => {
             const isObject = typeof value === "object" && value !== null && !Array.isArray(value)
             const isArray = Array.isArray(value)
             const isJSON = isObject || isArray

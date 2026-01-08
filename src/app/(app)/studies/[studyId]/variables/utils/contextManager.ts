@@ -1,85 +1,54 @@
 /**
- * Stack-based context tracking for grouping observations
- * Tracks instance keys (e.g., trials_index, responses_index) for joining observations
+ * Stack-based rowKey tracking for grouping observations
+ * Tracks array structural identity for stable join keys
  */
 
-export type ContextFrame = Record<string, string | number>
+import type { RowKeyEntry } from "../types"
+
+export type ContextFrame = { arrayId: string; index: number }
 
 /**
- * Context Manager - manages a stack of context frames
- * Each frame represents context from an array traversal (e.g., { trials_index: 0 })
- * Maintains a cached merged context for efficiency
+ * Context Manager - manages a stack of rowKey frames
+ * Each frame represents an array instance with its structural identity
+ * Owns the rowKeyStack for tracking array nesting
  */
 export class ContextManager {
-  private stack: ContextFrame[] = []
-  private mergedContext: Record<string, string | number> = {}
+  private rowKeyStack: RowKeyEntry[] = []
 
   /**
-   * Push a new context frame when entering an array element
-   * @param arrayKey The key of the array being traversed (e.g., "trials")
-   * @param index The index of the current array element
-   * @param depth The nesting depth (used for collision handling)
+   * Push a new rowKey frame when entering an array element
+   * @param frame The array structural identity and index
    */
-  push(arrayKey: string, index: number, depth: number): void {
-    let contextKey = this.deriveContextKey(arrayKey)
-
-    // Handle collisions: if key exists, append depth
-    if (contextKey in this.mergedContext) {
-      contextKey = `${contextKey}_${depth}`
-    }
-
-    const frame: ContextFrame = { [contextKey]: index }
-    this.stack.push(frame)
-
-    // Update cached merged context directly (no merging needed)
-    this.mergedContext[contextKey] = index
+  push(frame: ContextFrame): void {
+    this.rowKeyStack.push(frame)
   }
 
   /**
-   * Pop the top context frame when leaving an array element
+   * Pop the top rowKey frame when leaving an array element
    */
   pop(): void {
-    const frame = this.stack.pop()
-    if (frame) {
-      const key = Object.keys(frame)[0]
-      delete this.mergedContext[key]
-    }
+    this.rowKeyStack.pop()
   }
 
   /**
-   * Get the merged context from all frames in the stack
-   * Returns a copy of the cached merged context
+   * Get the current rowKey stack (copy)
+   * Returns a copy of the current rowKey array
    */
-  getContext(): Record<string, string | number> {
-    return { ...this.mergedContext }
+  getRowKey(): RowKeyEntry[] {
+    return [...this.rowKeyStack]
   }
 
   /**
-   * Derive a context key from an array key
-   * Examples:
-   * - "trials" → "trials_index"
-   * - "responses" → "responses_index"
-   * - "items" → "items_index"
-   * - "data" → "data_index"
-   *
-   * Always uses the array key as-is with "_index" suffix for consistency
-   */
-  private deriveContextKey(arrayKey: string): string {
-    return `${arrayKey}_index`
-  }
-
-  /**
-   * Get the current depth of the context stack
+   * Get the current depth of the rowKey stack
    */
   getDepth(): number {
-    return this.stack.length
+    return this.rowKeyStack.length
   }
 
   /**
-   * Clear all context frames and merged context
+   * Clear all rowKey frames
    */
   clear(): void {
-    this.stack = []
-    this.mergedContext = {}
+    this.rowKeyStack = []
   }
 }

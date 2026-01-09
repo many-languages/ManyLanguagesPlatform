@@ -1,4 +1,4 @@
-import type { NewExtractionResult, ExtractionObservation, RowKeyEntry, ScopeKeys } from "../types"
+import type { ExtractionObservation, RowKeyEntry, ScopeKeys } from "../types"
 import type { JsonPath } from "./path"
 import { Path } from "./path"
 import { toSourcePath, toVariableKey } from "./path"
@@ -24,12 +24,13 @@ const DEFAULT_OPTIONS: Required<Omit<WalkerOptions, "componentId" | "scopeKeys">
 /**
  * Walker - deterministic DFS traversal of JSON data
  * Extracts observations with full provenance and context tracking
+ * Stats are tracked in the shared diagnosticEngine
  */
 export function walk(
   data: any,
   options: WalkerOptions,
   diagnosticEngine: DiagnosticEngine
-): NewExtractionResult {
+): { observations: ExtractionObservation[] } {
   const opts = { ...DEFAULT_OPTIONS, ...options }
   const contextManager = new ContextManager()
   const observations: ExtractionObservation[] = []
@@ -44,21 +45,21 @@ export function walk(
   function walkRecursive(value: any, path: JsonPath, depth: number): void {
     // Check guardrails
     if (depth > opts.maxDepth) {
-      diagnosticEngine.recordMaxDepthExceeded(depth, opts.maxDepth)
+      diagnosticEngine.emitMaxDepthExceeded(depth, opts.maxDepth)
       return
     }
 
-    diagnosticEngine.incrementNodeCount()
+    diagnosticEngine.recordNodeCount()
     if (diagnosticEngine.getStats().nodeCount > opts.maxNodes) {
-      diagnosticEngine.recordMaxNodesExceeded()
+      diagnosticEngine.emitMaxNodesExceeded()
       return
     }
 
-    diagnosticEngine.updateDepth(depth)
-    diagnosticEngine.checkDepth(depth)
+    diagnosticEngine.recordDepth(depth)
+    diagnosticEngine.emitDepthWarning(depth)
 
     if (observations.length >= opts.maxObservations) {
-      diagnosticEngine.recordMaxObservationsExceeded()
+      diagnosticEngine.emitMaxObservationsExceeded()
       return
     }
 
@@ -76,13 +77,13 @@ export function walk(
     // Recurse based on type
     if (Array.isArray(value)) {
       // Array of objects or mixed: iterate with rowKey tracking
-      // Get the path to the array (before the index) to compute arrayId
+      // Get the path to the array (before the index) to compute arrayKey
       const arrayPath = path // Current path is the path to the array itself
-      const arrayId = toVariableKey(arrayPath) // e.g., "trials[*]" or "trials[*].responses[*]"
+      const arrayKey = toVariableKey(arrayPath) // e.g., "trials[*]" or "trials[*].responses[*]"
 
       value.forEach((item, index) => {
         // Push rowKey frame for this array instance
-        contextManager.push({ arrayId, index })
+        contextManager.push({ arrayKey, index })
 
         const itemPath = Path.index(path, index)
         walkRecursive(item, itemPath, depth + 1)
@@ -109,14 +110,7 @@ export function walk(
   // Start walking from root
   walkRecursive(data, Path.root(), 0)
 
-  // Get final stats
-  const stats = diagnosticEngine.getStats()
-
   return {
     observations,
-    componentDiagnostics: new Map(),
-    runDiagnostics: [],
-    stats,
-    diagnosticEngine, // Return the shared engine
   }
 }

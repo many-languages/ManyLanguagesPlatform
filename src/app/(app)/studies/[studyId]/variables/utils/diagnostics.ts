@@ -1,5 +1,6 @@
 import type {
   Diagnostic,
+  DiagnosticCode,
   ExtractionObservation,
   ExtractionStats,
   VariableFlag,
@@ -15,7 +16,7 @@ export class DiagnosticEngine {
   private stats = {
     nodeCount: 0,
     observationCount: 0,
-    maxDepthSeen: 0,
+    maxDepth: 0,
   }
 
   private counts = {
@@ -260,25 +261,25 @@ export class DiagnosticEngine {
   }
 
   /**
-   * Increment node count (called for each node visited during traversal)
+   * Record node count (called for each node visited during traversal)
    */
-  incrementNodeCount(): void {
+  recordNodeCount(): void {
     this.stats.nodeCount++
   }
 
   /**
-   * Update max depth seen
+   * Record max depth seen
    */
-  updateDepth(depth: number): void {
-    if (depth > this.stats.maxDepthSeen) {
-      this.stats.maxDepthSeen = depth
+  recordDepth(depth: number): void {
+    if (depth > this.stats.maxDepth) {
+      this.stats.maxDepth = depth
     }
   }
 
   /**
-   * Check cardinality and add diagnostics if needed
+   * Emit cardinality warning if observations exceed threshold
    */
-  checkCardinality(): void {
+  emitCardinalityWarning(): void {
     // Check overall observation count (run-level only)
     if (this.stats.observationCount > this.maxObservations) {
       this.addDiagnostic({
@@ -295,9 +296,9 @@ export class DiagnosticEngine {
   }
 
   /**
-   * Check depth and add diagnostic if too deep
+   * Emit depth warning if nesting is too deep
    */
-  checkDepth(depth: number): void {
+  emitDepthWarning(depth: number): void {
     if (depth > this.deepNestingThreshold) {
       this.addDiagnostic({
         severity: "warning",
@@ -313,9 +314,9 @@ export class DiagnosticEngine {
   }
 
   /**
-   * Add a diagnostic for max nodes exceeded
+   * Emit diagnostic for max nodes exceeded
    */
-  recordMaxNodesExceeded(): void {
+  emitMaxNodesExceeded(): void {
     this.addDiagnostic({
       severity: "error",
       code: "MAX_NODES_EXCEEDED",
@@ -328,9 +329,9 @@ export class DiagnosticEngine {
   }
 
   /**
-   * Add a diagnostic for max observations exceeded
+   * Emit diagnostic for max observations exceeded
    */
-  recordMaxObservationsExceeded(): void {
+  emitMaxObservationsExceeded(): void {
     this.addDiagnostic({
       severity: "error",
       code: "MAX_OBSERVATIONS_EXCEEDED",
@@ -344,9 +345,9 @@ export class DiagnosticEngine {
   }
 
   /**
-   * Add a diagnostic for max depth exceeded
+   * Emit diagnostic for max depth exceeded
    */
-  recordMaxDepthExceeded(depth: number, threshold: number): void {
+  emitMaxDepthExceeded(depth: number, threshold: number): void {
     this.addDiagnostic({
       severity: "error",
       code: "MAX_DEPTH_EXCEEDED",
@@ -385,22 +386,35 @@ export class DiagnosticEngine {
   }
 
   /**
-   * Get all collected diagnostics (run-level only, for backward compatibility)
+   * Finalize run-level diagnostics after all facts have been collected during traversal
+   * Materializes diagnostics from collected facts (cardinality, skipped non-JSON types, truncation)
+   * This is called automatically when getDiagnosticsByLevel() is invoked
    */
-  getDiagnostics(): Diagnostic[] {
-    // Run final checks (only run-level)
-    this.checkCardinality()
-    this.checkSkippedNonJsonTypes()
-    // Variable-level diagnostics materialized during aggregation from facts, not here
-
-    // Return run-level diagnostics for backward compatibility
-    return [...this.diagnostics.run]
+  private finalizeRunLevelDiagnostics(): void {
+    this.emitCardinalityWarning()
+    this.emitSkippedNonJsonTypeWarnings()
+    this.emitTruncatedExtractionWarning()
   }
 
   /**
-   * Check skipped non-JSON types and add diagnostics
+   * Emit truncated extraction warning if extraction was truncated
    */
-  private checkSkippedNonJsonTypes(): void {
+  private emitTruncatedExtractionWarning(): void {
+    if (this.wasTruncated()) {
+      this.addDiagnostic({
+        severity: "warning",
+        code: "TRUNCATED_EXTRACTION",
+        level: "run",
+        message: "Extraction was truncated due to limits",
+        metadata: {},
+      })
+    }
+  }
+
+  /**
+   * Emit diagnostics for skipped non-JSON types
+   */
+  private emitSkippedNonJsonTypeWarnings(): void {
     for (const [jsType, data] of this.diagnostics.skippedNonJsonTypes.entries()) {
       const message =
         data.count === 1
@@ -431,7 +445,7 @@ export class DiagnosticEngine {
     return {
       nodeCount: this.stats.nodeCount,
       observationCount: this.stats.observationCount,
-      maxDepth: this.stats.maxDepthSeen,
+      maxDepth: this.stats.maxDepth,
     }
   }
 
@@ -513,11 +527,15 @@ export class DiagnosticEngine {
 
   /**
    * Get diagnostics by level
+   * Finalizes run-level diagnostics (cardinality, skipped non-JSON types) before returning
    */
   getDiagnosticsByLevel(): {
     component: Map<string, Diagnostic[]>
     run: Diagnostic[]
   } {
+    // Finalize run-level diagnostics after all facts have been collected
+    this.finalizeRunLevelDiagnostics()
+
     return {
       component: new Map(this.diagnostics.component),
       run: [...this.diagnostics.run],
@@ -854,30 +872,30 @@ export function materializeVariableDiagnostics(
 }
 
 /**
- * Map diagnostic codes to variable flags for quick filtering
- */
-const DIAGNOSTIC_CODE_TO_FLAG: Partial<Record<string, VariableFlag>> = {
-  TYPE_DRIFT: "TYPE_DRIFT",
-  MANY_NULLS: "MANY_NULLS",
-  MIXED_ARRAY_ELEMENT_TYPES: "MIXED_ARRAY_ELEMENT_TYPES",
-  HIGH_OCCURRENCE: "HIGH_OCCURRENCE",
-  HIGH_CARDINALITY: "HIGH_CARDINALITY",
-  LARGE_VALUES: "LARGE_VALUES",
-}
-
-/**
  * Derive variable flags from diagnostics (projection for quick filtering)
- * Flags are a lightweight projection of diagnostics - no duplicate logic
+ * Flags are a lightweight projection of diagnostics - extracts DiagnosticCodes that are flags
  */
 export function deriveVariableFlags(diagnostics: Diagnostic[]): VariableFlag[] {
   const flags: VariableFlag[] = []
   const seenFlags = new Set<VariableFlag>()
 
+  // Diagnostic codes that map to flags
+  const flagCodes: Set<DiagnosticCode> = new Set([
+    "TYPE_DRIFT",
+    "MANY_NULLS",
+    "MIXED_ARRAY_ELEMENT_TYPES",
+    "HIGH_OCCURRENCE",
+    "HIGH_CARDINALITY",
+    "LARGE_VALUES",
+  ])
+
   for (const diagnostic of diagnostics) {
-    const flag = DIAGNOSTIC_CODE_TO_FLAG[diagnostic.code]
-    if (flag && !seenFlags.has(flag)) {
-      flags.push(flag)
-      seenFlags.add(flag)
+    if (flagCodes.has(diagnostic.code)) {
+      const flag = diagnostic.code as VariableFlag
+      if (!seenFlags.has(flag)) {
+        flags.push(flag)
+        seenFlags.add(flag)
+      }
     }
   }
 

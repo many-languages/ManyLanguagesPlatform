@@ -59,7 +59,12 @@ export default function VariableExtractionPreview({
           observationStore={extractionData.observationStore}
         />
 
-        <WarningsList warnings={extractionResult.warnings} />
+        <WarningsList
+          diagnostics={[
+            ...extractionResult.runDiagnostics,
+            ...Array.from(extractionResult.componentDiagnostics.values()).flat(),
+          ]}
+        />
 
         <SkippedValuesTable skippedValues={extractionResult.skippedValues} />
       </Card>

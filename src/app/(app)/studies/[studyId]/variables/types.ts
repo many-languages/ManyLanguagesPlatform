@@ -1,12 +1,14 @@
 // Variable Types - Shared across features (codebook, feedback, admin, etc.)
 
+import type { DiagnosticEngine } from "./utils/diagnostics"
+
 export type VariableType = "string" | "number" | "boolean" | "array" | "object"
 
 // New extraction system types
 export type ValueType = "null" | "boolean" | "number" | "string" | "array" | "object"
 
 export interface RowKeyEntry {
-  arrayId: string // Structural identity of the array (e.g., "trials[*]" or "trials[*].responses[*]")
+  arrayKey: string // Structural identity of the array (e.g., "trials[*]" or "trials[*].responses[*]")
   index: number // Index within that array
 }
 
@@ -18,12 +20,12 @@ export interface ScopeKeys {
 }
 
 export interface ExtractionObservation {
-  variableKey: string // wildcarded path, e.g. trials[*].rt
-  path: string // exact path, e.g. trials[0].rt
+  variableKey: string // wildcarded path with $ prefix, e.g. $trials[*].rt
+  path: string // exact path, e.g. $trials[0].rt
   keyPath: string[] // structural breadcrumb: sequence of object keys and [*] for arrays, e.g. ["trials", "*", "stimulus", "color"] for trials[3].stimulus.color
   valueType: ValueType
   valueJson: string // JSON.stringify(value)
-  rowKey: RowKeyEntry[] // Structural identity for array instances: which instance in which array nesting, e.g. [{ arrayId: "trials[*]", index: 0 }, { arrayId: "trials[*].responses[*]", index: 2 }]
+  rowKey: RowKeyEntry[] // Structural identity for array instances: which instance in which array nesting, e.g. [{ arrayKey: "trials[*]", index: 0 }, { arrayKey: "trials[*].responses[*]", index: 2 }]
   rowKeyId: string // String representation of rowKey for efficient joining: "trials[*]#0|trials[*].responses[*]#2" or "root" for non-array values
   scopeKeys: ScopeKeys // Execution context keys (componentId, and optionally workerId, batchId, groupId from JATOS)
   depth: number // Nesting depth (0 = root level)
@@ -59,12 +61,44 @@ export type DiagnosticCode =
   | "EMPTY_OR_NO_DATA"
   | "TRUNCATED_EXTRACTION"
 
+// Metadata structures for different diagnostic types
+export interface DiagnosticMetadata {
+  // Common fields
+  variable?: string // variableKey for variable-level diagnostics
+  componentId?: number // Component ID for component-level diagnostics
+  count?: number // Count of occurrences/issues
+  threshold?: number // Threshold value that was exceeded
+  observationCount?: number // Number of observations
+  nullRate?: number // Null rate (0-1)
+  nullCount?: number // Number of null values
+  totalCount?: number // Total count of values
+  distinctCount?: number // Number of distinct values
+  maxLength?: number // Maximum length
+  depth?: number // Nesting depth
+  nodeCount?: number // Number of nodes visited
+
+  // Component-level diagnostic fields
+  format?: string // Data format (json, csv, tsv, text, etc.)
+  error?: string // Error message for PARSE_ERROR
+
+  // Type-specific fields
+  types?: Record<string, number> // Type counts for TYPE_DRIFT
+  examplePaths?: string[] // Example paths for TYPE_DRIFT, SKIPPED_NON_JSON_TYPE
+  jsType?: string // JavaScript type for SKIPPED_NON_JSON_TYPE
+  tag?: string // Tag for SKIPPED_NON_JSON_TYPE
+  firstKeyPathString?: string // First keyPath for VARIABLE_KEY_COLLISION
+  currentKeyPathString?: string // Current keyPath for VARIABLE_KEY_COLLISION
+  example?: // Example observation/issue
+  | { scopeKeyId: string; rowKeyId: string; path: string } // For DUPLICATE_OBSERVATION
+    | { rowKeyId: string; path: string } // For ROW_KEY_ID_ANOMALY
+}
+
 export interface Diagnostic {
   severity: DiagnosticSeverity
   code: DiagnosticCode
   level: DiagnosticLevel
   message: string
-  metadata?: Record<string, any>
+  metadata?: DiagnosticMetadata
 }
 
 export interface ExtractionStats {
@@ -73,14 +107,12 @@ export interface ExtractionStats {
   maxDepth: number
 }
 
-// Forward declaration - DiagnosticEngine is defined in utils/diagnostics.ts
-// We use any here to avoid circular dependencies, but it should be DiagnosticEngine
 export interface NewExtractionResult {
   observations: ExtractionObservation[]
   componentDiagnostics: Map<string, Diagnostic[]> // keyed by componentId
   runDiagnostics: Diagnostic[]
   stats: ExtractionStats
-  diagnosticEngine: any // DiagnosticEngine - Expose for accessing facts/counts during aggregation
+  diagnosticEngine: DiagnosticEngine // Expose for accessing facts/counts during aggregation
 }
 
 export interface VariableExample {
@@ -88,13 +120,16 @@ export interface VariableExample {
   sourcePath: string // The exact path where this example value was found (e.g., "trials[0].rt")
 }
 
-export type VariableFlag =
-  | "TYPE_DRIFT" // Multiple VariableType observed for same variable
-  | "MANY_NULLS" // Null rate above threshold (e.g. ≥ 20%)
-  | "MIXED_ARRAY_ELEMENT_TYPES" // Array-of-primitives but elements have mixed types
-  | "HIGH_OCCURRENCE" // observationCount > threshold (e.g. 10k)
-  | "HIGH_CARDINALITY" // Too many distinct string values/options
-  | "LARGE_VALUES" // Very long strings or very long arrays (e.g. maxLen > 5k)
+// Extract variable flags from DiagnosticCode (subset of diagnostic codes that are used as flags)
+export type VariableFlag = Extract<
+  DiagnosticCode,
+  | "TYPE_DRIFT"
+  | "MANY_NULLS"
+  | "MIXED_ARRAY_ELEMENT_TYPES"
+  | "HIGH_OCCURRENCE"
+  | "HIGH_CARDINALITY"
+  | "LARGE_VALUES"
+>
 
 export type VariableHeuristicThresholds = {
   manyNulls: number
@@ -141,7 +176,6 @@ export type SkippedReason =
 export interface ExtractionResult {
   variables: ExtractedVariable[] // Each has diagnostics field
   skippedValues: SkippedValue[]
-  warnings: string[] // User-friendly warnings (for non-skipped issues)
   componentDiagnostics: Map<string, Diagnostic[]> // keyed by componentId
   runDiagnostics: Diagnostic[]
 }

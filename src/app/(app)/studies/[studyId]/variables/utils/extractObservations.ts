@@ -11,12 +11,7 @@ import { walk } from "./walker"
  */
 export function extractObservations(enrichedResult: EnrichedJatosStudyResult): NewExtractionResult {
   const allObservations: NewExtractionResult["observations"] = []
-  const allStats: NewExtractionResult["stats"] = {
-    nodeCount: 0,
-    observationCount: 0,
-    maxDepth: 0,
-  }
-  // Single DiagnosticEngine for all components
+  // Single DiagnosticEngine for all components (tracks stats across all components)
   const diagnosticEngine = new DiagnosticEngine(50000)
 
   enrichedResult.componentResults.forEach((component) => {
@@ -62,10 +57,6 @@ export function extractObservations(enrichedResult: EnrichedJatosStudyResult): N
         if (transformedData) {
           const result = walk(transformedData, { componentId, scopeKeys }, diagnosticEngine)
           allObservations.push(...result.observations)
-          // Merge stats
-          allStats.nodeCount += result.stats.nodeCount
-          allStats.observationCount += result.stats.observationCount
-          allStats.maxDepth = Math.max(allStats.maxDepth, result.stats.maxDepth)
         } else {
           // Component-level: EMPTY_OR_NO_DATA
           diagnosticEngine.addComponentDiagnostic(String(componentId), {
@@ -90,10 +81,6 @@ export function extractObservations(enrichedResult: EnrichedJatosStudyResult): N
       if (parsedData !== undefined && parsedData !== null) {
         const result = walk(parsedData, { componentId, scopeKeys }, diagnosticEngine)
         allObservations.push(...result.observations)
-        // Merge stats
-        allStats.nodeCount += result.stats.nodeCount
-        allStats.observationCount += result.stats.observationCount
-        allStats.maxDepth = Math.max(allStats.maxDepth, result.stats.maxDepth)
       } else {
         diagnosticEngine.addComponentDiagnostic(String(componentId), {
           severity: "warning",
@@ -124,26 +111,15 @@ export function extractObservations(enrichedResult: EnrichedJatosStudyResult): N
   })
 
   // Get diagnostics by level from DiagnosticEngine
+  // This automatically finalizes run-level diagnostics (cardinality, skipped non-JSON types, truncation)
   const { component: componentDiagnostics, run: runDiagnostics } =
     diagnosticEngine.getDiagnosticsByLevel()
-
-  // Check for truncation and add TRUNCATED_EXTRACTION if needed
-  const finalRunDiagnostics = [...runDiagnostics]
-  if (diagnosticEngine.wasTruncated()) {
-    finalRunDiagnostics.push({
-      severity: "warning",
-      code: "TRUNCATED_EXTRACTION",
-      level: "run",
-      message: "Extraction was truncated due to limits",
-      metadata: {},
-    })
-  }
 
   return {
     observations: allObservations,
     componentDiagnostics, // Map keyed by componentId
-    runDiagnostics: finalRunDiagnostics,
-    stats: allStats,
+    runDiagnostics, // Already includes TRUNCATED_EXTRACTION if needed
+    stats: diagnosticEngine.getStats(), // Use engine's aggregated stats (already includes all components)
     diagnosticEngine, // Expose for aggregation (contains facts)
   }
 }

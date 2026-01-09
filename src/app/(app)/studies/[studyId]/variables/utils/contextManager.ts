@@ -5,7 +5,7 @@
 
 import type { RowKeyEntry } from "../types"
 
-export type ContextFrame = { arrayId: string; index: number }
+export type ContextFrame = { arrayKey: string; index: number }
 
 /**
  * Context Manager - manages a stack of rowKey frames

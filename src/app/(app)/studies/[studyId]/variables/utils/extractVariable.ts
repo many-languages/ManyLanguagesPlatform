@@ -15,18 +15,9 @@ export function extractVariables(enrichedResult: EnrichedJatosStudyResult): Extr
   // Then, aggregate observations into variables
   const variables = aggregateVariables(extractionResult)
 
-  // Convert diagnostics to warnings (for non-skipped issues)
-  // Combine run-level and component-level diagnostics for warnings
-  const allDiagnostics = [
-    ...extractionResult.runDiagnostics,
-    ...Array.from(extractionResult.componentDiagnostics.values()).flat(),
-  ]
-  const warnings = allDiagnostics.filter((d) => d.severity === "warning").map((d) => d.message)
-
   return {
     variables,
     skippedValues: [], // TODO: map from diagnostics if needed
-    warnings,
     componentDiagnostics: extractionResult.componentDiagnostics,
     runDiagnostics: extractionResult.runDiagnostics,
   }

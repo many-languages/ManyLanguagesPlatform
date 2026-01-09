@@ -21,7 +21,7 @@ function safeStringify(value: any): string {
 
 /**
  * Compute rowKeyId from rowKey array for efficient joining
- * Format: "arrayId#index|arrayId#index|..."
+ * Format: "arrayKey#index|arrayKey#index|..."
  * Returns "root" when there are no arrays in the path (non-array values).
  * In that case, use (scopeKeys, variable) to identify the slot.
  */
@@ -29,7 +29,7 @@ function computeRowKeyId(rowKey: RowKeyEntry[]): string {
   if (rowKey.length === 0) {
     return "root"
   }
-  return rowKey.map((f) => `${f.arrayId}#${f.index}`).join("|")
+  return rowKey.map((f) => `${f.arrayKey}#${f.index}`).join("|")
 }
 
 /**

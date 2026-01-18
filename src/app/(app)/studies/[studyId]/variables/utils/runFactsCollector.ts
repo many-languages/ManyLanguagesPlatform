@@ -13,12 +13,14 @@ export class RunFactsCollector {
   // Thresholds / caps
   private readonly deepNestingThreshold: number
   private readonly maxExamplePaths: number
+  private readonly enabled: boolean
 
   readonly runFacts: RunFacts
 
-  constructor(args: { deepNestingThreshold: number; maxExamplePaths: number }) {
+  constructor(args: { deepNestingThreshold: number; maxExamplePaths: number; enabled?: boolean }) {
     this.deepNestingThreshold = args.deepNestingThreshold
     this.maxExamplePaths = args.maxExamplePaths
+    this.enabled = args.enabled ?? true
 
     this.runFacts = {
       limits: new Map(),
@@ -27,14 +29,11 @@ export class RunFactsCollector {
     }
   }
 
-  wasTruncated(): boolean {
-    return this.runFacts.limits.size > 0
-  }
-
   /**
    * Main internal reducer for run events -> runFacts
    */
   private recordRunEvent(e: RunEvent): void {
+    if (!this.enabled) return
     switch (e.kind) {
       case "MAX_DEPTH_EXCEEDED":
       case "MAX_NODES_EXCEEDED":

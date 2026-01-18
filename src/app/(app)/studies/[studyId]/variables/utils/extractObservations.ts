@@ -96,6 +96,7 @@ export function extractObservations(
   const runFactsCollector = new RunFactsCollector({
     deepNestingThreshold: config.run.deepNestingThreshold,
     maxExamplePaths: config.run.maxExamplePaths,
+    enabled: diagnosticsEnabled,
   })
   const variableFactsCollector = new VariableFactsCollector({
     maxExamplePaths: config.variable.maxExamplePaths,
@@ -170,11 +171,12 @@ export function extractObservations(
   })
 
   // Freeze facts into immutable snapshots
-  const runFacts = freezeRunFacts(runFactsCollector)
   const variableFacts = freezeVariableFacts(variableFactsCollector)
 
-  // Materialize diagnostics from frozen facts
-  const runDiagnostics = diagnosticsEnabled ? materializeRunDiagnostics(runFacts) : []
+  // Materialize diagnostics from frozen facts (only if enabled)
+  const runDiagnostics = diagnosticsEnabled
+    ? materializeRunDiagnostics(freezeRunFacts(runFactsCollector))
+    : []
 
   return {
     observations: allObservations,

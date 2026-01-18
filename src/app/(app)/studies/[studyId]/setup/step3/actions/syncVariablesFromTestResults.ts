@@ -37,24 +37,19 @@ export async function syncVariablesFromTestResultsAction(
       }
     }
 
-    // Sync variables to database (only primitives for now, arrays/objects can be added later)
-    const primitiveVariables = extractionResult.variables.filter(
-      (v) => v.type === "string" || v.type === "number" || v.type === "boolean"
-    )
-
     await syncStudyVariablesRsc({
       studyId,
-      variables: primitiveVariables.map((v) => ({
-        name: v.variableName,
-        label: v.variableName,
-        type: v.type as "string" | "number" | "boolean",
-        example: v.examples[0]?.value || "",
+      variables: extractionResult.variables.map((v) => ({
+        variableKey: v.variableKey,
+        variableName: v.variableName,
+        type: v.type,
+        examples: v.examples,
       })),
     })
 
     return {
       success: true,
-      variableCount: primitiveVariables.length,
+      variableCount: extractionResult.variables.length,
     }
   } catch (error) {
     console.error("Failed to sync variables from test results:", error)

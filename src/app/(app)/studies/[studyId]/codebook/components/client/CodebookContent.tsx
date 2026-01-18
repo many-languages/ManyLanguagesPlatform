@@ -12,10 +12,10 @@ import { AsyncButton } from "@/src/app/components/AsyncButton"
 
 interface VariableCodebookEntry {
   id: number
-  name: string
-  label: string | null
+  variableKey: string
+  variableName: string
   type: string | null
-  example: string | null
+  examples: Array<{ value: string; sourcePath: string }>
   description: string | null
   personalData: boolean
 }
@@ -23,10 +23,10 @@ interface VariableCodebookEntry {
 interface CodebookContentProps {
   initialVariables: Array<{
     id: number
-    name: string
-    label: string | null
+    variableKey: string
+    variableName: string
     type: string | null
-    example: string | null
+    examples: Array<{ value: string; sourcePath: string }> | null
     description: string | null
     personalData: boolean
   }>
@@ -43,10 +43,10 @@ export default function CodebookContent({ initialVariables }: CodebookContentPro
     setVariables(
       initialVariables.map((v) => ({
         id: v.id,
-        name: v.name,
-        label: v.label,
+        variableKey: v.variableKey,
+        variableName: v.variableName,
         type: v.type,
-        example: v.example,
+        examples: v.examples ?? [],
         description: v.description ?? "",
         personalData: v.personalData ?? false,
       }))
@@ -75,7 +75,7 @@ export default function CodebookContent({ initialVariables }: CodebookContentPro
     if (missingDescriptions.length > 0) {
       toast.error(
         `Please add descriptions for all variables. Missing: ${missingDescriptions
-          .map((v) => v.name)
+          .map((v) => v.variableName)
           .join(", ")}`
       )
       return
@@ -123,16 +123,14 @@ export default function CodebookContent({ initialVariables }: CodebookContentPro
               <div className="flex flex-col gap-4">
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1">
-                    <h3 className="font-semibold text-lg">{variable.name}</h3>
-                    {variable.label && (
-                      <p className="text-sm text-base-content/70">Label: {variable.label}</p>
-                    )}
+                    <h3 className="font-semibold text-lg">{variable.variableName}</h3>
+                    <p className="text-xs text-base-content/50">Key: {variable.variableKey}</p>
                     {variable.type && (
                       <p className="text-sm text-base-content/70">Type: {variable.type}</p>
                     )}
-                    {variable.example && (
+                    {variable.examples.length > 0 && (
                       <p className="text-sm text-base-content/70">
-                        Example: <code className="text-xs">{variable.example}</code>
+                        Example: <code className="text-xs">{variable.examples[0]?.value}</code>
                       </p>
                     )}
                   </div>

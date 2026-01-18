@@ -7,10 +7,17 @@ const SyncStudyVariables = z.object({
   studyId: z.number(),
   variables: z.array(
     z.object({
-      name: z.string(),
-      label: z.string().optional(),
-      type: z.string().optional(),
-      example: z.string().optional(),
+      variableKey: z.string(),
+      variableName: z.string(),
+      type: z.string(),
+      examples: z
+        .array(
+          z.object({
+            value: z.string(),
+            sourcePath: z.string(),
+          })
+        )
+        .optional(),
     })
   ),
 })
@@ -19,10 +26,13 @@ const SyncStudyVariables = z.object({
 export async function syncStudyVariablesRsc(input: {
   studyId: number
   variables: Array<{
-    name: string
-    label?: string
-    type?: string
-    example?: string
+    variableKey: string
+    variableName: string
+    type: string
+    examples?: Array<{
+      value: string
+      sourcePath: string
+    }>
   }>
 }) {
   await verifyResearcherStudyAccess(input.studyId)
@@ -31,9 +41,13 @@ export async function syncStudyVariablesRsc(input: {
   const results = await Promise.all(
     input.variables.map((v) =>
       db.studyVariable.upsert({
-        where: { studyId_name: { studyId: input.studyId, name: v.name } },
+        where: { studyId_variableKey: { studyId: input.studyId, variableKey: v.variableKey } },
         create: { studyId: input.studyId, ...v },
-        update: v,
+        update: {
+          variableName: v.variableName,
+          type: v.type,
+          examples: v.examples,
+        },
       })
     )
   )

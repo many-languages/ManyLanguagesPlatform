@@ -190,17 +190,17 @@ model StudyResearcher {
 model StudyVariable {
   id           Int      @id @default(autoincrement())
   studyId      Int
-  name         String // e.g. "score" or "reaction_time"
-  label        String? // optional human-readable label
-  type         String? // e.g. "number", "string", "boolean"
-  example      String? // optional example value from trial run
+  variableKey  String // Structural variable key with $ prefix, e.g. $trials[*].rt
+  variableName String // Human-readable prettified name, e.g. "rt"
+  type         String // e.g. "number", "string", "boolean", "array", "object"
+  examples     Json? // Array of { value: string, sourcePath: string } from pilot extraction
   description  String? // codebook description of the variable
   personalData Boolean  @default(false) // whether this variable contains personal data
   createdAt    DateTime @default(now())
 
   study Study @relation(fields: [studyId], references: [id])
 
-  @@unique([studyId, name])
+  @@unique([studyId, variableKey])
 }
 
 model ParticipantStudy {

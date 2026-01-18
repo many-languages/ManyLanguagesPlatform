@@ -85,8 +85,10 @@ function prepareDataForWalking(
  */
 export function extractObservations(
   enrichedResult: EnrichedJatosStudyResult,
-  config: ExtractionConfig = DEFAULT_EXTRACTION_CONFIG
+  config: ExtractionConfig = DEFAULT_EXTRACTION_CONFIG,
+  options?: { diagnostics?: boolean }
 ): NewExtractionResult {
+  const diagnosticsEnabled = options?.diagnostics ?? true
   const allObservations: NewExtractionResult["observations"] = []
 
   // Single collectors for all components (tracks stats and facts across all components)
@@ -115,26 +117,30 @@ export function extractObservations(
 
     // Early validation: empty data
     if (!component.parsedData && !component.dataContent) {
-      componentDiagnosticsCollector.add(componentId, {
-        severity: "warning",
-        code: "EMPTY_OR_NO_DATA",
-        message: `Component ${componentId} has no data or empty data`,
-        metadata: { componentId },
-      })
+      if (diagnosticsEnabled) {
+        componentDiagnosticsCollector.add(componentId, {
+          severity: "warning",
+          code: "EMPTY_OR_NO_DATA",
+          message: `Component ${componentId} has no data or empty data`,
+          metadata: { componentId },
+        })
+      }
       return
     }
 
     // Early validation: parse errors
     if (component.parseError) {
-      componentDiagnosticsCollector.add(componentId, {
-        severity: "error",
-        code: "PARSE_ERROR",
-        message: `Parse error: ${component.parseError}`,
-        metadata: {
-          componentId,
-          error: component.parseError,
-        },
-      })
+      if (diagnosticsEnabled) {
+        componentDiagnosticsCollector.add(componentId, {
+          severity: "error",
+          code: "PARSE_ERROR",
+          message: `Parse error: ${component.parseError}`,
+          metadata: {
+            componentId,
+            error: component.parseError,
+          },
+        })
+      }
       return
     }
 
@@ -145,12 +151,14 @@ export function extractObservations(
     // Handle format-specific errors
     if ("error" in prepared) {
       const severity = prepared.error.code === "TEXT_FORMAT_NOT_SUPPORTED" ? "error" : "warning"
-      componentDiagnosticsCollector.add(componentId, {
-        severity,
-        code: prepared.error.code,
-        message: prepared.error.message,
-        metadata: { componentId, format },
-      })
+      if (diagnosticsEnabled) {
+        componentDiagnosticsCollector.add(componentId, {
+          severity,
+          code: prepared.error.code,
+          message: prepared.error.message,
+          metadata: { componentId, format },
+        })
+      }
       return
     }
 
@@ -166,7 +174,7 @@ export function extractObservations(
   const variableFacts = freezeVariableFacts(variableFactsCollector)
 
   // Materialize diagnostics from frozen facts
-  const runDiagnostics = materializeRunDiagnostics(runFacts)
+  const runDiagnostics = diagnosticsEnabled ? materializeRunDiagnostics(runFacts) : []
 
   return {
     observations: allObservations,

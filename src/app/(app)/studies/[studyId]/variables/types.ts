@@ -278,8 +278,42 @@ export interface ExtractedVariable {
   diagnostics?: Diagnostic[] // Variable-level diagnostics (materialized from facts and computed from counts)
 }
 
-export interface ExtractionResult {
-  variables: ExtractedVariable[] // Each has diagnostics field
-  componentDiagnostics: Map<number, Diagnostic[]> // keyed by componentId
-  runDiagnostics: Diagnostic[]
+export interface ExtractionBundle {
+  variables: ExtractedVariable[]
+  observations: ExtractionObservation[]
+  stats: ExtractionStats
+  diagnostics: {
+    run: Diagnostic[]
+    component: Map<number, Diagnostic[]>
+  }
 }
+
+export type PublicVariable = Omit<ExtractedVariable, "diagnostics"> & {
+  diagnostics?: never
+}
+
+export type ExtractionView = "debug" | "codebook" | "feedback-authoring" | "feedback-render"
+
+export type ExtractionViewPayload =
+  | {
+      view: "debug"
+      variables: ExtractedVariable[]
+      diagnostics: ExtractionBundle["diagnostics"]
+      observations: ExtractionObservation[]
+      stats: ExtractionStats
+    }
+  | {
+      view: "codebook"
+      variables: PublicVariable[]
+    }
+  | {
+      view: "feedback-authoring"
+      variables: PublicVariable[]
+      observations: ExtractionObservation[]
+      stats: ExtractionStats
+    }
+  | {
+      view: "feedback-render"
+      variables: PublicVariable[]
+      stats: ExtractionStats
+    }

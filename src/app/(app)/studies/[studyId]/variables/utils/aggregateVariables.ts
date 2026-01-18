@@ -18,8 +18,10 @@ import { materializeVariableDiagnostics } from "./materializeVariableDiagnostics
 export function aggregateVariables(
   observations: ExtractionObservation[],
   variableFacts: VariableFacts,
-  config: ExtractionConfig
+  config: ExtractionConfig,
+  options?: { diagnostics?: boolean }
 ): ExtractedVariable[] {
+  const diagnosticsEnabled = options?.diagnostics ?? true
   // Track variable metadata and keyPath map as we iterate (no storage of observation arrays)
   const variableMetadata = new Map<
     string,
@@ -88,18 +90,14 @@ export function aggregateVariables(
 
     // Materialize variable-level diagnostics from facts (single source of truth)
     // Use thresholds from config
-    const materializedDiagnostics = materializeVariableDiagnostics(
-      variableKey,
-      facts,
-      variableType,
-      config.heuristics,
-      {
-        maxExamplePaths: config.variable.maxExamplePaths,
-      }
-    )
+    const materializedDiagnostics = diagnosticsEnabled
+      ? materializeVariableDiagnostics(variableKey, facts, variableType, config.heuristics, {
+          maxExamplePaths: config.variable.maxExamplePaths,
+        })
+      : []
 
     // Derive flags from diagnostics (projection for quick filtering)
-    const flags = deriveVariableFlags(materializedDiagnostics)
+    const flags = diagnosticsEnabled ? deriveVariableFlags(materializedDiagnostics) : []
 
     variables.push({
       variableKey,
@@ -112,7 +110,10 @@ export function aggregateVariables(
       flags,
       depth,
       isTopLevel,
-      diagnostics: materializedDiagnostics.length > 0 ? materializedDiagnostics : undefined,
+      diagnostics:
+        diagnosticsEnabled && materializedDiagnostics.length > 0
+          ? materializedDiagnostics
+          : undefined,
     })
   }
 

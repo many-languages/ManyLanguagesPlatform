@@ -1,43 +1,55 @@
 import {
+  ExtractionConfig,
   ExtractedVariable,
-  NewExtractionResult,
+  ExtractionObservation,
+  VariableFacts,
   VariableExample,
-  VariableHeuristicThresholds,
 } from "../types"
 import { buildVariableNames } from "./buildVariableNames"
-import { deriveVariableFlags, materializeVariableDiagnostics } from "./diagnostics"
+import { deriveVariableFlags } from "./deriveVariableFlags"
 import { determineVariableType } from "./determineVariableType"
+import { materializeVariableDiagnostics } from "./materializeVariableDiagnostics"
 
 /**
  * Aggregate observations into high-level variable aggregates
  * Lightweight: only stores metadata and examples, not all values
+ * Takes only the data needed (observations and variableFacts) as direct parameters
  */
-export function aggregateVariables(extractionResult: NewExtractionResult): ExtractedVariable[] {
-  // Track variable metadata as we iterate (no storage of observation arrays)
+export function aggregateVariables(
+  observations: ExtractionObservation[],
+  variableFacts: VariableFacts,
+  config: ExtractionConfig
+): ExtractedVariable[] {
+  // Track variable metadata and keyPath map as we iterate (no storage of observation arrays)
   const variableMetadata = new Map<
     string,
     {
       keyPath: string[]
       componentIds: Set<number>
-      depths: number[]
+      minDepth: number
       examples: VariableExample[]
+      count: number
     }
   >()
+  const keyPathMap = new Map<string, string[]>()
 
   // Single pass through observations to collect metadata
-  for (const obs of extractionResult.observations) {
+  for (const obs of observations) {
     if (!variableMetadata.has(obs.variableKey)) {
+      keyPathMap.set(obs.variableKey, obs.keyPath)
       variableMetadata.set(obs.variableKey, {
         keyPath: obs.keyPath,
         componentIds: new Set(),
-        depths: [],
+        minDepth: Infinity,
         examples: [],
+        count: 0,
       })
     }
 
     const meta = variableMetadata.get(obs.variableKey)!
     meta.componentIds.add(obs.scopeKeys.componentId)
-    meta.depths.push(obs.depth)
+    meta.minDepth = Math.min(meta.minDepth, obs.depth)
+    meta.count++
 
     // Collect examples (first 5 only)
     if (meta.examples.length < 5) {
@@ -48,26 +60,11 @@ export function aggregateVariables(extractionResult: NewExtractionResult): Extra
     }
   }
 
-  // Build keyPath map for variable name generation
-  const variableKeyPaths = new Map<string, string[]>()
-  for (const [variableKey, meta] of variableMetadata.entries()) {
-    variableKeyPaths.set(variableKey, meta.keyPath)
-  }
+  // Generate prettified variable names (keyPathMap already built during observation loop)
+  const variableNames = buildVariableNames(keyPathMap)
 
-  // Generate prettified variable names
-  const variableNames = buildVariableNames(variableKeyPaths)
-
-  // Get facts from the single DiagnosticEngine
-  const facts = extractionResult.diagnosticEngine.getVariableFacts()
-
-  // Centralized thresholds configuration
-  const thresholds: VariableHeuristicThresholds = {
-    manyNulls: 0.2, // 20%
-    highNullRate: 0.8, // 80%
-    highOccurrence: 10000,
-    highCardinality: 100,
-    largeValueLength: 5000,
-  }
+  // Use variableFacts directly (already a snapshot, no engine dependency)
+  const facts = variableFacts
 
   // Convert to ExtractedVariable array
   const variables: ExtractedVariable[] = []
@@ -78,23 +75,27 @@ export function aggregateVariables(extractionResult: NewExtractionResult): Extra
     // Get unique component IDs
     const componentIds = Array.from(meta.componentIds)
 
-    // Get observation count from facts
-    const observationCount = facts.counts.variableCounts.get(variableKey) || 0
+    // Get observation count directly from observations (source of truth, independent of diagnostics)
+    const observationCount = meta.count
 
-    // Determine data structure (simplified - could be enhanced)
-    const dataStructure: "array" | "object" = observationCount > 1 ? "array" : "object"
+    // Determine data structure: check if variableKey contains [*] (array wildcard)
+    // This correctly identifies array variables vs object variables based on structure
+    const dataStructure: "array" | "object" = variableKey.includes("[*]") ? "array" : "object"
 
-    // Compute depth from observations (use minDepth as the variable depth)
-    const minDepth = Math.min(...meta.depths)
-    const depth = minDepth // Use minimum depth as the variable depth
-    const isTopLevel = minDepth === 0 // Top level if at least one observation is at root
+    // Use minDepth directly (already computed during observation loop)
+    const depth = meta.minDepth
+    const isTopLevel = meta.minDepth === 1 // Top-level keys are direct children of root (depth 1)
 
     // Materialize variable-level diagnostics from facts (single source of truth)
+    // Use thresholds from config
     const materializedDiagnostics = materializeVariableDiagnostics(
       variableKey,
       facts,
       variableType,
-      thresholds
+      config.heuristics,
+      {
+        maxExamplePaths: config.variable.maxExamplePaths,
+      }
     )
 
     // Derive flags from diagnostics (projection for quick filtering)

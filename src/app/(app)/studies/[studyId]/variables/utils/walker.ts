@@ -1,76 +1,117 @@
-import type { ExtractionObservation, RowKeyEntry, ScopeKeys } from "../types"
+import type { ExtractionObservation, ExtractionConfig, ScopeKeys } from "../types"
 import type { JsonPath } from "./path"
 import { Path } from "./path"
 import { toSourcePath, toVariableKey } from "./path"
-import { ContextManager } from "./contextManager"
-import { DiagnosticEngine } from "./diagnostics"
+import { RowKeyTracker } from "./RowKeyTracker"
+import { RunFactsCollector } from "./runFactsCollector"
+import { StatsTracker } from "./statsTracker"
 import { shouldEmit } from "./extractionPolicy"
-import { emitObservation } from "./observationEmitter"
+import { emitObservation, computeScopeKeyId } from "./observationEmitter"
+import { VariableFactsCollector } from "./variableFactsCollector"
 
-export interface WalkerOptions {
-  maxDepth?: number
-  maxNodes?: number
-  maxObservations?: number
-  componentId: number
-  scopeKeys?: Partial<ScopeKeys> // Optional scope keys (componentId is required, others optional)
+/**
+ * Emission environment - bundles all context needed for observation emission
+ */
+type EmitEnv = {
+  ctx: PipelineContext
+  scopeKeys: ScopeKeys
+  rowKeyTracker: RowKeyTracker
+  observations: ExtractionObservation[]
 }
 
-const DEFAULT_OPTIONS: Required<Omit<WalkerOptions, "componentId" | "scopeKeys">> = {
-  maxDepth: 10,
-  maxNodes: 10000,
-  maxObservations: 50000,
+/**
+ * Pipeline context - bundles all extraction state and engines
+ * Ensures consistency: all engines use the same config
+ */
+export interface PipelineContext {
+  config: ExtractionConfig
+  stats: StatsTracker
+  run: RunFactsCollector
+  variable: VariableFactsCollector
+}
+
+/**
+ * Try to emit an observation - handles all emission logic in one place
+ * Returns "stop" if emission happened (don't recurse), "continue" if should recurse
+ */
+function tryEmitObservation(value: any, path: JsonPath, env: EmitEnv): "continue" | "stop" {
+  // Policy check: should we emit this value?
+  if (!shouldEmit(value)) {
+    return "continue"
+  }
+
+  // Limit check: max observations guard (only checked when about to emit)
+  const nextObsCount = env.ctx.stats.getObservationCount() + 1
+  if (nextObsCount > env.ctx.config.walker.maxObservations) {
+    env.ctx.run.recordMaxObservationsExceeded({
+      threshold: env.ctx.config.walker.maxObservations,
+      observationCount: nextObsCount - 1, // Report the count we stopped at (before the would-be exceed)
+    })
+    return "stop"
+  }
+
+  // Emit observation - copy rowKey snapshot (readonly reference must be copied)
+  const rowKey = [...env.rowKeyTracker.rowKey]
+  const scopeKeyId = computeScopeKeyId(env.scopeKeys)
+  const observation = emitObservation(
+    path,
+    value,
+    rowKey,
+    env.scopeKeys,
+    scopeKeyId,
+    env.ctx.config.variable.maxDistinctTracking
+  )
+
+  // Record observation
+  env.observations.push(observation)
+  env.ctx.stats.recordObservationCount()
+  env.ctx.variable.record(observation)
+
+  return "stop"
 }
 
 /**
  * Walker - deterministic DFS traversal of JSON data
  * Extracts observations with full provenance and context tracking
- * Stats are tracked in the shared diagnosticEngine
+ * Stats are tracked directly via StatsTracker
  */
 export function walk(
   data: any,
-  options: WalkerOptions,
-  diagnosticEngine: DiagnosticEngine
+  scopeKeys: ScopeKeys,
+  ctx: PipelineContext
 ): { observations: ExtractionObservation[] } {
-  const opts = { ...DEFAULT_OPTIONS, ...options }
-  const contextManager = new ContextManager()
+  const rowKeyTracker = new RowKeyTracker()
   const observations: ExtractionObservation[] = []
 
-  // Build scopeKeys from options (componentId is required, others optional)
-  const scopeKeys: ScopeKeys = {
-    ...(opts.scopeKeys || {}),
-    componentId: opts.componentId,
+  const env: EmitEnv = {
+    ctx,
+    scopeKeys,
+    rowKeyTracker,
+    observations,
   }
 
   // Recursive walk function
   function walkRecursive(value: any, path: JsonPath, depth: number): void {
     // Check guardrails
-    if (depth > opts.maxDepth) {
-      diagnosticEngine.emitMaxDepthExceeded(depth, opts.maxDepth)
+    if (depth > ctx.config.walker.maxDepth) {
+      ctx.run.recordMaxDepthExceeded(depth, ctx.config.walker.maxDepth)
       return
     }
 
-    diagnosticEngine.recordNodeCount()
-    if (diagnosticEngine.getStats().nodeCount > opts.maxNodes) {
-      diagnosticEngine.emitMaxNodesExceeded()
+    ctx.stats.recordNodeCount()
+    if (ctx.stats.getNodeCount() > ctx.config.walker.maxNodes) {
+      ctx.run.recordMaxNodesExceeded({
+        nodeCount: ctx.stats.getNodeCount(),
+        threshold: ctx.config.walker.maxNodes,
+      })
       return
     }
 
-    diagnosticEngine.recordDepth(depth)
-    diagnosticEngine.emitDepthWarning(depth)
+    ctx.stats.recordDepth(depth)
+    ctx.run.recordDepthWarning(depth)
 
-    if (observations.length >= opts.maxObservations) {
-      diagnosticEngine.emitMaxObservationsExceeded()
-      return
-    }
-
-    // Check if we should emit this value
-    if (shouldEmit(value)) {
-      // Get the current rowKey from contextManager
-      const rowKey = contextManager.getRowKey()
-      const observation = emitObservation(path, value, rowKey, scopeKeys)
-      observations.push(observation)
-      diagnosticEngine.recordObservation(observation)
-      // Don't recurse into emitted values
+    // Try to emit - if emitted, stop recursion
+    if (tryEmitObservation(value, path, env) === "stop") {
       return
     }
 
@@ -83,13 +124,13 @@ export function walk(
 
       value.forEach((item, index) => {
         // Push rowKey frame for this array instance
-        contextManager.push({ arrayKey, index })
+        rowKeyTracker.push({ arrayKey, index })
 
         const itemPath = Path.index(path, index)
         walkRecursive(item, itemPath, depth + 1)
 
         // Pop rowKey frame when leaving this array element
-        contextManager.pop()
+        rowKeyTracker.pop()
       })
     } else if (typeof value === "object" && value !== null) {
       // Object: iterate key-value pairs
@@ -102,7 +143,7 @@ export function walk(
       // Note: null is valid JSON and is handled as a primitive by shouldEmit
       const jsType = typeof value
       const pathString = toSourcePath(path)
-      diagnosticEngine.recordSkippedNonJsonType(pathString, jsType)
+      ctx.run.recordSkippedNonJsonType(pathString, jsType)
     }
     // Primitives are already handled by shouldEmit
   }

@@ -1,4 +1,4 @@
-import type { ExtractionObservation, ScopeKeys } from "../types"
+import type { ExtractionObservation } from "../types"
 
 /**
  * Observation Store - provides efficient lookup of observations by variableKey, scope, and row
@@ -15,7 +15,7 @@ import type { ExtractionObservation, ScopeKeys } from "../types"
  * - Returns valueJson strings (caller parses) to avoid repeated parsing
  * - Uses variableKey: string directly (store is ignorant of ExtractedVariable aggregates)
  * - Provides row/scoped helpers for accessing observations by execution context
- * - Builds stable scopeKeyId from all present ScopeKeys fields (sorted) for extensibility
+ * - Uses pre-computed scopeKeyId from observations (no need to recompute from scopeKeys)
  */
 export class ObservationStore {
   private readonly allObservations: ReadonlyArray<ExtractionObservation>
@@ -46,39 +46,13 @@ export class ObservationStore {
 
       // Index by scope and row for iterateRow() lookups
       // Key format: "${scopeKeyId}||${rowKeyId}"
-      const joinKey = this.buildJoinKey(obs.scopeKeys, obs.rowKeyId)
+      // Use pre-computed scopeKeyId from observation (no need to recompute)
+      const joinKey = `${obs.scopeKeyId}||${obs.rowKeyId}`
       if (!this.byScopeAndRow.has(joinKey)) {
         this.byScopeAndRow.set(joinKey, [])
       }
       this.byScopeAndRow.get(joinKey)!.push(i)
     }
-  }
-
-  /**
-   * Build stable scopeKeyId from all present ScopeKeys fields (sorted)
-   * Format: "batchId:abc|componentId:123|groupId:xyz|workerId:456"
-   * Fields are sorted alphabetically by key name for stability
-   * Only includes fields that are present (not undefined)
-   *
-   * This design allows ScopeKeys to be extended in the future without breaking
-   * existing functionality - new fields will automatically be included.
-   */
-  private buildScopeKeyId(scopeKeys: ScopeKeys): string {
-    return Object.entries(scopeKeys)
-      .filter(([, v]) => v !== undefined)
-      .sort(([a], [b]) => a.localeCompare(b))
-      .map(([k, v]) => `${k}:${String(v)}`)
-      .join("|")
-  }
-
-  /**
-   * Build join key from scopeKeys and rowKeyId
-   * Format: "${scopeKeyId}||${rowKeyId}"
-   * Used for indexing and looking up observations by scope and row
-   */
-  private buildJoinKey(scopeKeys: ScopeKeys, rowKeyId: string): string {
-    const scopeKeyId = this.buildScopeKeyId(scopeKeys)
-    return `${scopeKeyId}||${rowKeyId}`
   }
 
   /**
@@ -134,21 +108,21 @@ export class ObservationStore {
    * Returns an iterator to avoid array allocation
    * Useful for accessing all observations that belong to the same array instance
    *
-   * @param scopeKeys - The scope keys (componentId, workerId, batchId, groupId)
+   * @param scopeKeyId - Pre-computed scope key ID (from observation.scopeKeyId)
    * @param rowKeyId - The row key ID (e.g., "trials[*]#0|trials[*].responses[*]#2" or "root" for non-array values)
    *
    * Example:
    * ```typescript
-   * for (const obs of store.iterateRow(scopeKeys, rowKeyId)) {
+   * for (const obs of store.iterateRow(scopeKeyId, rowKeyId)) {
    *   console.log(obs.variableKey, obs.valueJson)
    * }
    * ```
    */
   *iterateRow(
-    scopeKeys: ScopeKeys,
+    scopeKeyId: string,
     rowKeyId: string
   ): Generator<ExtractionObservation, void, unknown> {
-    const joinKey = this.buildJoinKey(scopeKeys, rowKeyId)
+    const joinKey = `${scopeKeyId}||${rowKeyId}`
     const indices = this.byScopeAndRow.get(joinKey) || []
     for (const i of indices) {
       yield this.allObservations[i]
@@ -185,29 +159,28 @@ export class ObservationStore {
   }
 
   /**
-   * Ergonomic: Record<string, unknown> for one (scopeKeys, rowKeyId).
+   * Ergonomic: Record<string, unknown> for one (scopeKeyId, rowKeyId).
    * Behavior: last-write-wins on duplicates, and warns (dev-only).
    */
-  getRowRecord(scopeKeys: ScopeKeys, rowKeyId: string): Record<string, unknown> {
-    return this.getRowRecordLastWriteWins(scopeKeys, rowKeyId, { warnOnDuplicates: true })
+  getRowRecord(scopeKeyId: string, rowKeyId: string): Record<string, unknown> {
+    return this.getRowRecordLastWriteWins(scopeKeyId, rowKeyId, { warnOnDuplicates: true })
   }
 
   /**
    * Explicit last-write-wins version (optionally warns).
-   * This is the best “default” for app logic/conditionals.
+   * This is the best "default" for app logic/conditionals.
    */
   getRowRecordLastWriteWins(
-    scopeKeys: ScopeKeys,
+    scopeKeyId: string,
     rowKeyId: string,
     options?: { warnOnDuplicates?: boolean }
   ): Record<string, unknown> {
     const record: Record<string, unknown> = {}
-    const scopeKeyId = this.buildScopeKeyId(scopeKeys)
 
     // Track duplicates (only if we might warn)
     const seen = options?.warnOnDuplicates ? new Map<string, string[]>() : null
 
-    for (const obs of this.iterateRow(scopeKeys, rowKeyId)) {
+    for (const obs of this.iterateRow(scopeKeyId, rowKeyId)) {
       if (seen) {
         const paths = seen.get(obs.variableKey) ?? []
         paths.push(obs.path)
@@ -234,10 +207,10 @@ export class ObservationStore {
    * Safer alternative: preserves *all* values for duplicates.
    * Result: Record<variableKey, unknown[]>
    */
-  getRowRecordMulti(scopeKeys: ScopeKeys, rowKeyId: string): Record<string, unknown[]> {
+  getRowRecordMulti(scopeKeyId: string, rowKeyId: string): Record<string, unknown[]> {
     const record: Record<string, unknown[]> = {}
 
-    for (const obs of this.iterateRow(scopeKeys, rowKeyId)) {
+    for (const obs of this.iterateRow(scopeKeyId, rowKeyId)) {
       const v = this.parseValueJson(obs.valueJson)
       ;(record[obs.variableKey] ??= []).push(v)
     }

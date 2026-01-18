@@ -1,7 +1,5 @@
 // Variable Types - Shared across features (codebook, feedback, admin, etc.)
 
-import type { DiagnosticEngine } from "./utils/diagnostics"
-
 export type VariableType = "string" | "number" | "boolean" | "array" | "object"
 
 // New extraction system types
@@ -12,11 +10,84 @@ export interface RowKeyEntry {
   index: number // Index within that array
 }
 
+export type VariableFacts = {
+  counts: {
+    variableCounts: Map<string, number>
+    variableNullCounts: Map<string, number>
+    variableUnserializableFallbacks: Map<string, number>
+  }
+  types: {
+    variableTypes: Map<string, Map<string, { count: number; examplePaths: string[] }>>
+    variableObjectArrayLeaves: Set<string>
+  }
+  shapes: {
+    variableLengths: Map<string, { min?: number; max?: number }>
+    variableHasMixedArrayElements: Set<string>
+  }
+  distinct: {
+    strings: Map<string, Set<string>>
+    options: Map<string, Set<string>>
+  }
+  invariants: {
+    duplicates: {
+      observationKeys: Map<string, Map<string, Set<string>>> // Map<variableKey, Map<scopeKeyId, Set<rowKeyId>>>
+      duplicateObservationCounts: Map<string, number>
+      duplicateObservationExamples: Map<
+        string,
+        { scopeKeyId: string; rowKeyId: string; path: string }
+      >
+    }
+    collisions: {
+      variableKeyPathMap: Map<string, string>
+      variableKeyCollisionCounts: Map<string, number>
+      variableKeyCollisionKeyPaths: Map<string, { first: string; second: string }>
+    }
+    rowKeyAnomalies: {
+      rowKeyIdAnomalyCounts: Map<string, number>
+      rowKeyIdAnomalyExamples: Map<string, { rowKeyId: string; path: string }>
+    }
+  }
+}
+
+export type RunEvent =
+  | { kind: "MAX_DEPTH_EXCEEDED"; depth: number; threshold: number }
+  | { kind: "MAX_NODES_EXCEEDED"; nodeCount: number; threshold: number }
+  | { kind: "MAX_OBSERVATIONS_EXCEEDED"; observationCount: number; threshold: number }
+  | { kind: "DEEP_NESTING"; depth: number; threshold: number }
+  | { kind: "SKIPPED_NON_JSON_TYPE"; jsType: string; path: string; tag?: string }
+
+export type RunLimitEvent = Extract<
+  RunEvent,
+  { kind: "MAX_DEPTH_EXCEEDED" | "MAX_NODES_EXCEEDED" | "MAX_OBSERVATIONS_EXCEEDED" }
+>
+
+export type RunDeepNestingEvent = Extract<RunEvent, { kind: "DEEP_NESTING" }>
+export type RunSkippedNonJsonEvent = Extract<RunEvent, { kind: "SKIPPED_NON_JSON_TYPE" }>
+
+export type RunFacts = {
+  limits: Map<RunLimitEvent["kind"], RunLimitEvent> // first occurrence wins
+  deepNesting: { threshold: number; maxDepth: number } // aggregate
+  skippedNonJson: Map<string, { count: number; examplePaths: string[]; tag?: string }> // bucket by jsType
+}
+
 export interface ScopeKeys {
   componentId: number // Component ID where this observation was extracted from
   workerId?: number // JATOS worker ID (optional, for future use)
   batchId?: string // JATOS batch ID (optional, for future use)
   groupId?: string // JATOS group ID (optional, for future use)
+}
+
+/**
+ * Diagnostic metadata extracted from values before stringification.
+ * Only needed for variable-level diagnostics, not core observation data.
+ */
+export interface ValueDiagnosticMetadata {
+  length: number // String length or array length
+  stringValue?: string // Actual string value (for distinct tracking, only if string type)
+  arrayElementInfo?: { kind: "uniform"; type: ValueType } | { kind: "mixed" }
+  // undefined = not computed (empty array or non-array)
+  arrayStringValues?: string[] // Array of string values (for distinct options, only if array of strings, limited)
+  stringifyError?: "circular" | "stringify_error" // Error type if stringify failed
 }
 
 export interface ExtractionObservation {
@@ -29,11 +100,14 @@ export interface ExtractionObservation {
   rowKeyId: string // String representation of rowKey for efficient joining: "trials[*]#0|trials[*].responses[*]#2" or "root" for non-array values
   scopeKeys: ScopeKeys // Execution context keys (componentId, and optionally workerId, batchId, groupId from JATOS)
   depth: number // Nesting depth (0 = root level)
+  diagnosticMetadata?: ValueDiagnosticMetadata // Optional metadata for variable diagnostics (extracted before stringification)
+  // Pre-computed derived values for efficient diagnostics
+  scopeKeyId: string // Pre-computed from scopeKeys (used for invariants/metrics)
+  keyPathString: string // Pre-computed from keyPath (JSON-encoded segments joined by ".", used for collisions)
+  hasArrayIndices: boolean // Pre-computed from path (used for rowKey anomalies)
 }
 
 export type DiagnosticSeverity = "error" | "warning"
-
-export type DiagnosticLevel = "component" | "run" | "variable"
 
 export type DiagnosticCode =
   | "TYPE_DRIFT"
@@ -48,7 +122,6 @@ export type DiagnosticCode =
   | "TEXT_FORMAT_NOT_SUPPORTED"
   | "UNKNOWN_FORMAT"
   | "SKIPPED_NON_JSON_TYPE"
-  | "VALUE_JSON_PARSE_FAILED"
   | "VALUE_JSON_UNSERIALIZABLE_FALLBACK_USED"
   | "HIGH_NULL_RATE"
   | "MANY_NULLS"
@@ -96,7 +169,6 @@ export interface DiagnosticMetadata {
 export interface Diagnostic {
   severity: DiagnosticSeverity
   code: DiagnosticCode
-  level: DiagnosticLevel
   message: string
   metadata?: DiagnosticMetadata
 }
@@ -109,10 +181,10 @@ export interface ExtractionStats {
 
 export interface NewExtractionResult {
   observations: ExtractionObservation[]
-  componentDiagnostics: Map<string, Diagnostic[]> // keyed by componentId
+  componentDiagnostics: Map<number, Diagnostic[]> // keyed by componentId
   runDiagnostics: Diagnostic[]
   stats: ExtractionStats
-  diagnosticEngine: DiagnosticEngine // Expose for accessing facts/counts during aggregation
+  variableFacts: VariableFacts // Snapshot of variable facts (immutable data for aggregation)
 }
 
 export interface VariableExample {
@@ -139,6 +211,58 @@ export type VariableHeuristicThresholds = {
   largeValueLength: number
 }
 
+/**
+ * Complete extraction configuration with all thresholds and limits.
+ * Single source of truth for all configurable values in the pipeline.
+ */
+export interface ExtractionConfig {
+  // Walker limits (guardrails for traversal)
+  walker: {
+    maxDepth: number
+    maxNodes: number
+    maxObservations: number
+  }
+  // Run-level diagnostics thresholds
+  run: {
+    deepNestingThreshold: number
+    maxExamplePaths: number
+  }
+  // Variable-level diagnostics thresholds
+  variable: {
+    maxExamplePaths: number
+    maxDistinctTracking: number
+  }
+  // Variable heuristic thresholds (for materialization)
+  heuristics: VariableHeuristicThresholds
+}
+
+/**
+ * Default extraction configuration.
+ * All components should use this unless overridden.
+ */
+export const DEFAULT_EXTRACTION_CONFIG: ExtractionConfig = {
+  walker: {
+    maxDepth: 10,
+    maxNodes: 10000,
+    maxObservations: 50000,
+  },
+  run: {
+    deepNestingThreshold: 8,
+    maxExamplePaths: 3,
+  },
+  variable: {
+    maxExamplePaths: 3,
+    maxDistinctTracking: 100,
+  },
+  heuristics: {
+    manyNulls: 0.2, // 20%
+    highNullRate: 0.8, // 80%
+    highOccurrence: 10000,
+    highCardinality: 100,
+    largeValueLength: 5000,
+  },
+}
+
 export interface ExtractedVariable {
   variableKey: string // Structural variable key with $ prefix, e.g. $trials[*].rt
   variableName: string // Human-readable prettified name without quotes and root, e.g. "rt" or "Quality: easy to use"
@@ -154,34 +278,8 @@ export interface ExtractedVariable {
   diagnostics?: Diagnostic[] // Variable-level diagnostics (materialized from facts and computed from counts)
 }
 
-export type ValidationSeverity = "error" | "warning"
-
-export interface SkippedValue {
-  value: any
-  path: string // Where it was found (e.g., "numbers", "numbers[*]", "")
-  reason: SkippedReason
-  context: string // Human-readable context description
-  severity: ValidationSeverity // Error (skipped) or warning (not skipped but flagged)
-}
-
-export type SkippedReason =
-  | "unnamed_primitive_at_root"
-  | "unnamed_primitive_in_root_array"
-  | "primitive_in_mixed_array"
-  | "mixed_array_with_nested_arrays"
-  | "array_of_arrays"
-  | "text_format_not_supported"
-  | "parse_error"
-
 export interface ExtractionResult {
   variables: ExtractedVariable[] // Each has diagnostics field
-  skippedValues: SkippedValue[]
-  componentDiagnostics: Map<string, Diagnostic[]> // keyed by componentId
+  componentDiagnostics: Map<number, Diagnostic[]> // keyed by componentId
   runDiagnostics: Diagnostic[]
-}
-
-export interface AvailableVariable {
-  name: string
-  type: "string" | "number" | "boolean"
-  example?: any
 }

@@ -1,9 +1,9 @@
 "use client"
 
-import type { OriginalStructureAnalysis } from "../../../../variables/utils/structureAnalyzer/analyzeOriginalStructure"
+import type { DebugStructureAnalysis } from "../../../../variables/utils/structureAnalyzer/analyzeOriginalStructure"
 
 interface StructureStatsProps {
-  originalStructureAnalysis: OriginalStructureAnalysis
+  originalStructureAnalysis: DebugStructureAnalysis
 }
 
 export default function StructureStats({ originalStructureAnalysis }: StructureStatsProps) {

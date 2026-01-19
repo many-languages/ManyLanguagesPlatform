@@ -1,9 +1,9 @@
 "use client"
 
-import type { OriginalStructureAnalysis } from "../../../../variables/utils/structureAnalyzer/analyzeOriginalStructure"
+import type { DebugStructureAnalysis } from "../../../../variables/utils/structureAnalyzer/analyzeOriginalStructure"
 
 interface DetectedPatternsProps {
-  patterns: OriginalStructureAnalysis["patterns"]
+  patterns: DebugStructureAnalysis["patterns"]
 }
 
 export default function DetectedPatterns({ patterns }: DetectedPatternsProps) {

@@ -1,7 +1,7 @@
 "use client"
 
 import type { EnrichedJatosStudyResult } from "@/src/types/jatos"
-import type { OriginalStructureAnalysis } from "../../../../variables/utils/structureAnalyzer/analyzeOriginalStructure"
+import type { DebugStructureAnalysis } from "../../../../variables/utils/structureAnalyzer/analyzeOriginalStructure"
 import type { ExtractedVariable } from "../../../../variables/types"
 import type { PathDisplay } from "../../../types"
 import StructureStats from "./StructureStats"
@@ -12,7 +12,7 @@ import { scrollToComponentData } from "../../../utils/pathHighlighting"
 
 interface StructureOverviewProps {
   enrichedResult: EnrichedJatosStudyResult
-  originalStructureAnalysis: OriginalStructureAnalysis
+  originalStructureAnalysis: DebugStructureAnalysis
   allExtractedPathsByParentKey: Map<string, Array<{ path: PathDisplay; componentId: number }>>
   extractedVariables: ExtractedVariable[]
   highlightedPath?: { path: string; componentId: number } | null

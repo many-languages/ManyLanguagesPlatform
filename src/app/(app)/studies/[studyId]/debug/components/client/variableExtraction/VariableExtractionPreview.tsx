@@ -2,16 +2,13 @@
 
 import type { EnrichedJatosStudyResult } from "@/src/types/jatos"
 import { DEFAULT_EXTRACTION_CONFIG } from "../../../../variables/types"
-import { extractVariables } from "../../../../variables/utils/extractVariable"
-import { extractObservations } from "../../../../variables/utils/extractObservations"
-import { aggregateVariables } from "../../../../variables/utils/aggregateVariables"
+import { extractVariableBundle } from "../../../../variables/utils/extractVariable"
 import { createObservationStore } from "../../../../variables/utils/observationStore"
-import { analyzeOriginalStructure } from "../../../../variables/utils/structureAnalyzer/analyzeOriginalStructure"
+import { analyzeDebugStructure } from "../../../../variables/utils/structureAnalyzer/analyzeOriginalStructure"
 import Card from "@/src/app/components/Card"
 import StructureAnalysisCard from "../structureAnalysis/StructureAnalysisCard"
 import VariableStats from "./VariableStats"
 import VariableTable from "./VariableTable"
-import WarningsList from "./WarningsList"
 import { useMemo } from "react"
 
 interface VariableExtractionPreviewProps {
@@ -21,28 +18,20 @@ interface VariableExtractionPreviewProps {
 export default function VariableExtractionPreview({
   enrichedResult,
 }: VariableExtractionPreviewProps) {
-  // Extract observations and variables separately for debug view
-  const extractionData = useMemo(() => {
-    const observationsResult = extractObservations(enrichedResult, DEFAULT_EXTRACTION_CONFIG)
-    const variables = aggregateVariables(
-      observationsResult.observations,
-      observationsResult.variableFacts,
-      DEFAULT_EXTRACTION_CONFIG
-    )
-    const observationStore = createObservationStore(observationsResult.observations)
-    return { observations: observationsResult.observations, variables, observationStore }
-  }, [enrichedResult])
-
-  // Also get extraction result for warnings
-  const extractionResult = useMemo(
-    () => extractVariables(enrichedResult, DEFAULT_EXTRACTION_CONFIG),
+  const extractionBundle = useMemo(
+    () => extractVariableBundle(enrichedResult, DEFAULT_EXTRACTION_CONFIG),
     [enrichedResult]
   )
 
-  // Create original structure analysis
-  const originalStructureAnalysis = useMemo(
-    () => analyzeOriginalStructure(enrichedResult),
-    [enrichedResult]
+  const observationStore = useMemo(
+    () => createObservationStore(extractionBundle.observations),
+    [extractionBundle.observations]
+  )
+
+  // Analyze structure from extraction results
+  const debugStructureAnalysis = useMemo(
+    () => analyzeDebugStructure(extractionBundle, enrichedResult),
+    [extractionBundle, enrichedResult]
   )
 
   return (
@@ -50,25 +39,19 @@ export default function VariableExtractionPreview({
       {/* Structure Analysis Card */}
       <StructureAnalysisCard
         enrichedResult={enrichedResult}
-        originalStructureAnalysis={originalStructureAnalysis}
-        extractedVariables={extractionData.variables}
-        observations={extractionData.observations}
+        originalStructureAnalysis={debugStructureAnalysis}
+        extractedVariables={extractionBundle.variables}
+        observations={extractionBundle.observations}
+        diagnostics={extractionBundle.diagnostics}
       />
 
       {/* Variable Extraction Preview Card */}
       <Card title="Variable Extraction Preview" collapsible defaultOpen={true}>
-        <VariableStats extractedVariables={extractionData.variables} />
+        <VariableStats extractedVariables={extractionBundle.variables} />
 
         <VariableTable
-          extractedVariables={extractionData.variables}
-          observationStore={extractionData.observationStore}
-        />
-
-        <WarningsList
-          diagnostics={[
-            ...extractionResult.runDiagnostics,
-            ...Array.from(extractionResult.componentDiagnostics.values()).flat(),
-          ]}
+          extractedVariables={extractionBundle.variables}
+          observationStore={observationStore}
         />
       </Card>
     </div>

@@ -1,7 +1,7 @@
 "use client"
 
 import type { EnrichedJatosStudyResult } from "@/src/types/jatos"
-import type { OriginalStructureAnalysis } from "../../../../variables/utils/structureAnalyzer/analyzeOriginalStructure"
+import type { DebugStructureAnalysis } from "../../../../variables/utils/structureAnalyzer/analyzeOriginalStructure"
 import type { ExtractedVariable } from "../../../../variables/types"
 import { Alert } from "@/src/app/components/Alert"
 import { useMemo, useCallback, useEffect } from "react"
@@ -12,7 +12,7 @@ import CopyButton from "../CopyButton"
 
 interface StructureComponentsProps {
   enrichedResult: EnrichedJatosStudyResult
-  originalStructureAnalysis: OriginalStructureAnalysis
+  originalStructureAnalysis: DebugStructureAnalysis
   extractedVariables: ExtractedVariable[]
   selectedComponentId: number | "all" | null
   highlightedPath?: { path: string; componentId: number } | null

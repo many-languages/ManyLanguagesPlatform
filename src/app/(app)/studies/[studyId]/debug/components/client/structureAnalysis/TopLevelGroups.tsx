@@ -1,12 +1,12 @@
 "use client"
 
 import type { EnrichedJatosStudyResult } from "@/src/types/jatos"
-import type { OriginalStructureAnalysis } from "../../../../variables/utils/structureAnalyzer/analyzeOriginalStructure"
+import type { DebugStructureAnalysis } from "../../../../variables/utils/structureAnalyzer/analyzeOriginalStructure"
 import PathBadge from "./PathBadge"
 
 interface TopLevelGroupsProps {
   enrichedResult: EnrichedJatosStudyResult
-  originalStructureAnalysis: OriginalStructureAnalysis
+  originalStructureAnalysis: DebugStructureAnalysis
   highlightedPath?: { path: string; componentId: number } | null
   onPathClick: (path: string, componentId: number) => void
 }
@@ -17,7 +17,13 @@ export default function TopLevelGroups({
   highlightedPath,
   onPathClick,
 }: TopLevelGroupsProps) {
-  if (originalStructureAnalysis.statistics.totalTopLevelGroups === 0) return null
+  const hasRootTopLevel =
+    originalStructureAnalysis.statistics.totalTopLevelGroups === 0 &&
+    originalStructureAnalysis.structureType === "array"
+
+  if (originalStructureAnalysis.statistics.totalTopLevelGroups === 0 && !hasRootTopLevel) {
+    return null
+  }
 
   return (
     <div className="card bg-base-200 p-4">
@@ -39,6 +45,17 @@ export default function TopLevelGroups({
         </div>
       </div>
       <div className="flex flex-wrap gap-2">
+        {hasRootTopLevel && enrichedResult.componentResults.length > 0 && (
+          <PathBadge
+            key="root"
+            path="root"
+            type="array"
+            componentId={enrichedResult.componentResults[0]!.componentId}
+            highlightedPath={highlightedPath}
+            size="lg"
+            onClick={(path, componentId) => onPathClick(path, componentId)}
+          />
+        )}
         {Array.from(originalStructureAnalysis.topLevelKeyTypes.keys()).map((key) => {
           const keyType = originalStructureAnalysis.topLevelKeyTypes.get(key)
 

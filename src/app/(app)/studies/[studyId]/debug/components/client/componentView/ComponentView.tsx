@@ -1,7 +1,7 @@
 "use client"
 
 import type { EnrichedJatosStudyResult } from "@/src/types/jatos"
-import type { OriginalStructureAnalysis } from "../../../../variables/utils/structureAnalyzer/analyzeOriginalStructure"
+import type { DebugStructureAnalysis } from "../../../../variables/utils/structureAnalyzer/analyzeOriginalStructure"
 import type { ExtractedVariable } from "../../../../variables/types"
 import { Alert } from "@/src/app/components/Alert"
 import ComponentDataViewer from "./ComponentDataViewer"
@@ -12,9 +12,14 @@ type ComponentResult = EnrichedJatosStudyResult["componentResults"][number]
 
 interface ComponentViewProps {
   component: ComponentResult
-  componentAnalysis?: OriginalStructureAnalysis["components"][number]
+  componentAnalysis?: DebugStructureAnalysis["components"][number]
   extractedVariables: ExtractedVariable[]
-  highlightedPath?: { path: string; componentId: number } | null
+  highlightedPath?: {
+    path: string
+    componentId: number
+    paths?: string[]
+    highlightKey?: string
+  } | null
   onHighlightPath: (path: string, componentId: number) => void
 }
 
@@ -50,6 +55,12 @@ export default function ComponentView({
 
   const highlightedPathForComponent =
     highlightedPath?.componentId === component.componentId ? highlightedPath.path : undefined
+  const highlightedPathsForComponent =
+    highlightedPath?.componentId === component.componentId ? highlightedPath.paths : undefined
+  const highlightedKeyForComponent =
+    highlightedPath?.componentId === component.componentId
+      ? highlightedPath.highlightKey
+      : undefined
 
   return (
     <div className="card bg-base-200 p-4">
@@ -131,7 +142,12 @@ export default function ComponentView({
         </Alert>
       )}
 
-      <ComponentDataViewer component={component} highlightedPath={highlightedPathForComponent} />
+      <ComponentDataViewer
+        component={component}
+        highlightedPath={highlightedPathForComponent}
+        highlightedPaths={highlightedPathsForComponent}
+        highlightKey={highlightedKeyForComponent}
+      />
     </div>
   )
 }

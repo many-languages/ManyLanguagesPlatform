@@ -2,7 +2,7 @@
 
 import type { JatosMetadata } from "@/src/types/jatos"
 import Card from "@/src/app/components/Card"
-import JsonSyntaxHighlighter from "@/src/app/components/JsonSyntaxHighlighter"
+import JsonView from "@/src/app/components/JsonView"
 import CopyButton from "./CopyButton"
 
 interface MetadataViewerProps {
@@ -18,7 +18,7 @@ export default function MetadataViewer({ metadata }: MetadataViewerProps) {
       actions={<CopyButton getTextToCopy={() => JSON.stringify(metadata, null, 2)} />}
     >
       <div className="max-h-96 overflow-auto rounded-lg border border-base-300">
-        <JsonSyntaxHighlighter code={JSON.stringify(metadata, null, 2)} />
+        <JsonView code={JSON.stringify(metadata, null, 2)} />
       </div>
 
       <div className="text-sm text-muted-content mt-2">

@@ -1,30 +1,32 @@
 /**
- * Original Structure Analysis
- * Analyzes the original parsedData structure BEFORE variable extraction
- * This shows the actual data structure as it exists in the JATOS results
+ * Debug Structure Analysis
+ * Analyzes extraction results to produce standardized structure data for debug UI
+ * Derives structure from observations (post-transformation) rather than raw parsedData
  */
 
 import type { EnrichedJatosStudyResult } from "@/src/types/jatos"
-import {
-  analyzeComponentStructure,
-  type ComponentStructureAnalysis,
-} from "./analyzeComponentStructure"
-import {
-  identifyOriginalPatterns,
-  analyzeOriginalArrayPatterns,
-  deriveOverallStructureType,
-  type OriginalDetectedPattern,
-} from "./detectOriginalPatterns"
-import { calculateOriginalStatistics, type OriginalStatistics } from "./calculateOriginalStatistics"
+import type { ExtractionBundle, ExtractionObservation, ValueType } from "../../types"
+import type { DataFormat } from "@/src/lib/jatos/parsers/formatDetector"
+import { identifyOriginalPatterns, type OriginalDetectedPattern } from "./detectOriginalPatterns"
+import { type OriginalStatistics } from "./calculateOriginalStatistics"
 
-// Re-export ComponentStructureAnalysis for external use
-export type { ComponentStructureAnalysis } from "./analyzeComponentStructure"
+export interface ComponentStructureAnalysis {
+  componentId: number
+  originalFormat?: DataFormat // Format user uploaded (csv, json, tsv, text)
+  structureType: "array" | "object" | "primitive" | "null" | "empty"
+  topLevelKeys: string[]
+  topLevelKeyTypes: Map<string, "primitive" | "array" | "object">
+  maxDepth: number
+  totalKeys: number
+  hasError?: boolean
+  errorInfo?: { code: string; message: string }
+}
 
-export interface OriginalStructureAnalysis {
-  // Overall structure type
+export interface DebugStructureAnalysis {
+  // Overall structure type (post-transformation)
   structureType: "array" | "object" | "mixed" | "empty"
 
-  // Component-level analysis
+  // Component-level analysis (derived from observations)
   components: ComponentStructureAnalysis[]
 
   // Aggregated statistics
@@ -33,24 +35,74 @@ export interface OriginalStructureAnalysis {
   // Map of top-level key names to their types
   topLevelKeyTypes: Map<string, "primitive" | "array" | "object">
 
-  // Pattern detection
+  // Pattern detection (derived from observations)
   patterns: OriginalDetectedPattern[]
-  arrayPatterns: ReturnType<typeof analyzeOriginalArrayPatterns>
+  arrayPatterns: { hasArrayPatterns: boolean; arrayComponents: ComponentStructureAnalysis[] }
 }
 
 /**
- * Analyze the original structure of parsedData
+ * Helper to infer structure type from value type
  */
-export function analyzeOriginalStructure(
+function valueTypeToStructureType(valueType: ValueType): "primitive" | "array" | "object" {
+  if (valueType === "array") return "array"
+  if (valueType === "object") return "object"
+  return "primitive"
+}
+
+/**
+ * Analyze debug structure from extraction results
+ * Derives structure from observations (post-transformation) rather than raw parsedData
+ */
+export function analyzeDebugStructure(
+  extractionBundle: ExtractionBundle,
   enrichedResult: EnrichedJatosStudyResult
-): OriginalStructureAnalysis {
+): DebugStructureAnalysis {
+  const { observations, diagnostics } = extractionBundle
+
+  // Group observations by componentId
+  const observationsByComponent = new Map<number, ExtractionObservation[]>()
+  observations.forEach((obs) => {
+    const componentId = obs.scopeKeys.componentId
+    if (!observationsByComponent.has(componentId)) {
+      observationsByComponent.set(componentId, [])
+    }
+    observationsByComponent.get(componentId)!.push(obs)
+  })
+
+  // Analyze each component
   const components: ComponentStructureAnalysis[] = []
 
   enrichedResult.componentResults.forEach((component) => {
-    if (!component.parsedData) {
+    const componentId = component.componentId
+    const componentObs = observationsByComponent.get(componentId) || []
+    const componentDiags = diagnostics.component.get(componentId) || []
+
+    // Check for errors
+    const errorDiag = componentDiags.find((d) => d.severity === "error")
+    const hasError = !!errorDiag
+
+    // If no observations and has error, mark as error component
+    if (componentObs.length === 0 && hasError) {
       components.push({
-        componentId: component.componentId,
+        componentId,
+        originalFormat: component.detectedFormat?.format,
         structureType: "null",
+        topLevelKeys: [],
+        topLevelKeyTypes: new Map(),
+        maxDepth: 0,
+        totalKeys: 0,
+        hasError: true,
+        errorInfo: errorDiag ? { code: errorDiag.code, message: errorDiag.message } : undefined,
+      })
+      return
+    }
+
+    // If no observations and no error, mark as empty
+    if (componentObs.length === 0) {
+      components.push({
+        componentId,
+        originalFormat: component.detectedFormat?.format,
+        structureType: "empty",
         topLevelKeys: [],
         topLevelKeyTypes: new Map(),
         maxDepth: 0,
@@ -59,23 +111,97 @@ export function analyzeOriginalStructure(
       return
     }
 
-    const data = component.parsedData
-    const analysis = analyzeComponentStructure(data, component.componentId)
-    components.push(analysis)
+    // Derive structure from observations
+    // Check if any observation has array indices in variableKey (contains [*])
+    const hasArrayStructure = componentObs.some((obs) => obs.variableKey.includes("[*]"))
+
+    // Collect top-level keys (first element of keyPath)
+    const topLevelKeysSet = new Set<string>()
+    const topLevelKeyTypes = new Map<string, "primitive" | "array" | "object">()
+
+    componentObs.forEach((obs) => {
+      if (obs.keyPath.length > 0) {
+        const topKey = obs.keyPath[0]
+        if (topKey !== "*") {
+          // Skip root-level array elements
+          topLevelKeysSet.add(topKey)
+
+          // Infer type from observation
+          const currentType = valueTypeToStructureType(obs.valueType)
+          const existingType = topLevelKeyTypes.get(topKey)
+
+          // Prefer more complex types (object > array > primitive)
+          if (!existingType) {
+            topLevelKeyTypes.set(topKey, currentType)
+          } else if (
+            currentType === "object" ||
+            (currentType === "array" && existingType === "primitive")
+          ) {
+            topLevelKeyTypes.set(topKey, currentType)
+          }
+        }
+      }
+    })
+
+    const topLevelKeys = Array.from(topLevelKeysSet)
+
+    // Calculate max depth and total unique variables
+    const maxDepth = Math.max(...componentObs.map((obs) => obs.depth), 0)
+    const uniqueVariableKeys = new Set(componentObs.map((obs) => obs.variableKey))
+    const totalKeys = uniqueVariableKeys.size
+
+    // Determine structure type
+    let structureType: "array" | "object" | "primitive"
+    if (hasArrayStructure) {
+      structureType = "array"
+    } else if (topLevelKeys.length > 0) {
+      structureType = "object"
+    } else {
+      structureType = "primitive"
+    }
+
+    components.push({
+      componentId,
+      originalFormat: component.detectedFormat?.format,
+      structureType,
+      topLevelKeys,
+      topLevelKeyTypes,
+      maxDepth,
+      totalKeys,
+      hasError: hasError,
+      errorInfo: errorDiag ? { code: errorDiag.code, message: errorDiag.message } : undefined,
+    })
   })
 
   // Calculate aggregated statistics
   const componentsWithData = components.filter(
     (c) => c.structureType !== "null" && c.structureType !== "empty"
   )
-  const statistics = calculateOriginalStatistics(components, enrichedResult.componentResults.length)
 
-  // Calculate top-level key types map
+  // Aggregate top-level keys across all components
+  const allTopLevelKeys = new Set<string>()
+  componentsWithData.forEach((c) => {
+    c.topLevelKeys.forEach((key) => allTopLevelKeys.add(key))
+  })
+
+  const maxNestingDepth = Math.max(...componentsWithData.map((c) => c.maxDepth), 0)
+  const averageNestingDepth =
+    componentsWithData.length > 0
+      ? componentsWithData.reduce((sum, c) => sum + c.maxDepth, 0) / componentsWithData.length
+      : 0
+
+  const statistics: OriginalStatistics = {
+    totalComponents: enrichedResult.componentResults.length,
+    componentsWithData: componentsWithData.length,
+    totalTopLevelGroups: allTopLevelKeys.size,
+    maxNestingDepth,
+    averageNestingDepth,
+  }
+
+  // Calculate top-level key types map (aggregated across components)
   const keyTypeMap = new Map<string, "primitive" | "array" | "object">()
   componentsWithData.forEach((c) => {
     c.topLevelKeys.forEach((key) => {
-      // If key exists in this component, track its type
-      // If key appears in multiple components, prefer object > array > primitive
       const existingType = keyTypeMap.get(key)
       const currentType = c.topLevelKeyTypes.get(key)
 
@@ -95,12 +221,28 @@ export function analyzeOriginalStructure(
     })
   })
 
-  // Determine overall structure type from patterns
-  const structureType = deriveOverallStructureType(components)
+  // Determine overall structure type
+  const hasArrayStructure = components.some((c) => c.structureType === "array")
+  const hasObjectStructure = components.some((c) => c.structureType === "object")
+
+  let structureType: "array" | "object" | "mixed" | "empty"
+  if (componentsWithData.length === 0) {
+    structureType = "empty"
+  } else if (hasArrayStructure && !hasObjectStructure) {
+    structureType = "array"
+  } else if (hasObjectStructure && !hasArrayStructure) {
+    structureType = "object"
+  } else {
+    structureType = "mixed"
+  }
 
   // Run pattern detection
   const patterns = identifyOriginalPatterns(components)
-  const arrayPatterns = analyzeOriginalArrayPatterns(components)
+  const arrayComponents = components.filter((c) => c.structureType === "array")
+  const arrayPatterns = {
+    hasArrayPatterns: arrayComponents.length > 0,
+    arrayComponents,
+  }
 
   return {
     structureType,

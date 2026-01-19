@@ -2,7 +2,7 @@
 
 import { useMemo } from "react"
 import Modal from "@/src/app/components/Modal"
-import JsonSyntaxHighlighter from "@/src/app/components/JsonSyntaxHighlighter"
+import JsonView from "@/src/app/components/JsonView"
 import type { ExtractedVariable } from "../../../../variables/types"
 import type { ObservationStore } from "../../../../variables/utils/observationStore"
 import { formatValue } from "@/src/lib/utils/formatValue"
@@ -66,7 +66,7 @@ export default function VariableValuesModal({
                   <div className="bg-base-200 px-3 py-1 text-xs font-mono text-muted-content">
                     [{index}]:
                   </div>
-                  <JsonSyntaxHighlighter code={jsonString} language="json" />
+                  <JsonView code={jsonString} language="json" />
                 </div>
               )
             }

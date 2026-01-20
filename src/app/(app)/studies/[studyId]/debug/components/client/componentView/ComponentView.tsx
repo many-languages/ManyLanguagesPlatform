@@ -1,10 +1,11 @@
 "use client"
 
 import type { EnrichedJatosStudyResult } from "@/src/types/jatos"
-import type { DebugStructureAnalysis } from "../../../utils/materializeDebugView"
 import type { ExtractedVariable } from "../../../../variables/types"
 import type { HighlightedPaths, SelectedPath } from "../../../types"
 import { Alert } from "@/src/app/components/Alert"
+import { useMemo } from "react"
+import { computeComponentStats } from "../../../utils/componentStats"
 import ComponentDataViewer from "./ComponentDataViewer"
 import PathBadge from "../structureAnalysis/PathBadge"
 import { scrollToComponentData } from "../../../utils/pathHighlighting"
@@ -13,7 +14,6 @@ type ComponentResult = EnrichedJatosStudyResult["componentResults"][number]
 
 interface ComponentViewProps {
   component: ComponentResult
-  componentAnalysis?: DebugStructureAnalysis["components"][number]
   extractedVariables: ExtractedVariable[]
   selectedPath?: SelectedPath | null
   highlightedPaths?: HighlightedPaths | null
@@ -22,7 +22,6 @@ interface ComponentViewProps {
 
 export default function ComponentView({
   component,
-  componentAnalysis,
   extractedVariables,
   selectedPath,
   highlightedPaths,
@@ -33,24 +32,32 @@ export default function ComponentView({
     scrollToComponentData(componentId, 100)
   }
 
-  // Get extracted variables for this component that are nested (not top-level)
-  const nestedVariables = extractedVariables.filter(
-    (variable) => variable.componentIds.includes(component.componentId) && !variable.isTopLevel
+  // Compute component stats
+  const stats = useMemo(
+    () => computeComponentStats(component.componentId, extractedVariables),
+    [component.componentId, extractedVariables]
   )
 
-  // Collect all unique variables
-  const variablesMap = new Map<string, ExtractedVariable>()
-  nestedVariables.forEach((variable) => {
-    if (!variablesMap.has(variable.variableName)) {
-      variablesMap.set(variable.variableName, variable)
-    }
-  })
+  // Get extracted variables for this component that are nested (not top-level)
+  const allExtractedPaths = useMemo(() => {
+    const nestedVariables = extractedVariables.filter(
+      (variable) => variable.componentIds.includes(component.componentId) && !variable.isTopLevel
+    )
 
-  const allExtractedPaths = Array.from(variablesMap.values()).map((variable) => ({
-    variableKey: variable.variableKey,
-    variableName: variable.variableName,
-    type: variable.type as "string" | "number" | "boolean" | "array" | "object",
-  }))
+    // Collect all unique variables by variableName
+    const variablesMap = new Map<string, ExtractedVariable>()
+    nestedVariables.forEach((variable) => {
+      if (!variablesMap.has(variable.variableName)) {
+        variablesMap.set(variable.variableName, variable)
+      }
+    })
+
+    return Array.from(variablesMap.values()).map((variable) => ({
+      variableKey: variable.variableKey,
+      variableName: variable.variableName,
+      type: variable.type as "string" | "number" | "boolean" | "array" | "object",
+    }))
+  }, [component.componentId, extractedVariables])
 
   const highlightedPathsForComponent =
     highlightedPaths?.componentId === component.componentId ? highlightedPaths.jsonPaths : undefined
@@ -60,48 +67,19 @@ export default function ComponentView({
       <div className="flex justify-between items-start mb-3">
         <h3 className="font-semibold">Component {component.componentId}</h3>
         <div className="flex gap-2 items-center">
-          {componentAnalysis && (
-            <span className="badge badge-lg capitalize">{componentAnalysis.structureType}</span>
-          )}
           {component.parseError && <div className="badge badge-warning badge-sm">Parse Error</div>}
         </div>
       </div>
 
-      {componentAnalysis && (
-        <div className="grid grid-cols-3 gap-4 mb-3">
+      {stats.totalVariables > 0 && (
+        <div className="grid grid-cols-2 gap-4 mb-3">
           <div>
             <div className="text-xs text-muted-content">Max Depth</div>
-            <div className="font-medium">{componentAnalysis.maxDepth}</div>
+            <div className="font-medium">{stats.maxDepth}</div>
           </div>
           <div>
-            <div className="text-xs text-muted-content">Top-Level Keys</div>
-            <div className="font-medium">{componentAnalysis.topLevelKeys.length}</div>
-          </div>
-          <div>
-            <div className="text-xs text-muted-content">Total Keys</div>
-            <div className="font-medium">{componentAnalysis.totalKeys}</div>
-          </div>
-        </div>
-      )}
-
-      {componentAnalysis && componentAnalysis.topLevelKeys.length > 0 && (
-        <div className="mb-3">
-          <div className="text-xs text-muted-content mb-1">Top-Level Keys:</div>
-          <div className="flex flex-wrap gap-1">
-            {componentAnalysis.topLevelKeys.map((key: string) => {
-              const keyType = componentAnalysis.topLevelKeyTypes.get(key)
-              return (
-                <PathBadge
-                  key={key}
-                  path={key}
-                  type={keyType || "object"}
-                  componentId={component.componentId}
-                  selectedPath={selectedPath}
-                  size="sm"
-                  onClick={handlePathClick}
-                />
-              )
-            })}
+            <div className="text-xs text-muted-content">Total Variables</div>
+            <div className="font-medium">{stats.totalVariables}</div>
           </div>
         </div>
       )}

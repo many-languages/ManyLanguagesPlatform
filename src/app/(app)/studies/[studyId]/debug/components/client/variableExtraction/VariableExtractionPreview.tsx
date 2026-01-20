@@ -4,7 +4,6 @@ import type { EnrichedJatosStudyResult } from "@/src/types/jatos"
 import { DEFAULT_EXTRACTION_CONFIG } from "../../../../variables/types"
 import { extractVariableBundle } from "../../../../variables/utils/extractVariable"
 import { createExtractionIndexStore } from "../../../../variables/utils/extractionIndexStore"
-import { materializeDebugView } from "../../../utils/materializeDebugView"
 import Card from "@/src/app/components/Card"
 import StructureAnalysisCard from "../structureAnalysis/StructureAnalysisCard"
 import VariableStats from "./VariableStats"
@@ -28,17 +27,10 @@ export default function VariableExtractionPreview({
     [extractionBundle.observations]
   )
 
-  // Materialize debug view aggregates (single pass)
-  const debugView = useMemo(
-    () => materializeDebugView(extractionBundle, indexStore),
-    [extractionBundle, indexStore]
-  )
-
   return (
     <div className="space-y-6">
       {/* Structure Analysis Card */}
       <StructureAnalysisCard
-        debugView={debugView}
         extractedVariables={extractionBundle.variables}
         indexStore={indexStore}
         observations={extractionBundle.observations}

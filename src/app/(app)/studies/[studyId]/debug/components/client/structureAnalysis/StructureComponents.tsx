@@ -1,11 +1,10 @@
 "use client"
 
 import type { EnrichedJatosStudyResult } from "@/src/types/jatos"
-import type { DebugStructureAnalysis } from "../../../utils/materializeDebugView"
 import type { ExtractedVariable } from "../../../../variables/types"
 import type { HighlightedPaths, SelectedPath } from "../../../types"
 import { Alert } from "@/src/app/components/Alert"
-import { useMemo, useCallback, useEffect } from "react"
+import { useMemo, useCallback } from "react"
 import { formatJson } from "@/src/lib/utils/formatJson"
 import ComponentView from "../componentView/ComponentView"
 import ComponentSelector from "../componentView/ComponentSelector"
@@ -13,7 +12,6 @@ import CopyButton from "../CopyButton"
 
 interface StructureComponentsProps {
   enrichedResult: EnrichedJatosStudyResult
-  structureAnalysis: DebugStructureAnalysis
   extractedVariables: ExtractedVariable[]
   selectedComponentId: number | "all" | null
   selectedPath?: SelectedPath | null
@@ -24,7 +22,6 @@ interface StructureComponentsProps {
 
 export default function StructureComponents({
   enrichedResult,
-  structureAnalysis,
   extractedVariables,
   selectedComponentId,
   selectedPath,
@@ -32,7 +29,23 @@ export default function StructureComponents({
   onSelectComponent,
   onHighlightPath,
 }: StructureComponentsProps) {
-  const componentsWithData = enrichedResult.componentResults.filter((c) => c.dataContent)
+  const componentsWithData = useMemo(
+    () => enrichedResult.componentResults.filter((c) => c.dataContent),
+    [enrichedResult.componentResults]
+  )
+
+  // Determine which components to render
+  const componentsToRender = useMemo(() => {
+    if (selectedComponentId === "all") {
+      return componentsWithData
+    } else if (typeof selectedComponentId === "number") {
+      const component = enrichedResult.componentResults.find(
+        (c) => c.componentId === selectedComponentId
+      )
+      return component?.dataContent ? [component] : []
+    }
+    return []
+  }, [selectedComponentId, componentsWithData, enrichedResult.componentResults])
 
   // Define the copy logic in the parent component
   const getTextToCopy = useCallback(() => {
@@ -79,12 +92,8 @@ export default function StructureComponents({
   }, [selectedComponentId, componentsWithData, enrichedResult.componentResults])
 
   // Determine if copy button should be enabled
-  const canCopy = useMemo(() => {
-    return (
-      componentsWithData.length > 0 &&
-      (selectedComponentId === "all" || selectedComponentId !== null)
-    )
-  }, [componentsWithData.length, selectedComponentId])
+  const canCopy =
+    componentsWithData.length > 0 && (selectedComponentId === "all" || selectedComponentId !== null)
 
   return (
     <div className="space-y-4">
@@ -99,54 +108,21 @@ export default function StructureComponents({
         onSelect={onSelectComponent}
       />
 
-      {selectedComponentId === "all" ? (
-        // All Components View
+      {componentsToRender.length === 0 ? (
+        <Alert variant="info">Please select a component to view details</Alert>
+      ) : (
         <div className="space-y-6">
-          {componentsWithData.map((component) => {
-            const componentAnalysis = structureAnalysis.components.find(
-              (c) => c.componentId === component.componentId
-            )
-
-            return (
-              <ComponentView
-                key={component.id}
-                component={component}
-                componentAnalysis={componentAnalysis}
-                extractedVariables={extractedVariables}
-                selectedPath={selectedPath}
-                highlightedPaths={highlightedPaths}
-                onHighlightPath={onHighlightPath}
-              />
-            )
-          })}
-        </div>
-      ) : typeof selectedComponentId === "number" ? (
-        // Single Component View
-        (() => {
-          const selectedComponent = enrichedResult.componentResults.find(
-            (c) => c.componentId === selectedComponentId
-          )
-          const componentAnalysis = structureAnalysis.components.find(
-            (c) => c.componentId === selectedComponentId
-          )
-
-          if (!selectedComponent || !selectedComponent.dataContent) {
-            return <Alert variant="info">Please select a component with data to view details</Alert>
-          }
-
-          return (
+          {componentsToRender.map((component) => (
             <ComponentView
-              component={selectedComponent}
-              componentAnalysis={componentAnalysis}
+              key={component.id}
+              component={component}
               extractedVariables={extractedVariables}
               selectedPath={selectedPath}
               highlightedPaths={highlightedPaths}
               onHighlightPath={onHighlightPath}
             />
-          )
-        })()
-      ) : (
-        <Alert variant="info">Please select a component to view details</Alert>
+          ))}
+        </div>
       )}
     </div>
   )

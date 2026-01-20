@@ -1,7 +1,6 @@
 "use client"
 
 import type { EnrichedJatosStudyResult } from "@/src/types/jatos"
-import type { DebugViewMaterialized } from "../../../utils/materializeDebugView"
 import type {
   Diagnostic,
   ExtractedVariable,
@@ -11,13 +10,10 @@ import type { ExtractionIndexStore } from "../../../../variables/utils/extractio
 import type { HighlightedPaths, SelectedPath } from "../../../types"
 import Card from "@/src/app/components/Card"
 import { useState, useCallback } from "react"
-import { useTopLevelGroups } from "../../../hooks/useTopLevelGroups"
-import StructureOverview from "./StructureOverview"
 import StructureComponents from "./StructureComponents"
 import StructureDiagnostics from "./StructureDiagnostics"
 
 interface StructureAnalysisCardProps {
-  debugView: DebugViewMaterialized
   extractedVariables: ExtractedVariable[]
   indexStore: ExtractionIndexStore
   observations: ExtractionObservation[]
@@ -30,36 +26,36 @@ interface StructureAnalysisCardProps {
 }
 
 export default function StructureAnalysisCard({
-  debugView,
   extractedVariables,
   indexStore,
   observations,
   diagnostics,
   enrichedResult,
 }: StructureAnalysisCardProps) {
-  const [analysisTab, setAnalysisTab] = useState<"overview" | "components" | "diagnostics">(
-    "overview"
-  )
-  const [selectedComponentId, setSelectedComponentId] = useState<number | "all" | null>(
-    debugView.structure.components.find(
-      (c) => c.structureType !== "null" && c.structureType !== "empty"
-    )?.componentId ?? "all"
-  )
+  const [analysisTab, setAnalysisTab] = useState<"components" | "diagnostics">("components")
+
+  // Find first component with observations (has data) - lazy initial state
+  const [selectedComponentId, setSelectedComponentId] = useState<number | "all" | null>(() => {
+    const componentsWithData = enrichedResult.componentResults.filter((c) => c.dataContent)
+    for (const component of componentsWithData) {
+      const obsIndices = indexStore.getObservationIndicesByComponentId(component.componentId)
+      if (obsIndices.length > 0) {
+        return component.componentId
+      }
+    }
+    return "all"
+  })
   const [selectedPath, setSelectedPath] = useState<SelectedPath | null>(null)
   const [highlightedPaths, setHighlightedPaths] = useState<HighlightedPaths | null>(null)
-
-  // Compute top-level groups with variables and their types
-  const topLevelGroups = useTopLevelGroups(extractedVariables, indexStore, observations)
 
   // Handler to extract example paths from variable and highlight
   // Receives variableKey (structural identifier) directly, no lookup needed
   const handleVariableClick = useCallback(
     (variableKey: string, componentId: number) => {
-      // Check if this is a variable (has $ prefix) or a top-level key
       const variable = extractedVariables.find((v) => v.variableKey === variableKey)
       if (!variable) {
-        // Fallback: use the path directly if not a variable (top-level key)
-        setSelectedPath({ selectedPath: variableKey, componentId })
+        // If not a variable, clear selection
+        setSelectedPath(null)
         setHighlightedPaths(null)
         return
       }
@@ -87,16 +83,10 @@ export default function StructureAnalysisCard({
       {/* Analysis Tabs */}
       <div className="tabs tabs-boxed mb-4">
         <button
-          className={`tab ${analysisTab === "overview" ? "tab-active" : ""}`}
-          onClick={() => setAnalysisTab("overview")}
-        >
-          Overview
-        </button>
-        <button
           className={`tab ${analysisTab === "components" ? "tab-active" : ""}`}
           onClick={() => setAnalysisTab("components")}
         >
-          Components ({debugView.structure.components.length})
+          Components
         </button>
         <button
           className={`tab ${analysisTab === "diagnostics" ? "tab-active" : ""}`}
@@ -106,23 +96,10 @@ export default function StructureAnalysisCard({
         </button>
       </div>
 
-      {/* Overview Tab */}
-      {analysisTab === "overview" && (
-        <StructureOverview
-          structureAnalysis={debugView.structure}
-          topLevelGroups={topLevelGroups}
-          selectedPath={selectedPath}
-          onSwitchToComponents={() => setAnalysisTab("components")}
-          onSelectComponent={(componentId) => setSelectedComponentId(componentId)}
-          onHighlightPath={handleVariableClick}
-        />
-      )}
-
       {/* Components Tab */}
       {analysisTab === "components" && (
         <StructureComponents
           enrichedResult={enrichedResult}
-          structureAnalysis={debugView.structure}
           extractedVariables={extractedVariables}
           selectedComponentId={selectedComponentId}
           selectedPath={selectedPath}

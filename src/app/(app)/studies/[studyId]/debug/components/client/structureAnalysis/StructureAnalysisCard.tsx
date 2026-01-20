@@ -1,162 +1,86 @@
 "use client"
 
 import type { EnrichedJatosStudyResult } from "@/src/types/jatos"
-import type { DebugStructureAnalysis } from "../../../../variables/utils/structureAnalyzer/analyzeOriginalStructure"
+import type { DebugViewMaterialized } from "../../../utils/materializeDebugView"
 import type {
   Diagnostic,
   ExtractedVariable,
   ExtractionObservation,
 } from "../../../../variables/types"
-import type { PathDisplay } from "../../../types"
+import type { ExtractionIndexStore } from "../../../../variables/utils/extractionIndexStore"
+import type { HighlightedPaths, SelectedPath } from "../../../types"
 import Card from "@/src/app/components/Card"
-import { useState, useMemo, useCallback } from "react"
+import { useState, useCallback } from "react"
+import { useTopLevelGroups } from "../../../hooks/useTopLevelGroups"
 import StructureOverview from "./StructureOverview"
 import StructureComponents from "./StructureComponents"
 import StructureDiagnostics from "./StructureDiagnostics"
 
 interface StructureAnalysisCardProps {
-  enrichedResult: EnrichedJatosStudyResult
-  originalStructureAnalysis: DebugStructureAnalysis
+  debugView: DebugViewMaterialized
   extractedVariables: ExtractedVariable[]
+  indexStore: ExtractionIndexStore
   observations: ExtractionObservation[]
   diagnostics: {
     run: Diagnostic[]
     component: Map<number, Diagnostic[]>
+    variable: Map<string, { variableName: string; diagnostics: Diagnostic[] }>
   }
+  enrichedResult: EnrichedJatosStudyResult
 }
 
 export default function StructureAnalysisCard({
-  enrichedResult,
-  originalStructureAnalysis,
+  debugView,
   extractedVariables,
+  indexStore,
   observations,
   diagnostics,
+  enrichedResult,
 }: StructureAnalysisCardProps) {
   const [analysisTab, setAnalysisTab] = useState<"overview" | "components" | "diagnostics">(
     "overview"
   )
   const [selectedComponentId, setSelectedComponentId] = useState<number | "all" | null>(
-    enrichedResult.componentResults.find((c) => c.dataContent)?.componentId ?? "all"
+    debugView.structure.components.find(
+      (c) => c.structureType !== "null" && c.structureType !== "empty"
+    )?.componentId ?? "all"
   )
-  const [highlightedPath, setHighlightedPath] = useState<{
-    path: string
-    componentId: number
-    paths?: string[]
-    highlightKey?: string
-  } | null>(null)
+  const [selectedPath, setSelectedPath] = useState<SelectedPath | null>(null)
+  const [highlightedPaths, setHighlightedPaths] = useState<HighlightedPaths | null>(null)
 
-  const getLastKeyFromVariableKey = useCallback((variableKey: string) => {
-    const regex = /\.([A-Za-z_$][A-Za-z0-9_$]*)|\["([^"]+)"\]|\[(\d+)\]/g
-    let match: RegExpExecArray | null
-    let lastKey: string | undefined
-    while ((match = regex.exec(variableKey)) !== null) {
-      const key = match[1] || match[2]
-      if (key) {
-        lastKey = key
-      }
-    }
-    return lastKey
-  }, [])
+  // Compute top-level groups with variables and their types
+  const topLevelGroups = useTopLevelGroups(extractedVariables, indexStore, observations)
 
   // Handler to extract example paths from variable and highlight
+  // Receives variableKey (structural identifier) directly, no lookup needed
   const handleVariableClick = useCallback(
-    (variablePath: string, componentId: number) => {
-      // Find the variable
-      const variable = extractedVariables.find((v) => v.variableName === variablePath)
+    (variableKey: string, componentId: number) => {
+      // Check if this is a variable (has $ prefix) or a top-level key
+      const variable = extractedVariables.find((v) => v.variableKey === variableKey)
       if (!variable) {
-        // Fallback: use the path directly if not a variable
-        setHighlightedPath({ path: variablePath, componentId, highlightKey: variablePath })
+        // Fallback: use the path directly if not a variable (top-level key)
+        setSelectedPath({ selectedPath: variableKey, componentId })
+        setHighlightedPaths(null)
         return
       }
 
-      const allObservationPaths = observations
-        .filter(
-          (obs) =>
-            obs.variableKey === variable.variableKey && obs.scopeKeys.componentId === componentId
-        )
-        .map((obs) => obs.path)
+      const indices = indexStore.getObservationIndicesByVariableKey(variableKey)
+      const allObservationPaths: string[] = []
+      for (const index of indices) {
+        const obs = observations[index]
+        if (obs && obs.scopeKeys.componentId === componentId) {
+          allObservationPaths.push(obs.path)
+        }
+      }
 
-      setHighlightedPath({
-        path: variable.variableName,
+      setSelectedPath({ selectedPath: variableKey, componentId })
+      setHighlightedPaths({
         componentId,
-        paths: allObservationPaths,
-        highlightKey: getLastKeyFromVariableKey(variable.variableKey) || variable.variableName,
+        jsonPaths: allObservationPaths,
       })
     },
-    [extractedVariables, observations, getLastKeyFromVariableKey]
+    [extractedVariables, indexStore, observations]
   )
-
-  // Collect all extracted paths from all components for the overview
-  // Group by topLevelKey from observations (first element of keyPath)
-  const allExtractedPathsByParentKey = useMemo(() => {
-    const variablesByParentKey = new Map<
-      string,
-      Array<{ variable: ExtractedVariable; componentId: number }>
-    >()
-
-    // Group observations by topLevelKey (first element of keyPath), then map to variables
-    const observationsByTopLevelKey = new Map<string, ExtractionObservation[]>()
-    observations.forEach((obs) => {
-      // Get the first element of keyPath as the top-level key
-      // If root-level array element, group under "root"
-      const topLevelKey =
-        obs.keyPath.length > 0 ? (obs.keyPath[0] === "*" ? "root" : obs.keyPath[0]) : null
-      if (!topLevelKey) return
-
-      if (!observationsByTopLevelKey.has(topLevelKey)) {
-        observationsByTopLevelKey.set(topLevelKey, [])
-      }
-      observationsByTopLevelKey.get(topLevelKey)!.push(obs)
-    })
-
-    // Map observations to variables by parent key
-    observationsByTopLevelKey.forEach((obsGroup, parentKey) => {
-      // Group observations by variableKey
-      const byVariable = new Map<string, ExtractionObservation[]>()
-      obsGroup.forEach((obs) => {
-        if (!byVariable.has(obs.variableKey)) {
-          byVariable.set(obs.variableKey, [])
-        }
-        byVariable.get(obs.variableKey)!.push(obs)
-      })
-
-      // For each variable, find the ExtractedVariable and add entries for each componentId
-      byVariable.forEach((variableObservations, variableKey) => {
-        const variable = extractedVariables.find((v) => v.variableKey === variableKey)
-        if (!variable) return
-
-        // Get unique componentIds from observations
-        const componentIds = Array.from(
-          new Set(variableObservations.map((obs) => obs.scopeKeys.componentId))
-        )
-
-        componentIds.forEach((componentId) => {
-          if (!variablesByParentKey.has(parentKey)) {
-            variablesByParentKey.set(parentKey, [])
-          }
-          variablesByParentKey.get(parentKey)!.push({ variable, componentId })
-        })
-      })
-    })
-
-    // Convert to the format expected by the UI
-    const converted = new Map<string, Array<{ path: PathDisplay; componentId: number }>>()
-    variablesByParentKey.forEach((variablesWithComponents, parentKey) => {
-      converted.set(
-        parentKey,
-        variablesWithComponents.map(({ variable, componentId }) => ({
-          path: {
-            path: variable.variableName,
-            type: variable.type as PathDisplay["type"],
-            exampleValue: variable.examples[0]?.value || null,
-            depth: variable.depth,
-          },
-          componentId,
-        }))
-      )
-    })
-    return converted
-  }, [observations, extractedVariables])
 
   return (
     <Card title="Structure Analysis" collapsible defaultOpen={true}>
@@ -172,7 +96,7 @@ export default function StructureAnalysisCard({
           className={`tab ${analysisTab === "components" ? "tab-active" : ""}`}
           onClick={() => setAnalysisTab("components")}
         >
-          Components ({originalStructureAnalysis.components.length})
+          Components ({debugView.structure.components.length})
         </button>
         <button
           className={`tab ${analysisTab === "diagnostics" ? "tab-active" : ""}`}
@@ -185,11 +109,9 @@ export default function StructureAnalysisCard({
       {/* Overview Tab */}
       {analysisTab === "overview" && (
         <StructureOverview
-          enrichedResult={enrichedResult}
-          originalStructureAnalysis={originalStructureAnalysis}
-          allExtractedPathsByParentKey={allExtractedPathsByParentKey}
-          extractedVariables={extractedVariables}
-          highlightedPath={highlightedPath}
+          structureAnalysis={debugView.structure}
+          topLevelGroups={topLevelGroups}
+          selectedPath={selectedPath}
           onSwitchToComponents={() => setAnalysisTab("components")}
           onSelectComponent={(componentId) => setSelectedComponentId(componentId)}
           onHighlightPath={handleVariableClick}
@@ -200,19 +122,18 @@ export default function StructureAnalysisCard({
       {analysisTab === "components" && (
         <StructureComponents
           enrichedResult={enrichedResult}
-          originalStructureAnalysis={originalStructureAnalysis}
+          structureAnalysis={debugView.structure}
           extractedVariables={extractedVariables}
           selectedComponentId={selectedComponentId}
-          highlightedPath={highlightedPath}
+          selectedPath={selectedPath}
+          highlightedPaths={highlightedPaths}
           onSelectComponent={(componentId) => setSelectedComponentId(componentId)}
           onHighlightPath={handleVariableClick}
         />
       )}
 
       {/* Diagnostics Tab */}
-      {analysisTab === "diagnostics" && (
-        <StructureDiagnostics diagnostics={diagnostics} extractedVariables={extractedVariables} />
-      )}
+      {analysisTab === "diagnostics" && <StructureDiagnostics diagnostics={diagnostics} />}
     </Card>
   )
 }

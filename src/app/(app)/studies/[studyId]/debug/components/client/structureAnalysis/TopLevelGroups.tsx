@@ -1,27 +1,27 @@
 "use client"
 
-import type { EnrichedJatosStudyResult } from "@/src/types/jatos"
-import type { DebugStructureAnalysis } from "../../../../variables/utils/structureAnalyzer/analyzeOriginalStructure"
+import type { DebugStructureAnalysis } from "../../../utils/materializeDebugView"
+import type { SelectedPath, TopLevelGroup } from "../../../types"
 import PathBadge from "./PathBadge"
 
 interface TopLevelGroupsProps {
-  enrichedResult: EnrichedJatosStudyResult
-  originalStructureAnalysis: DebugStructureAnalysis
-  highlightedPath?: { path: string; componentId: number } | null
+  structureAnalysis: DebugStructureAnalysis
+  topLevelGroups: Map<string, TopLevelGroup>
+  selectedPath?: SelectedPath | null
   onPathClick: (path: string, componentId: number) => void
 }
 
 export default function TopLevelGroups({
-  enrichedResult,
-  originalStructureAnalysis,
-  highlightedPath,
+  structureAnalysis,
+  topLevelGroups,
+  selectedPath,
   onPathClick,
 }: TopLevelGroupsProps) {
   const hasRootTopLevel =
-    originalStructureAnalysis.statistics.totalTopLevelGroups === 0 &&
-    originalStructureAnalysis.structureType === "array"
+    structureAnalysis.statistics.totalTopLevelGroups === 0 &&
+    structureAnalysis.structureType === "array"
 
-  if (originalStructureAnalysis.statistics.totalTopLevelGroups === 0 && !hasRootTopLevel) {
+  if (structureAnalysis.statistics.totalTopLevelGroups === 0 && !hasRootTopLevel) {
     return null
   }
 
@@ -45,27 +45,22 @@ export default function TopLevelGroups({
         </div>
       </div>
       <div className="flex flex-wrap gap-2">
-        {hasRootTopLevel && enrichedResult.componentResults.length > 0 && (
+        {hasRootTopLevel && structureAnalysis.components.length > 0 && (
           <PathBadge
             key="root"
             path="root"
             type="array"
-            componentId={enrichedResult.componentResults[0]!.componentId}
-            highlightedPath={highlightedPath}
+            componentId={structureAnalysis.components[0]!.componentId}
+            selectedPath={selectedPath}
             size="lg"
             onClick={(path, componentId) => onPathClick(path, componentId)}
           />
         )}
-        {Array.from(originalStructureAnalysis.topLevelKeyTypes.keys()).map((key) => {
-          const keyType = originalStructureAnalysis.topLevelKeyTypes.get(key)
-
+        {Array.from(topLevelGroups.entries()).map(([key, group]) => {
           // Find the first component that has this key
-          const componentWithKey = enrichedResult.componentResults.find((component) => {
-            const componentAnalysis = originalStructureAnalysis.components.find(
-              (c) => c.componentId === component.componentId
-            )
-            return componentAnalysis?.topLevelKeys.includes(key)
-          })
+          const componentWithKey = structureAnalysis.components.find((c) =>
+            c.topLevelKeys.includes(key)
+          )
 
           if (!componentWithKey) return null
 
@@ -73,9 +68,9 @@ export default function TopLevelGroups({
             <PathBadge
               key={key}
               path={key}
-              type={keyType || "object"}
+              type={group.type}
               componentId={componentWithKey.componentId}
-              highlightedPath={highlightedPath}
+              selectedPath={selectedPath}
               size="lg"
               onClick={onPathClick}
             />

@@ -3,8 +3,8 @@
 import type { EnrichedJatosStudyResult } from "@/src/types/jatos"
 import { DEFAULT_EXTRACTION_CONFIG } from "../../../../variables/types"
 import { extractVariableBundle } from "../../../../variables/utils/extractVariable"
-import { createObservationStore } from "../../../../variables/utils/observationStore"
-import { analyzeDebugStructure } from "../../../../variables/utils/structureAnalyzer/analyzeOriginalStructure"
+import { createExtractionIndexStore } from "../../../../variables/utils/extractionIndexStore"
+import { materializeDebugView } from "../../../utils/materializeDebugView"
 import Card from "@/src/app/components/Card"
 import StructureAnalysisCard from "../structureAnalysis/StructureAnalysisCard"
 import VariableStats from "./VariableStats"
@@ -23,26 +23,27 @@ export default function VariableExtractionPreview({
     [enrichedResult]
   )
 
-  const observationStore = useMemo(
-    () => createObservationStore(extractionBundle.observations),
+  const indexStore = useMemo(
+    () => createExtractionIndexStore(extractionBundle.observations),
     [extractionBundle.observations]
   )
 
-  // Analyze structure from extraction results
-  const debugStructureAnalysis = useMemo(
-    () => analyzeDebugStructure(extractionBundle, enrichedResult),
-    [extractionBundle, enrichedResult]
+  // Materialize debug view aggregates (single pass)
+  const debugView = useMemo(
+    () => materializeDebugView(extractionBundle, indexStore),
+    [extractionBundle, indexStore]
   )
 
   return (
     <div className="space-y-6">
       {/* Structure Analysis Card */}
       <StructureAnalysisCard
-        enrichedResult={enrichedResult}
-        originalStructureAnalysis={debugStructureAnalysis}
+        debugView={debugView}
         extractedVariables={extractionBundle.variables}
+        indexStore={indexStore}
         observations={extractionBundle.observations}
         diagnostics={extractionBundle.diagnostics}
+        enrichedResult={enrichedResult}
       />
 
       {/* Variable Extraction Preview Card */}
@@ -51,7 +52,8 @@ export default function VariableExtractionPreview({
 
         <VariableTable
           extractedVariables={extractionBundle.variables}
-          observationStore={observationStore}
+          indexStore={indexStore}
+          observations={extractionBundle.observations}
         />
       </Card>
     </div>

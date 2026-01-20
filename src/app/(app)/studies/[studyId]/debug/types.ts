@@ -1,7 +1,18 @@
-// Simple type for path display (replaces NestedPath)
-export type PathDisplay = {
-  path: string
-  type: "string" | "number" | "boolean" | "object" | "array" | "null"
-  exampleValue: any
-  depth: number
+import { ExtractedVariable } from "../variables/types"
+
+// Highlighted path state for badge and JSON tree highlighting
+export type SelectedPath = {
+  selectedPath: string // Path identifier to highlight (variableKey for variables, key name for top-level keys)
+  componentId: number // Which component this selection applies to
+}
+
+export type HighlightedPaths = {
+  componentId: number // Which component these paths apply to
+  jsonPaths: string[] // Concrete JSON paths for tree highlighting
+}
+
+// Top-level group containing variables and their type
+export type TopLevelGroup = {
+  variables: Array<{ variable: ExtractedVariable; componentId: number }>
+  type: "primitive" | "array" | "object"
 }

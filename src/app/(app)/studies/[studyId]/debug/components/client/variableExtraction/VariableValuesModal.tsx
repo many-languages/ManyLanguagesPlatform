@@ -3,20 +3,22 @@
 import { useMemo } from "react"
 import Modal from "@/src/app/components/Modal"
 import JsonView from "@/src/app/components/JsonView"
-import type { ExtractedVariable } from "../../../../variables/types"
-import type { ObservationStore } from "../../../../variables/utils/observationStore"
+import type { ExtractedVariable, ExtractionObservation } from "../../../../variables/types"
+import type { ExtractionIndexStore } from "../../../../variables/utils/extractionIndexStore"
 import { formatValue } from "@/src/lib/utils/formatValue"
 import { formatJson } from "@/src/lib/utils/formatJson"
 
 interface VariableValuesModalProps {
   selectedVariable: ExtractedVariable | null
-  observationStore: ObservationStore
+  indexStore: ExtractionIndexStore
+  observations: ExtractionObservation[]
   onClose: () => void
 }
 
 export default function VariableValuesModal({
   selectedVariable,
-  observationStore,
+  indexStore,
+  observations,
   onClose,
 }: VariableValuesModalProps) {
   const isOpen = selectedVariable !== null
@@ -25,7 +27,7 @@ export default function VariableValuesModal({
   const allValues = useMemo(() => {
     if (!selectedVariable) return []
     const valueJsonStrings = Array.from(
-      observationStore.iterateValueJsonByVariableKey(selectedVariable.variableKey)
+      indexStore.iterateValueJsonByVariableKey(selectedVariable.variableKey, observations)
     )
     return valueJsonStrings.map((json) => {
       try {
@@ -34,7 +36,7 @@ export default function VariableValuesModal({
         return null
       }
     })
-  }, [selectedVariable, observationStore])
+  }, [selectedVariable, indexStore, observations])
 
   return (
     <Modal open={isOpen} size="max-w-4xl">

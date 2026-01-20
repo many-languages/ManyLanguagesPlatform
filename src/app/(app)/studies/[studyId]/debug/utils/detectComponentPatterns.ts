@@ -1,37 +1,11 @@
 /**
- * Original Structure Pattern Detection
- * Detects patterns in the raw data structure before extraction
+ * Component Structure Pattern Detection
+ * Detects patterns across component structures derived from extraction
  */
 
-import type { ComponentStructureAnalysis } from "./analyzeOriginalStructure"
+import { ComponentStructureAnalysis } from "./materializeDebugView"
 
-/**
- * Derive overall structure type from component structures
- */
-export function deriveOverallStructureType(
-  components: ComponentStructureAnalysis[]
-): "array" | "object" | "mixed" | "empty" {
-  const componentsWithData = components.filter(
-    (c) => c.structureType !== "null" && c.structureType !== "empty"
-  )
-
-  if (componentsWithData.length === 0) {
-    return "empty"
-  }
-
-  const hasArrayStructure = componentsWithData.some((c) => c.structureType === "array")
-  const hasObjectStructure = componentsWithData.some((c) => c.structureType === "object")
-
-  if (hasArrayStructure && !hasObjectStructure) {
-    return "array"
-  } else if (hasObjectStructure && !hasArrayStructure) {
-    return "object"
-  } else {
-    return "mixed"
-  }
-}
-
-export interface OriginalDetectedPattern {
+export interface DetectedPattern {
   type: "nested_object" | "array_of_objects" | "flat_structure" | "mixed" | "inconsistent"
   description: string
   exampleComponents: number[]
@@ -39,12 +13,12 @@ export interface OriginalDetectedPattern {
 }
 
 /**
- * Identify common patterns in original structure
+ * Identify common patterns across components
  */
-export function identifyOriginalPatterns(
+export function identifyComponentPatterns(
   components: ComponentStructureAnalysis[]
-): OriginalDetectedPattern[] {
-  const patterns: OriginalDetectedPattern[] = []
+): DetectedPattern[] {
+  const patterns: DetectedPattern[] = []
   const componentsWithData = components.filter(
     (c) => c.structureType !== "null" && c.structureType !== "empty"
   )
@@ -111,20 +85,4 @@ export function identifyOriginalPatterns(
   }
 
   return patterns
-}
-
-/**
- * Analyze array patterns in original structure
- * Returns descriptive information about array components (not checks)
- */
-export function analyzeOriginalArrayPatterns(components: ComponentStructureAnalysis[]): {
-  hasArrayPatterns: boolean
-  arrayComponents: ComponentStructureAnalysis[]
-} {
-  const arrayComponents = components.filter((c) => c.structureType === "array")
-
-  return {
-    hasArrayPatterns: arrayComponents.length > 0,
-    arrayComponents,
-  }
 }

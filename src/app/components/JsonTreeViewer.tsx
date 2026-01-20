@@ -7,7 +7,6 @@ interface JsonTreeViewerProps {
   data: unknown
   className?: string
   highlightPaths?: string[]
-  highlightKey?: string
   expandAll?: boolean
 }
 
@@ -19,7 +18,7 @@ function escapeQuotedKey(key: string): string {
   return key.replace(/\\/g, "\\\\").replace(/"/g, '\\"')
 }
 
-function segmentsToPath(segments: Array<string | number>): string {
+function segmentsToPath(segments: ReadonlyArray<string | number>): string {
   let out = "$"
   segments.forEach((segment) => {
     const seg = String(segment)
@@ -85,7 +84,7 @@ function normalizePath(path: string): string {
   return segmentsToPath(parsePathSegments(path))
 }
 
-function keyPathToSegments(keyPath: Array<string | number>): Array<string | number> {
+function keyPathToSegments(keyPath: ReadonlyArray<string | number>): Array<string | number> {
   const reversed = [...keyPath].reverse()
   const segments = reversed.filter((seg) => seg !== "root")
   return segments
@@ -95,7 +94,6 @@ export default function JsonTreeViewer({
   data,
   className,
   highlightPaths,
-  highlightKey,
   expandAll = true,
 }: JsonTreeViewerProps) {
   const highlightPathSet = useMemo(() => {
@@ -103,7 +101,7 @@ export default function JsonTreeViewer({
     return new Set(highlightPaths.map((path) => normalizePath(path)))
   }, [highlightPaths])
 
-  const isHighlightedPath = (keyPath: Array<string | number>): boolean => {
+  const isHighlightedPath = (keyPath: ReadonlyArray<string | number>): boolean => {
     if (highlightPathSet.size === 0) return false
     const path = segmentsToPath(keyPathToSegments(keyPath))
     return highlightPathSet.has(path)
@@ -119,15 +117,14 @@ export default function JsonTreeViewer({
         }
         labelRenderer={(keyPath) => {
           const key = String(keyPath[0])
-          const matchKey = highlightKey ? key === highlightKey : false
           const matchPath = isHighlightedPath(keyPath)
-          const className = matchKey || matchPath ? "bg-warning/30 rounded px-1" : undefined
+          const className = matchPath ? "bg-warning/30 rounded px-1" : undefined
           return <span className={className}>{key}</span>
         }}
         valueRenderer={(raw, _value, ...keyPath) => {
           const matchPath = isHighlightedPath(keyPath)
           const className = matchPath ? "bg-warning/20 rounded px-1" : undefined
-          return <span className={className}>{raw}</span>
+          return <span className={className}>{String(raw)}</span>
         }}
       />
     </div>

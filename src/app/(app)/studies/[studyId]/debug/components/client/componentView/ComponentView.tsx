@@ -1,8 +1,9 @@
 "use client"
 
 import type { EnrichedJatosStudyResult } from "@/src/types/jatos"
-import type { DebugStructureAnalysis } from "../../../../variables/utils/structureAnalyzer/analyzeOriginalStructure"
+import type { DebugStructureAnalysis } from "../../../utils/materializeDebugView"
 import type { ExtractedVariable } from "../../../../variables/types"
+import type { HighlightedPaths, SelectedPath } from "../../../types"
 import { Alert } from "@/src/app/components/Alert"
 import ComponentDataViewer from "./ComponentDataViewer"
 import PathBadge from "../structureAnalysis/PathBadge"
@@ -14,12 +15,8 @@ interface ComponentViewProps {
   component: ComponentResult
   componentAnalysis?: DebugStructureAnalysis["components"][number]
   extractedVariables: ExtractedVariable[]
-  highlightedPath?: {
-    path: string
-    componentId: number
-    paths?: string[]
-    highlightKey?: string
-  } | null
+  selectedPath?: SelectedPath | null
+  highlightedPaths?: HighlightedPaths | null
   onHighlightPath: (path: string, componentId: number) => void
 }
 
@@ -27,7 +24,8 @@ export default function ComponentView({
   component,
   componentAnalysis,
   extractedVariables,
-  highlightedPath,
+  selectedPath,
+  highlightedPaths,
   onHighlightPath,
 }: ComponentViewProps) {
   const handlePathClick = (path: string, componentId: number) => {
@@ -49,18 +47,13 @@ export default function ComponentView({
   })
 
   const allExtractedPaths = Array.from(variablesMap.values()).map((variable) => ({
-    path: variable.variableName,
+    variableKey: variable.variableKey,
+    variableName: variable.variableName,
     type: variable.type as "string" | "number" | "boolean" | "array" | "object",
   }))
 
-  const highlightedPathForComponent =
-    highlightedPath?.componentId === component.componentId ? highlightedPath.path : undefined
   const highlightedPathsForComponent =
-    highlightedPath?.componentId === component.componentId ? highlightedPath.paths : undefined
-  const highlightedKeyForComponent =
-    highlightedPath?.componentId === component.componentId
-      ? highlightedPath.highlightKey
-      : undefined
+    highlightedPaths?.componentId === component.componentId ? highlightedPaths.jsonPaths : undefined
 
   return (
     <div className="card bg-base-200 p-4">
@@ -103,7 +96,7 @@ export default function ComponentView({
                   path={key}
                   type={keyType || "object"}
                   componentId={component.componentId}
-                  highlightedPath={highlightedPath}
+                  selectedPath={selectedPath}
                   size="sm"
                   onClick={handlePathClick}
                 />
@@ -121,11 +114,12 @@ export default function ComponentView({
               const tooltipType = pathItem.type === "string" ? "primitive" : pathItem.type
               return (
                 <PathBadge
-                  key={pathItem.path}
-                  path={pathItem.path}
+                  key={pathItem.variableKey}
+                  path={pathItem.variableKey}
+                  name={pathItem.variableName}
                   type={pathItem.type}
                   componentId={component.componentId}
-                  highlightedPath={highlightedPath}
+                  selectedPath={selectedPath}
                   size="sm"
                   tooltipType={tooltipType}
                   onClick={handlePathClick}
@@ -142,12 +136,7 @@ export default function ComponentView({
         </Alert>
       )}
 
-      <ComponentDataViewer
-        component={component}
-        highlightedPath={highlightedPathForComponent}
-        highlightedPaths={highlightedPathsForComponent}
-        highlightKey={highlightedKeyForComponent}
-      />
+      <ComponentDataViewer component={component} highlightPaths={highlightedPathsForComponent} />
     </div>
   )
 }

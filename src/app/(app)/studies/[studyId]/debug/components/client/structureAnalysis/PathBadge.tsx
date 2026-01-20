@@ -1,13 +1,15 @@
 "use client"
 
+import type { SelectedPath } from "../../../types"
 import { getTypeBadgeClass, getPathTypeBadgeClass } from "../../../utils/badgeHelpers"
 import { scrollToComponentData } from "../../../utils/pathHighlighting"
 
 interface PathBadgeProps {
-  path: string
+  path: string // Identifier (e.g., variableKey for variables, key name for top-level keys)
+  name?: string // Optional display name (e.g., variableName for variables). Falls back to path if not provided
   type: "primitive" | "array" | "object" | "string" | "number" | "boolean" | "null" | string
   componentId: number
-  highlightedPath?: { path: string; componentId: number } | null
+  selectedPath?: SelectedPath | null
   size?: "sm" | "lg"
   onClick?: (path: string, componentId: number) => void
   tooltipType?: string
@@ -16,9 +18,10 @@ interface PathBadgeProps {
 
 export default function PathBadge({
   path,
+  name,
   type,
   componentId,
-  highlightedPath,
+  selectedPath,
   size = "sm",
   onClick,
   tooltipType,
@@ -34,7 +37,7 @@ export default function PathBadge({
 
   // Check if this path is highlighted
   const isHighlighted =
-    highlightedPath?.path === path && highlightedPath?.componentId === componentId
+    selectedPath?.selectedPath === path && selectedPath?.componentId === componentId
 
   // Normalize tooltip type
   const displayTooltipType =
@@ -58,6 +61,8 @@ export default function PathBadge({
     }
   }
 
+  const displayName = name || path
+
   return (
     <button
       className={`badge ${badgeClass} badge-${size} font-mono cursor-pointer hover:opacity-80 transition-opacity ${
@@ -66,7 +71,7 @@ export default function PathBadge({
       title={tooltipMessage}
       onClick={handleClick}
     >
-      {path}
+      {displayName}
     </button>
   )
 }

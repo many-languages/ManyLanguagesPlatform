@@ -1,5 +1,5 @@
 import type { EnrichedJatosStudyResult } from "@/src/types/jatos"
-import type { ExtractionBundle, ExtractionConfig } from "../types"
+import type { Diagnostic, ExtractionBundle, ExtractionConfig } from "../types"
 import { DEFAULT_EXTRACTION_CONFIG } from "../types"
 import { aggregateVariables } from "./aggregateVariables"
 import { extractObservations } from "./extractObservations"
@@ -30,13 +30,24 @@ export function extractVariableBundle(
     options
   )
 
+  const variableDiagnostics = new Map<string, { variableName: string; diagnostics: Diagnostic[] }>()
+  for (const variable of variables) {
+    if (variable.diagnostics && variable.diagnostics.length > 0) {
+      variableDiagnostics.set(variable.variableKey, {
+        variableName: variable.variableName,
+        diagnostics: variable.diagnostics,
+      })
+    }
+  }
+
   return {
     variables,
     observations: extractionResult.observations,
-    stats: extractionResult.stats,
+    componentFacts: extractionResult.componentFacts,
     diagnostics: {
       run: extractionResult.runDiagnostics,
       component: extractionResult.componentDiagnostics,
+      variable: variableDiagnostics,
     },
   }
 }

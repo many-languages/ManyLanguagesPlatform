@@ -70,6 +70,17 @@ export type RunFacts = {
   skippedNonJson: Map<string, { count: number; examplePaths: string[]; tag?: string }> // bucket by jsType
 }
 
+export interface ComponentFactsEntry {
+  componentId: number
+  detectedFormat?: string
+  hasParsedData: boolean
+  hasDataContent: boolean
+  parseError?: string
+  formatError?: { code: DiagnosticCode; message: string }
+}
+
+export type ComponentFacts = Map<number, ComponentFactsEntry>
+
 export interface ScopeKeys {
   componentId: number // Component ID where this observation was extracted from
   workerId?: number // JATOS worker ID (optional, for future use)
@@ -185,6 +196,7 @@ export interface NewExtractionResult {
   runDiagnostics: Diagnostic[]
   stats: ExtractionStats
   variableFacts: VariableFacts // Snapshot of variable facts (immutable data for aggregation)
+  componentFacts: ComponentFacts // Snapshot of component facts (immutable data for diagnostics)
 }
 
 export interface VariableExample {
@@ -281,9 +293,10 @@ export interface ExtractedVariable {
 export interface ExtractionBundle {
   variables: ExtractedVariable[]
   observations: ExtractionObservation[]
-  stats: ExtractionStats
+  componentFacts: ComponentFacts
   diagnostics: {
     run: Diagnostic[]
     component: Map<number, Diagnostic[]>
+    variable: Map<string, { variableName: string; diagnostics: Diagnostic[] }>
   }
 }

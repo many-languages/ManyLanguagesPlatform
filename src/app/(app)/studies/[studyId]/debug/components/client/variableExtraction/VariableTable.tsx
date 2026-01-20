@@ -1,8 +1,8 @@
 "use client"
 
 import { useMemo, useState } from "react"
-import type { ExtractedVariable } from "../../../../variables/types"
-import type { ObservationStore } from "../../../../variables/utils/observationStore"
+import type { ExtractedVariable, ExtractionObservation } from "../../../../variables/types"
+import type { ExtractionIndexStore } from "../../../../variables/utils/extractionIndexStore"
 import type { ColumnDef } from "@tanstack/react-table"
 import Table from "@/src/app/components/Table"
 import VariableValuesModal from "./VariableValuesModal"
@@ -10,12 +10,14 @@ import { getTypeBadgeClass } from "../../../utils/badgeHelpers"
 
 interface VariableTableProps {
   extractedVariables: ExtractedVariable[]
-  observationStore: ObservationStore
+  indexStore: ExtractionIndexStore
+  observations: ExtractionObservation[]
 }
 
 export default function VariableTable({
   extractedVariables,
-  observationStore,
+  indexStore,
+  observations,
 }: VariableTableProps) {
   const [selectedVariable, setSelectedVariable] = useState<ExtractedVariable | null>(null)
 
@@ -113,7 +115,8 @@ export default function VariableTable({
       </div>
       <VariableValuesModal
         selectedVariable={selectedVariable}
-        observationStore={observationStore}
+        indexStore={indexStore}
+        observations={observations}
         onClose={handleCloseModal}
       />
     </>

@@ -5,7 +5,7 @@ import {
   NewExtractionResult,
   DiagnosticCode,
 } from "../types"
-import { ComponentDiagnosticsCollector } from "./componentDiagnosticsCollector"
+import { ComponentFactsCollector } from "./componentFactsCollector"
 import { RunFactsCollector } from "./runFactsCollector"
 import { StatsTracker } from "./statsTracker"
 import { transformCsvToObject } from "./transformCsvToObject"
@@ -13,7 +13,9 @@ import { walk, type PipelineContext } from "./walker"
 import { VariableFactsCollector } from "./variableFactsCollector"
 import { freezeVariableFacts } from "./freezeVariableFacts"
 import { freezeRunFacts } from "./freezeRunFacts"
+import { freezeComponentFacts } from "./freezeComponentFacts"
 import { materializeRunDiagnostics } from "./materializeRunDiagnostics"
+import { materializeComponentDiagnostics } from "./materializeComponentDiagnostics"
 
 /**
  * Format-specific data preparation
@@ -102,7 +104,7 @@ export function extractObservations(
     maxExamplePaths: config.variable.maxExamplePaths,
     maxDistinctTracking: config.variable.maxDistinctTracking,
   })
-  const componentDiagnosticsCollector = new ComponentDiagnosticsCollector()
+  const componentFactsCollector = new ComponentFactsCollector()
 
   // Create pipeline context once (ensures consistency across all walks)
   const ctx: PipelineContext = {
@@ -115,51 +117,36 @@ export function extractObservations(
   // Process each component
   enrichedResult.componentResults.forEach((component) => {
     const componentId = component.componentId
+    const format = component.detectedFormat?.format
+
+    componentFactsCollector.recordComponent({
+      componentId,
+      detectedFormat: format,
+      hasParsedData: !!component.parsedData,
+      hasDataContent: !!component.dataContent,
+    })
 
     // Early validation: empty data
     if (!component.parsedData && !component.dataContent) {
-      if (diagnosticsEnabled) {
-        componentDiagnosticsCollector.add(componentId, {
-          severity: "warning",
-          code: "EMPTY_OR_NO_DATA",
-          message: `Component ${componentId} has no data or empty data`,
-          metadata: { componentId },
-        })
-      }
       return
     }
 
     // Early validation: parse errors
     if (component.parseError) {
-      if (diagnosticsEnabled) {
-        componentDiagnosticsCollector.add(componentId, {
-          severity: "error",
-          code: "PARSE_ERROR",
-          message: `Parse error: ${component.parseError}`,
-          metadata: {
-            componentId,
-            error: component.parseError,
-          },
-        })
-      }
+      componentFactsCollector.recordParseError(componentId, component.parseError)
       return
     }
 
     // Prepare data for walking (format-specific transformation)
-    const format = component.detectedFormat?.format
     const prepared = prepareDataForWalking(format, component.parsedData)
 
     // Handle format-specific errors
     if ("error" in prepared) {
-      const severity = prepared.error.code === "TEXT_FORMAT_NOT_SUPPORTED" ? "error" : "warning"
-      if (diagnosticsEnabled) {
-        componentDiagnosticsCollector.add(componentId, {
-          severity,
-          code: prepared.error.code,
-          message: prepared.error.message,
-          metadata: { componentId, format },
-        })
-      }
+      componentFactsCollector.recordFormatError(
+        componentId,
+        prepared.error.code,
+        prepared.error.message
+      )
       return
     }
 
@@ -172,17 +159,22 @@ export function extractObservations(
 
   // Freeze facts into immutable snapshots
   const variableFacts = freezeVariableFacts(variableFactsCollector)
+  const componentFacts = freezeComponentFacts(componentFactsCollector)
 
   // Materialize diagnostics from frozen facts (only if enabled)
   const runDiagnostics = diagnosticsEnabled
     ? materializeRunDiagnostics(freezeRunFacts(runFactsCollector))
     : []
+  const componentDiagnostics = diagnosticsEnabled
+    ? materializeComponentDiagnostics(componentFacts)
+    : new Map()
 
   return {
     observations: allObservations,
-    componentDiagnostics: componentDiagnosticsCollector.getComponentDiagnostics(),
+    componentDiagnostics,
     runDiagnostics,
     stats: statsTracker.getStats(),
     variableFacts,
+    componentFacts,
   }
 }

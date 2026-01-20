@@ -1,22 +1,17 @@
 "use client"
 
-import type { Diagnostic, ExtractedVariable } from "../../../../variables/types"
+import type { Diagnostic } from "../../../../variables/types"
 
 interface StructureDiagnosticsProps {
   diagnostics: {
     run: Diagnostic[]
     component: Map<number, Diagnostic[]>
+    variable: Map<string, { variableName: string; diagnostics: Diagnostic[] }>
   }
-  extractedVariables: ExtractedVariable[]
 }
 
-export default function StructureDiagnostics({
-  diagnostics,
-  extractedVariables,
-}: StructureDiagnosticsProps) {
-  const variablesWithDiagnostics = extractedVariables.filter(
-    (variable) => variable.diagnostics && variable.diagnostics.length > 0
-  )
+export default function StructureDiagnostics({ diagnostics }: StructureDiagnosticsProps) {
+  const variablesWithDiagnostics = Array.from(diagnostics.variable.entries())
 
   return (
     <div className="space-y-4">
@@ -65,17 +60,14 @@ export default function StructureDiagnostics({
           <div className="text-sm text-muted-content">No variable-level diagnostics.</div>
         ) : (
           <div className="space-y-3">
-            {variablesWithDiagnostics.map((variable) => (
-              <div key={variable.variableKey} className="space-y-2">
+            {variablesWithDiagnostics.map(([variableKey, variableEntry]) => (
+              <div key={variableKey} className="space-y-2">
                 <div className="text-sm font-medium">
-                  {variable.variableName}{" "}
-                  <span className="text-xs text-muted-content">({variable.variableKey})</span>
+                  {variableEntry.variableName}{" "}
+                  <span className="text-xs text-muted-content">({variableKey})</span>
                 </div>
-                {variable.diagnostics?.map((diagnostic, idx) => (
-                  <div
-                    key={`variable-${variable.variableKey}-${idx}`}
-                    className="alert alert-warning"
-                  >
+                {variableEntry.diagnostics.map((diagnostic, idx) => (
+                  <div key={`variable-${variableKey}-${idx}`} className="alert alert-warning">
                     <span>
                       [{diagnostic.severity}] {diagnostic.code}: {diagnostic.message}
                     </span>

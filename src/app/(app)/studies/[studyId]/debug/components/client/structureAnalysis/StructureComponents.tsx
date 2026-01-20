@@ -1,8 +1,9 @@
 "use client"
 
 import type { EnrichedJatosStudyResult } from "@/src/types/jatos"
-import type { DebugStructureAnalysis } from "../../../../variables/utils/structureAnalyzer/analyzeOriginalStructure"
+import type { DebugStructureAnalysis } from "../../../utils/materializeDebugView"
 import type { ExtractedVariable } from "../../../../variables/types"
+import type { HighlightedPaths, SelectedPath } from "../../../types"
 import { Alert } from "@/src/app/components/Alert"
 import { useMemo, useCallback, useEffect } from "react"
 import { formatJson } from "@/src/lib/utils/formatJson"
@@ -12,30 +13,26 @@ import CopyButton from "../CopyButton"
 
 interface StructureComponentsProps {
   enrichedResult: EnrichedJatosStudyResult
-  originalStructureAnalysis: DebugStructureAnalysis
+  structureAnalysis: DebugStructureAnalysis
   extractedVariables: ExtractedVariable[]
   selectedComponentId: number | "all" | null
-  highlightedPath?: { path: string; componentId: number } | null
+  selectedPath?: SelectedPath | null
+  highlightedPaths?: HighlightedPaths | null
   onSelectComponent: (componentId: number | "all" | null) => void
   onHighlightPath: (path: string, componentId: number) => void
 }
 
 export default function StructureComponents({
   enrichedResult,
-  originalStructureAnalysis,
+  structureAnalysis,
   extractedVariables,
   selectedComponentId,
-  highlightedPath,
+  selectedPath,
+  highlightedPaths,
   onSelectComponent,
   onHighlightPath,
 }: StructureComponentsProps) {
   const componentsWithData = enrichedResult.componentResults.filter((c) => c.dataContent)
-
-  // Log all extracted variable names
-  useEffect(() => {
-    const variableNames = extractedVariables.map((v) => v.variableName).join(", ")
-    console.log("Extracted Variables:", variableNames)
-  }, [extractedVariables])
 
   // Define the copy logic in the parent component
   const getTextToCopy = useCallback(() => {
@@ -106,7 +103,7 @@ export default function StructureComponents({
         // All Components View
         <div className="space-y-6">
           {componentsWithData.map((component) => {
-            const componentAnalysis = originalStructureAnalysis.components.find(
+            const componentAnalysis = structureAnalysis.components.find(
               (c) => c.componentId === component.componentId
             )
 
@@ -116,7 +113,8 @@ export default function StructureComponents({
                 component={component}
                 componentAnalysis={componentAnalysis}
                 extractedVariables={extractedVariables}
-                highlightedPath={highlightedPath}
+                selectedPath={selectedPath}
+                highlightedPaths={highlightedPaths}
                 onHighlightPath={onHighlightPath}
               />
             )
@@ -128,7 +126,7 @@ export default function StructureComponents({
           const selectedComponent = enrichedResult.componentResults.find(
             (c) => c.componentId === selectedComponentId
           )
-          const componentAnalysis = originalStructureAnalysis.components.find(
+          const componentAnalysis = structureAnalysis.components.find(
             (c) => c.componentId === selectedComponentId
           )
 
@@ -141,7 +139,8 @@ export default function StructureComponents({
               component={selectedComponent}
               componentAnalysis={componentAnalysis}
               extractedVariables={extractedVariables}
-              highlightedPath={highlightedPath}
+              selectedPath={selectedPath}
+              highlightedPaths={highlightedPaths}
               onHighlightPath={onHighlightPath}
             />
           )

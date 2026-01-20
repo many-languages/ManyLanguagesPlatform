@@ -1,9 +1,7 @@
 "use client"
 
-import type { EnrichedJatosStudyResult } from "@/src/types/jatos"
-import type { DebugStructureAnalysis } from "../../../../variables/utils/structureAnalyzer/analyzeOriginalStructure"
-import type { ExtractedVariable } from "../../../../variables/types"
-import type { PathDisplay } from "../../../types"
+import type { DebugStructureAnalysis } from "../../../utils/materializeDebugView"
+import type { SelectedPath, TopLevelGroup } from "../../../types"
 import StructureStats from "./StructureStats"
 import TopLevelGroups from "./TopLevelGroups"
 import ExtractedVariablesOverview from "./ExtractedVariablesOverview"
@@ -11,22 +9,18 @@ import DetectedPatterns from "./DetectedPatterns"
 import { scrollToComponentData } from "../../../utils/pathHighlighting"
 
 interface StructureOverviewProps {
-  enrichedResult: EnrichedJatosStudyResult
-  originalStructureAnalysis: DebugStructureAnalysis
-  allExtractedPathsByParentKey: Map<string, Array<{ path: PathDisplay; componentId: number }>>
-  extractedVariables: ExtractedVariable[]
-  highlightedPath?: { path: string; componentId: number } | null
+  structureAnalysis: DebugStructureAnalysis
+  topLevelGroups: Map<string, TopLevelGroup>
+  selectedPath?: SelectedPath | null
   onSwitchToComponents: () => void
   onSelectComponent: (componentId: number) => void
   onHighlightPath: (path: string, componentId: number) => void
 }
 
 export default function StructureOverview({
-  enrichedResult,
-  originalStructureAnalysis,
-  allExtractedPathsByParentKey,
-  extractedVariables,
-  highlightedPath,
+  structureAnalysis,
+  topLevelGroups,
+  selectedPath,
   onSwitchToComponents,
   onSelectComponent,
   onHighlightPath,
@@ -40,23 +34,22 @@ export default function StructureOverview({
 
   return (
     <div className="space-y-4">
-      <StructureStats originalStructureAnalysis={originalStructureAnalysis} />
+      <StructureStats structureAnalysis={structureAnalysis} />
 
       <TopLevelGroups
-        enrichedResult={enrichedResult}
-        originalStructureAnalysis={originalStructureAnalysis}
-        highlightedPath={highlightedPath}
+        structureAnalysis={structureAnalysis}
+        topLevelGroups={topLevelGroups}
+        selectedPath={selectedPath}
         onPathClick={handlePathClick}
       />
 
       <ExtractedVariablesOverview
-        allExtractedPathsByParentKey={allExtractedPathsByParentKey}
-        extractedVariables={extractedVariables}
-        highlightedPath={highlightedPath}
+        topLevelGroups={topLevelGroups}
+        selectedPath={selectedPath}
         onPathClick={handlePathClick}
       />
 
-      <DetectedPatterns patterns={originalStructureAnalysis.patterns} />
+      <DetectedPatterns patterns={structureAnalysis.patterns} />
     </div>
   )
 }

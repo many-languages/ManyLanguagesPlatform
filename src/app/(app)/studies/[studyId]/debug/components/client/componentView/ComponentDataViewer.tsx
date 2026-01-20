@@ -10,33 +10,15 @@ type ComponentResult = EnrichedJatosStudyResult["componentResults"][number]
 
 interface ComponentDataViewerProps {
   component: ComponentResult
-  highlightedPath?: string
-  highlightedPaths?: string[]
-  highlightKey?: string
+  highlightPaths?: string[]
 }
 
 export default function ComponentDataViewer({
   component,
-  highlightedPath,
-  highlightedPaths,
-  highlightKey,
+  highlightPaths,
 }: ComponentDataViewerProps) {
   const format = component.detectedFormat?.format
   const parsedData = component.parsedData
-
-  const fallbackHighlightKey = (() => {
-    if (!highlightedPath) return undefined
-    const segments: string[] = []
-    const regex = /\.([A-Za-z_$][A-Za-z0-9_$]*)|\["([^"]+)"\]|\[(\d+)\]/g
-    let match: RegExpExecArray | null
-    while ((match = regex.exec(highlightedPath)) !== null) {
-      const key = match[1] || match[2]
-      if (key) {
-        segments.push(key)
-      }
-    }
-    return segments.length > 0 ? segments[segments.length - 1] : undefined
-  })()
 
   // JSON: Pretty-print with syntax highlighting
   if (format === "json" && parsedData) {
@@ -45,18 +27,7 @@ export default function ComponentDataViewer({
         id={`raw-data-component-${component.componentId}`}
         className="max-h-96 overflow-auto rounded-lg border border-base-300 scroll-mt-4"
       >
-        <JsonTreeViewer
-          data={parsedData}
-          highlightPaths={
-            highlightedPaths && highlightedPaths.length > 0
-              ? highlightedPaths
-              : highlightedPath
-              ? [highlightedPath]
-              : undefined
-          }
-          highlightKey={highlightKey || fallbackHighlightKey}
-          expandAll={true}
-        />
+        <JsonTreeViewer data={parsedData} highlightPaths={highlightPaths} expandAll={true} />
       </div>
     )
   }
@@ -126,7 +97,7 @@ export default function ComponentDataViewer({
     )
   }
 
-  // Plain text or fallback: Show with syntax highlighting if possible
+  // Plain text or fallback
   return (
     <div
       id={`raw-data-component-${component.componentId}`}

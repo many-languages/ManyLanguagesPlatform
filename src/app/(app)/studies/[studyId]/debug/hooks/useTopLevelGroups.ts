@@ -53,22 +53,18 @@ export function useTopLevelGroups(
   observations: ExtractionObservation[]
 ): Map<string, TopLevelGroup> {
   return useMemo(() => {
-    const grouped = new Map<string, Array<{ variable: ExtractedVariable; componentId: number }>>()
+    const grouped = new Map<string, ExtractedVariable[]>()
 
     // First, group variables by top-level key
     for (const variable of extractedVariables) {
       const topLevelKey = getTopLevelKey(variable.variableKey)
       if (!topLevelKey) continue
 
-      // Get componentIds where this variable appears
-      const componentIds = indexStore.getComponentIdsByVariableKey(variable.variableKey)
-
-      for (const componentId of componentIds) {
-        if (!grouped.has(topLevelKey)) {
-          grouped.set(topLevelKey, [])
-        }
-        grouped.get(topLevelKey)!.push({ variable, componentId })
+      // Add variable to the group (variable.componentIds already contains all component IDs)
+      if (!grouped.has(topLevelKey)) {
+        grouped.set(topLevelKey, [])
       }
+      grouped.get(topLevelKey)!.push(variable)
     }
 
     // Build a map of top-level keys to their keyPath match values

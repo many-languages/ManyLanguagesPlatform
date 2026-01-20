@@ -29,37 +29,39 @@ export default function ExtractedVariablesOverview({
             </div>
           </div>
           <div className="flex flex-wrap gap-1">
-            {group.variables.map(({ variable, componentId }) => {
-              // Normalize type for tooltip
-              const tooltipType =
-                variable.type === "string" ||
-                variable.type === "number" ||
-                variable.type === "boolean"
-                  ? "primitive"
-                  : variable.type === "array" || variable.type === "object"
-                  ? variable.type
-                  : "primitive"
+            {group.variables.flatMap((variable) =>
+              variable.componentIds.map((componentId) => {
+                // Normalize type for tooltip
+                const tooltipType =
+                  variable.type === "string" ||
+                  variable.type === "number" ||
+                  variable.type === "boolean"
+                    ? "primitive"
+                    : variable.type === "array" || variable.type === "object"
+                    ? variable.type
+                    : "primitive"
 
-              const unshownCount =
-                variable.examples.length > 0
-                  ? variable.occurrences - variable.examples.length
-                  : undefined
+                const unshownCount =
+                  variable.examples.length > 0
+                    ? variable.occurrences - variable.examples.length
+                    : undefined
 
-              return (
-                <PathBadge
-                  key={`${variable.variableKey}-${componentId}`}
-                  path={variable.variableKey}
-                  name={variable.variableName}
-                  type={variable.type}
-                  componentId={componentId}
-                  selectedPath={selectedPath}
-                  size="sm"
-                  tooltipType={tooltipType}
-                  unshownObservationsCount={unshownCount}
-                  onClick={onPathClick}
-                />
-              )
-            })}
+                return (
+                  <PathBadge
+                    key={`${variable.variableKey}-${componentId}`}
+                    path={variable.variableKey}
+                    name={variable.variableName}
+                    type={variable.type}
+                    componentId={componentId}
+                    selectedPath={selectedPath}
+                    size="sm"
+                    tooltipType={tooltipType}
+                    unshownObservationsCount={unshownCount}
+                    onClick={onPathClick}
+                  />
+                )
+              })
+            )}
           </div>
         </div>
       ))}

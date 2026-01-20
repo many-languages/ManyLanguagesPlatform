@@ -1,27 +1,25 @@
 "use client"
 
-import type { DebugStructureAnalysis } from "../../../utils/materializeDebugView"
 import type { SelectedPath, TopLevelGroup } from "../../../types"
 import PathBadge from "./PathBadge"
 
 interface TopLevelGroupsProps {
-  structureAnalysis: DebugStructureAnalysis
   topLevelGroups: Map<string, TopLevelGroup>
   selectedPath?: SelectedPath | null
   onPathClick: (path: string, componentId: number) => void
 }
 
 export default function TopLevelGroups({
-  structureAnalysis,
   topLevelGroups,
   selectedPath,
   onPathClick,
 }: TopLevelGroupsProps) {
-  const hasRootTopLevel =
-    structureAnalysis.statistics.totalTopLevelGroups === 0 &&
-    structureAnalysis.structureType === "array"
+  // Check if there's a root group (array structure at root level)
+  const rootGroup = topLevelGroups.get("root")
+  const hasRootTopLevel = rootGroup !== undefined && rootGroup.type === "array"
 
-  if (structureAnalysis.statistics.totalTopLevelGroups === 0 && !hasRootTopLevel) {
+  // If no groups at all, don't render
+  if (topLevelGroups.size === 0) {
     return null
   }
 
@@ -45,37 +43,38 @@ export default function TopLevelGroups({
         </div>
       </div>
       <div className="flex flex-wrap gap-2">
-        {hasRootTopLevel && structureAnalysis.components.length > 0 && (
+        {hasRootTopLevel && rootGroup && rootGroup.variables.length > 0 && (
           <PathBadge
             key="root"
             path="root"
             type="array"
-            componentId={structureAnalysis.components[0]!.componentId}
+            componentId={rootGroup.variables[0]!.componentIds[0]!}
             selectedPath={selectedPath}
             size="lg"
             onClick={(path, componentId) => onPathClick(path, componentId)}
           />
         )}
-        {Array.from(topLevelGroups.entries()).map(([key, group]) => {
-          // Find the first component that has this key
-          const componentWithKey = structureAnalysis.components.find((c) =>
-            c.topLevelKeys.includes(key)
-          )
+        {Array.from(topLevelGroups.entries())
+          .filter(([key]) => key !== "root" || !hasRootTopLevel) // Don't show root twice if already shown above
+          .map(([key, group]) => {
+            // Get componentId from first variable in the group
+            const firstVariable = group.variables[0]
+            if (!firstVariable || firstVariable.componentIds.length === 0) {
+              return null
+            }
 
-          if (!componentWithKey) return null
-
-          return (
-            <PathBadge
-              key={key}
-              path={key}
-              type={group.type}
-              componentId={componentWithKey.componentId}
-              selectedPath={selectedPath}
-              size="lg"
-              onClick={onPathClick}
-            />
-          )
-        })}
+            return (
+              <PathBadge
+                key={key}
+                path={key}
+                type={group.type}
+                componentId={firstVariable.componentIds[0]!}
+                selectedPath={selectedPath}
+                size="lg"
+                onClick={onPathClick}
+              />
+            )
+          })}
       </div>
     </div>
   )

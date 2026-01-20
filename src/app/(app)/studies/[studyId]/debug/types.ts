@@ -13,6 +13,6 @@ export type HighlightedPaths = {
 
 // Top-level group containing variables and their type
 export type TopLevelGroup = {
-  variables: Array<{ variable: ExtractedVariable; componentId: number }>
+  variables: ExtractedVariable[] // Variables grouped by top-level key (use variable.componentIds for component info)
   type: "primitive" | "array" | "object"
 }

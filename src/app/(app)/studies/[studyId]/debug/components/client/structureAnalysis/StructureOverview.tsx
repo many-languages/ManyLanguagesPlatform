@@ -37,7 +37,6 @@ export default function StructureOverview({
       <StructureStats structureAnalysis={structureAnalysis} />
 
       <TopLevelGroups
-        structureAnalysis={structureAnalysis}
         topLevelGroups={topLevelGroups}
         selectedPath={selectedPath}
         onPathClick={handlePathClick}

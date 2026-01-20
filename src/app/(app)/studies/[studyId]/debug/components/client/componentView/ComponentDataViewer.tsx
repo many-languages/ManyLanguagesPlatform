@@ -25,7 +25,7 @@ export default function ComponentDataViewer({
     return (
       <div
         id={`raw-data-component-${component.componentId}`}
-        className="max-h-96 overflow-auto rounded-lg border border-base-300 scroll-mt-4"
+        className="max-h-96 overflow-auto rounded-lg scroll-mt-4"
       >
         <JsonTreeViewer
           data={parsedData}

@@ -60,7 +60,7 @@ export default function ComponentView({
 
       {extractedPaths.length > 0 && (
         <div className="mb-3 mt-4">
-          <div className="text-xs text-muted-content mb-1">Extracted Variables from Objects:</div>
+          <div className="text-xs text-muted-content mb-1">Extracted Variables:</div>
           <div className="flex flex-wrap gap-1">
             {extractedPaths.map((pathItem) => (
               <VariableBadge

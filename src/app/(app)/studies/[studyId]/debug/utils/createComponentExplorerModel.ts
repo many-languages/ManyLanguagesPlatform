@@ -30,7 +30,7 @@ export function createComponentExplorerModel(args: {
     const badges: ComponentBadge[] = []
     for (const key of keys) {
       const v = variableByKey.get(key)
-      if (!v || v.isTopLevel) continue
+      if (!v) continue
       badges.push({ variableKey: v.variableKey, variableName: v.variableName, type: v.type })
     }
 

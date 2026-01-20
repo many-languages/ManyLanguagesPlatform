@@ -37,19 +37,17 @@ export default function StructureComponents({
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-end">
-        <CopyButton getTextToCopy={getTextToCopy} disabled={!canCopy} />
+      <div className="flex-1">
+        <ComponentSelector
+          // selector should use the filtered list from the model
+          components={componentExplorer.items.map((it) => ({
+            id: it.component.id,
+            componentId: it.component.componentId,
+          }))}
+          selectedComponentId={selectedComponentId}
+          onSelect={onSelectComponent}
+        />
       </div>
-
-      <ComponentSelector
-        // selector should use the filtered list from the model
-        components={componentExplorer.items.map((it) => ({
-          id: it.component.id,
-          componentId: it.component.componentId,
-        }))}
-        selectedComponentId={selectedComponentId}
-        onSelect={onSelectComponent}
-      />
 
       {itemsToRender.length === 0 ? (
         <Alert variant="info">Please select a component to view details</Alert>
@@ -73,6 +71,9 @@ export default function StructureComponents({
               />
             )
           })}
+          <div className="flex justify-end pt-2">
+            <CopyButton getTextToCopy={getTextToCopy} disabled={!canCopy} />
+          </div>
         </div>
       )}
     </div>

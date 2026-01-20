@@ -1,12 +1,14 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useCallback, useMemo, useState } from "react"
 import type { ExtractedVariable, ExtractionObservation } from "../../../../variables/types"
 import type { ExtractionIndexStore } from "../../../../variables/utils/extractionIndexStore"
 import type { ColumnDef } from "@tanstack/react-table"
 import Table from "@/src/app/components/Table"
 import VariableValuesModal from "./VariableValuesModal"
 import { getTypeBadgeClass } from "../../../utils/badgeHelpers"
+import { VariableRow } from "../../../types"
+import { examplePreview } from "../../../utils/examplePreview"
 
 interface VariableTableProps {
   extractedVariables: ExtractedVariable[]
@@ -21,15 +23,26 @@ export default function VariableTable({
 }: VariableTableProps) {
   const [selectedVariable, setSelectedVariable] = useState<ExtractedVariable | null>(null)
 
-  const handleShowValues = (variable: ExtractedVariable) => {
-    setSelectedVariable(variable)
-  }
+  const handleShowValues = useCallback((row: VariableRow) => {
+    setSelectedVariable(row._variable)
+  }, [])
 
-  const handleCloseModal = () => {
-    setSelectedVariable(null)
-  }
+  const handleCloseModal = useCallback(() => setSelectedVariable(null), [])
 
-  const columns = useMemo<ColumnDef<ExtractedVariable>[]>(
+  const rows = useMemo<VariableRow[]>(
+    () =>
+      extractedVariables.map((v) => ({
+        variableKey: v.variableKey,
+        variableName: v.variableName,
+        type: v.type,
+        occurrences: v.occurrences,
+        examplePreview: examplePreview(v),
+        _variable: v,
+      })),
+    [extractedVariables]
+  )
+
+  const columns = useMemo<ColumnDef<VariableRow>[]>(
     () => [
       {
         accessorKey: "variableName",
@@ -42,39 +55,23 @@ export default function VariableTable({
         accessorKey: "type",
         header: "Type",
         cell: ({ row }) => {
-          const variable = row.original
-          const badgeClass = getTypeBadgeClass(variable.type)
+          const badgeClass = getTypeBadgeClass(row.original.type)
           return (
-            <div className="tooltip tooltip-top cursor-help">
-              <span className={`badge ${badgeClass}`}>{variable.type}</span>
+            <div>
+              <span className={`badge ${badgeClass}`}>{row.original.type}</span>
             </div>
           )
         },
       },
+      { accessorKey: "occurrences", header: "Occurrences" },
       {
-        accessorKey: "occurrences",
-        header: "Occurrences",
-        cell: ({ row }) => row.original.occurrences,
-      },
-      {
-        accessorKey: "exampleValue",
+        accessorKey: "examplePreview",
         header: "Example Value",
-        cell: ({ row }) => {
-          const exampleValue = row.original.examples[0]?.value
-          let parsed: any = null
-          if (exampleValue) {
-            try {
-              parsed = JSON.parse(exampleValue)
-            } catch {
-              parsed = exampleValue
-            }
-          }
-          return (
-            <span className="font-mono text-xs max-w-xs truncate block">
-              {parsed !== null ? String(parsed) : ""}
-            </span>
-          )
-        },
+        cell: ({ row }) => (
+          <span className="font-mono text-xs max-w-xs truncate block">
+            {row.original.examplePreview}
+          </span>
+        ),
       },
       {
         id: "allValues",
@@ -88,10 +85,10 @@ export default function VariableTable({
         enableColumnFilter: false,
       },
     ],
-    []
+    [handleShowValues]
   )
 
-  if (extractedVariables.length === 0) {
+  if (rows.length === 0) {
     return (
       <div className="alert alert-info">
         <span>No variables extracted from this result</span>
@@ -104,7 +101,7 @@ export default function VariableTable({
       <div className="overflow-x-auto">
         <Table
           columns={columns}
-          data={extractedVariables}
+          data={rows}
           enableSorting={true}
           enableFilters={true}
           addPagination={false}

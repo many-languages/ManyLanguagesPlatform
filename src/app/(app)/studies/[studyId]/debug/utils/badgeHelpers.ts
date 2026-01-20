@@ -1,16 +1,20 @@
-import { TYPE_BADGE_CLASSES, VariableType } from "../constants"
+import { TYPE_BADGE_CLASSES } from "../constants"
+import type { VariableType } from "../../variables/types"
 
 /**
  * Maps a variable type to its corresponding badge class
- * @param type - The variable type (primitive, array, or object)
+ * @param type - The variable type from variables/types.ts
  * @returns The DaisyUI badge class name
  */
-export function getTypeBadgeClass(type: VariableType | "primitive" | "array" | "object"): string {
-  // Normalize the type to match our constants
-  const normalizedType: VariableType =
-    type === "primitive" ? "primitive" : type === "array" ? "array" : "object"
-
-  return TYPE_BADGE_CLASSES[normalizedType]
+export function getTypeBadgeClass(type: VariableType): string {
+  // Map string/number/boolean to primitive, keep array/object as is
+  if (type === "string" || type === "number" || type === "boolean") {
+    return TYPE_BADGE_CLASSES.primitive
+  }
+  if (type === "array") {
+    return TYPE_BADGE_CLASSES.array
+  }
+  return TYPE_BADGE_CLASSES.object
 }
 
 /**

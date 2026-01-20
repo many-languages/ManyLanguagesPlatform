@@ -1,5 +1,6 @@
 import { EnrichedJatosStudyResult } from "@/src/types/jatos"
 import { ComponentStats } from "./utils/componentStats"
+import { ExtractedVariable } from "../variables/types"
 
 // Highlighted path state for badge and JSON tree highlighting
 export type SelectedPath = {
@@ -36,4 +37,13 @@ export type ComponentExplorerModel = {
   // on-demand helpers
   getCopyText: (sel: ComponentExplorerSelection) => string
   getHighlightPaths: (componentId: ComponentId, variableKey: string) => string[]
+}
+
+export type VariableRow = {
+  variableKey: string
+  variableName: string
+  type: ExtractedVariable["type"]
+  occurrences: number
+  examplePreview: string
+  _variable: ExtractedVariable
 }

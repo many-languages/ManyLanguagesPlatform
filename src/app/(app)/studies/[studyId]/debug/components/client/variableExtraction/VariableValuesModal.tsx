@@ -7,6 +7,7 @@ import type { ExtractedVariable, ExtractionObservation } from "../../../../varia
 import type { ExtractionIndexStore } from "../../../../variables/utils/extractionIndexStore"
 import { formatValue } from "@/src/lib/utils/formatValue"
 import { formatJson } from "@/src/lib/utils/formatJson"
+import { tryParseJson } from "../../../utils/tryParseJson"
 
 interface VariableValuesModalProps {
   selectedVariable: ExtractedVariable | null
@@ -26,16 +27,10 @@ export default function VariableValuesModal({
   // Get all values from observation store
   const allValues = useMemo(() => {
     if (!selectedVariable) return []
-    const valueJsonStrings = Array.from(
+
+    return Array.from(
       indexStore.iterateValueJsonByVariableKey(selectedVariable.variableKey, observations)
-    )
-    return valueJsonStrings.map((json) => {
-      try {
-        return JSON.parse(json)
-      } catch {
-        return null
-      }
-    })
+    ).map((valueJson) => tryParseJson(valueJson))
   }, [selectedVariable, indexStore, observations])
 
   return (
@@ -56,7 +51,19 @@ export default function VariableValuesModal({
         </div>
 
         <div className="max-h-[60vh] overflow-auto space-y-4">
-          {allValues.map((value, index) => {
+          {allValues.map((parsed, index) => {
+            if (!parsed.ok) {
+              return (
+                <div key={index} className="border border-base-300 rounded-lg p-3">
+                  <span className="text-muted-content text-xs font-mono">[{index}]:</span>{" "}
+                  <span className="font-mono text-sm whitespace-pre-wrap break-words">
+                    {parsed.raw}
+                  </span>
+                </div>
+              )
+            }
+
+            const value = parsed.value
             const isObject = typeof value === "object" && value !== null && !Array.isArray(value)
             const isArray = Array.isArray(value)
             const isJSON = isObject || isArray
@@ -74,11 +81,10 @@ export default function VariableValuesModal({
             }
 
             // For primitive values, show with simple formatting
-            const formatted = formatValue(value)
             return (
               <div key={index} className="border border-base-300 rounded-lg p-3">
                 <span className="text-muted-content text-xs font-mono">[{index}]:</span>{" "}
-                <span className="font-mono text-sm">{formatted}</span>
+                <span className="font-mono text-sm">{formatValue(value)}</span>
               </div>
             )
           })}

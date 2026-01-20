@@ -6,5 +6,3 @@ export const TYPE_BADGE_CLASSES = {
   array: "badge-secondary",
   object: "badge-accent",
 } as const
-
-export type VariableType = keyof typeof TYPE_BADGE_CLASSES

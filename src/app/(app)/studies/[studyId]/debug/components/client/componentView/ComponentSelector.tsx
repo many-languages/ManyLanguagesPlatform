@@ -1,19 +1,20 @@
 "use client"
 
-import type { EnrichedJatosStudyResult } from "@/src/types/jatos"
-
 interface ComponentSelectorProps {
-  componentsWithData: EnrichedJatosStudyResult["componentResults"]
+  components: Array<{
+    id: number
+    componentId: number
+  }>
   selectedComponentId: number | "all" | null
   onSelect: (componentId: number | "all" | null) => void
 }
 
 export default function ComponentSelector({
-  componentsWithData,
+  components,
   selectedComponentId,
   onSelect,
 }: ComponentSelectorProps) {
-  if (componentsWithData.length === 0) return null
+  if (components.length === 0) return null
 
   return (
     <div className="mb-4">
@@ -36,7 +37,7 @@ export default function ComponentSelector({
       >
         <option value="">Select a component...</option>
         <option value="all">All Components</option>
-        {componentsWithData.map((component) => (
+        {components.map((component) => (
           <option key={component.id} value={component.componentId}>
             Component {component.componentId}
           </option>

@@ -43,7 +43,6 @@ export function extractVariableBundle(
   return {
     variables,
     observations: extractionResult.observations,
-    componentFacts: extractionResult.componentFacts,
     diagnostics: {
       run: extractionResult.runDiagnostics,
       component: extractionResult.componentDiagnostics,

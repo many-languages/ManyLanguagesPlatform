@@ -7,11 +7,12 @@ import type {
   ExtractionObservation,
 } from "../../../../variables/types"
 import type { ExtractionIndexStore } from "../../../../variables/utils/extractionIndexStore"
-import type { HighlightedPaths, SelectedPath } from "../../../types"
+import type { SelectedPath } from "../../../types"
 import Card from "@/src/app/components/Card"
-import { useState, useCallback } from "react"
+import { useState, useCallback, useMemo } from "react"
 import StructureComponents from "./StructureComponents"
 import StructureDiagnostics from "./StructureDiagnostics"
+import { createComponentExplorerModel } from "../../../utils/createComponentExplorerModel"
 
 interface StructureAnalysisCardProps {
   extractedVariables: ExtractedVariable[]
@@ -34,49 +35,27 @@ export default function StructureAnalysisCard({
 }: StructureAnalysisCardProps) {
   const [analysisTab, setAnalysisTab] = useState<"components" | "diagnostics">("components")
 
-  // Find first component with observations (has data) - lazy initial state
-  const [selectedComponentId, setSelectedComponentId] = useState<number | "all" | null>(() => {
-    const componentsWithData = enrichedResult.componentResults.filter((c) => c.dataContent)
-    for (const component of componentsWithData) {
-      const obsIndices = indexStore.getObservationIndicesByComponentId(component.componentId)
-      if (obsIndices.length > 0) {
-        return component.componentId
-      }
-    }
-    return "all"
-  })
-  const [selectedPath, setSelectedPath] = useState<SelectedPath | null>(null)
-  const [highlightedPaths, setHighlightedPaths] = useState<HighlightedPaths | null>(null)
+  // Build the joined explorer model once
+  const componentExplorer = useMemo(() => {
+    return createComponentExplorerModel({
+      enrichedResult,
+      extractedVariables,
+      observations,
+      indexStore,
+    })
+  }, [enrichedResult, extractedVariables, observations, indexStore])
 
-  // Handler to extract example paths from variable and highlight
-  // Receives variableKey (structural identifier) directly, no lookup needed
-  const handleVariableClick = useCallback(
-    (variableKey: string, componentId: number) => {
-      const variable = extractedVariables.find((v) => v.variableKey === variableKey)
-      if (!variable) {
-        // If not a variable, clear selection
-        setSelectedPath(null)
-        setHighlightedPaths(null)
-        return
-      }
-
-      const indices = indexStore.getObservationIndicesByVariableKey(variableKey)
-      const allObservationPaths: string[] = []
-      for (const index of indices) {
-        const obs = observations[index]
-        if (obs && obs.scopeKeys.componentId === componentId) {
-          allObservationPaths.push(obs.path)
-        }
-      }
-
-      setSelectedPath({ selectedPath: variableKey, componentId })
-      setHighlightedPaths({
-        componentId,
-        jsonPaths: allObservationPaths,
-      })
-    },
-    [extractedVariables, indexStore, observations]
+  // Initial selection: first component with any observations, else "all"
+  const [selectedComponentId, setSelectedComponentId] = useState<number | "all" | null>(
+    () => componentExplorer.firstComponentId ?? "all"
   )
+
+  // Selected variable (and component it applies to)
+  const [selectedPath, setSelectedPath] = useState<SelectedPath | null>(null)
+
+  const handleVariableClick = useCallback((variableKey: string, componentId: number) => {
+    setSelectedPath({ selectedPath: variableKey, componentId })
+  }, [])
 
   return (
     <Card title="Structure Analysis" collapsible defaultOpen={true}>
@@ -99,12 +78,10 @@ export default function StructureAnalysisCard({
       {/* Components Tab */}
       {analysisTab === "components" && (
         <StructureComponents
-          enrichedResult={enrichedResult}
-          extractedVariables={extractedVariables}
+          componentExplorer={componentExplorer}
           selectedComponentId={selectedComponentId}
           selectedPath={selectedPath}
-          highlightedPaths={highlightedPaths}
-          onSelectComponent={(componentId) => setSelectedComponentId(componentId)}
+          onSelectComponent={setSelectedComponentId}
           onHighlightPath={handleVariableClick}
         />
       )}

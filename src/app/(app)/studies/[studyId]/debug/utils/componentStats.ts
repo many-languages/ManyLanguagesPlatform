@@ -1,8 +1,3 @@
-/**
- * Component Statistics Helper
- * Computes simple stats for a component from extracted variables
- */
-
 import type { ExtractedVariable } from "../../variables/types"
 
 export interface ComponentStats {
@@ -11,32 +6,22 @@ export interface ComponentStats {
 }
 
 /**
- * Compute component statistics from extracted variables
+ * Compute component statistics using variable keys + variable lookup.
+ * Avoids scanning extractedVariables for each component.
  */
 export function computeComponentStats(
-  componentId: number,
-  extractedVariables: ExtractedVariable[]
+  variableKeys: string[],
+  variableByKey: ReadonlyMap<string, ExtractedVariable>
 ): ComponentStats {
-  // Get all variables for this component
-  const componentVariables = extractedVariables.filter((variable) =>
-    variable.componentIds.includes(componentId)
-  )
+  const totalVariables = variableKeys.length
+  if (totalVariables === 0) return { maxDepth: 0, totalVariables: 0 }
 
-  if (componentVariables.length === 0) {
-    return {
-      maxDepth: 0,
-      totalVariables: 0,
-    }
+  let maxDepth = 0
+  for (const key of variableKeys) {
+    const v = variableByKey.get(key)
+    if (!v) continue
+    if (v.depth > maxDepth) maxDepth = v.depth
   }
 
-  // Calculate max depth from variable depths
-  const maxDepth = Math.max(...componentVariables.map((v) => v.depth), 0)
-
-  // Count unique variables (by variableKey)
-  const uniqueVariables = new Set(componentVariables.map((v) => v.variableKey))
-
-  return {
-    maxDepth,
-    totalVariables: uniqueVariables.size,
-  }
+  return { maxDepth, totalVariables }
 }

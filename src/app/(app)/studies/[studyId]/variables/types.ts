@@ -293,7 +293,6 @@ export interface ExtractedVariable {
 export interface ExtractionBundle {
   variables: ExtractedVariable[]
   observations: ExtractionObservation[]
-  componentFacts: ComponentFacts
   diagnostics: {
     run: Diagnostic[]
     component: Map<number, Diagnostic[]>

@@ -1,15 +1,11 @@
 import type { ExtractionObservation } from "../types"
 
-/**
- * ExtractionIndexStore - lightweight indices over observations.
- * Stores only indexes (no data) for fast lookups.
- * Observations should be accessed from the ExtractionBundle.
- */
 export class ExtractionIndexStore {
   private readonly byVariableKey: Map<string, number[]>
   private readonly byComponentId: Map<number, number[]>
   private readonly componentIdsByVariableKey: Map<string, Set<number>>
   private readonly variableKeysByComponentId: Map<number, Set<string>>
+  private readonly byComponentAndVariableKey: Map<string, number[]>
   private readonly totalCount: number
 
   constructor(observations: ExtractionObservation[]) {
@@ -17,71 +13,79 @@ export class ExtractionIndexStore {
     this.byComponentId = new Map()
     this.componentIdsByVariableKey = new Map()
     this.variableKeysByComponentId = new Map()
+    this.byComponentAndVariableKey = new Map()
 
     for (let i = 0; i < observations.length; i++) {
-      const obs = observations[i]
+      const obs = observations[i]!
       const componentId = obs.scopeKeys.componentId
 
-      if (!this.byVariableKey.has(obs.variableKey)) {
-        this.byVariableKey.set(obs.variableKey, [])
+      // (componentId, variableKey) -> indices
+      const compositeKey = `${componentId}::${obs.variableKey}`
+      let compositeArr = this.byComponentAndVariableKey.get(compositeKey)
+      if (!compositeArr) {
+        compositeArr = []
+        this.byComponentAndVariableKey.set(compositeKey, compositeArr)
       }
-      this.byVariableKey.get(obs.variableKey)!.push(i)
+      compositeArr.push(i)
 
-      if (!this.byComponentId.has(componentId)) {
-        this.byComponentId.set(componentId, [])
+      // variableKey -> indices
+      let varArr = this.byVariableKey.get(obs.variableKey)
+      if (!varArr) {
+        varArr = []
+        this.byVariableKey.set(obs.variableKey, varArr)
       }
-      this.byComponentId.get(componentId)!.push(i)
+      varArr.push(i)
 
-      if (!this.componentIdsByVariableKey.has(obs.variableKey)) {
-        this.componentIdsByVariableKey.set(obs.variableKey, new Set())
+      // componentId -> indices
+      let compArr = this.byComponentId.get(componentId)
+      if (!compArr) {
+        compArr = []
+        this.byComponentId.set(componentId, compArr)
       }
-      this.componentIdsByVariableKey.get(obs.variableKey)!.add(componentId)
+      compArr.push(i)
 
-      if (!this.variableKeysByComponentId.has(componentId)) {
-        this.variableKeysByComponentId.set(componentId, new Set())
+      // variableKey -> set(componentId)
+      let compSet = this.componentIdsByVariableKey.get(obs.variableKey)
+      if (!compSet) {
+        compSet = new Set()
+        this.componentIdsByVariableKey.set(obs.variableKey, compSet)
       }
-      this.variableKeysByComponentId.get(componentId)!.add(obs.variableKey)
+      compSet.add(componentId)
+
+      // componentId -> set(variableKey)
+      let varSet = this.variableKeysByComponentId.get(componentId)
+      if (!varSet) {
+        varSet = new Set()
+        this.variableKeysByComponentId.set(componentId, varSet)
+      }
+      varSet.add(obs.variableKey)
     }
 
     this.totalCount = observations.length
   }
 
   getObservationIndicesByVariableKey(variableKey: string): number[] {
-    return this.byVariableKey.get(variableKey) || []
+    return this.byVariableKey.get(variableKey) ?? []
   }
 
   getObservationIndicesByComponentId(componentId: number): number[] {
-    return this.byComponentId.get(componentId) || []
+    return this.byComponentId.get(componentId) ?? []
   }
 
-  *iterateObservationsByVariableKey(
-    variableKey: string,
-    observations: ExtractionObservation[]
-  ): Generator<ExtractionObservation, void, unknown> {
-    const indices = this.getObservationIndicesByVariableKey(variableKey)
-    for (const i of indices) {
-      yield observations[i]
-    }
-  }
-
-  *iterateObservationsByComponentId(
+  getObservationIndicesByComponentAndVariableKey(
     componentId: number,
-    observations: ExtractionObservation[]
-  ): Generator<ExtractionObservation, void, unknown> {
-    const indices = this.getObservationIndicesByComponentId(componentId)
-    for (const i of indices) {
-      yield observations[i]
-    }
+    variableKey: string
+  ): number[] {
+    return this.byComponentAndVariableKey.get(`${componentId}::${variableKey}`) ?? []
   }
 
-  *iterateValueJsonByVariableKey(
+  getObservationPathsByComponentAndVariableKey(
+    componentId: number,
     variableKey: string,
     observations: ExtractionObservation[]
-  ): Generator<string, void, unknown> {
-    const indices = this.getObservationIndicesByVariableKey(variableKey)
-    for (const i of indices) {
-      yield observations[i].valueJson
-    }
+  ): string[] {
+    const idx = this.getObservationIndicesByComponentAndVariableKey(componentId, variableKey)
+    return idx.map((i) => observations[i]!.path)
   }
 
   getComponentIdsByVariableKey(variableKey: string): number[] {
@@ -102,6 +106,28 @@ export class ExtractionIndexStore {
 
   getTotalCount(): number {
     return this.totalCount
+  }
+
+  *iterateObservationsByVariableKey(
+    variableKey: string,
+    observations: ExtractionObservation[]
+  ): Generator<ExtractionObservation, void, unknown> {
+    for (const i of this.getObservationIndicesByVariableKey(variableKey)) yield observations[i]!
+  }
+
+  *iterateObservationsByComponentId(
+    componentId: number,
+    observations: ExtractionObservation[]
+  ): Generator<ExtractionObservation, void, unknown> {
+    for (const i of this.getObservationIndicesByComponentId(componentId)) yield observations[i]!
+  }
+
+  *iterateValueJsonByVariableKey(
+    variableKey: string,
+    observations: ExtractionObservation[]
+  ): Generator<string, void, unknown> {
+    for (const i of this.getObservationIndicesByVariableKey(variableKey))
+      yield observations[i]!.valueJson
   }
 }
 

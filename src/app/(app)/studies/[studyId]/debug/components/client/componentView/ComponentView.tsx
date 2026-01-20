@@ -1,66 +1,40 @@
 "use client"
 
 import type { EnrichedJatosStudyResult } from "@/src/types/jatos"
-import type { ExtractedVariable } from "../../../../variables/types"
-import type { HighlightedPaths, SelectedPath } from "../../../types"
+import type { SelectedPath } from "../../../types"
 import { Alert } from "@/src/app/components/Alert"
-import { useMemo } from "react"
-import { computeComponentStats } from "../../../utils/componentStats"
+import type { ComponentStats } from "../../../utils/componentStats"
 import ComponentDataViewer from "./ComponentDataViewer"
-import PathBadge from "../structureAnalysis/PathBadge"
+import VariableBadge from "../structureAnalysis/VariableBadge"
 import { scrollToComponentData } from "../../../utils/pathHighlighting"
 
 type ComponentResult = EnrichedJatosStudyResult["componentResults"][number]
 
 interface ComponentViewProps {
   component: ComponentResult
-  extractedVariables: ExtractedVariable[]
+  extractedPaths: Array<{
+    variableKey: string
+    variableName: string
+    type: "string" | "number" | "boolean" | "array" | "object"
+  }>
+  stats: ComponentStats
   selectedPath?: SelectedPath | null
-  highlightedPaths?: HighlightedPaths | null
-  onHighlightPath: (path: string, componentId: number) => void
+  highlightPaths?: string[]
+  onHighlightPath: (variableKey: string, componentId: number) => void
 }
 
 export default function ComponentView({
   component,
-  extractedVariables,
+  extractedPaths,
   selectedPath,
-  highlightedPaths,
+  highlightPaths,
   onHighlightPath,
+  stats,
 }: ComponentViewProps) {
-  const handlePathClick = (path: string, componentId: number) => {
-    onHighlightPath(path, componentId)
+  const handlePathClick = (variableKey: string, componentId: number) => {
+    onHighlightPath(variableKey, componentId)
     scrollToComponentData(componentId, 100)
   }
-
-  // Compute component stats
-  const stats = useMemo(
-    () => computeComponentStats(component.componentId, extractedVariables),
-    [component.componentId, extractedVariables]
-  )
-
-  // Get extracted variables for this component that are nested (not top-level)
-  const allExtractedPaths = useMemo(() => {
-    const nestedVariables = extractedVariables.filter(
-      (variable) => variable.componentIds.includes(component.componentId) && !variable.isTopLevel
-    )
-
-    // Collect all unique variables by variableName
-    const variablesMap = new Map<string, ExtractedVariable>()
-    nestedVariables.forEach((variable) => {
-      if (!variablesMap.has(variable.variableName)) {
-        variablesMap.set(variable.variableName, variable)
-      }
-    })
-
-    return Array.from(variablesMap.values()).map((variable) => ({
-      variableKey: variable.variableKey,
-      variableName: variable.variableName,
-      type: variable.type as "string" | "number" | "boolean" | "array" | "object",
-    }))
-  }, [component.componentId, extractedVariables])
-
-  const highlightedPathsForComponent =
-    highlightedPaths?.componentId === component.componentId ? highlightedPaths.jsonPaths : undefined
 
   return (
     <div className="card bg-base-200 p-4">
@@ -84,26 +58,22 @@ export default function ComponentView({
         </div>
       )}
 
-      {allExtractedPaths.length > 0 && (
+      {extractedPaths.length > 0 && (
         <div className="mb-3 mt-4">
           <div className="text-xs text-muted-content mb-1">Extracted Variables from Objects:</div>
           <div className="flex flex-wrap gap-1">
-            {allExtractedPaths.map((pathItem) => {
-              const tooltipType = pathItem.type === "string" ? "primitive" : pathItem.type
-              return (
-                <PathBadge
-                  key={pathItem.variableKey}
-                  path={pathItem.variableKey}
-                  name={pathItem.variableName}
-                  type={pathItem.type}
-                  componentId={component.componentId}
-                  selectedPath={selectedPath}
-                  size="sm"
-                  tooltipType={tooltipType}
-                  onClick={handlePathClick}
-                />
-              )
-            })}
+            {extractedPaths.map((pathItem) => (
+              <VariableBadge
+                key={pathItem.variableKey}
+                variableKey={pathItem.variableKey}
+                variableName={pathItem.variableName}
+                type={pathItem.type}
+                componentId={component.componentId}
+                selectedPath={selectedPath}
+                size="sm"
+                onSelect={handlePathClick}
+              />
+            ))}
           </div>
         </div>
       )}
@@ -114,7 +84,7 @@ export default function ComponentView({
         </Alert>
       )}
 
-      <ComponentDataViewer component={component} highlightPaths={highlightedPathsForComponent} />
+      <ComponentDataViewer component={component} highlightPaths={highlightPaths} />
     </div>
   )
 }

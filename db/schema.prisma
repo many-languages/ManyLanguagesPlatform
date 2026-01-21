@@ -79,6 +79,11 @@ model Token {
   @@unique([hashedToken, type])
 }
 
+enum ExtractionSnapshotStatus {
+  DRAFT
+  APPROVED
+}
+
 enum StudyStatus {
   OPEN
   CLOSED
@@ -116,6 +121,22 @@ model Study {
   // JATOS workers
   jatosWorkerType    JatosWorkerType? @default(SINGLE)
 
+  // Approved extraction
+  approvedExtractionId Int?                @unique
+  approvedExtraction   ExtractionSnapshot? @relation("ApprovedExtraction", fields: [approvedExtractionId], references: [id], onDelete: SetNull)
+
+  // Setup revision
+  setupRevision Int @default(1)
+
+  // Extraction snapshots
+  extractionSnapshots ExtractionSnapshot[] @relation("StudyExtractions")
+
+  // Pilot dataset snapshots
+  pilotDatasetSnapshots PilotDatasetSnapshot[]
+
+  // Pilot links
+  pilotLinks PilotLink[]
+
   // Archival
   archived     Boolean   @default(false)
   archivedAt   DateTime?
@@ -125,8 +146,7 @@ model Study {
   // Relations
   researchers      StudyResearcher[]
   participations   ParticipantStudy[]
-  FeedbackTemplate FeedbackTemplate[]
-  StudyVariable    StudyVariable[]
+  FeedbackTemplate FeedbackTemplate?
 
   // Setup completion tracking
   // These fields track explicit completion of each setup step
@@ -182,26 +202,31 @@ model StudyResearcher {
 
   jatosRunUrl String? // stored personal single link
 
-  role      ResearcherRole @default(PI)
-  createdAt DateTime       @default(now())
+  role       ResearcherRole @default(PI)
+  createdAt  DateTime       @default(now())
+  pilotLinks PilotLink[]
 
   @@unique([studyId, userId])
 }
 
 model StudyVariable {
-  id           Int      @id @default(autoincrement())
-  studyId      Int
-  variableKey  String // Structural variable key with $ prefix, e.g. $trials[*].rt
-  variableName String // Human-readable prettified name, e.g. "rt"
-  type         String // e.g. "number", "string", "boolean", "array", "object"
-  examples     Json? // Array of { value: string, sourcePath: string } from pilot extraction
-  description  String? // codebook description of the variable
-  personalData Boolean  @default(false) // whether this variable contains personal data
-  createdAt    DateTime @default(now())
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
 
-  study Study @relation(fields: [studyId], references: [id])
+  extractionSnapshotId Int
 
-  @@unique([studyId, variableKey])
+  variableKey  String
+  variableName String
+  type         String
+  examples     Json?
+
+  description  String?
+  personalData Boolean @default(false)
+
+  extractionSnapshot ExtractionSnapshot @relation(fields: [extractionSnapshotId], references: [id], onDelete: Cascade)
+
+  @@unique([extractionSnapshotId, variableKey])
+  @@index([extractionSnapshotId])
 }
 
 model ParticipantStudy {
@@ -224,13 +249,25 @@ model ParticipantStudy {
 }
 
 model FeedbackTemplate {
-  id        Int      @id @default(autoincrement())
-  studyId   Int      @unique
-  content   String // raw markdown with placeholders, e.g. "Your score: {{score}}"
+  id      Int @id @default(autoincrement())
+  studyId Int @unique
+
+  setupRevision Int
+
+  extractionSnapshotId Int
+  extractionSnapshot   ExtractionSnapshot @relation(fields: [extractionSnapshotId], references: [id], onDelete: Cascade)
+
+  content              String
+  requiredVariableKeys Json? // string[]
+  extractorVersion     String? // safety check
+
+  lastPreviewPilotDatasetHash String?
+  lastPreviewedAt             DateTime?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  study Study @relation(fields: [studyId], references: [id])
+  study Study @relation(fields: [studyId], references: [id], onDelete: Cascade)
 }
 
 model AdminInvite {
@@ -247,4 +284,70 @@ model AdminInvite {
 
   @@index([email])
   @@index([expiresAt])
+}
+
+model PilotLink {
+  id        Int       @id @default(autoincrement())
+  createdAt DateTime  @default(now())
+  revokedAt DateTime?
+
+  studyId           Int
+  studyResearcherId Int
+  setupRevision     Int
+
+  jatosRunUrl String
+  markerToken String @unique
+
+  study      Study           @relation(fields: [studyId], references: [id], onDelete: Cascade)
+  researcher StudyResearcher @relation(fields: [studyResearcherId], references: [id], onDelete: Cascade)
+
+  @@index([studyId, setupRevision, createdAt])
+  @@index([studyResearcherId, setupRevision, createdAt])
+  @@index([studyId, setupRevision])
+}
+
+model PilotDatasetSnapshot {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+
+  studyId       Int
+  setupRevision Int
+
+  pilotDatasetHash String
+  pilotRunCount    Int
+  pilotRunIds      Json?
+  markerTokens     Json? // string[]
+
+  study Study @relation(fields: [studyId], references: [id], onDelete: Cascade)
+
+  extractions ExtractionSnapshot[]
+
+  @@unique([studyId, setupRevision, pilotDatasetHash])
+  @@index([studyId, setupRevision, createdAt])
+}
+
+model ExtractionSnapshot {
+  id         Int       @id @default(autoincrement())
+  createdAt  DateTime  @default(now())
+  approvedAt DateTime?
+
+  setupRevision Int
+  status        ExtractionSnapshotStatus @default(DRAFT)
+
+  pilotDatasetSnapshotId Int?
+  pilotDatasetSnapshot   PilotDatasetSnapshot? @relation(fields: [pilotDatasetSnapshotId], references: [id], onDelete: SetNull)
+
+  extractorVersion    String
+  extractorConfigHash String?
+  structureSummary    Json?
+  aggregates          Json?
+
+  studyId           Int
+  study             Study              @relation("StudyExtractions", fields: [studyId], references: [id], onDelete: Cascade)
+  variables         StudyVariable[]
+  feedbackTemplates FeedbackTemplate[]
+
+  approvedForStudy Study? @relation("ApprovedExtraction")
+
+  @@index([studyId, setupRevision, status, createdAt])
 }

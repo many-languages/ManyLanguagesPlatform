@@ -10,6 +10,7 @@ const UpdateSetupCompletion = z.object({
   step3Completed: z.boolean().optional(),
   step4Completed: z.boolean().optional(),
   step5Completed: z.boolean().optional(),
+  step6Completed: z.boolean().optional(),
 })
 
 export default resolver.pipe(
@@ -28,6 +29,7 @@ export default resolver.pipe(
       step3Completed?: boolean
       step4Completed?: boolean
       step5Completed?: boolean
+      step6Completed?: boolean
     } = {}
 
     if (completionFlags.step1Completed !== undefined) {
@@ -56,6 +58,7 @@ export default resolver.pipe(
         step3Completed: true,
         step4Completed: true,
         step5Completed: true,
+        step6Completed: true,
       },
     })
 

@@ -13,10 +13,10 @@ export async function createFeedbackTemplateRsc(input: {
 
   const template = await db.feedbackTemplate.create({ data: input })
 
-  // Mark step 5 as complete after successful creation
+  // Mark step 6 as complete after successful creation
   await db.study.update({
     where: { id: input.studyId },
-    data: { step5Completed: true },
+    data: { step6Completed: true },
   })
 
   return template

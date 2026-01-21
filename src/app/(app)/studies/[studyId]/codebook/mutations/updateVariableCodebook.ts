@@ -51,7 +51,7 @@ export async function updateVariableCodebookRsc(input: {
     )
   )
 
-  // Mark step4 as completed if all variables have descriptions
+  // Mark step5 as completed if all variables have descriptions
   const allVariables = await db.studyVariable.findMany({
     where: { studyId: input.studyId },
   })
@@ -63,7 +63,7 @@ export async function updateVariableCodebookRsc(input: {
   if (allHaveDescriptions && allVariables.length > 0) {
     await db.study.update({
       where: { id: input.studyId },
-      data: { step4Completed: true },
+      data: { step5Completed: true },
     })
   }
 

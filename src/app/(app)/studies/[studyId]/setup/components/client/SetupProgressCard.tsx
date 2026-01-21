@@ -21,10 +21,11 @@ export default function SetupProgressCard({ study }: SetupProgressCardProps) {
   const progress = getSetupProgress(study)
   const { completedStepsList, incompleteStep, isComplete } = progress
 
-  // Check if Step 5 needs revision (has template but Step 3 or Step 4 is incomplete)
+  // Check if Step 6 needs revision (has template but Step 3, Step 4, or Step 5 is incomplete)
   // This happens when JATOS study is updated after feedback template was created
   const hasFeedbackTemplate = (study.FeedbackTemplate?.length ?? 0) > 0
-  const step5NeedsRevision = hasFeedbackTemplate && (!study.step3Completed || !study.step4Completed)
+  const step6NeedsRevision =
+    hasFeedbackTemplate && (!study.step3Completed || !study.step4Completed || !study.step5Completed)
 
   const handleStepClick = (stepId: number) => {
     // Only completed steps are clickable, so we always navigate with edit mode
@@ -38,15 +39,15 @@ export default function SetupProgressCard({ study }: SetupProgressCardProps) {
         onClickStep={handleStepClick}
         editable={true}
       />
-      {step5NeedsRevision && (
+      {step6NeedsRevision && (
         <Alert variant="info" className="mt-4">
           <p className="mb-2">
             Your feedback template needs to be reviewed after the JATOS study was updated. Please
-            complete Step 3 and Step 4 first, then revise your feedback template.
+            complete Step 3, Step 4, and Step 5 first, then revise your feedback template.
           </p>
         </Alert>
       )}
-      {!isComplete && !step5NeedsRevision && (
+      {!isComplete && !step6NeedsRevision && (
         <Alert variant="warning" className="mt-4">
           <p className="mb-2">Complete all steps to open your study for participants.</p>
           {incompleteStep && (

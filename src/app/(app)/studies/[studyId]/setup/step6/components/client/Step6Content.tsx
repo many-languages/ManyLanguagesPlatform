@@ -14,7 +14,7 @@ import { FeedbackFormEditorRef } from "../../../../feedback/types"
 import FeedbackFormEditor from "../../../../feedback/components/client/FeedbackFormEditor"
 import { useNotificationMenuContext } from "@/src/app/(app)/notifications/context/NotificationMenuContext"
 
-interface Step5ContentProps {
+interface Step6ContentProps {
   initialFeedbackTemplate?: {
     id: number
     content: string
@@ -25,11 +25,11 @@ interface Step5ContentProps {
   allTestResults: EnrichedJatosStudyResult[]
 }
 
-export default function Step5Content({
+export default function Step6Content({
   initialFeedbackTemplate = null,
   enrichedResult,
   allTestResults,
-}: Step5ContentProps) {
+}: Step6ContentProps) {
   const router = useRouter()
   const { study, studyId } = useStudySetup()
   const feedbackEditorRef = useRef<FeedbackFormEditorRef>(null)
@@ -54,7 +54,8 @@ export default function Step5Content({
       study.step2Completed &&
       study.step3Completed &&
       study.step4Completed &&
-      (study.step5Completed || templateSavedDuringFinish || !!initialFeedbackTemplate)
+      study.step5Completed &&
+      (study.step6Completed || templateSavedDuringFinish || !!initialFeedbackTemplate)
 
     // Check if setup is now complete and auto-open study
     if (canAutoOpen) {
@@ -87,12 +88,12 @@ export default function Step5Content({
         studyId={studyId}
         allTestResults={allTestResults}
         onTemplateSaved={() => {
-          // Refresh to get updated study data (step5Completed will be updated)
+          // Refresh to get updated study data (step6Completed will be updated)
           router.refresh()
         }}
       />
       <StepNavigation
-        prev="step4"
+        prev="step5"
         next="study"
         nextLabel="Finish Setup"
         onNext={handleFinish}

@@ -20,6 +20,7 @@ export const getSetupCompletionRsc = cache(async (studyId: number) => {
       step3Completed: true,
       step4Completed: true,
       step5Completed: true,
+      step6Completed: true,
     },
   })
 

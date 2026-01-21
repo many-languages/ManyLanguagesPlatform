@@ -133,8 +133,9 @@ model Study {
   step1Completed Boolean @default(false) // General information completed (title + description)
   step2Completed Boolean @default(false) // JATOS study imported (jatosStudyId + jatosStudyUUID exist)
   step3Completed Boolean @default(false) // Test run completed (pilot test finished + test data available)
-  step4Completed Boolean @default(false) // Codebook completed (variable descriptions and personal data flags annotated)
-  step5Completed Boolean @default(false) // Feedback template created (FeedbackTemplate exists)
+  step4Completed Boolean @default(false) // Debug completed (data validation and inspection)
+  step5Completed Boolean @default(false) // Codebook completed (variable descriptions and personal data flags annotated)
+  step6Completed Boolean @default(false) // Feedback template created (FeedbackTemplate exists)
 
   @@index([archived, createdAt])
 }

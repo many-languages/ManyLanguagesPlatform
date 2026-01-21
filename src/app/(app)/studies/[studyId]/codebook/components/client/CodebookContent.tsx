@@ -177,16 +177,16 @@ export default function CodebookContent({ initialVariables }: CodebookContentPro
       </div>
 
       <StepNavigation
-        prev="step3"
-        next="step5"
+        prev="step4"
+        next="step6"
         disableNext={
-          !study.step4Completed ||
+          !study.step5Completed ||
           variables.some((v) => !v.description || v.description.trim() === "")
         }
         nextTooltip={
           variables.some((v) => !v.description || v.description.trim() === "")
             ? "Please add descriptions for all variables and save before proceeding"
-            : !study.step4Completed
+            : !study.step5Completed
             ? "Please save the codebook before proceeding"
             : undefined
         }

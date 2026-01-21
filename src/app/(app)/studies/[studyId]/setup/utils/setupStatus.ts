@@ -17,7 +17,8 @@ export function isSetupComplete(study: StudyWithRelations | StudyWithMinimalRela
     study.step2Completed &&
     study.step3Completed &&
     study.step4Completed &&
-    study.step5Completed
+    study.step5Completed &&
+    study.step6Completed
   )
 }
 
@@ -33,6 +34,7 @@ export function getIncompleteStep(
   if (!study.step3Completed) return 3
   if (!study.step4Completed) return 4
   if (!study.step5Completed) return 5
+  if (!study.step6Completed) return 6
   return null // All complete
 }
 
@@ -64,10 +66,10 @@ export function getSetupProgress(study: StudyWithRelations | StudyWithMinimalRel
   return {
     isComplete,
     incompleteStep,
-    totalSteps: 5,
+    totalSteps: 6,
     completedSteps: completedSteps.length,
     completedStepsList: completedSteps,
-    progressPercentage: (completedSteps.length / 5) * 100,
+    progressPercentage: (completedSteps.length / 6) * 100,
   }
 }
 
@@ -104,7 +106,7 @@ export function getPostStepNavigationUrl(
   }
 
   if (typeof returnTo === "number") {
-    if (returnTo < 1 || returnTo > 5) {
+    if (returnTo < 1 || returnTo > 6) {
       // Invalid step number, default to study page
       return `/studies/${studyId}`
     }

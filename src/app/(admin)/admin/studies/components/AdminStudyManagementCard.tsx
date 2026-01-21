@@ -19,23 +19,35 @@ import MDEditor from "@uiw/react-md-editor"
 type StudyWithFeedbackTemplate = Study & {
   FeedbackTemplate: FeedbackTemplate[] | null
   step5Completed?: boolean
+  step6Completed?: boolean
 }
 
-function getSetupStatus(study: Study & { step5Completed?: boolean }): string {
+function getSetupStatus(
+  study: Study & { step5Completed?: boolean; step6Completed?: boolean }
+): string {
   const {
     step1Completed,
     step2Completed,
     step3Completed,
     step4Completed,
     step5Completed = false,
+    step6Completed = false,
   } = study
 
   // Check if all steps are completed
-  if (step1Completed && step2Completed && step3Completed && step4Completed && step5Completed) {
+  if (
+    step1Completed &&
+    step2Completed &&
+    step3Completed &&
+    step4Completed &&
+    step5Completed &&
+    step6Completed
+  ) {
     return "finished"
   }
 
   // Find the latest completed step
+  if (step6Completed) return "Step 6"
   if (step5Completed) return "Step 5"
   if (step4Completed) return "Step 4"
   if (step3Completed) return "Step 3"
@@ -247,7 +259,8 @@ function StudyActions({ studies }: { studies: StudyWithFeedbackTemplate[] }) {
           s.step2Completed &&
           s.step3Completed &&
           s.step4Completed &&
-          s.step5Completed
+          s.step5Completed &&
+          s.step6Completed
         )
     )
 

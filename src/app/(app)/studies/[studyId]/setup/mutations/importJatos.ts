@@ -43,13 +43,9 @@ export default resolver.pipe(
         },
       })
 
-      // If JATOS changed, invalidate Step 3 (clear test run URLs)
+      // If JATOS changed, invalidate Step 3 (clear pilot run URLs)
       // Step 4 (Debug), Step 5 (Codebook), and Step 6 (FeedbackTemplate) are preserved but will be marked incomplete
       if (isChangingJatos) {
-        await db.studyResearcher.updateMany({
-          where: { studyId },
-          data: { jatosRunUrl: null },
-        })
         // Invalidate step 3, step 4, step 5, and step 6 completion status
         await db.study.update({
           where: { id: studyId },

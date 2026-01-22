@@ -8,6 +8,10 @@ export interface FeedbackTemplate {
   id: number
   studyId: number
   content: string
+  setupRevision?: number
+  extractionSnapshotId?: number
+  extractorVersion?: string
+  requiredVariableKeys?: string[] | null
   createdAt: Date
   updatedAt: Date
 }
@@ -38,8 +42,13 @@ export interface FeedbackFormEditorRef {
   isTemplateSaved: () => boolean
 }
 
+export interface FeedbackVariable {
+  variableName: string
+  type: string
+  variableKey?: string
+}
+
 export interface FeedbackFormEditorProps {
-  enrichedResult: EnrichedJatosStudyResult
   initialTemplate?: {
     id: number
     content: string
@@ -48,5 +57,9 @@ export interface FeedbackFormEditorProps {
   } | null
   studyId: number
   onTemplateSaved?: () => void
-  allTestResults?: EnrichedJatosStudyResult[]
+  allPilotResults?: EnrichedJatosStudyResult[]
+  variables: FeedbackVariable[]
+  extractionBundle:
+    | import("../setup/utils/serializeExtractionBundle").SerializedExtractionBundle
+    | null
 }

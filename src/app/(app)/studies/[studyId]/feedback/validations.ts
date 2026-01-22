@@ -3,11 +3,19 @@ import { z } from "zod"
 export const CreateFeedbackTemplateSchema = z.object({
   studyId: z.number().int().positive(),
   content: z.string().min(1, "Template content cannot be empty"),
+  setupRevision: z.number().int().positive(),
+  extractionSnapshotId: z.number().int().positive(),
+  extractorVersion: z.string().min(1),
+  requiredVariableKeys: z.array(z.string()).optional(),
 })
 
 export const UpdateFeedbackTemplateSchema = z.object({
   id: z.number().int().positive(),
   content: z.string().min(1, "Template content cannot be empty"),
+  setupRevision: z.number().int().positive(),
+  extractionSnapshotId: z.number().int().positive(),
+  extractorVersion: z.string().min(1),
+  requiredVariableKeys: z.array(z.string()).optional(),
 })
 
 export const GetFeedbackTemplateSchema = z.object({

@@ -63,7 +63,7 @@ export default function CodebookContent({ initialVariables }: CodebookContentPro
 
   const handleSave = async () => {
     if (variables.length === 0) {
-      toast.error("No variables found. Please complete step 3 first.")
+      toast.error("No variables found. Please complete step 4 first.")
       return
     }
 
@@ -103,8 +103,8 @@ export default function CodebookContent({ initialVariables }: CodebookContentPro
   if (variables.length === 0) {
     return (
       <Alert variant="warning">
-        No variables found. Please complete step 3 (Test run) first to extract variables from your
-        test data.
+        No variables found. Please complete step 4 (Debug + approve extraction) first to extract
+        variables from your pilot data.
       </Alert>
     )
   }

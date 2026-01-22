@@ -4,11 +4,11 @@ import { useState, useEffect, useTransition, useRef, useCallback, useMemo } from
 import { useRouter } from "next/navigation"
 import { toast } from "react-hot-toast"
 import { useSession } from "@blitzjs/auth"
-import { useMutation } from "@blitzjs/rpc"
+import { useMutation, useQuery } from "@blitzjs/rpc"
 import { useStudySetup } from "../../../components/client/StudySetupProvider"
 import updateSetupCompletion from "../../../mutations/updateSetupCompletion"
 import { checkPilotStatusAction } from "../../actions/checkPilotStatus"
-import { syncVariablesFromTestResultsAction } from "../../actions/syncVariablesFromTestResults"
+import getResearcherRunUrl from "../../../queries/getResearcherRunUrl"
 import Step3Instructions from "./Step3Instructions"
 import Step3Actions from "./Step3Actions"
 import StepNavigation from "../../../components/client/StepNavigation"
@@ -27,23 +27,19 @@ export default function Step3Content() {
     [study.researchers, userId]
   )
   const researcherId = researcher?.id ?? null
-  const jatosRunUrl = researcher?.jatosRunUrl ?? null
+  const [researcherRunUrl] = useQuery(
+    getResearcherRunUrl,
+    { studyId: study.id },
+    { enabled: Boolean(researcherId) }
+  )
+  const jatosRunUrl = researcherRunUrl?.jatosRunUrl ?? null
 
   // Pilot completion state - initialize from database to prevent flicker
   const [pilotCompleted, setPilotCompleted] = useState<boolean | null>(study.step3Completed ?? null)
 
-  // Separate function to update completion and sync variables
+  // Separate function to update completion
   const updateCompletion = useCallback(async () => {
     try {
-      // First sync variables from test results
-      const syncResult = await syncVariablesFromTestResultsAction(study.id)
-
-      if (!syncResult.success && syncResult.error) {
-        console.warn("Failed to sync variables:", syncResult.error)
-        // Continue anyway - variables might sync later or user can trigger manually
-      }
-
-      // Then update step 3 completion
       await updateSetupCompletionMutation({
         studyId: study.id,
         step3Completed: true,
@@ -85,7 +81,7 @@ export default function Step3Content() {
         try {
           await updateCompletion()
           if (showToasts) {
-            toast.success("Pilot study completed! You can proceed to Step 4.")
+            toast.success("Pilot run completed! You can proceed to Step 4.")
           }
         } catch (err) {
           // Already logged in updateCompletion
@@ -95,7 +91,7 @@ export default function Step3Content() {
         }
       } else {
         if (showToasts) {
-          toast.error("No completed pilot study found. Please complete the survey and try again.")
+          toast.error("No completed pilot run found. Please complete the survey and try again.")
         }
       }
     },

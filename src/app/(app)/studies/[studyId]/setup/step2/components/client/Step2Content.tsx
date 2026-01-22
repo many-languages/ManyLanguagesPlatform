@@ -16,7 +16,7 @@ import deleteExistingJatosStudy from "@/src/lib/jatos/api/deleteExistingJatosStu
 import { uploadStudyFile } from "@/src/lib/jatos/api/uploadStudyFile"
 import { Alert } from "@/src/app/components/Alert"
 import { FORM_ERROR } from "@/src/app/components/Form"
-import { generateAndSaveResearcherTestRunUrl } from "../../../../utils/generateResearcherTestRunUrl"
+import { generateAndSaveResearcherPilotRunUrl } from "../../../../utils/generateResearcherPilotRunUrl"
 
 export default function Step2Content() {
   const router = useRouter()
@@ -75,11 +75,11 @@ export default function Step2Content() {
       // Don't fail the whole import if this fails, but log it
     }
 
-    // 4️⃣ Auto-generate test link for the current researcher
+    // 4️⃣ Auto-generate pilot link for the current researcher
     try {
       const researcher = study.researchers?.find((r) => r.userId === userId)
       if (researcher?.id && jatosBatchId) {
-        await generateAndSaveResearcherTestRunUrl({
+        await generateAndSaveResearcherPilotRunUrl({
           studyResearcherId: researcher.id,
           jatosStudyId: uploadResult.jatosStudyId,
           jatosBatchId: jatosBatchId,
@@ -87,8 +87,8 @@ export default function Step2Content() {
         // Silent success - test link generated automatically
       }
     } catch (err) {
-      console.error("Failed to auto-generate test link:", err)
-      // Don't fail the import if test link generation fails - user can generate it manually in Step 3
+      console.error("Failed to auto-generate pilot link:", err)
+      // Don't fail the import if pilot link generation fails - user can generate it manually in Step 3
     }
 
     // 5️⃣ Success

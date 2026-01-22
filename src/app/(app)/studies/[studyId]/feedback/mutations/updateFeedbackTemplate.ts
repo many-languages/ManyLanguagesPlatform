@@ -8,6 +8,10 @@ import { verifyResearcherStudyAccess } from "../../utils/verifyResearchersStudyA
 export async function updateFeedbackTemplateRsc(input: {
   id: number
   content: string
+  setupRevision: number
+  extractionSnapshotId: number
+  extractorVersion: string
+  requiredVariableKeys?: string[]
 }): Promise<FeedbackTemplate> {
   // Get the template to check studyId
   const existingTemplate = await db.feedbackTemplate.findUnique({
@@ -24,7 +28,13 @@ export async function updateFeedbackTemplateRsc(input: {
 
   const template = await db.feedbackTemplate.update({
     where: { id: input.id },
-    data: { content: input.content },
+    data: {
+      content: input.content,
+      setupRevision: input.setupRevision,
+      extractionSnapshotId: input.extractionSnapshotId,
+      extractorVersion: input.extractorVersion,
+      requiredVariableKeys: input.requiredVariableKeys,
+    },
     select: {
       id: true,
       studyId: true,

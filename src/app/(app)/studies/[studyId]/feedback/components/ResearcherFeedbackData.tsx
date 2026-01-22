@@ -1,7 +1,6 @@
-import { getStudyDataByCommentRsc } from "../../../queries/getStudyDataByComment"
 import { getFeedbackTemplateRsc } from "../queries/getFeedbackTemplate"
 import ResearcherFeedback from "./client/ResearcherFeedback"
-import { getAllTestResultsRsc } from "@/src/app/(app)/studies/[studyId]/utils/getAllTestResults"
+import { getAllPilotResultsRsc } from "@/src/app/(app)/studies/[studyId]/utils/getAllPilotResults"
 
 interface ResearcherFeedbackDataProps {
   studyId: number
@@ -9,8 +8,9 @@ interface ResearcherFeedbackDataProps {
 
 export default async function ResearcherFeedbackData({ studyId }: ResearcherFeedbackDataProps) {
   try {
-    // Get test results for preview
-    const { enrichedResult } = await getStudyDataByCommentRsc(studyId, "test")
+    // Get pilot results for preview and across statistics
+    const allPilotResults = await getAllPilotResultsRsc(studyId)
+    const enrichedResult = allPilotResults[0] ?? null
 
     // Get feedback template
     const template = await getFeedbackTemplateRsc(studyId)
@@ -19,15 +19,12 @@ export default async function ResearcherFeedbackData({ studyId }: ResearcherFeed
       return null
     }
 
-    // Get all test results for "across" scope statistics
-    const allTestResults = await getAllTestResultsRsc(studyId)
-
     return (
       <ResearcherFeedback
         studyId={studyId}
         initialEnrichedResult={enrichedResult}
         template={template}
-        initialAllEnrichedResults={allTestResults}
+        initialAllEnrichedResults={allPilotResults}
       />
     )
   } catch (error) {

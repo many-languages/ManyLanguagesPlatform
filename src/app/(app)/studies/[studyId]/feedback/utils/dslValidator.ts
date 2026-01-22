@@ -1,5 +1,4 @@
-import { EnrichedJatosStudyResult } from "@/src/types/jatos"
-import { extractVariables } from "../../variables/utils/extractVariable"
+import type { FeedbackVariable } from "../types"
 
 export interface DSLError {
   type: "variable" | "stat" | "conditional" | "filter" | "syntax"
@@ -17,15 +16,14 @@ export interface ValidationResult {
 /**
  * Validates DSL syntax and checks for common errors
  */
-export function validateDSL(
-  template: string,
-  enrichedResult: EnrichedJatosStudyResult
-): ValidationResult {
+export function validateDSL(template: string, variables: FeedbackVariable[]): ValidationResult {
   const errors: DSLError[] = []
 
-  // Get available variables
-  const extractionResult = extractVariables(enrichedResult)
-  const variableNames = new Set(extractionResult.variables.map((v) => v.variableName))
+  const variableNames = new Set(variables.map((v) => v.variableName))
+  const availableFields = variables.map((v) => ({
+    name: v.variableName,
+    type: v.type,
+  }))
 
   // Validate variables: {{ var:name:modifier | where: condition }}
   const varRegex =
@@ -322,12 +320,4 @@ function validateMalformedSyntax(template: string): DSLError[] {
   }
 
   return errors
-}
-
-/**
- * Extracts available variable names from enriched result
- */
-function getAvailableVariableNames(enrichedResult: EnrichedJatosStudyResult): string[] {
-  const extractionResult = extractVariables(enrichedResult)
-  return extractionResult.variables.map((v) => v.variableName)
 }

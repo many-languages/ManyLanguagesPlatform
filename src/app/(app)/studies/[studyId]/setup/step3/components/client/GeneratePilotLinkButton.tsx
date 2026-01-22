@@ -3,10 +3,10 @@
 import type { ReactNode } from "react"
 import { useRouter } from "next/navigation"
 import toast from "react-hot-toast"
-import { generateAndSaveResearcherTestRunUrl } from "../../../../utils/generateResearcherTestRunUrl"
+import { generateAndSaveResearcherPilotRunUrl } from "../../../../utils/generateResearcherPilotRunUrl"
 import { AsyncButton } from "@/src/app/components/AsyncButton"
 
-interface GenerateTestLinkButtonProps {
+interface GeneratePilotLinkButtonProps {
   studyResearcherId: number
   jatosStudyId: number
   jatosBatchId: number
@@ -16,32 +16,32 @@ interface GenerateTestLinkButtonProps {
   children?: ReactNode
 }
 
-export default function GenerateTestLinkButton({
+export default function GeneratePilotLinkButton({
   studyResearcherId,
   jatosStudyId,
   jatosBatchId,
   onGenerated,
-  label = "Generate Test Link",
+  label = "Generate Pilot Link",
   className = "btn btn-primary",
   children,
-}: GenerateTestLinkButtonProps) {
+}: GeneratePilotLinkButtonProps) {
   const router = useRouter()
 
   const handleGenerate = async () => {
     try {
-      const runUrl = await generateAndSaveResearcherTestRunUrl({
+      const runUrl = await generateAndSaveResearcherPilotRunUrl({
         studyResearcherId,
         jatosStudyId,
         jatosBatchId,
       })
 
-      toast.success("Test link generated successfully!")
+      toast.success("Pilot link generated successfully!")
       router.refresh() // Refresh to get the new test link data
       onGenerated?.(runUrl) // Optional callback for additional actions
     } catch (error) {
-      console.error("Failed to generate test link:", error)
+      console.error("Failed to generate pilot link:", error)
       toast.error(
-        "Failed to generate test link. Please refresh the page and try again, or contact support if the issue persists."
+        "Failed to generate pilot link. Please refresh the page and try again, or contact support if the issue persists."
       )
       throw error // Re-throw so AsyncButton can handle loading state
     }

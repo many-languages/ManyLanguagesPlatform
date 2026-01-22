@@ -7,8 +7,14 @@ import db from "db"
 import type { EnrichedJatosStudyResult, JatosStudyResult } from "@/src/types/jatos"
 import { verifyResearcherStudyAccess } from "./verifyResearchersStudyAccess"
 
-// Server-side helper to get all test results for a study
-export const getAllTestResultsRsc = cache(
+const PILOT_COMMENT_PREFIX = "pilot:"
+
+function isPilotComment(comment?: string) {
+  return typeof comment === "string" && comment.startsWith(PILOT_COMMENT_PREFIX)
+}
+
+// Server-side helper to get all pilot results for a study
+export const getAllPilotResultsRsc = cache(
   async (studyId: number): Promise<EnrichedJatosStudyResult[]> => {
     await verifyResearcherStudyAccess(studyId)
 
@@ -21,30 +27,30 @@ export const getAllTestResultsRsc = cache(
     // Get metadata
     const metadata = await getResultsMetadata({ studyIds: [study.jatosStudyId] })
 
-    // Filter for test results (comment === "test")
-    const testResults =
-      metadata.data?.[0]?.studyResults?.filter(
-        (result: JatosStudyResult) => result.comment === "test"
+    // Filter for pilot results (comment starts with "pilot:")
+    const pilotResults =
+      metadata.data?.[0]?.studyResults?.filter((result: JatosStudyResult) =>
+        isPilotComment(result.comment)
       ) || []
 
-    if (testResults.length === 0) {
-      return [] // No test results found
+    if (pilotResults.length === 0) {
+      return [] // No pilot results found
     }
 
-    // Get IDs of test results
-    const testResultIds = testResults.map((result: JatosStudyResult) => result.id).join(",")
+    // Get IDs of pilot results
+    const pilotResultIds = pilotResults.map((result: JatosStudyResult) => result.id).join(",")
 
     // Get and parse raw data
-    const { data: arrayBuffer } = await getResultsData({ studyResultIds: testResultIds })
+    const { data: arrayBuffer } = await getResultsData({ studyResultIds: pilotResultIds })
     const blob = new Blob([arrayBuffer])
     const files = await parseJatosZip(blob)
 
     // Enrich with metadata
     const allEnriched = matchJatosDataToMetadata(metadata, files)
 
-    // Filter to only test results and sort by id (descending) to get latest first
+    // Filter to only pilot results and sort by id (descending) to get latest first
     return allEnriched
-      .filter((result: EnrichedJatosStudyResult) => result.comment === "test")
+      .filter((result: EnrichedJatosStudyResult) => isPilotComment(result.comment))
       .sort((a, b) => b.id - a.id) // Latest first (highest ID = newest)
   }
 )

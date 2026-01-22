@@ -116,7 +116,7 @@ export default async function ResearcherData({ studyId, study }: ResearcherDataP
         studyId={studyId}
       />
 
-      {/* Feedback preview with test results */}
+      {/* Feedback preview with pilot results */}
       <ResearcherFeedbackData studyId={studyId} />
     </>
   )

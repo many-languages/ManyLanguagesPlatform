@@ -1,7 +1,7 @@
 import { cache } from "react"
 import { getResultsMetadata } from "@/src/lib/jatos/api/getResultsMetadata"
 import { getStudyProperties } from "@/src/lib/jatos/api/getStudyProperties"
-import { getAllTestResultsRsc } from "../../utils/getAllTestResults"
+import { getAllPilotResultsRsc } from "../../utils/getAllPilotResults"
 import { verifyResearcherStudyAccess } from "../../utils/verifyResearchersStudyAccess"
 import type {
   JatosMetadata,
@@ -12,7 +12,7 @@ import db from "db"
 
 export interface ValidationData {
   metadata: JatosMetadata
-  testResults: EnrichedJatosStudyResult[]
+  pilotResults: EnrichedJatosStudyResult[]
   properties: JatosStudyProperties
   study: {
     id: number
@@ -20,6 +20,11 @@ export interface ValidationData {
     jatosStudyUUID: string | null
     title: string
   }
+  approvedExtraction?: {
+    id: number
+    pilotRunIds: number[] | null
+    pilotDatasetHash: string | null
+  } | null
 }
 
 /**
@@ -35,6 +40,17 @@ export const getValidationDataRsc = cache(async (studyId: number): Promise<Valid
       jatosStudyId: true,
       jatosStudyUUID: true,
       title: true,
+      approvedExtraction: {
+        select: {
+          id: true,
+          pilotDatasetSnapshot: {
+            select: {
+              pilotRunIds: true,
+              pilotDatasetHash: true,
+            },
+          },
+        },
+      },
     },
   })
 
@@ -53,15 +69,15 @@ export const getValidationDataRsc = cache(async (studyId: number): Promise<Valid
   // Fetch metadata
   const metadata = await getResultsMetadata({ studyIds: [study.jatosStudyId] })
 
-  // Fetch test results (enriched with data)
-  const testResults = await getAllTestResultsRsc(studyId)
+  // Fetch pilot results (enriched with data)
+  const pilotResults = await getAllPilotResultsRsc(studyId)
 
   // Fetch study properties
   const properties = await getStudyProperties(study.jatosStudyUUID)
 
   return {
     metadata,
-    testResults,
+    pilotResults,
     properties,
     study: {
       id: study.id,
@@ -69,5 +85,14 @@ export const getValidationDataRsc = cache(async (studyId: number): Promise<Valid
       jatosStudyUUID: study.jatosStudyUUID,
       title: study.title,
     },
+    approvedExtraction: study.approvedExtraction
+      ? {
+          id: study.approvedExtraction.id,
+          pilotRunIds: Array.isArray(study.approvedExtraction.pilotDatasetSnapshot?.pilotRunIds)
+            ? (study.approvedExtraction.pilotDatasetSnapshot?.pilotRunIds as number[])
+            : null,
+          pilotDatasetHash: study.approvedExtraction.pilotDatasetSnapshot?.pilotDatasetHash ?? null,
+        }
+      : null,
   }
 })

@@ -4,17 +4,15 @@ import { useState, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import { toast } from "react-hot-toast"
 import { saveFeedbackTemplateAction } from "../actions/saveFeedbackTemplate"
-import type { EnrichedJatosStudyResult } from "@/src/types/jatos"
 
 export interface UseFeedbackTemplateOptions {
   studyId: number
-  enrichedResult: EnrichedJatosStudyResult
   initialTemplate?: { id: number; content: string } | null
   onSuccess?: () => void
 }
 
 export function useFeedbackTemplate(options: UseFeedbackTemplateOptions) {
-  const { studyId, enrichedResult, initialTemplate, onSuccess } = options
+  const { studyId, initialTemplate, onSuccess } = options
   const router = useRouter()
   const [saving, setSaving] = useState(false)
   const [templateSaved, setTemplateSaved] = useState(!!initialTemplate)
@@ -31,7 +29,6 @@ export function useFeedbackTemplate(options: UseFeedbackTemplateOptions) {
         await saveFeedbackTemplateAction({
           studyId,
           content,
-          enrichedResult,
           initialTemplate,
         })
 
@@ -52,7 +49,7 @@ export function useFeedbackTemplate(options: UseFeedbackTemplateOptions) {
         setSaving(false)
       }
     },
-    [studyId, enrichedResult, initialTemplate, router, onSuccess]
+    [studyId, initialTemplate, router, onSuccess]
   )
 
   return {

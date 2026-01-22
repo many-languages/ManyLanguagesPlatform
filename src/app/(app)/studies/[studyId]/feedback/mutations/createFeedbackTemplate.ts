@@ -8,10 +8,23 @@ import { verifyResearcherStudyAccess } from "../../utils/verifyResearchersStudyA
 export async function createFeedbackTemplateRsc(input: {
   studyId: number
   content: string
+  setupRevision: number
+  extractionSnapshotId: number
+  extractorVersion: string
+  requiredVariableKeys?: string[]
 }): Promise<FeedbackTemplate> {
   await verifyResearcherStudyAccess(input.studyId)
 
-  const template = await db.feedbackTemplate.create({ data: input })
+  const template = await db.feedbackTemplate.create({
+    data: {
+      studyId: input.studyId,
+      content: input.content,
+      setupRevision: input.setupRevision,
+      extractionSnapshotId: input.extractionSnapshotId,
+      extractorVersion: input.extractorVersion,
+      requiredVariableKeys: input.requiredVariableKeys,
+    },
+  })
 
   // Mark step 6 as complete after successful creation
   await db.study.update({

@@ -2,15 +2,13 @@
 
 import { createFeedbackTemplateRsc } from "../mutations/createFeedbackTemplate"
 import { updateFeedbackTemplateRsc } from "../mutations/updateFeedbackTemplate"
-import { syncStudyVariablesRsc } from "../../variables/mutations/syncStudyVariables"
-import { extractVariables } from "../../variables/utils/extractVariable"
-import type { EnrichedJatosStudyResult } from "@/src/types/jatos"
 import type { FeedbackTemplate } from "../types"
+import db from "db"
+import { extractRequiredVariableNames } from "../utils/requiredKeys"
 
 export interface SaveTemplateInput {
   studyId: number
   content: string
-  enrichedResult: EnrichedJatosStudyResult
   initialTemplate?: {
     id: number
     content: string
@@ -29,35 +27,50 @@ export interface SaveTemplateResult {
 export async function saveFeedbackTemplateAction(
   input: SaveTemplateInput
 ): Promise<SaveTemplateResult> {
-  const { studyId, content, enrichedResult, initialTemplate } = input
+  const { studyId, content, initialTemplate } = input
 
   // Validate content
   if (!content.trim()) {
     throw new Error("Template content cannot be empty")
   }
 
+  const study = await db.study.findUnique({
+    where: { id: studyId },
+    select: {
+      setupRevision: true,
+      approvedExtraction: {
+        select: {
+          id: true,
+          extractorVersion: true,
+        },
+      },
+    },
+  })
+
+  if (!study?.approvedExtraction) {
+    throw new Error("No approved extraction found for this study")
+  }
+
+  const requiredVariableKeys = extractRequiredVariableNames(content.trim())
+
   // Save or update template
   const template = initialTemplate
     ? await updateFeedbackTemplateRsc({
         id: initialTemplate.id,
         content: content.trim(),
+        setupRevision: study.setupRevision,
+        extractionSnapshotId: study.approvedExtraction.id,
+        extractorVersion: study.approvedExtraction.extractorVersion,
+        requiredVariableKeys,
       })
     : await createFeedbackTemplateRsc({
         studyId,
         content: content.trim(),
+        setupRevision: study.setupRevision,
+        extractionSnapshotId: study.approvedExtraction.id,
+        extractorVersion: study.approvedExtraction.extractorVersion,
+        requiredVariableKeys,
       })
-
-  // Sync variables to database
-  const variables = extractVariables(enrichedResult).variables
-  await syncStudyVariablesRsc({
-    studyId,
-    variables: variables.map((v) => ({
-      variableKey: v.variableKey,
-      variableName: v.variableName,
-      type: v.type,
-      examples: v.examples,
-    })),
-  })
 
   return {
     template,

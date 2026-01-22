@@ -15,7 +15,7 @@ export default function Step3Instructions({
 }: Step3InstructionsProps) {
   return (
     <Card
-      title={pilotCompleted === true ? "Want to run more tests?" : "How to test your study?"}
+      title={pilotCompleted === true ? "Want to run more pilots?" : "How to pilot your study?"}
       collapsible
       bgColor="bg-base-300"
       className="mb-6"
@@ -34,7 +34,7 @@ export default function Step3Instructions({
             </a>
           </li>
           {hasJatosSetup && (
-            <li>Generate a new test link using the "Generate Test Link" button below</li>
+            <li>Generate a new pilot link using the "Generate Pilot Link" button below</li>
           )}
         </ol>
       ) : (
@@ -52,9 +52,9 @@ export default function Step3Instructions({
               </a>
             </li>
           ) : (
-            <li>Click "Generate Test Link" below to create a test link</li>
+            <li>Click "Generate Pilot Link" below to create a pilot link</li>
           )}
-          <li>Complete the entire survey as a test participant</li>
+          <li>Complete the entire survey as a pilot participant</li>
           <li>Click "Check Pilot Status" to verify completion</li>
         </ol>
       )}

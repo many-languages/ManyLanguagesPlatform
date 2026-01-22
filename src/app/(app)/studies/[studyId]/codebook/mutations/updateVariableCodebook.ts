@@ -25,12 +25,21 @@ export async function updateVariableCodebookRsc(input: {
 }) {
   await verifyResearcherStudyAccess(input.studyId)
 
-  // Verify all variables belong to this study
+  const study = await db.study.findUnique({
+    where: { id: input.studyId },
+    select: { approvedExtractionId: true },
+  })
+
+  if (!study?.approvedExtractionId) {
+    throw new Error("No approved extraction found for this study.")
+  }
+
+  // Verify all variables belong to the approved extraction snapshot
   const variableIds = input.variables.map((v) => v.id)
   const existingVariables = await db.studyVariable.findMany({
     where: {
       id: { in: variableIds },
-      studyId: input.studyId,
+      extractionSnapshotId: study.approvedExtractionId,
     },
   })
 
@@ -53,7 +62,7 @@ export async function updateVariableCodebookRsc(input: {
 
   // Mark step5 as completed if all variables have descriptions
   const allVariables = await db.studyVariable.findMany({
-    where: { studyId: input.studyId },
+    where: { extractionSnapshotId: study.approvedExtractionId },
   })
 
   const allHaveDescriptions = allVariables.every(

@@ -1,12 +1,11 @@
 "use client"
 
 import { useState, useMemo } from "react"
-import { EnrichedJatosStudyResult } from "@/src/types/jatos"
-import { extractVariables } from "../../../variables/utils/extractVariable"
 import { SelectField, SyntaxPreview } from "./shared"
+import type { FeedbackVariable } from "../../types"
 
 interface FilterBuilderProps {
-  enrichedResult: EnrichedJatosStudyResult
+  variables: FeedbackVariable[]
   onInsert: (filterClause: string) => void
   onClose: () => void
 }
@@ -41,13 +40,10 @@ const OPERATORS = {
 
 const MAX_CONDITIONS = 3
 
-export default function FilterBuilder({ enrichedResult, onInsert, onClose }: FilterBuilderProps) {
+export default function FilterBuilder({ variables, onInsert, onClose }: FilterBuilderProps) {
   const [conditions, setConditions] = useState<FilterCondition[]>([
     { field: "", operator: "==", value: "" },
   ])
-
-  const extractionResult = extractVariables(enrichedResult)
-  const variables = extractionResult.variables
 
   const fieldOptions = useMemo(
     () =>

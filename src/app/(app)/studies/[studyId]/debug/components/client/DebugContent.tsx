@@ -15,10 +15,10 @@ interface DebugContentProps {
 
 export default function DebugContent({ validationData }: DebugContentProps) {
   const [selectedResultId, setSelectedResultId] = useState<number | null>(
-    validationData.testResults[0]?.id ?? null
+    validationData.pilotResults[0]?.id ?? null
   )
 
-  const selectedResult = validationData.testResults.find((r) => r.id === selectedResultId)
+  const selectedResult = validationData.pilotResults.find((r) => r.id === selectedResultId)
 
   return (
     <div className="space-y-6">
@@ -38,15 +38,15 @@ export default function DebugContent({ validationData }: DebugContentProps) {
       </div>
 
       {/* Test Result Selector */}
-      {validationData.testResults.length > 0 && (
-        <Card title="Select Test Result" bgColor="bg-base-200">
+      {validationData.pilotResults.length > 0 && (
+        <Card title="Select Pilot Result" bgColor="bg-base-200">
           <select
             className="select select-bordered w-full"
             value={selectedResultId ?? ""}
             onChange={(e) => setSelectedResultId(Number(e.target.value) || null)}
           >
-            <option value="">Select a test result...</option>
-            {validationData.testResults.map((result) => (
+            <option value="">Select a pilot result...</option>
+            {validationData.pilotResults.map((result) => (
               <option key={result.id} value={result.id}>
                 Result #{result.id} - {result.studyCode} (Started:{" "}
                 {new Date(result.startDate).toLocaleString()})
@@ -54,21 +54,21 @@ export default function DebugContent({ validationData }: DebugContentProps) {
             ))}
           </select>
           <p className="text-sm text-muted-content mt-2">
-            {validationData.testResults.length} test result
-            {validationData.testResults.length !== 1 ? "s" : ""} available
+            {validationData.pilotResults.length} pilot result
+            {validationData.pilotResults.length !== 1 ? "s" : ""} available
           </p>
         </Card>
       )}
 
-      {!selectedResult && validationData.testResults.length > 0 && (
+      {!selectedResult && validationData.pilotResults.length > 0 && (
         <div className="alert alert-info">
-          <span>Please select a test result to view details</span>
+          <span>Please select a pilot result to view details</span>
         </div>
       )}
 
-      {validationData.testResults.length === 0 && (
+      {validationData.pilotResults.length === 0 && (
         <div className="alert alert-warning">
-          <span>No test results found. Please complete a test run first.</span>
+          <span>No pilot results found. Please complete a pilot run first.</span>
         </div>
       )}
 

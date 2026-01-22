@@ -1,14 +1,13 @@
 "use client"
 
 import { useState, useMemo } from "react"
-import { EnrichedJatosStudyResult } from "@/src/types/jatos"
-import { extractVariables } from "../../../variables/utils/extractVariable"
 import { SelectField } from "./shared"
 import Card from "@/src/app/components/Card"
 import { dslHelperStyles } from "../../styles/feedbackStyles"
+import type { FeedbackVariable } from "../../types"
 
 interface DSLHelperProps {
-  enrichedResult: EnrichedJatosStudyResult
+  variables: FeedbackVariable[]
 }
 
 interface Example {
@@ -21,7 +20,7 @@ interface Example {
 /**
  * Collapsible reference panel showing DSL syntax examples and available variables
  */
-export default function DSLHelper({ enrichedResult }: DSLHelperProps) {
+export default function DSLHelper({ variables }: DSLHelperProps) {
   const [searchTerm, setSearchTerm] = useState("")
   const [selectedCategory, setSelectedCategory] = useState<string>("all")
 
@@ -130,9 +129,6 @@ export default function DSLHelper({ enrichedResult }: DSLHelperProps) {
       category: "conditionals",
     },
   ]
-
-  const extractionResult = extractVariables(enrichedResult)
-  const variables = extractionResult.variables
 
   const categoryOptions = useMemo(
     () => [

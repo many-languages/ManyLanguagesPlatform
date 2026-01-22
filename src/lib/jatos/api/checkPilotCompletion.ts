@@ -6,6 +6,8 @@
  * @param jatosStudyUUID - The JATOS study UUID to check
  * @returns true if a finished personal worker result exists, false otherwise
  */
+const PILOT_COMMENT_PREFIX = "pilot:"
+
 export function checkPilotCompletionFromMetadata(metadata: any, jatosStudyUUID: string): boolean {
   if (!metadata?.data) return false
 
@@ -16,8 +18,10 @@ export function checkPilotCompletionFromMetadata(metadata: any, jatosStudyUUID: 
       const isFinished = result.studyState === "FINISHED"
       const isPersonalWorker =
         result.workerType === "PersonalMultiple" || result.workerType === "PersonalSingle"
+      const isPilot =
+        typeof result.comment === "string" && result.comment.startsWith(PILOT_COMMENT_PREFIX)
 
-      return isFinished && isPersonalWorker
+      return isFinished && isPersonalWorker && isPilot
     })
   })
 }

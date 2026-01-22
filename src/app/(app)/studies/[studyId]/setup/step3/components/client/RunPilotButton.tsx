@@ -2,12 +2,12 @@
 
 import { AsyncButton } from "@/src/app/components/AsyncButton"
 
-interface RunStudyButtonProps {
+interface RunPilotButtonProps {
   runUrl: string | null
   isActive?: boolean
 }
 
-export default function RunStudyButton({ runUrl, isActive = true }: RunStudyButtonProps) {
+export default function RunPilotButton({ runUrl, isActive = true }: RunPilotButtonProps) {
   const handleRunStudy = () => {
     if (!runUrl || !isActive) return
     // open JATOS run link in new tab
@@ -34,7 +34,7 @@ export default function RunStudyButton({ runUrl, isActive = true }: RunStudyButt
         disabled={!isActive}
         className="btn btn-primary btn-lg text-lg px-8 py-4"
       >
-        Run Study
+        Run Pilot
       </AsyncButton>
     </div>
   )

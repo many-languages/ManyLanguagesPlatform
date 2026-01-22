@@ -1,13 +1,12 @@
 "use client"
 
 import { useState, useMemo } from "react"
-import { EnrichedJatosStudyResult } from "@/src/types/jatos"
 import FilterBuilder from "./FilterBuilder"
-import { extractVariables } from "../../../variables/utils/extractVariable"
 import { SelectField, FilterButtonWithDisplay, SyntaxPreview } from "./shared"
+import type { FeedbackVariable } from "../../types"
 
 interface StatsSelectorProps {
-  enrichedResult: EnrichedJatosStudyResult
+  variables: FeedbackVariable[]
   onInsert: (statExpression: string) => void
   markdown?: string
 }
@@ -23,15 +22,12 @@ const METRICS = [
  * Component for selecting variables and their statistics
  * Shows dropdowns for variable selection and stat type, with insert button
  */
-export default function StatsSelector({ enrichedResult, onInsert, markdown }: StatsSelectorProps) {
+export default function StatsSelector({ variables, onInsert, markdown }: StatsSelectorProps) {
   const [selectedVariable, setSelectedVariable] = useState("")
   const [selectedMetric, setSelectedMetric] = useState("avg")
   const [selectedScope, setSelectedScope] = useState<"within" | "across">("within")
   const [showFilterBuilder, setShowFilterBuilder] = useState(false)
   const [currentFilterClause, setCurrentFilterClause] = useState("")
-
-  const extractionResult = extractVariables(enrichedResult)
-  const variables = extractionResult.variables
 
   const variableOptions = useMemo(
     () =>
@@ -148,7 +144,7 @@ export default function StatsSelector({ enrichedResult, onInsert, markdown }: St
             />
             {selectedScope === "across" && (
               <div className="text-xs text-warning mt-1">
-                ⚠️ In preview, this uses all "test" results. In actual feedback, it uses all
+                ⚠️ In preview, this uses all pilot results. In actual feedback, it uses all
                 participant results.
               </div>
             )}
@@ -176,7 +172,7 @@ export default function StatsSelector({ enrichedResult, onInsert, markdown }: St
       {/* FilterBuilder Modal */}
       {showFilterBuilder && (
         <FilterBuilder
-          enrichedResult={enrichedResult}
+          variables={variables}
           onInsert={handleFilterInsert}
           onClose={() => setShowFilterBuilder(false)}
         />

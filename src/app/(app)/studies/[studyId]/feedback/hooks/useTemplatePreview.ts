@@ -1,29 +1,26 @@
 "use client"
 
 import { useMemo } from "react"
-import { renderTemplate } from "../utils/feedbackRenderer"
-import type { EnrichedJatosStudyResult } from "@/src/types/jatos"
+import { renderTemplateWithContext } from "../utils/previewRenderer"
+import type { PreviewRenderContext } from "../utils/previewContext"
 
 export interface UseTemplatePreviewOptions {
   template: string
-  enrichedResult: EnrichedJatosStudyResult
-  allEnrichedResults?: EnrichedJatosStudyResult[]
+  context: PreviewRenderContext | null
 }
 
 export function useTemplatePreview(options: UseTemplatePreviewOptions) {
-  const { template, enrichedResult, allEnrichedResults } = options
+  const { template, context } = options
 
   const rendered = useMemo(() => {
     try {
-      return renderTemplate(template, {
-        enrichedResult,
-        allEnrichedResults,
-      })
+      if (!context) return template
+      return renderTemplateWithContext(template, context)
     } catch (e) {
       console.error("Preview render error:", e)
       return template // fallback to raw markdown
     }
-  }, [template, enrichedResult, allEnrichedResults])
+  }, [template, context])
 
   return rendered
 }

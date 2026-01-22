@@ -3,8 +3,8 @@
 import { ArrowPathIcon } from "@heroicons/react/24/outline"
 import { Alert } from "@/src/app/components/Alert"
 import { AsyncButton } from "@/src/app/components/AsyncButton"
-import RunStudyButton from "./RunStudyButton"
-import GenerateTestLinkButton from "./GenerateTestLinkButton"
+import RunPilotButton from "./RunPilotButton"
+import GeneratePilotLinkButton from "./GeneratePilotLinkButton"
 
 interface Step3ActionsProps {
   pilotCompleted: boolean | null
@@ -38,13 +38,13 @@ export default function Step3Actions({
   if (!jatosRunUrl) {
     return (
       <div className="max-w-2xl mx-auto space-y-6">
-        {/* Generate Test Link button when no link exists */}
+        {/* Generate Pilot Link button when no link exists */}
         <div className="flex justify-center">
-          <GenerateTestLinkButton
+          <GeneratePilotLinkButton
             studyResearcherId={researcherId}
             jatosStudyId={jatosStudyId}
             jatosBatchId={jatosBatchId}
-            label="Generate Test Link"
+            label="Generate Pilot Link"
             className="btn btn-primary btn-lg"
           />
         </div>
@@ -54,26 +54,26 @@ export default function Step3Actions({
 
   return (
     <div className="max-w-3xl mx-auto space-y-6 w-full">
-      {/* Actions Section - Generate Test Link (if completed), Run Study and Check Status */}
+      {/* Actions Section - Generate Pilot Link (if completed), Run Study and Check Status */}
       <div className="flex flex-wrap items-center justify-center gap-4 w-full">
         {pilotCompleted === true && jatosStudyId && jatosBatchId && (
           <>
             <div className="flex-shrink-0">
-              <GenerateTestLinkButton
+              <GeneratePilotLinkButton
                 studyResearcherId={researcherId}
                 jatosStudyId={jatosStudyId}
                 jatosBatchId={jatosBatchId}
-                label="Generate Test Link"
+                label="Generate Pilot Link"
                 className="btn btn-accent btn-lg whitespace-nowrap"
               >
                 <ArrowPathIcon className="h-4 w-4" />
-              </GenerateTestLinkButton>
+              </GeneratePilotLinkButton>
             </div>
             <div className="divider divider-horizontal hidden lg:flex" />
           </>
         )}
         <div className="flex-shrink-0">
-          <RunStudyButton runUrl={jatosRunUrl} />
+          <RunPilotButton runUrl={jatosRunUrl} />
         </div>
         <div className="divider divider-horizontal hidden lg:flex" />
         <div className="flex-shrink-0">

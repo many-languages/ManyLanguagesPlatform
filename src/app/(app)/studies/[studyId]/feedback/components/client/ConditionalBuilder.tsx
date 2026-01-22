@@ -1,14 +1,13 @@
 "use client"
 
 import { useState, useEffect, useCallback, useMemo } from "react"
-import { EnrichedJatosStudyResult } from "@/src/types/jatos"
 import VariableSelector from "./VariableSelector"
 import StatsSelector from "./StatsSelector"
-import { extractVariables } from "../../../variables/utils/extractVariable"
 import { SelectField, FilterButtonWithDisplay, SyntaxPreview } from "./shared"
+import type { FeedbackVariable } from "../../types"
 
 interface ConditionalBuilderProps {
-  enrichedResult: EnrichedJatosStudyResult
+  variables: FeedbackVariable[]
   onInsert: (conditionalBlock: string) => void
   onClose: () => void
 }
@@ -26,7 +25,7 @@ const OPERATORS = [
  * Modal for building conditional if/else blocks
  */
 export default function ConditionalBuilder({
-  enrichedResult,
+  variables,
   onInsert,
   onClose,
 }: ConditionalBuilderProps) {
@@ -41,9 +40,6 @@ export default function ConditionalBuilder({
   const [includeElse, setIncludeElse] = useState(false)
   const [focusedTextArea, setFocusedTextArea] = useState<"then" | "else">("then")
   const [currentFilterClause, setCurrentFilterClause] = useState("")
-
-  const extractionResult = extractVariables(enrichedResult)
-  const variables = extractionResult.variables
 
   // Get available variables for the condition builder
   const getAvailableVariables = useCallback(() => {
@@ -401,8 +397,8 @@ export default function ConditionalBuilder({
             </label>
             {/* Toolbar for Then Content */}
             <div className="flex gap-2 mb-2">
-              <VariableSelector enrichedResult={enrichedResult} onInsert={handleInsertVariable} />
-              <StatsSelector enrichedResult={enrichedResult} onInsert={handleInsertStat} />
+              <VariableSelector variables={variables} onInsert={handleInsertVariable} />
+              <StatsSelector variables={variables} onInsert={handleInsertStat} />
             </div>
             <textarea
               className="textarea textarea-bordered w-full h-24"
@@ -428,11 +424,8 @@ export default function ConditionalBuilder({
               <div>
                 {/* Toolbar for Else Content */}
                 <div className="flex gap-2 mb-2">
-                  <VariableSelector
-                    enrichedResult={enrichedResult}
-                    onInsert={handleInsertVariable}
-                  />
-                  <StatsSelector enrichedResult={enrichedResult} onInsert={handleInsertStat} />
+                  <VariableSelector variables={variables} onInsert={handleInsertVariable} />
+                  <StatsSelector variables={variables} onInsert={handleInsertStat} />
                 </div>
                 <textarea
                   className="textarea textarea-bordered w-full h-24"

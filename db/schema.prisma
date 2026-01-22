@@ -261,9 +261,6 @@ model FeedbackTemplate {
   requiredVariableKeys Json? // string[]
   extractorVersion     String? // safety check
 
-  lastPreviewPilotDatasetHash String?
-  lastPreviewedAt             DateTime?
-
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -287,9 +284,8 @@ model AdminInvite {
 }
 
 model PilotLink {
-  id        Int       @id @default(autoincrement())
-  createdAt DateTime  @default(now())
-  revokedAt DateTime?
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
 
   studyId           Int
   studyResearcherId Int
@@ -339,6 +335,7 @@ model ExtractionSnapshot {
 
   extractorVersion    String
   extractorConfigHash String?
+  outputHash          String?
   structureSummary    Json?
   aggregates          Json?
 

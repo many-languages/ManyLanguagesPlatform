@@ -1,9 +1,9 @@
 "use client"
 
 import { useRouter } from "next/navigation"
-import { useRef } from "react"
+import { useEffect, useRef, useState } from "react"
 import { useStudySetup } from "../../../components/client/StudySetupProvider"
-import { useMutation } from "@blitzjs/rpc"
+import { useMutation, useQuery } from "@blitzjs/rpc"
 import { toast } from "react-hot-toast"
 import { isSetupComplete } from "../../../utils/setupStatus"
 import updateStudyStatus from "@/src/app/(app)/studies/mutations/updateStudyStatus"
@@ -13,6 +13,10 @@ import type { EnrichedJatosStudyResult } from "@/src/types/jatos"
 import { FeedbackFormEditorRef } from "../../../../feedback/types"
 import FeedbackFormEditor from "../../../../feedback/components/client/FeedbackFormEditor"
 import { useNotificationMenuContext } from "@/src/app/(app)/notifications/context/NotificationMenuContext"
+import getCachedExtractionBundle from "../../../queries/getCachedExtractionBundle"
+import runExtraction from "../../../mutations/runExtraction"
+import type { SerializedExtractionBundle } from "../../../utils/serializeExtractionBundle"
+import type { FeedbackVariable } from "../../../../feedback/types"
 
 interface Step6ContentProps {
   initialFeedbackTemplate?: {
@@ -22,19 +26,50 @@ interface Step6ContentProps {
     updatedAt: Date
   } | null
   enrichedResult: EnrichedJatosStudyResult | null
-  allTestResults: EnrichedJatosStudyResult[]
+  allPilotResults: EnrichedJatosStudyResult[]
+  pilotResultId: number | null
+  variables: FeedbackVariable[]
 }
 
 export default function Step6Content({
   initialFeedbackTemplate = null,
   enrichedResult,
-  allTestResults,
+  allPilotResults,
+  pilotResultId,
+  variables,
 }: Step6ContentProps) {
   const router = useRouter()
   const { study, studyId } = useStudySetup()
   const feedbackEditorRef = useRef<FeedbackFormEditorRef>(null)
   const [updateStudyStatusMutation] = useMutation(updateStudyStatus)
   const { refetch: refetchNotifications } = useNotificationMenuContext()
+  const [runExtractionMutation] = useMutation(runExtraction)
+  const [extractionBundle, setExtractionBundle] = useState<SerializedExtractionBundle | null>(null)
+
+  const [cachedBundleResult] = useQuery(
+    getCachedExtractionBundle,
+    pilotResultId
+      ? { studyId, testResultId: pilotResultId, includeDiagnostics: false }
+      : { studyId, testResultId: 0, includeDiagnostics: false },
+    { enabled: Boolean(pilotResultId) }
+  )
+
+  useEffect(() => {
+    if (!pilotResultId) return
+    if (cachedBundleResult?.bundle) {
+      setExtractionBundle(cachedBundleResult.bundle)
+      return
+    }
+    runExtractionMutation({
+      studyId,
+      testResultId: pilotResultId,
+      includeDiagnostics: false,
+    })
+      .then((result) => setExtractionBundle(result.bundle))
+      .catch((error) => {
+        console.error("Failed to run extraction for preview:", error)
+      })
+  }, [cachedBundleResult, pilotResultId, runExtractionMutation, studyId])
 
   const handleFinish = async () => {
     let templateSavedDuringFinish = false
@@ -74,19 +109,20 @@ export default function Step6Content({
     router.replace(`/studies/${studyId}`)
   }
 
-  // Show warning if no test run data found
+  // Show warning if no pilot data found
   if (!enrichedResult) {
-    return <Alert variant="warning">No test run data found.</Alert>
+    return <Alert variant="warning">No pilot data found.</Alert>
   }
 
   return (
     <>
       <FeedbackFormEditor
         ref={feedbackEditorRef}
-        enrichedResult={enrichedResult}
         initialTemplate={initialFeedbackTemplate}
         studyId={studyId}
-        allTestResults={allTestResults}
+        allPilotResults={allPilotResults}
+        variables={variables}
+        extractionBundle={extractionBundle}
         onTemplateSaved={() => {
           // Refresh to get updated study data (step6Completed will be updated)
           router.refresh()

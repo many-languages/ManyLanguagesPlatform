@@ -48,9 +48,18 @@ export default resolver.pipe(
       updateData.step5Completed = completionFlags.step5Completed
     }
 
-    // Update study with completion flags
-    const study = await db.study.update({
-      where: { id: studyId },
+    const latestUpload = await db.jatosStudyUpload.findFirst({
+      where: { studyId },
+      orderBy: { createdAt: "desc" },
+      select: { id: true },
+    })
+
+    if (!latestUpload) {
+      throw new Error("No JATOS upload found for this study")
+    }
+
+    const upload = await db.jatosStudyUpload.update({
+      where: { id: latestUpload.id },
       data: updateData,
       select: {
         step1Completed: true,
@@ -59,9 +68,10 @@ export default resolver.pipe(
         step4Completed: true,
         step5Completed: true,
         step6Completed: true,
+        studyId: true,
       },
     })
 
-    return study
+    return upload
   }
 )

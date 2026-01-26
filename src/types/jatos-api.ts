@@ -18,6 +18,11 @@ export interface JatosImportResponse {
   jatosStudyId: number
   jatosStudyUUID: string
   jatosFileName: string
+  buildHash: string
+  hashAlgorithm: string
+  studyExists?: boolean
+  currentStudyTitle?: string
+  uploadedStudyTitle?: string
 }
 
 /**

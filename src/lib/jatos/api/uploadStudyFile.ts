@@ -15,18 +15,16 @@
  * ```
  */
 
-import type { JatosImportResponse, JatosImportConflictResponse } from "@/src/types/jatos-api"
+import type { JatosImportResponse } from "@/src/types/jatos-api"
 
 /**
  * Uploads a JATOS study file (.jzip) to the JATOS server.
  *
  * @param file - The .jzip file to upload
- * @returns Import result with study IDs, or conflict response if study exists
- * @throws Error if upload fails (non-409 errors)
+ * @returns Import result with study IDs
+ * @throws Error if upload fails
  */
-export async function uploadStudyFile(
-  file: File
-): Promise<JatosImportResponse | JatosImportConflictResponse> {
+export async function uploadStudyFile(file: File): Promise<JatosImportResponse> {
   const fd = new FormData()
   fd.append("studyFile", file, file.name)
 
@@ -36,19 +34,6 @@ export async function uploadStudyFile(
   })
 
   const data = await res.json()
-
-  // Handle existing study conflict (409)
-  if (res.status === 409) {
-    return {
-      error: data.error,
-      studyExists: true,
-      jatosStudyId: data.jatosStudyId,
-      jatosStudyUUID: data.jatosStudyUUID,
-      jatosFileName: data.jatosFileName,
-      currentStudyTitle: data.currentStudyTitle,
-      uploadedStudyTitle: data.uploadedStudyTitle,
-    } as JatosImportConflictResponse
-  }
 
   // Handle other errors
   if (!res.ok) {
@@ -61,5 +46,10 @@ export async function uploadStudyFile(
     jatosStudyId: data.jatosStudyId,
     jatosStudyUUID: data.jatosStudyUUID,
     jatosFileName: data.jatosFileName,
+    buildHash: data.buildHash,
+    hashAlgorithm: data.hashAlgorithm,
+    studyExists: data.studyExists,
+    currentStudyTitle: data.currentStudyTitle,
+    uploadedStudyTitle: data.uploadedStudyTitle,
   } as JatosImportResponse
 }

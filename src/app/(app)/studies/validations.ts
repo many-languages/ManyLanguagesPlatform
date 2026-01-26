@@ -35,6 +35,8 @@ export const ImportJatosSchema = BaseJatosFormSchema.extend({
   jatosStudyId: z.number(),
   jatosStudyUUID: z.string(),
   jatosFileName: z.string(),
+  buildHash: z.string().min(1),
+  hashAlgorithm: z.string().optional(),
 })
 
 export const StudyInformationFormSchema = z.object({

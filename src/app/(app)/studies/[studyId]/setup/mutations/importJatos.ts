@@ -7,64 +7,87 @@ export default resolver.pipe(
   resolver.zod(ImportJatosSchema),
   resolver.authorize("RESEARCHER"),
   async (input, ctx) => {
-    const { studyId, jatosWorkerType, jatosStudyId, jatosStudyUUID, jatosFileName } = input
+    const {
+      studyId,
+      jatosWorkerType,
+      jatosStudyId,
+      jatosStudyUUID,
+      jatosFileName,
+      buildHash,
+      hashAlgorithm,
+    } = input
 
     // Authorization check
     await verifyResearcherStudyAccess(studyId)
 
-    // Check if JATOS is being changed (not first upload)
-    const existingStudy = await db.study.findUnique({
-      where: { id: studyId },
-      select: { jatosStudyUUID: true, step2Completed: true },
-    })
-
-    // JATOS is changing if:
-    // 1. There was a UUID before and it's different now, OR
-    // 2. Step 2 was previously completed (meaning JATOS existed before, even if cleared)
-    const isChangingJatos =
-      (existingStudy?.jatosStudyUUID && existingStudy.jatosStudyUUID !== jatosStudyUUID) ||
-      (existingStudy?.step2Completed && jatosStudyUUID)
-
     try {
-      const result = await db.study.update({
-        where: { id: studyId },
-        data: {
-          jatosWorkerType,
-          jatosStudyId,
-          jatosStudyUUID,
-          jatosFileName,
-        },
-        select: {
-          id: true,
-          jatosWorkerType: true,
-          jatosStudyId: true,
-          jatosStudyUUID: true,
-          jatosFileName: true,
-        },
-      })
-
-      // If JATOS changed, invalidate Step 3 (clear pilot run URLs)
-      // Step 4 (Debug), Step 5 (Codebook), and Step 6 (FeedbackTemplate) are preserved but will be marked incomplete
-      if (isChangingJatos) {
-        // Invalidate step 3, step 4, step 5, and step 6 completion status
-        await db.study.update({
+      const result = await db.$transaction(async (tx) => {
+        const studyInfo = await tx.study.findUnique({
           where: { id: studyId },
+          select: { title: true, description: true },
+        })
+
+        if (!studyInfo) {
+          throw new Error("Study not found")
+        }
+
+        const step1Completed = Boolean(studyInfo.title && studyInfo.description)
+
+        const latestUpload = await tx.jatosStudyUpload.findFirst({
+          where: { studyId },
+          orderBy: { versionNumber: "desc" },
+          select: { versionNumber: true },
+        })
+
+        const versionNumber = (latestUpload?.versionNumber ?? 0) + 1
+
+        const study = await tx.study.update({
+          where: { id: studyId },
+          data: { jatosStudyUUID },
+          select: { id: true, jatosStudyUUID: true },
+        })
+
+        const upload = await tx.jatosStudyUpload.create({
           data: {
-            step3Completed: false,
-            step4Completed: false,
-            step5Completed: false,
-            step6Completed: false,
+            studyId,
+            versionNumber,
+            jatosStudyId,
+            jatosFileName,
+            jatosWorkerType,
+            buildHash,
+            hashAlgorithm: hashAlgorithm ?? undefined,
+            step1Completed,
+          },
+          select: {
+            id: true,
+            studyId: true,
+            versionNumber: true,
+            jatosStudyId: true,
+            jatosFileName: true,
+            jatosWorkerType: true,
+            buildHash: true,
+            hashAlgorithm: true,
           },
         })
-      }
 
-      return { study: result }
+        return { study, upload }
+      })
+
+      return { study: result.study, latestUpload: result.upload }
     } catch (e: any) {
       // Handle DB unique constraint (shouldn't happen with new flow)
-      if (e?.code === "P2002" && e?.meta?.target?.includes?.("jatosStudyUUID")) {
-        return {
-          error: "UUID already exists in database",
-          jatosStudyUUID,
+      if (e?.code === "P2002") {
+        const target = e?.meta?.target
+        if (target?.includes?.("jatosStudyUUID")) {
+          return {
+            error: "UUID already exists in database",
+            jatosStudyUUID,
+          }
+        }
+        if (target?.includes?.("buildHash")) {
+          return {
+            error: "This JATOS build has already been imported for this study",
+          }
         }
       }
       throw e

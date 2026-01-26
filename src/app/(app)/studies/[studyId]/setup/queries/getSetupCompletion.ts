@@ -15,12 +15,20 @@ export const getSetupCompletionRsc = cache(async (studyId: number) => {
   const study = await db.study.findUnique({
     where: { id: studyId },
     select: {
-      step1Completed: true,
-      step2Completed: true,
-      step3Completed: true,
-      step4Completed: true,
-      step5Completed: true,
-      step6Completed: true,
+      title: true,
+      description: true,
+      jatosStudyUploads: {
+        orderBy: { createdAt: "desc" },
+        take: 1,
+        select: {
+          step1Completed: true,
+          step2Completed: true,
+          step3Completed: true,
+          step4Completed: true,
+          step5Completed: true,
+          step6Completed: true,
+        },
+      },
     },
   })
 
@@ -28,7 +36,22 @@ export const getSetupCompletionRsc = cache(async (studyId: number) => {
     throw new Error("Study not found")
   }
 
-  return study
+  const latestUpload = study.jatosStudyUploads[0] ?? null
+
+  if (latestUpload) {
+    return latestUpload
+  }
+
+  const step1Completed = Boolean(study.title && study.description)
+
+  return {
+    step1Completed,
+    step2Completed: false,
+    step3Completed: false,
+    step4Completed: false,
+    step5Completed: false,
+    step6Completed: false,
+  }
 })
 
 // Blitz RPC for client usage with useQuery

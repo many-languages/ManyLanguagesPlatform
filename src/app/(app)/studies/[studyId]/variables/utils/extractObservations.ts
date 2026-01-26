@@ -86,9 +86,9 @@ function prepareDataForWalking(
  * Returns observations, diagnostics, and stats
  */
 export function extractObservations(
-  enrichedResult: EnrichedJatosStudyResult,
+  enrichedResults: EnrichedJatosStudyResult[],
   config: ExtractionConfig = DEFAULT_EXTRACTION_CONFIG,
-  options?: { diagnostics?: boolean }
+  options?: { diagnostics?: boolean; allowVariableKeys?: Set<string> }
 ): NewExtractionResult {
   const diagnosticsEnabled = options?.diagnostics ?? true
   const allObservations: NewExtractionResult["observations"] = []
@@ -112,49 +112,52 @@ export function extractObservations(
     stats: statsTracker,
     run: runFactsCollector,
     variable: variableFactsCollector,
+    allowVariableKeys: options?.allowVariableKeys,
   }
 
-  // Process each component
-  enrichedResult.componentResults.forEach((component) => {
-    const componentId = component.componentId
-    const format = component.detectedFormat?.format
+  // Process each result + component
+  enrichedResults.forEach((enrichedResult) => {
+    enrichedResult.componentResults.forEach((component) => {
+      const componentId = component.componentId
+      const format = component.detectedFormat?.format
 
-    componentFactsCollector.recordComponent({
-      componentId,
-      detectedFormat: format,
-      hasParsedData: !!component.parsedData,
-      hasDataContent: !!component.dataContent,
-    })
-
-    // Early validation: empty data
-    if (!component.parsedData && !component.dataContent) {
-      return
-    }
-
-    // Early validation: parse errors
-    if (component.parseError) {
-      componentFactsCollector.recordParseError(componentId, component.parseError)
-      return
-    }
-
-    // Prepare data for walking (format-specific transformation)
-    const prepared = prepareDataForWalking(format, component.parsedData)
-
-    // Handle format-specific errors
-    if ("error" in prepared) {
-      componentFactsCollector.recordFormatError(
+      componentFactsCollector.recordComponent({
         componentId,
-        prepared.error.code,
-        prepared.error.message
-      )
-      return
-    }
+        detectedFormat: format,
+        hasParsedData: !!component.parsedData,
+        hasDataContent: !!component.dataContent,
+      })
 
-    // Walk the prepared data
-    const scopeKeys = { componentId }
-    const result = walk(prepared.data, scopeKeys, ctx)
+      // Early validation: empty data
+      if (!component.parsedData && !component.dataContent) {
+        return
+      }
 
-    allObservations.push(...result.observations)
+      // Early validation: parse errors
+      if (component.parseError) {
+        componentFactsCollector.recordParseError(componentId, component.parseError)
+        return
+      }
+
+      // Prepare data for walking (format-specific transformation)
+      const prepared = prepareDataForWalking(format, component.parsedData)
+
+      // Handle format-specific errors
+      if ("error" in prepared) {
+        componentFactsCollector.recordFormatError(
+          componentId,
+          prepared.error.code,
+          prepared.error.message
+        )
+        return
+      }
+
+      // Walk the prepared data
+      const scopeKeys = { componentId, studyResultId: enrichedResult.id }
+      const result = walk(prepared.data, scopeKeys, ctx)
+
+      allObservations.push(...result.observations)
+    })
   })
 
   // Freeze facts into immutable snapshots

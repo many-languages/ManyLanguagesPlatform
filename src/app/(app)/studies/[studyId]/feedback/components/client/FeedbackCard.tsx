@@ -8,8 +8,11 @@ import Card from "@/src/app/components/Card"
 import { NavigationButton } from "@/src/app/components/NavigationButton"
 import { EmptyState } from "@/src/app/components/EmptyState"
 import RefreshFeedbackButton from "./RefreshFeedbackButton"
-import { renderTemplate } from "../../utils/feedbackRenderer"
 import { EnrichedJatosStudyResult } from "@/src/types/jatos"
+import { extractVariableBundleForRenderFromResults } from "../../../variables/utils/extractVariable"
+import { buildPreviewContextFromBundle } from "../../utils/previewContext"
+import { renderTemplateWithContext } from "../../utils/previewRenderer"
+import { extractRequiredVariableNames } from "../../utils/requiredKeys"
 import { mdEditorStyles, mdEditorClassName } from "../../styles/feedbackStyles"
 
 interface FeedbackCardProps {
@@ -18,12 +21,14 @@ interface FeedbackCardProps {
   template:
     | {
         content: string
+        requiredVariableKeys?: string[] | null
       }
     | null
     | undefined
   title?: string
   className?: string
   allEnrichedResults?: EnrichedJatosStudyResult[]
+  requiredVariableKeyList?: string[]
   onRefresh?: () => Promise<void> | void
   showEditButton?: boolean
 }
@@ -35,6 +40,7 @@ export default function FeedbackCard({
   title = "Feedback",
   className,
   allEnrichedResults,
+  requiredVariableKeyList,
   onRefresh,
   showEditButton = false,
 }: FeedbackCardProps) {
@@ -48,15 +54,39 @@ export default function FeedbackCard({
     }
 
     try {
-      return renderTemplate(template.content, {
-        enrichedResult,
-        allEnrichedResults, // For "across" scope statistics
+      const requiredVariableNames =
+        Array.isArray(template.requiredVariableKeys) && template.requiredVariableKeys.length > 0
+          ? template.requiredVariableKeys
+          : extractRequiredVariableNames(template.content)
+
+      const usesAcross = /\bstat:[^}]*:across\b/.test(template.content)
+      const resultsForExtraction =
+        usesAcross && allEnrichedResults && allEnrichedResults.length > 0
+          ? allEnrichedResults
+          : [enrichedResult]
+
+      const allowlist =
+        requiredVariableKeyList && requiredVariableKeyList.length > 0
+          ? new Set(requiredVariableKeyList)
+          : undefined
+
+      const bundle = extractVariableBundleForRenderFromResults(resultsForExtraction, allowlist)
+      const context = buildPreviewContextFromBundle(bundle, requiredVariableNames)
+
+      return renderTemplateWithContext(template.content, context, {
+        withinStudyResultId: enrichedResult.id,
       })
     } catch (e) {
       console.error("Error rendering feedback template:", e)
       return "Error rendering feedback. Please contact the researcher."
     }
-  }, [template?.content, enrichedResult, allEnrichedResults])
+  }, [
+    template?.content,
+    template?.requiredVariableKeys,
+    enrichedResult,
+    allEnrichedResults,
+    requiredVariableKeyList,
+  ])
 
   // Build actions: refresh button (if onRefresh provided) + edit button (if showEditButton)
   const hasActions = onRefresh || showEditButton

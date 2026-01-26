@@ -45,8 +45,9 @@ export function buildPreviewContextFromBundle(
     if (!vars[variableName]) vars[variableName] = []
     vars[variableName].push(value)
 
-    if (!rows[obs.rowKeyId]) rows[obs.rowKeyId] = {}
-    rows[obs.rowKeyId]![variableName] = value
+    const rowGroupKey = `${obs.scopeKeyId}::${obs.rowKeyId}`
+    if (!rows[rowGroupKey]) rows[rowGroupKey] = {}
+    rows[rowGroupKey]![variableName] = value
 
     const numeric =
       typeof value === "number"

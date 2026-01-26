@@ -1,6 +1,9 @@
 "use server"
 
-import { renderTemplate } from "../utils/feedbackRenderer"
+import { extractRequiredVariableNames } from "../utils/requiredKeys"
+import { buildPreviewContextFromBundle } from "../utils/previewContext"
+import { renderTemplateWithContext } from "../utils/previewRenderer"
+import { extractVariableBundleForRenderFromResults } from "../../variables/utils/extractVariable"
 import { PreviewFeedbackSchema } from "../validations"
 
 export async function previewFeedbackAction(_prevState: any, formData: FormData) {
@@ -11,7 +14,12 @@ export async function previewFeedbackAction(_prevState: any, formData: FormData)
       template,
       enrichedResult: JSON.parse(enrichedResultRaw),
     })
-    const rendered = renderTemplate(parsed.template, { enrichedResult: parsed.enrichedResult })
+    const requiredVariableNames = extractRequiredVariableNames(parsed.template)
+    const bundle = extractVariableBundleForRenderFromResults([parsed.enrichedResult])
+    const context = buildPreviewContextFromBundle(bundle, requiredVariableNames)
+    const rendered = renderTemplateWithContext(parsed.template, context, {
+      withinStudyResultId: parsed.enrichedResult.id,
+    })
     return { rendered, error: null }
   } catch (e: any) {
     return { rendered: "", error: e?.message || "Failed to render" }

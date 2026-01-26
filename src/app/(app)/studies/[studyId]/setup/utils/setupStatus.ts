@@ -39,7 +39,7 @@ export function getIncompleteStep(
 }
 
 /**
- * Returns an array of completed step numbers (1-5)
+ * Returns an array of completed step numbers (1-6)
  * Uses DB fields as source of truth
  */
 export function getCompletedSteps(study: StudyWithRelations | StudyWithMinimalRelations): number[] {
@@ -50,6 +50,7 @@ export function getCompletedSteps(study: StudyWithRelations | StudyWithMinimalRe
   if (study.step3Completed) completed.push(3)
   if (study.step4Completed) completed.push(4)
   if (study.step5Completed) completed.push(5)
+  if (study.step6Completed) completed.push(6)
 
   return completed
 }
@@ -121,7 +122,7 @@ export function getPostStepNavigationUrl(
 
   // Default to next step if study not provided
   const nextStep = currentStep + 1
-  if (nextStep > 5) {
+  if (nextStep > 6) {
     return `/studies/${studyId}` // All steps complete, go to study page
   }
   return `/studies/${studyId}/setup/step${nextStep}`

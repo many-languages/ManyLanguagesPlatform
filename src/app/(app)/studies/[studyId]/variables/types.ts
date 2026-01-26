@@ -83,6 +83,7 @@ export type ComponentFacts = Map<number, ComponentFactsEntry>
 
 export interface ScopeKeys {
   componentId: number // Component ID where this observation was extracted from
+  studyResultId?: number // JATOS study result ID (unique per run)
   workerId?: number // JATOS worker ID (optional, for future use)
   batchId?: string // JATOS batch ID (optional, for future use)
   groupId?: string // JATOS group ID (optional, for future use)
@@ -109,7 +110,7 @@ export interface ExtractionObservation {
   valueJson: string // JSON.stringify(value)
   rowKey: RowKeyEntry[] // Structural identity for array instances: which instance in which array nesting, e.g. [{ arrayKey: "trials[*]", index: 0 }, { arrayKey: "trials[*].responses[*]", index: 2 }]
   rowKeyId: string // String representation of rowKey for efficient joining: "trials[*]#0|trials[*].responses[*]#2" or "root" for non-array values
-  scopeKeys: ScopeKeys // Execution context keys (componentId, and optionally workerId, batchId, groupId from JATOS)
+  scopeKeys: ScopeKeys // Execution context keys (componentId, and optionally studyResultId, workerId, batchId, groupId from JATOS)
   depth: number // Nesting depth (0 = root level)
   diagnosticMetadata?: ValueDiagnosticMetadata // Optional metadata for variable diagnostics (extracted before stringification)
   // Pre-computed derived values for efficient diagnostics

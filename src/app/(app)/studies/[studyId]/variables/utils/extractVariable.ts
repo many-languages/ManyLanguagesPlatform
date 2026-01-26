@@ -20,7 +20,7 @@ export function extractVariableBundle(
   }
 ): ExtractionBundle {
   // First, extract observations
-  const extractionResult = extractObservations(enrichedResult, config, options)
+  const extractionResult = extractObservations([enrichedResult], config, options)
 
   // Then, aggregate observations into variables
   const variables = aggregateVariables(
@@ -48,5 +48,63 @@ export function extractVariableBundle(
       component: extractionResult.componentDiagnostics,
       variable: variableDiagnostics,
     },
+  }
+}
+
+/**
+ * Extract only the observations and variable aggregates needed for rendering.
+ * Diagnostics are disabled and observations are allowlisted by variable key.
+ */
+export function extractVariableBundleForRender(
+  enrichedResult: EnrichedJatosStudyResult,
+  requiredVariableKeys?: Set<string>,
+  config: ExtractionConfig = DEFAULT_EXTRACTION_CONFIG
+): Pick<ExtractionBundle, "variables" | "observations"> {
+  const extractionResult = extractObservations([enrichedResult], config, {
+    diagnostics: false,
+    allowVariableKeys: requiredVariableKeys,
+  })
+
+  const variables = aggregateVariables(
+    extractionResult.observations,
+    extractionResult.variableFacts,
+    config,
+    { diagnostics: false }
+  )
+
+  return {
+    variables,
+    observations: extractionResult.observations,
+  }
+}
+
+/**
+ * Extract only the observations and variable aggregates needed for rendering
+ * across multiple results.
+ */
+export function extractVariableBundleForRenderFromResults(
+  enrichedResults: EnrichedJatosStudyResult[],
+  requiredVariableKeys?: Set<string>,
+  config: ExtractionConfig = DEFAULT_EXTRACTION_CONFIG
+): Pick<ExtractionBundle, "variables" | "observations"> {
+  if (enrichedResults.length === 0) {
+    return { variables: [], observations: [] }
+  }
+
+  const extractionResult = extractObservations(enrichedResults, config, {
+    diagnostics: false,
+    allowVariableKeys: requiredVariableKeys,
+  })
+
+  const variables = aggregateVariables(
+    extractionResult.observations,
+    extractionResult.variableFacts,
+    config,
+    { diagnostics: false }
+  )
+
+  return {
+    variables,
+    observations: extractionResult.observations,
   }
 }

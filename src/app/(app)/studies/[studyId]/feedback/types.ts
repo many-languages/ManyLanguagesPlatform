@@ -35,6 +35,7 @@ export interface FeedbackCardProps {
   title?: string
   className?: string
   allEnrichedResults?: EnrichedJatosStudyResult[]
+  requiredVariableKeyList?: string[]
 }
 
 export interface FeedbackFormEditorRef {

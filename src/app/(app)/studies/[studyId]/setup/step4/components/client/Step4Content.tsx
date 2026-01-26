@@ -83,6 +83,10 @@ export default function Step4Content({ validationData }: Step4ContentProps) {
 
   const handleComplete = async () => {
     try {
+      if (study.step4Completed) {
+        router.push(`/studies/${studyId}/setup/step5`)
+        return
+      }
       if (!selectedResultId) {
         throw new Error("No pilot results found to approve")
       }
@@ -91,6 +95,7 @@ export default function Step4Content({ validationData }: Step4ContentProps) {
         testResultId: selectedResultId,
       })
       router.refresh()
+      router.push(`/studies/${studyId}/setup/step5`)
     } catch (err) {
       console.error("Failed to update step 4 completion:", err)
     }

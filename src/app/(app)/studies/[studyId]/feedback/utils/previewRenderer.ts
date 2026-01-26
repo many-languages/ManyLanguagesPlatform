@@ -1,24 +1,32 @@
 import type { PreviewRenderContext, Primitive } from "./previewContext"
 
-export function renderTemplateWithContext(template: string, ctx: PreviewRenderContext): string {
+export interface PreviewRenderOptions {
+  withinStudyResultId?: number
+}
+
+export function renderTemplateWithContext(
+  template: string,
+  ctx: PreviewRenderContext,
+  options?: PreviewRenderOptions
+): string {
   let out = template
 
   const ifBlockRegex = /\{\{#if\s+([^}]+)\}\}([\s\S]*?)\{\{\/?else\}\}([\s\S]*?)\{\{\/?if\}\}/g
   const ifBlockNoElseRegex = /\{\{#if\s+([^}]+)\}\}([\s\S]*?)\{\{\/?if\}\}/g
 
   out = out.replace(ifBlockRegex, (_m, expr: string, thenPart: string, elsePart: string) => {
-    const ok = evalExprWithContext(expr, ctx)
+    const ok = evalExprWithContext(expr, ctx, options)
     return ok ? thenPart : elsePart
   })
   out = out.replace(ifBlockNoElseRegex, (_m, expr: string, thenPart: string) => {
-    const ok = evalExprWithContext(expr, ctx)
+    const ok = evalExprWithContext(expr, ctx, options)
     return ok ? thenPart : ""
   })
 
   out = out.replace(
     /\{\{\s*var:([a-zA-Z0-9_\.]+)(?::([a-zA-Z0-9_]+))?(?:\s*\|\s*where:\s*([\s\S]*?))?\s*\}\}/g,
     (_m, name: string, modifier?: string, whereClause?: string) => {
-      const values = getVariableValues(ctx, name, whereClause)
+      const values = getVariableValues(ctx, name, whereClause, options)
       if (!values || values.length === 0) return ""
 
       switch (modifier) {
@@ -36,8 +44,9 @@ export function renderTemplateWithContext(template: string, ctx: PreviewRenderCo
 
   out = out.replace(
     /\{\{\s*stat:([a-zA-Z0-9_\.]+)\.(avg|median|sd|count)(?::(within|across))?(?:\s*\|\s*where:\s*([\s\S]*?))?\s*\}\}/g,
-    (_m, varName: string, metric: string, _scope?: string, whereClause?: string) => {
-      const values = getVariableValues(ctx, varName, whereClause)
+    (_m, varName: string, metric: string, scope?: string, whereClause?: string) => {
+      const isAcross = scope === "across"
+      const values = getVariableValues(ctx, varName, whereClause, isAcross ? undefined : options)
       if (metric === "count") return String(values.length)
       const series = toNumericSeries(values)
       if (metric === "avg") return safeNum(mean(series))
@@ -53,14 +62,22 @@ export function renderTemplateWithContext(template: string, ctx: PreviewRenderCo
 function getVariableValues(
   ctx: PreviewRenderContext,
   variableName: string,
-  whereClause?: string
+  whereClause?: string,
+  options?: PreviewRenderOptions
 ): Primitive[] {
+  const withinStudyResultId = options?.withinStudyResultId
   const values = ctx.vars[variableName] ?? []
-  if (!whereClause) return values
-  const pred = buildPredicate(whereClause)
+  if (!whereClause && !withinStudyResultId) return values
+  const pred = whereClause ? buildPredicate(whereClause) : undefined
   const filtered: Primitive[] = []
-  for (const row of Object.values(ctx.rows)) {
-    if (!pred(row)) continue
+  for (const [rowGroupKey, row] of Object.entries(ctx.rows)) {
+    if (
+      withinStudyResultId !== undefined &&
+      !rowMatchesStudyResultId(rowGroupKey, withinStudyResultId)
+    ) {
+      continue
+    }
+    if (pred && !pred(row)) continue
     if (row[variableName] !== undefined) {
       filtered.push(row[variableName] ?? null)
     }
@@ -108,11 +125,15 @@ function sd(xs: number[]): number | null {
   return Math.sqrt(v)
 }
 
-function evalExprWithContext(expr: string, ctx: PreviewRenderContext): boolean {
+function evalExprWithContext(
+  expr: string,
+  ctx: PreviewRenderContext,
+  options?: PreviewRenderOptions
+): boolean {
   let e = expr.replace(
     /var:([a-zA-Z0-9_\.]+)(?::([a-zA-Z0-9_]+))?/g,
     (_m, name: string, modifier?: string) => {
-      const values = ctx.vars[name] ?? []
+      const values = getVariableValues(ctx, name, undefined, options)
       if (values.length === 0) return "null"
 
       let value: Primitive
@@ -147,6 +168,13 @@ function evalExprWithContext(expr: string, ctx: PreviewRenderContext): boolean {
   } catch {
     return false
   }
+}
+
+function rowMatchesStudyResultId(rowGroupKey: string, studyResultId: number): boolean {
+  const scopeKeyId = rowGroupKey.split("::")[0] ?? ""
+  if (!scopeKeyId.includes("studyResultId:")) return true
+  const pattern = new RegExp(`(?:^|\\|)studyResultId:${studyResultId}(?:\\||$)`)
+  return pattern.test(scopeKeyId)
 }
 
 function buildPredicate(whereClause: string): (row: Record<string, Primitive>) => boolean {

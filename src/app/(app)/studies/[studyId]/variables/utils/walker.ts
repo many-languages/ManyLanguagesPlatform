@@ -28,6 +28,7 @@ export interface PipelineContext {
   stats: StatsTracker
   run: RunFactsCollector
   variable: VariableFactsCollector
+  allowVariableKeys?: Set<string>
 }
 
 /**
@@ -38,6 +39,11 @@ function tryEmitObservation(value: any, path: JsonPath, env: EmitEnv): "continue
   // Policy check: should we emit this value?
   if (!shouldEmit(value)) {
     return "continue"
+  }
+
+  // Allowlist check: only emit observations for requested variable keys
+  if (env.ctx.allowVariableKeys && !env.ctx.allowVariableKeys.has(toVariableKey(path))) {
+    return "stop"
   }
 
   // Limit check: max observations guard (only checked when about to emit)

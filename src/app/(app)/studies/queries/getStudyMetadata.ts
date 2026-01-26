@@ -11,16 +11,24 @@ export const GetStudyMetadataSchema = z.object({
 
 // Core database and API function
 async function fetchStudyMetadata(studyId: number) {
-  // 1) Get JATOS ID from your DB
+  // 1) Get latest JATOS ID from uploads
   const study = await db.study.findFirst({
     where: { id: studyId },
-    select: { jatosStudyId: true },
+    select: {
+      id: true,
+      jatosStudyUploads: {
+        orderBy: { createdAt: "desc" },
+        take: 1,
+        select: { jatosStudyId: true },
+      },
+    },
   })
   if (!study) throw new Error("Study not found")
-  if (!study.jatosStudyId) throw new Error("Study does not have JATOS ID")
+  const jatosStudyId = study.jatosStudyUploads[0]?.jatosStudyId ?? null
+  if (!jatosStudyId) throw new Error("Study does not have JATOS ID")
 
   // 2) Fetch metadata from JATOS API
-  const metadata = await getResultsMetadata({ studyIds: [study.jatosStudyId] })
+  const metadata = await getResultsMetadata({ studyIds: [jatosStudyId] })
 
   return metadata
 }

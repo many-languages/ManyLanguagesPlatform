@@ -19,6 +19,7 @@ export interface ValidationData {
     jatosStudyId: number | null
     jatosStudyUUID: string | null
     title: string
+    latestJatosStudyUpload?: { jatosStudyId: number | null } | null
   }
   approvedExtraction?: {
     id: number
@@ -37,9 +38,13 @@ export const getValidationDataRsc = cache(async (studyId: number): Promise<Valid
     where: { id: studyId },
     select: {
       id: true,
-      jatosStudyId: true,
       jatosStudyUUID: true,
       title: true,
+      jatosStudyUploads: {
+        orderBy: { createdAt: "desc" },
+        take: 1,
+        select: { jatosStudyId: true },
+      },
       approvedExtraction: {
         select: {
           id: true,
@@ -58,7 +63,10 @@ export const getValidationDataRsc = cache(async (studyId: number): Promise<Valid
     throw new Error("Study not found")
   }
 
-  if (!study.jatosStudyId) {
+  const latestUpload = study.jatosStudyUploads[0] ?? null
+  const jatosStudyId = latestUpload?.jatosStudyId ?? null
+
+  if (!jatosStudyId) {
     throw new Error("Study does not have a JATOS study ID")
   }
 
@@ -67,7 +75,7 @@ export const getValidationDataRsc = cache(async (studyId: number): Promise<Valid
   }
 
   // Fetch metadata
-  const metadata = await getResultsMetadata({ studyIds: [study.jatosStudyId] })
+  const metadata = await getResultsMetadata({ studyIds: [jatosStudyId] })
 
   // Fetch pilot results (enriched with data)
   const pilotResults = await getAllPilotResultsRsc(studyId)
@@ -81,9 +89,12 @@ export const getValidationDataRsc = cache(async (studyId: number): Promise<Valid
     properties,
     study: {
       id: study.id,
-      jatosStudyId: study.jatosStudyId,
+      jatosStudyId,
       jatosStudyUUID: study.jatosStudyUUID,
       title: study.title,
+      latestJatosStudyUpload: latestUpload
+        ? { jatosStudyId: latestUpload.jatosStudyId ?? null }
+        : null,
     },
     approvedExtraction: study.approvedExtraction
       ? {

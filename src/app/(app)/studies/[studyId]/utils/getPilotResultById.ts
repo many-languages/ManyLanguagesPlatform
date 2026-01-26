@@ -20,11 +20,20 @@ export const getPilotResultByIdRsc = cache(
 
     const study = await db.study.findUnique({
       where: { id: studyId },
-      select: { jatosStudyId: true },
+      select: {
+        id: true,
+        jatosStudyUploads: {
+          orderBy: { createdAt: "desc" },
+          take: 1,
+          select: { jatosStudyId: true },
+        },
+      },
     })
     if (!study) throw new Error("Study not found")
+    const jatosStudyId = study.jatosStudyUploads[0]?.jatosStudyId ?? null
+    if (!jatosStudyId) throw new Error("Study does not have JATOS ID")
 
-    const metadata = await getResultsMetadata({ studyIds: [study.jatosStudyId] })
+    const metadata = await getResultsMetadata({ studyIds: [jatosStudyId] })
     const testResult = metadata.data?.[0]?.studyResults?.find(
       (result: JatosStudyResult) => result.id === testResultId && isPilotComment(result.comment)
     )

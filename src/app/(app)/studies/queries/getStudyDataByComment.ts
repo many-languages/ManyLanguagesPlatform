@@ -21,12 +21,21 @@ export const getStudyDataByCommentRsc = cache(async (studyId: number, comment: s
 
   const study = await db.study.findUnique({
     where: { id: studyId },
-    select: { jatosStudyId: true },
+    select: {
+      id: true,
+      jatosStudyUploads: {
+        orderBy: { createdAt: "desc" },
+        take: 1,
+        select: { jatosStudyId: true },
+      },
+    },
   })
   if (!study) throw new Error("Study not found")
+  const jatosStudyId = study.jatosStudyUploads[0]?.jatosStudyId ?? null
+  if (!jatosStudyId) throw new Error("Study does not have JATOS ID")
 
   // 1) Metadata
-  const metadata = await getResultsMetadata({ studyIds: [study.jatosStudyId] })
+  const metadata = await getResultsMetadata({ studyIds: [jatosStudyId] })
 
   // 2) Find matching result
   const studyResultId = findStudyResultIdByComment(metadata, comment)

@@ -15,6 +15,9 @@ interface ParticipantDataProps {
 
 export default async function ParticipantData({ studyId, study }: ParticipantDataProps) {
   const setupComplete = isSetupComplete(study)
+  const latestUpload = study.latestJatosStudyUpload
+  const jatosStudyId = latestUpload?.jatosStudyId ?? null
+  const jatosWorkerType = latestUpload?.jatosWorkerType ?? null
 
   if (!setupComplete) {
     return (
@@ -39,11 +42,11 @@ export default async function ParticipantData({ studyId, study }: ParticipantDat
     const completionCheck = await checkParticipantCompletionAction(
       studyId,
       participant.pseudonym,
-      study.jatosStudyId!
+      jatosStudyId!
     )
 
     const isCompleted = completionCheck.success && completionCheck.completed
-    const isSingleRunStudy = study.jatosWorkerType === "SINGLE"
+    const isSingleRunStudy = jatosWorkerType === "SINGLE"
 
     // Hide button if study is completed and it's a SINGLE run study
     const shouldShowButton = !(isCompleted && isSingleRunStudy)
@@ -77,7 +80,7 @@ export default async function ParticipantData({ studyId, study }: ParticipantDat
         <ParticipantFeedbackData
           studyId={studyId}
           pseudonym={participant.pseudonym}
-          jatosStudyId={study.jatosStudyId!}
+          jatosStudyId={jatosStudyId!}
         />
       </>
     )

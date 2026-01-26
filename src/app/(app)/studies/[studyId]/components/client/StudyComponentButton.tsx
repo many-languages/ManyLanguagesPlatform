@@ -10,8 +10,10 @@ interface StudyComponentButtonProps {
 
 export default function StudyComponentButton({ study }: StudyComponentButtonProps) {
   const [open, setOpen] = useState(false)
-  const label = study.jatosComponentId ? "Edit Study Component" : "Add Study Component"
-  const variant = study.jatosComponentId ? "btn-outline" : "btn-primary"
+  const latestUpload = study.latestJatosStudyUpload
+  const label = latestUpload?.jatosComponentId ? "Edit Study Component" : "Add Study Component"
+  const variant = latestUpload?.jatosComponentId ? "btn-outline" : "btn-primary"
+  const jatosStudyId = latestUpload?.jatosStudyId
 
   return (
     <>
@@ -19,10 +21,10 @@ export default function StudyComponentButton({ study }: StudyComponentButtonProp
         {label}
       </button>
 
-      {open && (
+      {open && jatosStudyId && (
         <StudyComponentModal
           study={study}
-          jatosStudyId={study.jatosStudyId!}
+          jatosStudyId={jatosStudyId}
           isOpen={open}
           onClose={() => setOpen(false)}
         />

@@ -5,6 +5,42 @@ import { StudyWithRelations } from "../../../queries/getStudy"
 export interface StudyWithMinimalRelations extends Study {
   researchers?: { userId: number; role: string; jatosRunUrl?: string | null }[]
   FeedbackTemplate?: FeedbackTemplate[] | { id: number }[]
+  latestJatosStudyUpload?: {
+    step1Completed?: boolean
+    step2Completed?: boolean
+    step3Completed?: boolean
+    step4Completed?: boolean
+    step5Completed?: boolean
+    step6Completed?: boolean
+  } | null
+}
+
+type StepFlags = {
+  step1Completed: boolean
+  step2Completed: boolean
+  step3Completed: boolean
+  step4Completed: boolean
+  step5Completed: boolean
+  step6Completed: boolean
+}
+
+function resolveStepFlags(study: StudyWithRelations | StudyWithMinimalRelations): StepFlags {
+  const upload = study.latestJatosStudyUpload
+  const getFlag = (key: keyof StepFlags) => {
+    const uploadValue = upload?.[key]
+    if (typeof uploadValue === "boolean") return uploadValue
+    const studyValue = (study as Record<string, unknown>)[key]
+    return typeof studyValue === "boolean" ? studyValue : false
+  }
+
+  return {
+    step1Completed: getFlag("step1Completed"),
+    step2Completed: getFlag("step2Completed"),
+    step3Completed: getFlag("step3Completed"),
+    step4Completed: getFlag("step4Completed"),
+    step5Completed: getFlag("step5Completed"),
+    step6Completed: getFlag("step6Completed"),
+  }
 }
 
 /**
@@ -12,13 +48,14 @@ export interface StudyWithMinimalRelations extends Study {
  * Uses DB fields as source of truth
  */
 export function isSetupComplete(study: StudyWithRelations | StudyWithMinimalRelations): boolean {
+  const steps = resolveStepFlags(study)
   return !!(
-    study.step1Completed &&
-    study.step2Completed &&
-    study.step3Completed &&
-    study.step4Completed &&
-    study.step5Completed &&
-    study.step6Completed
+    steps.step1Completed &&
+    steps.step2Completed &&
+    steps.step3Completed &&
+    steps.step4Completed &&
+    steps.step5Completed &&
+    steps.step6Completed
   )
 }
 
@@ -29,12 +66,13 @@ export function isSetupComplete(study: StudyWithRelations | StudyWithMinimalRela
 export function getIncompleteStep(
   study: StudyWithRelations | StudyWithMinimalRelations
 ): number | null {
-  if (!study.step1Completed) return 1
-  if (!study.step2Completed) return 2
-  if (!study.step3Completed) return 3
-  if (!study.step4Completed) return 4
-  if (!study.step5Completed) return 5
-  if (!study.step6Completed) return 6
+  const steps = resolveStepFlags(study)
+  if (!steps.step1Completed) return 1
+  if (!steps.step2Completed) return 2
+  if (!steps.step3Completed) return 3
+  if (!steps.step4Completed) return 4
+  if (!steps.step5Completed) return 5
+  if (!steps.step6Completed) return 6
   return null // All complete
 }
 
@@ -43,14 +81,15 @@ export function getIncompleteStep(
  * Uses DB fields as source of truth
  */
 export function getCompletedSteps(study: StudyWithRelations | StudyWithMinimalRelations): number[] {
+  const steps = resolveStepFlags(study)
   const completed: number[] = []
 
-  if (study.step1Completed) completed.push(1)
-  if (study.step2Completed) completed.push(2)
-  if (study.step3Completed) completed.push(3)
-  if (study.step4Completed) completed.push(4)
-  if (study.step5Completed) completed.push(5)
-  if (study.step6Completed) completed.push(6)
+  if (steps.step1Completed) completed.push(1)
+  if (steps.step2Completed) completed.push(2)
+  if (steps.step3Completed) completed.push(3)
+  if (steps.step4Completed) completed.push(4)
+  if (steps.step5Completed) completed.push(5)
+  if (steps.step6Completed) completed.push(6)
 
   return completed
 }

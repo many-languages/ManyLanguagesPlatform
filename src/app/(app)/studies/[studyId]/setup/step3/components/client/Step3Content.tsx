@@ -20,6 +20,10 @@ export default function Step3Content() {
   const router = useRouter()
   const [updateSetupCompletionMutation] = useMutation(updateSetupCompletion)
   const [, startTransition] = useTransition() // React 19
+  const latestUpload = study.latestJatosStudyUpload
+  const jatosStudyId = latestUpload?.jatosStudyId ?? null
+  const jatosBatchId = latestUpload?.jatosBatchId ?? null
+  const step3Completed = latestUpload?.step3Completed ?? false
 
   // Memoize researcher lookup
   const researcher = useMemo(
@@ -35,7 +39,7 @@ export default function Step3Content() {
   const jatosRunUrl = researcherRunUrl?.jatosRunUrl ?? null
 
   // Pilot completion state - initialize from database to prevent flicker
-  const [pilotCompleted, setPilotCompleted] = useState<boolean | null>(study.step3Completed ?? null)
+  const [pilotCompleted, setPilotCompleted] = useState<boolean | null>(step3Completed ?? null)
 
   // Separate function to update completion
   const updateCompletion = useCallback(async () => {
@@ -103,17 +107,12 @@ export default function Step3Content() {
   const hasCheckedOnMount = useRef(false) // Track if we've auto-checked
   const [resumeCheckActive, setResumeCheckActive] = useState(false)
   useEffect(() => {
-    if (
-      jatosRunUrl &&
-      study?.jatosStudyUUID &&
-      !hasCheckedOnMount.current &&
-      !study.step3Completed
-    ) {
+    if (jatosRunUrl && study?.jatosStudyUUID && !hasCheckedOnMount.current && !step3Completed) {
       hasCheckedOnMount.current = true
       setResumeCheckActive(true)
       checkPilotStatus(false) // Don't show toasts on auto-check
     }
-  }, [jatosRunUrl, study?.jatosStudyUUID, study.step3Completed, checkPilotStatus])
+  }, [jatosRunUrl, study?.jatosStudyUUID, step3Completed, checkPilotStatus])
 
   const handlePilotStatusResume = useCallback(() => checkPilotStatus(false), [checkPilotStatus])
 
@@ -131,15 +130,15 @@ export default function Step3Content() {
       <Step3Instructions
         pilotCompleted={pilotCompleted}
         jatosRunUrl={jatosRunUrl}
-        hasJatosSetup={!!(study.jatosStudyId && study.jatosBatchId)}
+        hasJatosSetup={!!(jatosStudyId && jatosBatchId)}
       />
 
       <Step3Actions
         pilotCompleted={pilotCompleted}
         jatosRunUrl={jatosRunUrl}
         researcherId={researcherId!} // Safe: early return above ensures researcherId is non-null
-        jatosStudyId={study.jatosStudyId}
-        jatosBatchId={study.jatosBatchId}
+        jatosStudyId={jatosStudyId}
+        jatosBatchId={jatosBatchId}
         jatosStudyUUID={study.jatosStudyUUID}
         onCheckStatus={() => checkPilotStatus(true)}
       />

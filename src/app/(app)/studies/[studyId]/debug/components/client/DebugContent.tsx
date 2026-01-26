@@ -7,7 +7,6 @@ import SelectedResultView from "./SelectedResultView"
 import Card from "@/src/app/components/Card"
 import { useState } from "react"
 import StudyHeader from "./StudyHeader"
-import { Study } from "@/db"
 
 interface DebugContentProps {
   validationData: ValidationData
@@ -25,7 +24,7 @@ export default function DebugContent({ validationData }: DebugContentProps) {
       {/* Study-Level Information Section */}
       <div className="space-y-6">
         {/* Study Info */}
-        <StudyHeader study={validationData.study as Study} />
+        <StudyHeader study={validationData.study} />
         {/* Study Properties Viewer */}
         <StudyPropertiesViewer properties={validationData.properties} />
         {/* Metadata Viewer */}

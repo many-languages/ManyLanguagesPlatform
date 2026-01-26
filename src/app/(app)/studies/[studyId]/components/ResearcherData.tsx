@@ -19,9 +19,11 @@ interface ResearcherDataProps {
 
 export default async function ResearcherData({ studyId, study }: ResearcherDataProps) {
   const setupComplete = isSetupComplete(study)
+  const latestUpload = study.latestJatosStudyUpload
+  const jatosStudyId = latestUpload?.jatosStudyId ?? null
 
   // If JATOS study not imported, show setup alert
-  if (!study.jatosStudyId || !study.jatosStudyUUID) {
+  if (!jatosStudyId || !study.jatosStudyUUID) {
     return (
       <Alert variant="info" className="mt-4">
         <p>Complete Step 2 of setup to import your JATOS study.</p>
@@ -42,7 +44,7 @@ export default async function ResearcherData({ studyId, study }: ResearcherDataP
   try {
     const results = await Promise.allSettled([
       getStudyParticipantsRsc(studyId),
-      getResultsMetadata({ studyIds: [study.jatosStudyId] }),
+      getResultsMetadata({ studyIds: [jatosStudyId] }),
       getStudyProperties(study.jatosStudyUUID),
     ])
 
@@ -110,7 +112,7 @@ export default async function ResearcherData({ studyId, study }: ResearcherDataP
 
       {/* Showing detailed results */}
       <ResultsCardWrapper
-        jatosStudyId={study.jatosStudyId}
+        jatosStudyId={jatosStudyId}
         metadata={metadata}
         properties={properties}
         studyId={studyId}

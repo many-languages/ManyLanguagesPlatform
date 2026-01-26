@@ -25,6 +25,8 @@ export default function Step4Content({ validationData }: Step4ContentProps) {
   const { study, studyId } = useStudySetup()
   const [approveExtractionMutation] = useMutation(approveExtraction)
   const [runExtractionMutation] = useMutation(runExtraction)
+  const latestUpload = study.latestJatosStudyUpload
+  const step4Completed = latestUpload?.step4Completed ?? false
 
   const approvedPilotId = validationData.approvedExtraction?.pilotRunIds?.[0] ?? null
   const approvedPilotExists = validationData.pilotResults.some(
@@ -83,7 +85,7 @@ export default function Step4Content({ validationData }: Step4ContentProps) {
 
   const handleComplete = async () => {
     try {
-      if (study.step4Completed) {
+      if (step4Completed) {
         router.push(`/studies/${studyId}/setup/step5`)
         return
       }
@@ -166,7 +168,7 @@ export default function Step4Content({ validationData }: Step4ContentProps) {
         next="step5"
         disableNext={!selectedResultId}
         onNext={handleComplete}
-        nextLabel={study.step4Completed ? "Continue" : "Approve Extraction"}
+        nextLabel={step4Completed ? "Continue" : "Approve Extraction"}
       />
     </>
   )

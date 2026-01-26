@@ -20,12 +20,16 @@ export default function SetupProgressCard({ study }: SetupProgressCardProps) {
   const router = useRouter()
   const progress = getSetupProgress(study)
   const { completedStepsList, incompleteStep, isComplete } = progress
+  const latestUpload = study.latestJatosStudyUpload
+  const step3Completed = latestUpload?.step3Completed ?? false
+  const step4Completed = latestUpload?.step4Completed ?? false
+  const step5Completed = latestUpload?.step5Completed ?? false
 
   // Check if Step 6 needs revision (has template but Step 3, Step 4, or Step 5 is incomplete)
   // This happens when JATOS study is updated after feedback template was created
   const hasFeedbackTemplate = (study.FeedbackTemplate?.length ?? 0) > 0
   const step6NeedsRevision =
-    hasFeedbackTemplate && (!study.step3Completed || !study.step4Completed || !study.step5Completed)
+    hasFeedbackTemplate && (!step3Completed || !step4Completed || !step5Completed)
 
   const handleStepClick = (stepId: number) => {
     // Only completed steps are clickable, so we always navigate with edit mode

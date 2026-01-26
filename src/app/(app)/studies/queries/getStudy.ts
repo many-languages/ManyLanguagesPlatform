@@ -10,6 +10,10 @@ export async function findStudyById(id: number) {
   const study = await db.study.findUnique({
     where: { id },
     include: {
+      jatosStudyUploads: {
+        orderBy: { createdAt: "desc" },
+        take: 1,
+      },
       researchers: {
         select: { id: true, userId: true, role: true, jatosRunUrl: true },
       },
@@ -24,7 +28,10 @@ export async function findStudyById(id: number) {
 
   if (!study) throw new NotFoundError()
 
-  return study
+  return {
+    ...study,
+    latestJatosStudyUpload: study.jatosStudyUploads[0] ?? null,
+  }
 }
 
 // Export the return type of the helper function

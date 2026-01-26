@@ -26,6 +26,7 @@ export default function Step2Content() {
   const [updateStudyBatchMutation] = useMutation(updateStudyBatch)
   const [clearJatosDataMutation] = useMutation(clearJatosData)
   const [updateSetupCompletionMutation] = useMutation(updateSetupCompletion)
+  const latestUpload = study.latestJatosStudyUpload
 
   const [duplicateAlert, setDuplicateAlert] = useState<{
     uuid: string
@@ -137,10 +138,10 @@ export default function Step2Content() {
 
   const defaultValues = useMemo(
     () => ({
-      jatosWorkerType: (study?.jatosWorkerType || "SINGLE") as "SINGLE" | "MULTIPLE",
-      jatosFileName: study?.jatosFileName || undefined,
+      jatosWorkerType: (latestUpload?.jatosWorkerType || "SINGLE") as "SINGLE" | "MULTIPLE",
+      jatosFileName: latestUpload?.jatosFileName || undefined,
     }),
-    [study?.jatosWorkerType, study?.jatosFileName]
+    [latestUpload?.jatosWorkerType, latestUpload?.jatosFileName]
   )
 
   return (

@@ -6,7 +6,7 @@ import Form from "@/src/app/components/Form"
 import CheckboxFieldTable from "@/src/app/(app)/studies/components/CheckboxFieldTable"
 import { FormErrorDisplay } from "@/src/app/components/FormErrorDisplay"
 import { AdminStudySchema, AdminStudyFormValues } from "../validations"
-import { Study, FeedbackTemplate } from "db"
+import { FeedbackTemplate } from "db"
 import { useFormContext } from "react-hook-form"
 import { useRouter } from "next/navigation"
 import { useMutation } from "@blitzjs/rpc"
@@ -15,24 +15,22 @@ import enableDataCollection from "../mutations/enableDataCollection"
 import disableDataCollection from "../mutations/disableDataCollection"
 import Modal from "@/src/app/components/Modal"
 import MDEditor from "@uiw/react-md-editor"
+import type { AdminStudyWithLatestUpload } from "../queries/getAdminStudies"
 
-type StudyWithFeedbackTemplate = Study & {
+type StudyWithFeedbackTemplate = AdminStudyWithLatestUpload & {
   FeedbackTemplate: FeedbackTemplate[] | null
-  step5Completed?: boolean
-  step6Completed?: boolean
 }
 
-function getSetupStatus(
-  study: Study & { step5Completed?: boolean; step6Completed?: boolean }
-): string {
+function getSetupStatus(study: StudyWithFeedbackTemplate): string {
+  const latestUpload = study.latestJatosStudyUpload
   const {
-    step1Completed,
-    step2Completed,
-    step3Completed,
-    step4Completed,
+    step1Completed = false,
+    step2Completed = false,
+    step3Completed = false,
+    step4Completed = false,
     step5Completed = false,
     step6Completed = false,
-  } = study
+  } = latestUpload ?? {}
 
   // Check if all steps are completed
   if (
@@ -252,17 +250,24 @@ function StudyActions({ studies }: { studies: StudyWithFeedbackTemplate[] }) {
 
     // Validate that all selected studies have finished setup
     const selectedStudiesToEnable = studies.filter((s) => ids.includes(s.id))
-    const unfinishedStudies = selectedStudiesToEnable.filter(
-      (s) =>
-        !(
-          s.step1Completed &&
-          s.step2Completed &&
-          s.step3Completed &&
-          s.step4Completed &&
-          s.step5Completed &&
-          s.step6Completed
-        )
-    )
+    const unfinishedStudies = selectedStudiesToEnable.filter((s) => {
+      const latestUpload = s.latestJatosStudyUpload
+      const step1Completed = latestUpload?.step1Completed ?? false
+      const step2Completed = latestUpload?.step2Completed ?? false
+      const step3Completed = latestUpload?.step3Completed ?? false
+      const step4Completed = latestUpload?.step4Completed ?? false
+      const step5Completed = latestUpload?.step5Completed ?? false
+      const step6Completed = latestUpload?.step6Completed ?? false
+
+      return !(
+        step1Completed &&
+        step2Completed &&
+        step3Completed &&
+        step4Completed &&
+        step5Completed &&
+        step6Completed
+      )
+    })
 
     if (unfinishedStudies.length > 0) {
       const unfinishedTitles = unfinishedStudies

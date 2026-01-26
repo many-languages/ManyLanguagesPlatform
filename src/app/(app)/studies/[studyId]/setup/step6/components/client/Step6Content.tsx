@@ -45,6 +45,13 @@ export default function Step6Content({
   const { refetch: refetchNotifications } = useNotificationMenuContext()
   const [runExtractionMutation] = useMutation(runExtraction)
   const [extractionBundle, setExtractionBundle] = useState<SerializedExtractionBundle | null>(null)
+  const latestUpload = study.latestJatosStudyUpload
+  const step1Completed = latestUpload?.step1Completed ?? false
+  const step2Completed = latestUpload?.step2Completed ?? false
+  const step3Completed = latestUpload?.step3Completed ?? false
+  const step4Completed = latestUpload?.step4Completed ?? false
+  const step5Completed = latestUpload?.step5Completed ?? false
+  const step6Completed = latestUpload?.step6Completed ?? false
 
   const [cachedBundleResult] = useQuery(
     getCachedExtractionBundle,
@@ -85,12 +92,12 @@ export default function Step6Content({
 
     const canAutoOpen =
       !!study &&
-      study.step1Completed &&
-      study.step2Completed &&
-      study.step3Completed &&
-      study.step4Completed &&
-      study.step5Completed &&
-      (study.step6Completed || templateSavedDuringFinish || !!initialFeedbackTemplate)
+      step1Completed &&
+      step2Completed &&
+      step3Completed &&
+      step4Completed &&
+      step5Completed &&
+      (step6Completed || templateSavedDuringFinish || !!initialFeedbackTemplate)
 
     // Check if setup is now complete and auto-open study
     if (canAutoOpen) {

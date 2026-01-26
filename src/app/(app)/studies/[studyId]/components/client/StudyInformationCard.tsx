@@ -25,6 +25,8 @@ export default function StudyInformationCard({
   isPayed,
   actions,
 }: StudyInformationCardProps) {
+  const latestUpload = study.latestJatosStudyUpload
+  const jatosWorkerType = latestUpload?.jatosWorkerType ?? null
   const statsItems = [
     {
       label: "Sample Size",
@@ -57,16 +59,16 @@ export default function StudyInformationCard({
   ] as const
 
   const dataCollectionMethod =
-    study.jatosWorkerType === "SINGLE"
+    jatosWorkerType === "SINGLE"
       ? "single run"
-      : study.jatosWorkerType === "MULTIPLE"
+      : jatosWorkerType === "MULTIPLE"
       ? "multiple run"
-      : study.jatosWorkerType || "—"
+      : jatosWorkerType || "—"
 
   const dataCollectionMethodTooltip =
-    study.jatosWorkerType === "SINGLE"
+    jatosWorkerType === "SINGLE"
       ? "Participant can complete the study once"
-      : study.jatosWorkerType === "MULTIPLE"
+      : jatosWorkerType === "MULTIPLE"
       ? "Participant can complete the study multiple times"
       : undefined
 

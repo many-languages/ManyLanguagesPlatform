@@ -35,6 +35,7 @@ interface CodebookContentProps {
 export default function CodebookContent({ initialVariables }: CodebookContentProps) {
   const router = useRouter()
   const { study, studyId } = useStudySetup()
+  const step5Completed = study.latestJatosStudyUpload?.step5Completed ?? false
   const [variables, setVariables] = useState<VariableCodebookEntry[]>([])
   const [isSaving, setIsSaving] = useState(false)
   const [updateVariableCodebookMutation] = useMutation(updateVariableCodebook)
@@ -180,13 +181,12 @@ export default function CodebookContent({ initialVariables }: CodebookContentPro
         prev="step4"
         next="step6"
         disableNext={
-          !study.step5Completed ||
-          variables.some((v) => !v.description || v.description.trim() === "")
+          !step5Completed || variables.some((v) => !v.description || v.description.trim() === "")
         }
         nextTooltip={
           variables.some((v) => !v.description || v.description.trim() === "")
             ? "Please add descriptions for all variables and save before proceeding"
-            : !study.step5Completed
+            : !step5Completed
             ? "Please save the codebook before proceeding"
             : undefined
         }

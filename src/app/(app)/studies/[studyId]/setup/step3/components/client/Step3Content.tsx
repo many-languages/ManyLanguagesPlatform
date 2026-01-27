@@ -21,6 +21,7 @@ export default function Step3Content() {
   const [updateSetupCompletionMutation] = useMutation(updateSetupCompletion)
   const [, startTransition] = useTransition() // React 19
   const latestUpload = study.latestJatosStudyUpload
+  const jatosStudyUploadId = latestUpload?.id ?? null
   const jatosStudyId = latestUpload?.jatosStudyId ?? null
   const jatosBatchId = latestUpload?.jatosBatchId ?? null
   const step3Completed = latestUpload?.step3Completed ?? false
@@ -137,6 +138,7 @@ export default function Step3Content() {
         pilotCompleted={pilotCompleted}
         jatosRunUrl={jatosRunUrl}
         researcherId={researcherId!} // Safe: early return above ensures researcherId is non-null
+        jatosStudyUploadId={jatosStudyUploadId}
         jatosStudyId={jatosStudyId}
         jatosBatchId={jatosBatchId}
         jatosStudyUUID={study.jatosStudyUUID}

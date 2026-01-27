@@ -295,7 +295,6 @@ Executive summary: avoid accidental overwrites by validating UUIDs before upload
 
 - Migrate `updateStudyComponent` to write `jatosComponentId` / `jatosComponentUUID` on latest upload. (to be handled separately, might be needed for new functionality later)
 - Migrate `clearJatosData` to clear latest upload fields (and decide whether to keep `Study.jatosStudyUUID`). (I do not think we use this for anything, can be deleted?)
-- Refactor pilot run URL storage to use `PilotLink` keyed by `jatosStudyUploadId`.
 - Update extraction + codebook flows to bind to `jatosStudyUploadId` and `approvedExtractionId`.
 - Update all remaining UI components to read JATOS fields from `latestJatosStudyUpload`.
 - Resolve feedback template mismatch (`setupRevision`, `extractionSnapshotId` vs new schema fields).

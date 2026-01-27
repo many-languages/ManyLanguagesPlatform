@@ -10,6 +10,7 @@ interface Step3ActionsProps {
   pilotCompleted: boolean | null
   jatosRunUrl: string | null
   researcherId: number // Required - Step3Content returns early if null
+  jatosStudyUploadId: number | null
   jatosStudyId: number | null
   jatosBatchId: number | null
   jatosStudyUUID: string | null
@@ -20,12 +21,13 @@ export default function Step3Actions({
   pilotCompleted,
   jatosRunUrl,
   researcherId,
+  jatosStudyUploadId,
   jatosStudyId,
   jatosBatchId,
   jatosStudyUUID,
   onCheckStatus,
 }: Step3ActionsProps) {
-  if (!jatosStudyId || !jatosBatchId) {
+  if (!jatosStudyUploadId || !jatosStudyId || !jatosBatchId) {
     return (
       <div className="max-w-2xl mx-auto space-y-6">
         <Alert variant="warning">
@@ -42,6 +44,7 @@ export default function Step3Actions({
         <div className="flex justify-center">
           <GeneratePilotLinkButton
             studyResearcherId={researcherId}
+            jatosStudyUploadId={jatosStudyUploadId}
             jatosStudyId={jatosStudyId}
             jatosBatchId={jatosBatchId}
             label="Generate Pilot Link"
@@ -61,6 +64,7 @@ export default function Step3Actions({
             <div className="flex-shrink-0">
               <GeneratePilotLinkButton
                 studyResearcherId={researcherId}
+                jatosStudyUploadId={jatosStudyUploadId}
                 jatosStudyId={jatosStudyId}
                 jatosBatchId={jatosBatchId}
                 label="Generate Pilot Link"

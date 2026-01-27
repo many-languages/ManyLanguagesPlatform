@@ -20,22 +20,22 @@ export const getResearcherRunUrlRsc = cache(async (studyId: number) => {
 
   if (!researcher) throw new Error("You are not assigned to this study")
 
-  const study = await db.study.findUnique({
-    where: { id: researcher.studyId },
-    select: { setupRevision: true },
-  })
-
-  if (!study) throw new Error("Study not found")
-
-  const latestPilotLink = await db.pilotLink.findFirst({
-    where: {
-      studyId: researcher.studyId,
-      studyResearcherId: researcher.id,
-      setupRevision: study.setupRevision,
-    },
+  const latestUpload = await db.jatosStudyUpload.findFirst({
+    where: { studyId: researcher.studyId },
     orderBy: { createdAt: "desc" },
-    select: { jatosRunUrl: true },
+    select: { id: true },
   })
+
+  const latestPilotLink = latestUpload
+    ? await db.pilotLink.findFirst({
+        where: {
+          studyResearcherId: researcher.id,
+          jatosStudyUploadId: latestUpload.id,
+        },
+        orderBy: { createdAt: "desc" },
+        select: { jatosRunUrl: true },
+      })
+    : null
 
   return {
     id: researcher.id,

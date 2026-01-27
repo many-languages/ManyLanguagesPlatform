@@ -46,13 +46,19 @@ export default function Step2Content() {
       jatosFileName: uploadResult.jatosFileName,
       buildHash: uploadResult.buildHash,
       hashAlgorithm: uploadResult.hashAlgorithm,
-    } as any)) as { study?: any; error?: string; jatosStudyUUID?: string }
+    } as any)) as {
+      study?: any
+      latestUpload?: { id: number }
+      error?: string
+      jatosStudyUUID?: string
+    }
 
     if (dbResult?.error) {
       toast.error(dbResult.error)
       setLoading(false)
       return false
     }
+    const latestUploadId = dbResult?.latestUpload?.id ?? null
 
     // 2️⃣ Get batch ID
     const jatosBatchId = await fetchJatosBatchId(uploadResult.jatosStudyUUID)
@@ -79,9 +85,10 @@ export default function Step2Content() {
     // 4️⃣ Auto-generate pilot link for the current researcher
     try {
       const researcher = study.researchers?.find((r) => r.userId === userId)
-      if (researcher?.id && jatosBatchId) {
+      if (researcher?.id && jatosBatchId && latestUploadId) {
         await generateAndSaveResearcherPilotRunUrl({
           studyResearcherId: researcher.id,
+          jatosStudyUploadId: latestUploadId,
           jatosStudyId: uploadResult.jatosStudyId,
           jatosBatchId: jatosBatchId,
         })

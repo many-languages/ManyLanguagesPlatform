@@ -8,6 +8,7 @@ import { AsyncButton } from "@/src/app/components/AsyncButton"
 
 interface GeneratePilotLinkButtonProps {
   studyResearcherId: number
+  jatosStudyUploadId: number
   jatosStudyId: number
   jatosBatchId: number
   onGenerated?: (runUrl: string) => void // Optional callback for additional actions
@@ -18,6 +19,7 @@ interface GeneratePilotLinkButtonProps {
 
 export default function GeneratePilotLinkButton({
   studyResearcherId,
+  jatosStudyUploadId,
   jatosStudyId,
   jatosBatchId,
   onGenerated,
@@ -31,6 +33,7 @@ export default function GeneratePilotLinkButton({
     try {
       const runUrl = await generateAndSaveResearcherPilotRunUrl({
         studyResearcherId,
+        jatosStudyUploadId,
         jatosStudyId,
         jatosBatchId,
       })

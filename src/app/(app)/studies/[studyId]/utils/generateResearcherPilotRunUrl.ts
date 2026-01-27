@@ -5,6 +5,7 @@ import { createPersonalStudyCodeAndSave } from "@/src/lib/jatos/api/createPerson
 
 interface GenerateRunUrlArgs {
   studyResearcherId: number
+  jatosStudyUploadId: number
   jatosStudyId: number
   jatosBatchId: number
   ctx?: Ctx // optional for server-side use
@@ -17,6 +18,7 @@ interface GenerateRunUrlArgs {
  */
 export async function generateAndSaveResearcherPilotRunUrl({
   studyResearcherId,
+  jatosStudyUploadId,
   jatosStudyId,
   jatosBatchId,
   ctx,
@@ -33,13 +35,17 @@ export async function generateAndSaveResearcherPilotRunUrl({
         // client-side
         await invoke(saveResearcherJatosRunUrl, {
           studyResearcherId,
+          jatosStudyUploadId,
           jatosRunUrl: url,
           markerToken,
         })
       } else {
         // server-side
         if (!ctx) throw new Error("Missing Blitz context (ctx) for server-side call")
-        await saveResearcherJatosRunUrl({ studyResearcherId, jatosRunUrl: url, markerToken }, ctx)
+        await saveResearcherJatosRunUrl(
+          { studyResearcherId, jatosStudyUploadId, jatosRunUrl: url, markerToken },
+          ctx
+        )
       }
     },
   })

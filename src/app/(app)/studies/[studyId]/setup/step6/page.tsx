@@ -13,21 +13,31 @@ async function Step6ContentWrapper({ studyId }: { studyId: number }) {
   const study = await db.study.findUnique({
     where: { id: studyId },
     select: {
-      approvedExtraction: {
+      jatosStudyUploads: {
+        orderBy: { createdAt: "desc" },
+        take: 1,
         select: {
-          id: true,
-          pilotDatasetSnapshot: {
-            select: { pilotRunIds: true },
+          approvedExtraction: {
+            select: {
+              id: true,
+              approvedAt: true,
+              pilotDatasetSnapshot: {
+                select: { pilotRunIds: true },
+              },
+            },
           },
         },
       },
     },
   })
 
+  const latestUpload = study?.jatosStudyUploads[0] ?? null
+
+  const approvedExtraction = latestUpload?.approvedExtraction ?? null
   const pilotResultId =
-    Array.isArray(study?.approvedExtraction?.pilotDatasetSnapshot?.pilotRunIds) &&
-    study?.approvedExtraction?.pilotDatasetSnapshot?.pilotRunIds.length
-      ? (study?.approvedExtraction?.pilotDatasetSnapshot?.pilotRunIds[0] as number)
+    Array.isArray(latestUpload?.approvedExtraction?.pilotDatasetSnapshot?.pilotRunIds) &&
+    latestUpload?.approvedExtraction?.pilotDatasetSnapshot?.pilotRunIds.length
+      ? (latestUpload?.approvedExtraction?.pilotDatasetSnapshot?.pilotRunIds[0] as number)
       : null
 
   const enrichedResult = pilotResultId ? await getPilotResultByIdRsc(studyId, pilotResultId) : null
@@ -44,6 +54,8 @@ async function Step6ContentWrapper({ studyId }: { studyId: number }) {
       </div>
       <Step6Content
         initialFeedbackTemplate={feedbackTemplate}
+        approvedExtractionId={approvedExtraction?.id ?? null}
+        approvedExtractionApprovedAt={approvedExtraction?.approvedAt ?? null}
         enrichedResult={enrichedResult}
         allPilotResults={allPilotResults}
         pilotResultId={pilotResultId}

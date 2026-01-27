@@ -22,9 +22,16 @@ interface Step6ContentProps {
   initialFeedbackTemplate?: {
     id: number
     content: string
-    createdAt: Date
-    updatedAt: Date
+    createdAt: Date | string
+    updatedAt: Date | string
+    validatedExtractionId?: number | null
+    validationStatus?: "NEEDS_REVIEW" | "VALID" | "INVALID"
+    validatedAt?: Date | string | null
+    missingKeys?: string[] | null
+    extraKeys?: string[] | null
   } | null
+  approvedExtractionId: number | null
+  approvedExtractionApprovedAt: Date | string | null
   enrichedResult: EnrichedJatosStudyResult | null
   allPilotResults: EnrichedJatosStudyResult[]
   pilotResultId: number | null
@@ -33,6 +40,8 @@ interface Step6ContentProps {
 
 export default function Step6Content({
   initialFeedbackTemplate = null,
+  approvedExtractionId,
+  approvedExtractionApprovedAt,
   enrichedResult,
   allPilotResults,
   pilotResultId,
@@ -53,11 +62,33 @@ export default function Step6Content({
   const step5Completed = latestUpload?.step5Completed ?? false
   const step6Completed = latestUpload?.step6Completed ?? false
 
+  const missingKeys = Array.isArray(initialFeedbackTemplate?.missingKeys)
+    ? (initialFeedbackTemplate?.missingKeys as string[])
+    : []
+  const extraKeys = Array.isArray(initialFeedbackTemplate?.extraKeys)
+    ? (initialFeedbackTemplate?.extraKeys as string[])
+    : []
+  const validationStatus = initialFeedbackTemplate?.validationStatus ?? null
+  const validatedExtractionId = initialFeedbackTemplate?.validatedExtractionId ?? null
+  const templateUpdatedAt = initialFeedbackTemplate?.updatedAt
+    ? new Date(initialFeedbackTemplate.updatedAt)
+    : null
+  const approvedExtractionAt = approvedExtractionApprovedAt
+    ? new Date(approvedExtractionApprovedAt)
+    : null
+  const showInvalidKeys =
+    validationStatus === "INVALID" && (missingKeys.length > 0 || extraKeys.length > 0)
+  const showSoftWarning =
+    validationStatus === "VALID" &&
+    approvedExtractionId !== null &&
+    validatedExtractionId === approvedExtractionId &&
+    approvedExtractionAt !== null &&
+    templateUpdatedAt !== null &&
+    templateUpdatedAt < approvedExtractionAt
+
   const [cachedBundleResult] = useQuery(
     getCachedExtractionBundle,
-    pilotResultId
-      ? { studyId, testResultId: pilotResultId, includeDiagnostics: false }
-      : { studyId, testResultId: 0, includeDiagnostics: false },
+    { studyId, includeDiagnostics: false },
     { enabled: Boolean(pilotResultId) }
   )
 
@@ -69,7 +100,6 @@ export default function Step6Content({
     }
     runExtractionMutation({
       studyId,
-      testResultId: pilotResultId,
       includeDiagnostics: false,
     })
       .then((result) => setExtractionBundle(result.bundle))
@@ -123,6 +153,34 @@ export default function Step6Content({
 
   return (
     <>
+      {showInvalidKeys && (
+        <Alert variant="warning">
+          <div className="space-y-2">
+            <p>
+              This feedback template no longer matches the latest extraction. Please review and save
+              the template again to complete Step 6.
+            </p>
+            {missingKeys.length > 0 && (
+              <div>
+                <div className="font-semibold">Missing keys</div>
+                <div className="text-sm">{missingKeys.join(", ")}</div>
+              </div>
+            )}
+            {extraKeys.length > 0 && (
+              <div>
+                <div className="font-semibold">Additional keys</div>
+                <div className="text-sm">{extraKeys.join(", ")}</div>
+              </div>
+            )}
+          </div>
+        </Alert>
+      )}
+      {showSoftWarning && (
+        <Alert variant="info">
+          A new extraction was approved for this study version. The variables match your existing
+          template, but we recommend reviewing it again.
+        </Alert>
+      )}
       <FeedbackFormEditor
         ref={feedbackEditorRef}
         initialTemplate={initialFeedbackTemplate}

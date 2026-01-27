@@ -43,15 +43,17 @@ export const getValidationDataRsc = cache(async (studyId: number): Promise<Valid
       jatosStudyUploads: {
         orderBy: { createdAt: "desc" },
         take: 1,
-        select: { jatosStudyId: true },
-      },
-      approvedExtraction: {
         select: {
-          id: true,
-          pilotDatasetSnapshot: {
+          jatosStudyId: true,
+          approvedExtraction: {
             select: {
-              pilotRunIds: true,
-              pilotDatasetHash: true,
+              id: true,
+              pilotDatasetSnapshot: {
+                select: {
+                  pilotRunIds: true,
+                  pilotDatasetHash: true,
+                },
+              },
             },
           },
         },
@@ -96,13 +98,16 @@ export const getValidationDataRsc = cache(async (studyId: number): Promise<Valid
         ? { jatosStudyId: latestUpload.jatosStudyId ?? null }
         : null,
     },
-    approvedExtraction: study.approvedExtraction
+    approvedExtraction: latestUpload?.approvedExtraction
       ? {
-          id: study.approvedExtraction.id,
-          pilotRunIds: Array.isArray(study.approvedExtraction.pilotDatasetSnapshot?.pilotRunIds)
-            ? (study.approvedExtraction.pilotDatasetSnapshot?.pilotRunIds as number[])
+          id: latestUpload.approvedExtraction.id,
+          pilotRunIds: Array.isArray(
+            latestUpload.approvedExtraction.pilotDatasetSnapshot?.pilotRunIds
+          )
+            ? (latestUpload.approvedExtraction.pilotDatasetSnapshot?.pilotRunIds as number[])
             : null,
-          pilotDatasetHash: study.approvedExtraction.pilotDatasetSnapshot?.pilotDatasetHash ?? null,
+          pilotDatasetHash:
+            latestUpload.approvedExtraction.pilotDatasetSnapshot?.pilotDatasetHash ?? null,
         }
       : null,
   }

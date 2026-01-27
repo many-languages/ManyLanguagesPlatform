@@ -8,12 +8,15 @@ export interface FeedbackTemplate {
   id: number
   studyId: number
   content: string
-  setupRevision?: number
-  extractionSnapshotId?: number
-  extractorVersion?: string
+  validatedExtractionId?: number | null
+  validationStatus?: "NEEDS_REVIEW" | "VALID" | "INVALID"
+  validatedAt?: Date | string | null
+  missingKeys?: string[] | null
+  extraKeys?: string[] | null
+  extractorVersion?: string | null
   requiredVariableKeys?: string[] | null
-  createdAt: Date
-  updatedAt: Date
+  createdAt: Date | string
+  updatedAt: Date | string
 }
 
 export interface FeedbackTemplateInput {
@@ -53,8 +56,13 @@ export interface FeedbackFormEditorProps {
   initialTemplate?: {
     id: number
     content: string
-    createdAt: Date
-    updatedAt: Date
+    createdAt: Date | string
+    updatedAt: Date | string
+    validatedExtractionId?: number | null
+    validationStatus?: "NEEDS_REVIEW" | "VALID" | "INVALID"
+    validatedAt?: Date | string | null
+    missingKeys?: string[] | null
+    extraKeys?: string[] | null
   } | null
   studyId: number
   onTemplateSaved?: () => void

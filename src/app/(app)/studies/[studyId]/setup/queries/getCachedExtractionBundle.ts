@@ -7,10 +7,11 @@ import {
   serializeExtractionBundle,
   type SerializedExtractionBundle,
 } from "../utils/serializeExtractionBundle"
+import { getAllPilotResultsRsc } from "../../utils/getAllPilotResults"
+import db from "db"
 
 const GetCachedExtractionBundle = z.object({
   studyId: z.number(),
-  testResultId: z.number(),
   includeDiagnostics: z.boolean().optional().default(true),
 })
 
@@ -21,15 +22,36 @@ export type GetCachedExtractionBundleResult = {
 // Server-side helper for RSCs
 export async function getCachedExtractionBundleRsc(input: {
   studyId: number
-  testResultId: number
   includeDiagnostics?: boolean
 }): Promise<GetCachedExtractionBundleResult> {
   await verifyResearcherStudyAccess(input.studyId)
 
+  const study = await db.study.findUnique({
+    where: { id: input.studyId },
+    select: {
+      id: true,
+      jatosStudyUploads: {
+        orderBy: { createdAt: "desc" },
+        take: 1,
+        select: { id: true },
+      },
+    },
+  })
+  if (!study) throw new Error("Study not found")
+  const latestUpload = study.jatosStudyUploads[0] ?? null
+  if (!latestUpload) {
+    return { bundle: null }
+  }
+
   const includeDiagnostics = input.includeDiagnostics ?? true
-  const pilotDatasetHash = buildPilotDatasetHash(input.studyId, [input.testResultId])
+  const pilotResults = await getAllPilotResultsRsc(input.studyId)
+  if (pilotResults.length === 0) {
+    return { bundle: null }
+  }
+  const runIds = pilotResults.map((result) => result.id).sort((a, b) => a - b)
+  const pilotDatasetHash = buildPilotDatasetHash(latestUpload.id, runIds)
   const cacheKey = buildCacheKey({
-    studyId: input.studyId,
+    scopeId: latestUpload.id,
     pilotDatasetHash,
     includeDiagnostics,
   })
@@ -37,7 +59,7 @@ export async function getCachedExtractionBundleRsc(input: {
   let bundle = extractionBundleCache.get(cacheKey)
   if (!bundle && !includeDiagnostics) {
     const fallbackKey = buildCacheKey({
-      studyId: input.studyId,
+      scopeId: latestUpload.id,
       pilotDatasetHash,
       includeDiagnostics: true,
     })

@@ -1,10 +1,10 @@
 import { resolver } from "@blitzjs/rpc"
 import { z } from "zod"
 import db, { Prisma } from "db"
-import { getPilotResultByIdRsc } from "../../utils/getPilotResultById"
+import { getAllPilotResultsRsc } from "../../utils/getAllPilotResults"
 import { verifyResearcherStudyAccess } from "../../utils/verifyResearchersStudyAccess"
 import { DEFAULT_EXTRACTION_CONFIG } from "../../variables/types"
-import { extractVariableBundle } from "../../variables/utils/extractVariable"
+import { extractVariableBundleFromResults } from "../../variables/utils/extractVariable"
 import { extractionBundleCache } from "../utils/extractionBundleCache"
 import {
   EXTRACTOR_VERSION,
@@ -12,10 +12,10 @@ import {
   buildPilotDatasetHash,
   hashJson,
 } from "../utils/extractionCache"
+import { validateFeedbackTemplateAgainstExtraction } from "../../feedback/utils/validateTemplateAgainstExtraction"
 
 const ApproveExtraction = z.object({
   studyId: z.number(),
-  testResultId: z.number(),
 })
 
 function buildExtractionOutputHash(bundle: ReturnType<typeof extractVariableBundle>): string {
@@ -38,40 +38,61 @@ function buildExtractionOutputHash(bundle: ReturnType<typeof extractVariableBund
 // Server-side helper for RSCs
 export async function approveExtractionRsc(input: {
   studyId: number
-  testResultId: number
 }): Promise<{ extractionSnapshotId: number; variableCount: number }> {
   await verifyResearcherStudyAccess(input.studyId)
 
   const study = await db.study.findUnique({
     where: { id: input.studyId },
-    select: { id: true, setupRevision: true },
+    select: {
+      id: true,
+      jatosStudyUploads: {
+        orderBy: { createdAt: "desc" },
+        take: 1,
+        select: {
+          id: true,
+          pilotLinks: { select: { markerToken: true } },
+        },
+      },
+    },
   })
 
   if (!study) {
     throw new Error("Study not found")
   }
 
-  const testResult = await getPilotResultByIdRsc(input.studyId, input.testResultId)
-  const runIds = [testResult.id]
-  const pilotDatasetHash = buildPilotDatasetHash(input.studyId, runIds)
+  const latestUpload = study.jatosStudyUploads[0] ?? null
+  if (!latestUpload) {
+    throw new Error("No JATOS upload found for this study")
+  }
+
+  const pilotResults = await getAllPilotResultsRsc(input.studyId)
+  if (pilotResults.length === 0) {
+    throw new Error("No pilot results found for this study upload")
+  }
+
+  const runIds = pilotResults.map((result) => result.id).sort((a, b) => a - b)
+  const pilotDatasetHash = buildPilotDatasetHash(latestUpload.id, runIds)
 
   const cacheKey = buildCacheKey({
-    studyId: input.studyId,
+    scopeId: latestUpload.id,
     pilotDatasetHash,
     includeDiagnostics: true,
   })
 
   let bundle = extractionBundleCache.get(cacheKey)
   if (!bundle) {
-    bundle = extractVariableBundle(testResult, DEFAULT_EXTRACTION_CONFIG)
+    bundle = extractVariableBundleFromResults(pilotResults, DEFAULT_EXTRACTION_CONFIG)
     extractionBundleCache.set(cacheKey, bundle)
   }
 
   const extractionConfigHash = hashJson(DEFAULT_EXTRACTION_CONFIG)
   const outputHash = buildExtractionOutputHash(bundle)
   const structureSummary = {
-    componentCount: testResult.componentResults.length,
-    runCount: 1,
+    componentCount: pilotResults.reduce(
+      (count, result) => count + result.componentResults.length,
+      0
+    ),
+    runCount: runIds.length,
   }
   const aggregates = {
     variableCount: bundle.variables.length,
@@ -81,31 +102,28 @@ export async function approveExtractionRsc(input: {
   const result = await db.$transaction(async (tx) => {
     const pilotDatasetSnapshot = await tx.pilotDatasetSnapshot.upsert({
       where: {
-        studyId_setupRevision_pilotDatasetHash: {
-          studyId: input.studyId,
-          setupRevision: study.setupRevision,
+        jatosStudyUploadId_pilotDatasetHash: {
+          jatosStudyUploadId: latestUpload.id,
           pilotDatasetHash,
         },
       },
       create: {
-        studyId: input.studyId,
-        setupRevision: study.setupRevision,
+        jatosStudyUploadId: latestUpload.id,
         pilotDatasetHash,
         pilotRunCount: runIds.length,
         pilotRunIds: runIds,
-        markerTokens: undefined,
+        markerTokens: latestUpload.pilotLinks.map((link) => link.markerToken),
       },
       update: {
         pilotRunCount: runIds.length,
         pilotRunIds: runIds,
-        markerTokens: undefined,
+        markerTokens: latestUpload.pilotLinks.map((link) => link.markerToken),
       },
     })
 
     const existingSnapshot = await tx.extractionSnapshot.findFirst({
       where: {
-        studyId: input.studyId,
-        setupRevision: study.setupRevision,
+        jatosStudyUploadId: latestUpload.id,
         status: "APPROVED",
         pilotDatasetSnapshotId: pilotDatasetSnapshot.id,
         extractorVersion: EXTRACTOR_VERSION,
@@ -119,8 +137,7 @@ export async function approveExtractionRsc(input: {
       existingSnapshot ??
       (await tx.extractionSnapshot.create({
         data: {
-          studyId: input.studyId,
-          setupRevision: study.setupRevision,
+          jatosStudyUploadId: latestUpload.id,
           status: "APPROVED",
           approvedAt: new Date(),
           pilotDatasetSnapshotId: pilotDatasetSnapshot.id,
@@ -145,13 +162,26 @@ export async function approveExtractionRsc(input: {
       })
     }
 
-    await tx.study.update({
-      where: { id: input.studyId },
+    await tx.jatosStudyUpload.update({
+      where: { id: latestUpload.id },
       data: {
         approvedExtractionId: extractionSnapshot.id,
         step4Completed: true,
       },
     })
+
+    const feedbackValidation = await validateFeedbackTemplateAgainstExtraction(tx, {
+      studyId: input.studyId,
+      extractionSnapshotId: extractionSnapshot.id,
+      extractorVersion: EXTRACTOR_VERSION,
+    })
+
+    if (feedbackValidation?.status === "INVALID") {
+      await tx.jatosStudyUpload.update({
+        where: { id: latestUpload.id },
+        data: { step6Completed: false },
+      })
+    }
 
     return { extractionSnapshotId: extractionSnapshot.id, variableCount: bundle.variables.length }
   })

@@ -8,9 +8,6 @@ import { verifyResearcherStudyAccess } from "../../utils/verifyResearchersStudyA
 export async function createFeedbackTemplateRsc(input: {
   studyId: number
   content: string
-  setupRevision: number
-  extractionSnapshotId: number
-  extractorVersion: string
   requiredVariableKeys?: string[]
 }): Promise<FeedbackTemplate> {
   await verifyResearcherStudyAccess(input.studyId)
@@ -19,18 +16,28 @@ export async function createFeedbackTemplateRsc(input: {
     data: {
       studyId: input.studyId,
       content: input.content,
-      setupRevision: input.setupRevision,
-      extractionSnapshotId: input.extractionSnapshotId,
-      extractorVersion: input.extractorVersion,
+      validationStatus: "NEEDS_REVIEW",
+      validatedExtractionId: null,
+      validatedAt: null,
+      missingKeys: null,
+      extraKeys: null,
+      extractorVersion: null,
       requiredVariableKeys: input.requiredVariableKeys,
     },
   })
 
   // Mark step 6 as complete after successful creation
-  await db.study.update({
-    where: { id: input.studyId },
-    data: { step6Completed: true },
+  const latestUpload = await db.jatosStudyUpload.findFirst({
+    where: { studyId: input.studyId },
+    orderBy: { createdAt: "desc" },
+    select: { id: true },
   })
+  if (latestUpload) {
+    await db.jatosStudyUpload.update({
+      where: { id: latestUpload.id },
+      data: { step6Completed: true },
+    })
+  }
 
   return template
 }

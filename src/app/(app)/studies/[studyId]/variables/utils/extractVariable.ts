@@ -30,6 +30,52 @@ export function extractVariableBundle(
     options
   )
 
+  return {
+    variables,
+    observations: extractionResult.observations,
+    diagnostics: buildVariableDiagnostics(variables, extractionResult),
+  }
+}
+
+export function extractVariableBundleFromResults(
+  enrichedResults: EnrichedJatosStudyResult[],
+  config: ExtractionConfig = DEFAULT_EXTRACTION_CONFIG,
+  options?: {
+    diagnostics?: boolean
+  }
+): ExtractionBundle {
+  if (enrichedResults.length === 0) {
+    return {
+      variables: [],
+      observations: [],
+      diagnostics: {
+        run: [],
+        component: new Map(),
+        variable: new Map(),
+      },
+    }
+  }
+
+  const extractionResult = extractObservations(enrichedResults, config, options)
+
+  const variables = aggregateVariables(
+    extractionResult.observations,
+    extractionResult.variableFacts,
+    config,
+    options
+  )
+
+  return {
+    variables,
+    observations: extractionResult.observations,
+    diagnostics: buildVariableDiagnostics(variables, extractionResult),
+  }
+}
+
+function buildVariableDiagnostics(
+  variables: ExtractionBundle["variables"],
+  extractionResult: ReturnType<typeof extractObservations>
+): ExtractionBundle["diagnostics"] {
   const variableDiagnostics = new Map<string, { variableName: string; diagnostics: Diagnostic[] }>()
   for (const variable of variables) {
     if (variable.diagnostics && variable.diagnostics.length > 0) {
@@ -41,13 +87,9 @@ export function extractVariableBundle(
   }
 
   return {
-    variables,
-    observations: extractionResult.observations,
-    diagnostics: {
-      run: extractionResult.runDiagnostics,
-      component: extractionResult.componentDiagnostics,
-      variable: variableDiagnostics,
-    },
+    run: extractionResult.runDiagnostics,
+    component: extractionResult.componentDiagnostics,
+    variable: variableDiagnostics,
   }
 }
 

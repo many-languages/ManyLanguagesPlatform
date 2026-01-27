@@ -14,16 +14,23 @@ export const getStudyVariablesRsc = cache(async (studyId: number) => {
 
   const study = await db.study.findUnique({
     where: { id: studyId },
-    select: { approvedExtractionId: true },
+    select: {
+      jatosStudyUploads: {
+        orderBy: { createdAt: "desc" },
+        take: 1,
+        select: { approvedExtractionId: true },
+      },
+    },
   })
 
-  if (!study?.approvedExtractionId) {
+  const latestUpload = study?.jatosStudyUploads[0] ?? null
+  if (!latestUpload?.approvedExtractionId) {
     return []
   }
 
   // Get variables for the approved extraction snapshot
   const variables = await db.studyVariable.findMany({
-    where: { extractionSnapshotId: study.approvedExtractionId },
+    where: { extractionSnapshotId: latestUpload.approvedExtractionId },
     orderBy: { variableName: "asc" },
   })
 

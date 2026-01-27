@@ -13,6 +13,12 @@ function isPilotComment(comment?: string) {
   return typeof comment === "string" && comment.startsWith(PILOT_COMMENT_PREFIX)
 }
 
+function extractPilotMarkerToken(comment?: string): string | null {
+  if (!isPilotComment(comment)) return null
+  const token = comment.slice(PILOT_COMMENT_PREFIX.length)
+  return token ? token : null
+}
+
 // Server-side helper to get all pilot results for a study
 export const getAllPilotResultsRsc = cache(
   async (studyId: number): Promise<EnrichedJatosStudyResult[]> => {
@@ -25,22 +31,36 @@ export const getAllPilotResultsRsc = cache(
         jatosStudyUploads: {
           orderBy: { createdAt: "desc" },
           take: 1,
-          select: { jatosStudyId: true },
+          select: {
+            id: true,
+            jatosStudyId: true,
+            pilotLinks: {
+              select: { markerToken: true },
+            },
+          },
         },
       },
     })
     if (!study) throw new Error("Study not found")
-    const jatosStudyId = study.jatosStudyUploads[0]?.jatosStudyId ?? null
+    const latestUpload = study.jatosStudyUploads[0] ?? null
+    const jatosStudyId = latestUpload?.jatosStudyId ?? null
     if (!jatosStudyId) throw new Error("Study does not have JATOS ID")
+    const markerTokens = new Set(
+      latestUpload?.pilotLinks.map((link) => link.markerToken).filter(Boolean) ?? []
+    )
+    if (markerTokens.size === 0) {
+      return [] // No pilot links for this upload
+    }
 
     // Get metadata
     const metadata = await getResultsMetadata({ studyIds: [jatosStudyId] })
 
     // Filter for pilot results (comment starts with "pilot:")
     const pilotResults =
-      metadata.data?.[0]?.studyResults?.filter((result: JatosStudyResult) =>
-        isPilotComment(result.comment)
-      ) || []
+      metadata.data?.[0]?.studyResults?.filter((result: JatosStudyResult) => {
+        const token = extractPilotMarkerToken(result.comment)
+        return token ? markerTokens.has(token) : false
+      }) || []
 
     if (pilotResults.length === 0) {
       return [] // No pilot results found
@@ -59,7 +79,10 @@ export const getAllPilotResultsRsc = cache(
 
     // Filter to only pilot results and sort by id (descending) to get latest first
     return allEnriched
-      .filter((result: EnrichedJatosStudyResult) => isPilotComment(result.comment))
+      .filter((result: EnrichedJatosStudyResult) => {
+        const token = extractPilotMarkerToken(result.comment)
+        return token ? markerTokens.has(token) : false
+      })
       .sort((a, b) => b.id - a.id) // Latest first (highest ID = newest)
   }
 )

@@ -8,8 +8,8 @@ export function hashJson(value: unknown): string {
   return createHash("sha256").update(JSON.stringify(value)).digest("hex")
 }
 
-export function buildPilotDatasetHash(studyId: number, runIds: number[]): string {
-  return hashJson({ studyId, runIds })
+export function buildPilotDatasetHash(scopeId: number, runIds: number[]): string {
+  return hashJson({ scopeId, runIds })
 }
 
 function buildRequiredKeysHash(includeDiagnostics: boolean): string {
@@ -17,12 +17,12 @@ function buildRequiredKeysHash(includeDiagnostics: boolean): string {
 }
 
 export function buildCacheKey(options: {
-  studyId: number
+  scopeId: number
   pilotDatasetHash: string
   includeDiagnostics: boolean
 }): string {
   return buildExtractionCacheKey({
-    studyId: options.studyId,
+    studyId: options.scopeId,
     pilotDatasetHash: options.pilotDatasetHash,
     extractorVersion: EXTRACTOR_VERSION,
     requiredKeysHash: buildRequiredKeysHash(options.includeDiagnostics),

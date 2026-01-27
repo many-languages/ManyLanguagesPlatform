@@ -3,10 +3,10 @@ import { extractRequiredVariableNames } from "./requiredKeys"
 
 export async function resolveRequiredVariableKeys(template: {
   content: string
-  extractionSnapshotId?: number | null
+  validatedExtractionId?: number | null
   requiredVariableKeys?: string[] | null
 }): Promise<string[]> {
-  if (!template.extractionSnapshotId) return []
+  if (!template.validatedExtractionId) return []
 
   const requiredVariableNames =
     Array.isArray(template.requiredVariableKeys) && template.requiredVariableKeys.length > 0
@@ -17,7 +17,7 @@ export async function resolveRequiredVariableKeys(template: {
 
   const variables = await db.studyVariable.findMany({
     where: {
-      extractionSnapshotId: template.extractionSnapshotId,
+      extractionSnapshotId: template.validatedExtractionId,
       variableName: { in: requiredVariableNames },
     },
     select: { variableKey: true },

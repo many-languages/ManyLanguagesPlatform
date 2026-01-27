@@ -27,10 +27,17 @@ export async function updateVariableCodebookRsc(input: {
 
   const study = await db.study.findUnique({
     where: { id: input.studyId },
-    select: { approvedExtractionId: true },
+    select: {
+      jatosStudyUploads: {
+        orderBy: { createdAt: "desc" },
+        take: 1,
+        select: { id: true, approvedExtractionId: true },
+      },
+    },
   })
 
-  if (!study?.approvedExtractionId) {
+  const latestUpload = study?.jatosStudyUploads[0] ?? null
+  if (!latestUpload?.approvedExtractionId) {
     throw new Error("No approved extraction found for this study.")
   }
 
@@ -39,7 +46,7 @@ export async function updateVariableCodebookRsc(input: {
   const existingVariables = await db.studyVariable.findMany({
     where: {
       id: { in: variableIds },
-      extractionSnapshotId: study.approvedExtractionId,
+      extractionSnapshotId: latestUpload.approvedExtractionId,
     },
   })
 
@@ -62,7 +69,7 @@ export async function updateVariableCodebookRsc(input: {
 
   // Mark step5 as completed if all variables have descriptions
   const allVariables = await db.studyVariable.findMany({
-    where: { extractionSnapshotId: study.approvedExtractionId },
+    where: { extractionSnapshotId: latestUpload.approvedExtractionId },
   })
 
   const allHaveDescriptions = allVariables.every(
@@ -70,8 +77,8 @@ export async function updateVariableCodebookRsc(input: {
   )
 
   if (allHaveDescriptions && allVariables.length > 0) {
-    await db.study.update({
-      where: { id: input.studyId },
+    await db.jatosStudyUpload.update({
+      where: { id: latestUpload.id },
       data: { step5Completed: true },
     })
   }

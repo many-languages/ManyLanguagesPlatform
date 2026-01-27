@@ -7,7 +7,8 @@ const UpdateVariableCodebook = z.object({
   studyId: z.number(),
   variables: z.array(
     z.object({
-      id: z.number(),
+      variableKey: z.string(),
+      variableName: z.string(),
       description: z.string().nullable(),
       personalData: z.boolean(),
     })
@@ -18,7 +19,8 @@ const UpdateVariableCodebook = z.object({
 export async function updateVariableCodebookRsc(input: {
   studyId: number
   variables: Array<{
-    id: number
+    variableKey: string
+    variableName: string
     description: string | null
     personalData: boolean
   }>
@@ -41,42 +43,82 @@ export async function updateVariableCodebookRsc(input: {
     throw new Error("No approved extraction found for this study.")
   }
 
-  // Verify all variables belong to the approved extraction snapshot
-  const variableIds = input.variables.map((v) => v.id)
-  const existingVariables = await db.studyVariable.findMany({
+  const extractionVariables = await db.studyVariable.findMany({
     where: {
-      id: { in: variableIds },
       extractionSnapshotId: latestUpload.approvedExtractionId,
     },
+    select: { variableKey: true },
   })
 
-  if (existingVariables.length !== input.variables.length) {
+  const extractionVariableKeys = new Set(extractionVariables.map((v) => v.variableKey))
+  const inputVariableKeys = new Set(input.variables.map((v) => v.variableKey))
+
+  const allKeysValid = input.variables.every((v) => extractionVariableKeys.has(v.variableKey))
+  if (!allKeysValid) {
     throw new Error("One or more variables do not belong to this study.")
   }
 
-  // Update each variable
-  await Promise.all(
-    input.variables.map((v) =>
-      db.studyVariable.update({
-        where: { id: v.id },
-        data: {
-          description: v.description,
-          personalData: v.personalData,
-        },
-      })
-    )
-  )
+  const codebook =
+    (await db.codebook.findUnique({
+      where: { studyId: input.studyId },
+      select: { id: true },
+    })) ??
+    (await db.codebook.create({
+      data: { studyId: input.studyId },
+      select: { id: true },
+    }))
 
-  // Mark step5 as completed if all variables have descriptions
-  const allVariables = await db.studyVariable.findMany({
-    where: { extractionSnapshotId: latestUpload.approvedExtractionId },
+  await db.$transaction(async (tx) => {
+    await tx.codebook.update({
+      where: { id: codebook.id },
+      data: {
+        validationStatus: "NEEDS_REVIEW",
+        validatedExtractionId: null,
+        validatedAt: null,
+        missingKeys: null,
+        extraKeys: null,
+        extractorVersion: null,
+      },
+    })
+
+    await tx.codebookEntry.deleteMany({
+      where: {
+        codebookId: codebook.id,
+        variableKey: { notIn: Array.from(inputVariableKeys) },
+      },
+    })
+
+    await Promise.all(
+      input.variables.map((v) =>
+        tx.codebookEntry.upsert({
+          where: {
+            codebookId_variableKey: {
+              codebookId: codebook.id,
+              variableKey: v.variableKey,
+            },
+          },
+          update: {
+            variableName: v.variableName,
+            description: v.description,
+            personalData: v.personalData,
+          },
+          create: {
+            codebookId: codebook.id,
+            variableKey: v.variableKey,
+            variableName: v.variableName,
+            description: v.description,
+            personalData: v.personalData,
+          },
+        })
+      )
+    )
   })
 
-  const allHaveDescriptions = allVariables.every(
+  const allHaveDescriptions = input.variables.every(
     (v) => v.description && v.description.trim() !== ""
   )
 
-  if (allHaveDescriptions && allVariables.length > 0) {
+  if (allHaveDescriptions && input.variables.length > 0) {
     await db.jatosStudyUpload.update({
       where: { id: latestUpload.id },
       data: { step5Completed: true },

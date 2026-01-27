@@ -13,6 +13,7 @@ import {
   hashJson,
 } from "../utils/extractionCache"
 import { validateFeedbackTemplateAgainstExtraction } from "../../feedback/utils/validateTemplateAgainstExtraction"
+import { validateCodebookAgainstExtraction } from "../../codebook/utils/validateCodebookAgainstExtraction"
 
 const ApproveExtraction = z.object({
   studyId: z.number(),
@@ -176,10 +177,23 @@ export async function approveExtractionRsc(input: {
       extractorVersion: EXTRACTOR_VERSION,
     })
 
+    const codebookValidation = await validateCodebookAgainstExtraction(tx, {
+      studyId: input.studyId,
+      extractionSnapshotId: extractionSnapshot.id,
+      extractorVersion: EXTRACTOR_VERSION,
+    })
+
     if (feedbackValidation?.status === "INVALID") {
       await tx.jatosStudyUpload.update({
         where: { id: latestUpload.id },
         data: { step6Completed: false },
+      })
+    }
+
+    if (codebookValidation?.status === "INVALID") {
+      await tx.jatosStudyUpload.update({
+        where: { id: latestUpload.id },
+        data: { step5Completed: false },
       })
     }
 

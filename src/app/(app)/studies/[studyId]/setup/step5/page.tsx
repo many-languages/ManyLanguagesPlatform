@@ -1,10 +1,11 @@
 import { notFound } from "next/navigation"
 import CodebookContent from "../../codebook/components/client/CodebookContent"
 import SaveExitButton from "../components/client/SaveExitButton"
-import { getStudyVariablesRsc } from "../../variables/queries/getStudyVariables"
+import { getCodebookDataRsc } from "../../codebook/queries/getCodebookData"
 
 async function Step5ContentWrapper({ studyId }: { studyId: number }) {
-  let variables = await getStudyVariablesRsc(studyId)
+  const { variables, codebook, approvedExtractionId, approvedExtractionApprovedAt } =
+    await getCodebookDataRsc(studyId)
 
   return (
     <>
@@ -13,7 +14,12 @@ async function Step5ContentWrapper({ studyId }: { studyId: number }) {
         <h2 className="text-xl font-semibold text-center flex-1">Step 5 – Codebook</h2>
         <div className="w-32" /> {/* Spacer to balance the layout */}
       </div>
-      <CodebookContent initialVariables={variables} />
+      <CodebookContent
+        initialVariables={variables}
+        codebook={codebook}
+        approvedExtractionId={approvedExtractionId}
+        approvedExtractionApprovedAt={approvedExtractionApprovedAt}
+      />
     </>
   )
 }

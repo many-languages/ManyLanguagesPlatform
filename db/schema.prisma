@@ -114,6 +114,7 @@ model Study {
 
   // JATOS study uploads (versioned builds)
   jatosStudyUploads JatosStudyUpload[] @relation("StudyJatosUploads")
+  codebook          Codebook?
 
   // Versioned data lives on JatosStudyUpload
 
@@ -189,9 +190,6 @@ model StudyVariable {
   type         String
   examples     Json?
 
-  description  String?
-  personalData Boolean @default(false)
-
   extractionSnapshot ExtractionSnapshot @relation(fields: [extractionSnapshotId], references: [id], onDelete: Cascade)
 
   @@unique([extractionSnapshotId, variableKey])
@@ -242,6 +240,45 @@ model FeedbackTemplate {
   updatedAt DateTime @updatedAt
 
   study Study @relation(fields: [studyId], references: [id], onDelete: Cascade)
+}
+
+model Codebook {
+  id      Int @id @default(autoincrement())
+  studyId Int @unique
+
+  validatedExtractionId Int?
+  validatedExtraction   ExtractionSnapshot? @relation("ValidatedCodebookExtraction", fields: [validatedExtractionId], references: [id], onDelete: SetNull)
+  validationStatus      ValidationStatus    @default(NEEDS_REVIEW)
+  validatedAt           DateTime?
+  missingKeys           Json? // string[]
+  extraKeys             Json? // string[]
+  extractorVersion      String?
+
+  entries CodebookEntry[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  study Study @relation(fields: [studyId], references: [id], onDelete: Cascade)
+}
+
+model CodebookEntry {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  codebookId Int
+
+  variableKey  String
+  variableName String
+
+  description  String?
+  personalData Boolean @default(false)
+
+  codebook Codebook @relation(fields: [codebookId], references: [id], onDelete: Cascade)
+
+  @@unique([codebookId, variableKey])
+  @@index([codebookId])
 }
 
 model AdminInvite {
@@ -318,6 +355,7 @@ model ExtractionSnapshot {
 
   approvedForUpload          JatosStudyUpload?  @relation("ApprovedExtractionForUpload")
   validatedFeedbackTemplates FeedbackTemplate[] @relation("ValidatedExtraction")
+  validatedCodebooks         Codebook[]         @relation("ValidatedCodebookExtraction")
 
   @@index([jatosStudyUploadId, status, createdAt])
 }

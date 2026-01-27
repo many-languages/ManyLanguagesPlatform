@@ -30,15 +30,50 @@ interface CodebookContentProps {
     description: string | null
     personalData: boolean
   }>
+  codebook: {
+    validationStatus?: "NEEDS_REVIEW" | "VALID" | "INVALID" | null
+    validatedExtractionId?: number | null
+    validatedAt?: Date | string | null
+    missingKeys?: string[] | null
+    extraKeys?: string[] | null
+    updatedAt?: Date | string
+  } | null
+  approvedExtractionId: number | null
+  approvedExtractionApprovedAt: Date | string | null
 }
 
-export default function CodebookContent({ initialVariables }: CodebookContentProps) {
+export default function CodebookContent({
+  initialVariables,
+  codebook,
+  approvedExtractionId,
+  approvedExtractionApprovedAt,
+}: CodebookContentProps) {
   const router = useRouter()
   const { study, studyId } = useStudySetup()
   const step5Completed = study.latestJatosStudyUpload?.step5Completed ?? false
   const [variables, setVariables] = useState<VariableCodebookEntry[]>([])
   const [isSaving, setIsSaving] = useState(false)
   const [updateVariableCodebookMutation] = useMutation(updateVariableCodebook)
+
+  const missingKeys = Array.isArray(codebook?.missingKeys)
+    ? (codebook?.missingKeys as string[])
+    : []
+  const extraKeys = Array.isArray(codebook?.extraKeys) ? (codebook?.extraKeys as string[]) : []
+  const validationStatus = codebook?.validationStatus ?? null
+  const validatedExtractionId = codebook?.validatedExtractionId ?? null
+  const codebookUpdatedAt = codebook?.updatedAt ? new Date(codebook.updatedAt) : null
+  const approvedExtractionAt = approvedExtractionApprovedAt
+    ? new Date(approvedExtractionApprovedAt)
+    : null
+  const showInvalidKeys =
+    validationStatus === "INVALID" && (missingKeys.length > 0 || extraKeys.length > 0)
+  const showSoftWarning =
+    validationStatus === "VALID" &&
+    approvedExtractionId !== null &&
+    validatedExtractionId === approvedExtractionId &&
+    approvedExtractionAt !== null &&
+    codebookUpdatedAt !== null &&
+    codebookUpdatedAt < approvedExtractionAt
 
   useEffect(() => {
     setVariables(
@@ -87,7 +122,8 @@ export default function CodebookContent({ initialVariables }: CodebookContentPro
       await updateVariableCodebookMutation({
         studyId,
         variables: variables.map((v) => ({
-          id: v.id,
+          variableKey: v.variableKey,
+          variableName: v.variableName,
           description: v.description,
           personalData: v.personalData,
         })),
@@ -112,6 +148,34 @@ export default function CodebookContent({ initialVariables }: CodebookContentPro
 
   return (
     <>
+      {showInvalidKeys && (
+        <Alert variant="warning">
+          <div className="space-y-2">
+            <p>
+              This codebook no longer matches the latest extraction. Please review and save the
+              codebook again to complete Step 5.
+            </p>
+            {missingKeys.length > 0 && (
+              <div>
+                <div className="font-semibold">Missing keys</div>
+                <div className="text-sm">{missingKeys.join(", ")}</div>
+              </div>
+            )}
+            {extraKeys.length > 0 && (
+              <div>
+                <div className="font-semibold">Additional keys</div>
+                <div className="text-sm">{extraKeys.join(", ")}</div>
+              </div>
+            )}
+          </div>
+        </Alert>
+      )}
+      {showSoftWarning && (
+        <Alert variant="info">
+          A new extraction was approved for this study version. The variables match your existing
+          codebook, but we recommend reviewing it again.
+        </Alert>
+      )}
       <div className="mb-6">
         <p className="text-sm text-base-content/70 mb-4">
           Please provide a description for each variable in your data to create a codebook. Mark

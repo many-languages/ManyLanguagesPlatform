@@ -5,7 +5,7 @@ import Card from "@/src/app/components/Card"
 interface Step3InstructionsProps {
   pilotCompleted: boolean | null
   jatosRunUrl: string | null
-  hasJatosSetup: boolean // study.jatosStudyId && study.jatosBatchId
+  hasJatosSetup: boolean
 }
 
 export default function Step3Instructions({

@@ -1,5 +1,6 @@
 import { Study, FeedbackTemplate } from "@prisma/client"
 import { StudyWithRelations } from "../../../queries/getStudy"
+import { deriveStep1Completed } from "./deriveStep1Completed"
 
 // More flexible interface for studies with minimal researcher data
 export interface StudyWithMinimalRelations extends Study {
@@ -29,6 +30,9 @@ function resolveStepFlags(study: StudyWithRelations | StudyWithMinimalRelations)
   const getFlag = (key: keyof StepFlags) => {
     const uploadValue = upload?.[key]
     if (typeof uploadValue === "boolean") return uploadValue
+    if (key === "step1Completed") {
+      return deriveStep1Completed(study)
+    }
     const studyValue = (study as Record<string, unknown>)[key]
     return typeof studyValue === "boolean" ? studyValue : false
   }

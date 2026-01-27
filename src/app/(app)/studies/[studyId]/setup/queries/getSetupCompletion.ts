@@ -3,6 +3,7 @@ import db from "db"
 import { z } from "zod"
 import { cache } from "react"
 import { verifyResearcherStudyAccess } from "../../utils/verifyResearchersStudyAccess"
+import { deriveStep1Completed } from "../utils/deriveStep1Completed"
 
 const GetSetupCompletion = z.object({
   studyId: z.number(),
@@ -42,7 +43,7 @@ export const getSetupCompletionRsc = cache(async (studyId: number) => {
     return latestUpload
   }
 
-  const step1Completed = Boolean(study.title && study.description)
+  const step1Completed = deriveStep1Completed(study)
 
   return {
     step1Completed,

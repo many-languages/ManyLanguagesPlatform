@@ -106,7 +106,20 @@ Executive summary: Setup state and import metadata must live on the latest uploa
 - `src/app/(app)/studies/mutations/updateStudyComponent.ts`
 - `src/app/(app)/studies/mutations/clearJatosData.ts`
 
-**Change:** update these to **write/read latest upload** and to create new uploads during import (with required `versionNumber` and `buildHash`).
+**Status:** partially complete.
+
+**Implemented (2026-01-26):**
+
+- `getSetupCompletion` now returns latest upload flags; if no upload exists, **step1Completed is derived** from Study fields and steps 2–6 are `false`.
+- `updateSetupCompletion` now writes to **latest JatosStudyUpload** (error if none).
+- `updateStudyBatch` now writes to **latest JatosStudyUpload** (error if none).
+- `updateStudy` no longer writes `step1Completed` on Study.
+- `importJatos` now creates a new `JatosStudyUpload` with `versionNumber`, `buildHash`, and **step1Completed derived from Study**.
+
+**Remaining:**
+
+- `updateStudyComponent`, `clearJatosData` still reference Study fields.
+- Any other step-flag writers should be reviewed to ensure they update latest upload.
 
 ---
 
@@ -191,7 +204,17 @@ Executive summary: Step gating and progress must be derived from upload state.
 - `src/app/(app)/studies/[studyId]/setup/step4/components/client/Step4Content.tsx`
 - `src/app/(app)/studies/[studyId]/setup/step6/components/client/Step6Content.tsx`
 
-**Change:** all step flags and JATOS fields must read from latest upload.
+**Status:** partially complete.
+
+**Implemented (2026-01-26):**
+
+- Step 2 flow now parses UUID from the `.jzip`, **blocks mismatched UUIDs**, and uses a **server preflight** before any upload.
+- Step 2 update flow now shows a **"Update study" confirmation** when UUID matches the existing study, then imports.
+- Old 409 conflict flow and delete/re-upload alert removed.
+
+**Remaining:**
+
+- Ensure all step UI reads step flags from `latestJatosStudyUpload` (some already updated).
 
 ---
 
@@ -234,9 +257,48 @@ Executive summary: Upload creation needs a version and a build hash, even in the
 - `versionNumber`
 - `buildHash`
 
+**Status:** implemented (2026-01-26).
+
+- `buildHash` is computed server-side by unzipping the `.jzip` and hashing contents (sha256).
+- `versionNumber` is incremented per study during upload creation.
+
 Import flow must compute or derive these. If not available yet:
 
 - Temporary plan: increment versionNumber per study, and compute `buildHash` from file contents (or use a placeholder until hashing pipeline is added).
+
+---
+
+## New Preflight Guards (Implemented)
+
+Executive summary: avoid accidental overwrites by validating UUIDs before uploading to JATOS.
+
+**Implemented (2026-01-26):**
+
+- Client parses UUID from `.jzip` before upload using `extractJatosStudyUuidFromJzip`.
+- Server resolver `checkJatosStudyUuid`:
+  - rejects empty/invalid UUIDs,
+  - blocks UUIDs already linked to another Study,
+  - calls JATOS `/studies/{uuid}/properties` to gate:
+    - **create**: fails if study exists on JATOS,
+    - **update**: fails if study does not exist on JATOS.
+
+**Files added/updated:**
+
+- `src/lib/jatos/api/extractJatosStudyUuid.ts`
+- `src/lib/jatos/api/checkJatosStudyExists.ts`
+- `src/app/(app)/studies/[studyId]/setup/mutations/checkJatosStudyUuid.ts`
+- `src/app/(app)/studies/[studyId]/setup/step2/components/client/Step2Content.tsx`
+
+---
+
+## Remaining Checklist
+
+- Migrate `updateStudyComponent` to write `jatosComponentId` / `jatosComponentUUID` on latest upload. (to be handled separately, might be needed for new functionality later)
+- Migrate `clearJatosData` to clear latest upload fields (and decide whether to keep `Study.jatosStudyUUID`). (I do not think we use this for anything, can be deleted?)
+- Refactor pilot run URL storage to use `PilotLink` keyed by `jatosStudyUploadId`.
+- Update extraction + codebook flows to bind to `jatosStudyUploadId` and `approvedExtractionId`.
+- Update all remaining UI components to read JATOS fields from `latestJatosStudyUpload`.
+- Resolve feedback template mismatch (`setupRevision`, `extractionSnapshotId` vs new schema fields).
 
 ## Suggested Work Plan (Threadable)
 

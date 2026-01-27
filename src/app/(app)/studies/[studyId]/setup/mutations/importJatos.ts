@@ -2,6 +2,7 @@ import { resolver } from "@blitzjs/rpc"
 import db from "db"
 import { ImportJatosSchema } from "../../../validations"
 import { verifyResearcherStudyAccess } from "../../utils/verifyResearchersStudyAccess"
+import { deriveStep1Completed } from "../utils/deriveStep1Completed"
 
 export default resolver.pipe(
   resolver.zod(ImportJatosSchema),
@@ -31,7 +32,7 @@ export default resolver.pipe(
           throw new Error("Study not found")
         }
 
-        const step1Completed = Boolean(studyInfo.title && studyInfo.description)
+        const step1Completed = deriveStep1Completed(studyInfo)
 
         const latestUpload = await tx.jatosStudyUpload.findFirst({
           where: { studyId },

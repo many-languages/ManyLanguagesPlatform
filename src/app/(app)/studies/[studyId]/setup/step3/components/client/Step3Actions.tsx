@@ -15,6 +15,7 @@ interface Step3ActionsProps {
   jatosBatchId: number | null
   jatosStudyUUID: string | null
   onCheckStatus: () => Promise<void>
+  onPilotLinkGenerated?: (runUrl: string) => void | Promise<void>
 }
 
 export default function Step3Actions({
@@ -26,6 +27,7 @@ export default function Step3Actions({
   jatosBatchId,
   jatosStudyUUID,
   onCheckStatus,
+  onPilotLinkGenerated,
 }: Step3ActionsProps) {
   if (!jatosStudyUploadId || !jatosStudyId || !jatosBatchId) {
     return (
@@ -47,6 +49,7 @@ export default function Step3Actions({
             jatosStudyUploadId={jatosStudyUploadId}
             jatosStudyId={jatosStudyId}
             jatosBatchId={jatosBatchId}
+            onGenerated={onPilotLinkGenerated}
             label="Generate Pilot Link"
             className="btn btn-primary btn-lg"
           />
@@ -67,6 +70,7 @@ export default function Step3Actions({
                 jatosStudyUploadId={jatosStudyUploadId}
                 jatosStudyId={jatosStudyId}
                 jatosBatchId={jatosBatchId}
+                onGenerated={onPilotLinkGenerated}
                 label="Generate Pilot Link"
                 className="btn btn-accent btn-lg whitespace-nowrap"
               >

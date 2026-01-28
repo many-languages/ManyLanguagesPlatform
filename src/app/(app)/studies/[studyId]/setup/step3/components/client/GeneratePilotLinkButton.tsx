@@ -1,7 +1,6 @@
 "use client"
 
 import type { ReactNode } from "react"
-import { useRouter } from "next/navigation"
 import toast from "react-hot-toast"
 import { generateAndSaveResearcherPilotRunUrl } from "../../../../utils/generateResearcherPilotRunUrl"
 import { AsyncButton } from "@/src/app/components/AsyncButton"
@@ -27,8 +26,6 @@ export default function GeneratePilotLinkButton({
   className = "btn btn-primary",
   children,
 }: GeneratePilotLinkButtonProps) {
-  const router = useRouter()
-
   const handleGenerate = async () => {
     try {
       const runUrl = await generateAndSaveResearcherPilotRunUrl({
@@ -39,7 +36,6 @@ export default function GeneratePilotLinkButton({
       })
 
       toast.success("Pilot link generated successfully!")
-      router.refresh() // Refresh to get the new test link data
       onGenerated?.(runUrl) // Optional callback for additional actions
     } catch (error) {
       console.error("Failed to generate pilot link:", error)

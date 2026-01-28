@@ -32,7 +32,7 @@ export default function Step3Content() {
     [study.researchers, userId]
   )
   const researcherId = researcher?.id ?? null
-  const [researcherRunUrl] = useQuery(
+  const [researcherRunUrl, { refetch: refetchRunUrl }] = useQuery(
     getResearcherRunUrl,
     { studyId: study.id },
     { enabled: Boolean(researcherId) }
@@ -145,6 +145,9 @@ export default function Step3Content() {
         jatosStudyId={jatosStudyId}
         jatosBatchId={jatosBatchId}
         jatosStudyUUID={study.jatosStudyUUID}
+        onPilotLinkGenerated={async (_runUrl) => {
+          await refetchRunUrl()
+        }}
         onCheckStatus={() => checkPilotStatus(true)}
       />
 

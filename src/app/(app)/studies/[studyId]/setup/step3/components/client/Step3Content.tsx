@@ -66,7 +66,10 @@ export default function Step3Content() {
         return
       }
 
-      const result = await checkPilotStatusAction(study.jatosStudyUUID)
+      const result = await checkPilotStatusAction({
+        jatosStudyUUID: study.jatosStudyUUID,
+        jatosStudyUploadId,
+      })
 
       if (!result.success) {
         startTransition(() => {
@@ -100,7 +103,7 @@ export default function Step3Content() {
         }
       }
     },
-    [study?.jatosStudyUUID, updateCompletion]
+    [study?.jatosStudyUUID, jatosStudyUploadId, updateCompletion]
   )
 
   // Auto-check pilot status on mount when jatosRunUrl is available

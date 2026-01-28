@@ -1,15 +1,18 @@
 import db from "db"
-import { getBlitzContext } from "@/src/app/blitz-server"
+import { cache } from "react"
 
-export async function verifyResearcherStudyAccess(studyId: number): Promise<void> {
-  const { session } = await getBlitzContext()
-  if (!session.userId) throw new Error("Not authenticated")
-
+const checkDbAccess = cache(async (studyId: number, userId: number) => {
+  console.log(`Checking DB access for User: ${userId} on Study: ${studyId}`) // You'll see this only once per request
   const researcher = await db.studyResearcher.findFirst({
-    where: { studyId, userId: session.userId },
+    where: { studyId, userId: userId },
   })
+  return !!researcher
+})
 
-  if (!researcher) {
+export async function verifyResearcherStudyAccess(studyId: number, userId: number): Promise<void> {
+  const hasAccess = await checkDbAccess(studyId, userId)
+
+  if (!hasAccess) {
     throw new Error("You are not authorized to access this study.")
   }
 }

@@ -40,7 +40,13 @@ export default function Step3Content() {
   const jatosRunUrl = researcherRunUrl?.jatosRunUrl ?? null
 
   // Pilot completion state - initialize from database to prevent flicker
-  const [pilotCompleted, setPilotCompleted] = useState<boolean | null>(step3Completed ?? null)
+  const [pilotCompleted, setPilotCompleted] = useState<boolean>(step3Completed)
+
+  // Keep local state in sync with the prop from the database.
+  // This handles cases where the status is updated externally (eg, another browser tab).
+  useEffect(() => {
+    setPilotCompleted(step3Completed)
+  }, [step3Completed])
 
   // Separate function to update completion
   const updateCompletion = useCallback(async () => {
@@ -82,7 +88,7 @@ export default function Step3Content() {
       }
 
       startTransition(() => {
-        setPilotCompleted(result.completed)
+        setPilotCompleted(result.completed ?? false)
       })
 
       if (result.completed) {

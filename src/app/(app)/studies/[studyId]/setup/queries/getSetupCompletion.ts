@@ -4,17 +4,20 @@ import { z } from "zod"
 import { cache } from "react"
 import { verifyResearcherStudyAccess } from "../../utils/verifyResearchersStudyAccess"
 import { deriveStep1Completed } from "../utils/deriveStep1Completed"
+import { getBlitzContext } from "@/src/app/blitz-server"
 
 const GetSetupCompletion = z.object({
   studyId: z.number(),
 })
 
-// Server-side helper for RSCs
-export const getSetupCompletionRsc = cache(async (studyId: number) => {
-  await verifyResearcherStudyAccess(studyId)
-
-  const study = await db.study.findUnique({
-    where: { id: studyId },
+const getCachedStudyData = cache(async (studyId: number, userId: number) => {
+  return await db.study.findUnique({
+    where: {
+      id: studyId,
+      researchers: {
+        some: { userId: userId },
+      },
+    },
     select: {
       title: true,
       description: true,
@@ -32,28 +35,35 @@ export const getSetupCompletionRsc = cache(async (studyId: number) => {
       },
     },
   })
+})
+
+// Server-side helper for RSCs
+export const getSetupCompletionRsc = async (studyId: number) => {
+  const { session } = await getBlitzContext()
+  const userId = session.userId
+
+  if (!userId) throw new Error("Not authenticated")
+
+  await verifyResearcherStudyAccess(studyId, userId)
+
+  const study = await getCachedStudyData(studyId, userId)
 
   if (!study) {
     throw new Error("Study not found")
   }
 
   const latestUpload = study.jatosStudyUploads[0] ?? null
-
-  if (latestUpload) {
-    return latestUpload
-  }
-
-  const step1Completed = deriveStep1Completed(study)
+  if (latestUpload) return latestUpload
 
   return {
-    step1Completed,
+    step1Completed: deriveStep1Completed(study),
     step2Completed: false,
     step3Completed: false,
     step4Completed: false,
     step5Completed: false,
     step6Completed: false,
   }
-})
+}
 
 // Blitz RPC for client usage with useQuery
 export default resolver.pipe(

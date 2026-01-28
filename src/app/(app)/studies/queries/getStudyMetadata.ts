@@ -4,16 +4,22 @@ import db from "db"
 import { cache } from "react"
 import { z } from "zod"
 import { getBlitzContext } from "@/src/app/blitz-server"
+import { verifyResearcherStudyAccess } from "../[studyId]/utils/verifyResearchersStudyAccess"
 
 export const GetStudyMetadataSchema = z.object({
   studyId: z.number().int().positive(),
 })
 
 // Core database and API function
-async function fetchStudyMetadata(studyId: number) {
+const fetchStudyMetadata = cache(async (studyId: number, userId: number) => {
   // 1) Get latest JATOS ID from uploads
   const study = await db.study.findFirst({
-    where: { id: studyId },
+    where: {
+      id: studyId,
+      researchers: {
+        some: { userId: userId },
+      },
+    },
     select: {
       id: true,
       jatosStudyUploads: {
@@ -23,23 +29,25 @@ async function fetchStudyMetadata(studyId: number) {
       },
     },
   })
+
   if (!study) throw new Error("Study not found")
   const jatosStudyId = study.jatosStudyUploads[0]?.jatosStudyId ?? null
   if (!jatosStudyId) throw new Error("Study does not have JATOS ID")
 
   // 2) Fetch metadata from JATOS API
-  const metadata = await getResultsMetadata({ studyIds: [jatosStudyId] })
-
-  return metadata
-}
+  return await getResultsMetadata({ studyIds: [jatosStudyId] })
+})
 
 // Server-side helper for RSCs
 export const getStudyMetadataRsc = cache(async (studyId: number) => {
   const { session } = await getBlitzContext()
-  if (!session.userId) throw new Error("Not authenticated")
-  // Note: RSC helper doesn't check role, but RPC resolver does
+  const userId = session.userId
 
-  return fetchStudyMetadata(studyId)
+  if (!userId) throw new Error("Not authenticated")
+
+  await verifyResearcherStudyAccess(studyId, userId)
+
+  return fetchStudyMetadata(studyId, userId)
 })
 
 // Blitz RPC for client usage (with role check)
@@ -47,6 +55,6 @@ export default resolver.pipe(
   resolver.zod(GetStudyMetadataSchema),
   resolver.authorize("RESEARCHER"),
   async ({ studyId }) => {
-    return fetchStudyMetadata(studyId)
+    return getStudyMetadataRsc(studyId)
   }
 )

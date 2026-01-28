@@ -1,9 +1,17 @@
 import type { ComponentFacts, Diagnostic } from "../types"
+import { aggregateComponentFactsByRun } from "./aggregateFactsByRun"
 
-export function materializeComponentDiagnostics(facts: ComponentFacts): Map<number, Diagnostic[]> {
+export function materializeComponentDiagnostics(
+  facts: ComponentFacts | Map<number, ComponentFacts>
+): Map<number, Diagnostic[]> {
+  const firstValue = facts.values().next().value
+  const aggregated =
+    firstValue instanceof Map
+      ? aggregateComponentFactsByRun(facts as Map<number, ComponentFacts>)
+      : facts
   const byComponentId = new Map<number, Diagnostic[]>()
 
-  for (const [componentId, fact] of facts.entries()) {
+  for (const [componentId, fact] of aggregated.entries()) {
     const diags: Diagnostic[] = []
 
     if (!fact.hasParsedData && !fact.hasDataContent) {

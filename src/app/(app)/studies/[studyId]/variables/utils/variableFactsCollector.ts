@@ -35,6 +35,7 @@ export class VariableFactsCollector {
       },
       collisions: {
         variableKeyPathMap: new Map(),
+        variableKeyPathCounts: new Map(),
         variableKeyCollisionCounts: new Map(),
         variableKeyCollisionKeyPaths: new Map(),
       },
@@ -244,6 +245,14 @@ export class VariableFactsCollector {
         })
       }
     }
+
+    // Track keyPathString counts for collision aggregation
+    let pathCounts = this.facts.invariants.collisions.variableKeyPathCounts.get(variableKey)
+    if (!pathCounts) {
+      pathCounts = new Map()
+      this.facts.invariants.collisions.variableKeyPathCounts.set(variableKey, pathCounts)
+    }
+    pathCounts.set(obs.keyPathString, (pathCounts.get(obs.keyPathString) || 0) + 1)
 
     // Row key anomalies - use pre-computed hasArrayIndices
     if (

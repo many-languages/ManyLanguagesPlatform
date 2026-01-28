@@ -16,6 +16,7 @@ import { freezeRunFacts } from "./freezeRunFacts"
 import { freezeComponentFacts } from "./freezeComponentFacts"
 import { materializeRunDiagnostics } from "./materializeRunDiagnostics"
 import { materializeComponentDiagnostics } from "./materializeComponentDiagnostics"
+import { aggregateComponentFactsByRun, aggregateVariableFactsByRun } from "./aggregateFactsByRun"
 
 /**
  * Format-specific data preparation
@@ -93,30 +94,38 @@ export function extractObservations(
   const diagnosticsEnabled = options?.diagnostics ?? true
   const allObservations: NewExtractionResult["observations"] = []
 
-  // Single collectors for all components (tracks stats and facts across all components)
+  // Shared stats tracker for global limits (unchanged behavior)
   const statsTracker = new StatsTracker()
-  const runFactsCollector = new RunFactsCollector({
-    deepNestingThreshold: config.run.deepNestingThreshold,
-    maxExamplePaths: config.run.maxExamplePaths,
-    enabled: diagnosticsEnabled,
-  })
-  const variableFactsCollector = new VariableFactsCollector({
-    maxExamplePaths: config.variable.maxExamplePaths,
-    maxDistinctTracking: config.variable.maxDistinctTracking,
-  })
-  const componentFactsCollector = new ComponentFactsCollector()
-
-  // Create pipeline context once (ensures consistency across all walks)
-  const ctx: PipelineContext = {
-    config,
-    stats: statsTracker,
-    run: runFactsCollector,
-    variable: variableFactsCollector,
-    allowVariableKeys: options?.allowVariableKeys,
-  }
+  const runCollectorsByRun = new Map<number, RunFactsCollector>()
+  const variableCollectorsByRun = new Map<number, VariableFactsCollector>()
+  const componentCollectorsByRun = new Map<number, ComponentFactsCollector>()
 
   // Process each result + component
   enrichedResults.forEach((enrichedResult) => {
+    const runFactsCollector = new RunFactsCollector({
+      deepNestingThreshold: config.run.deepNestingThreshold,
+      maxExamplePaths: config.run.maxExamplePaths,
+      enabled: diagnosticsEnabled,
+    })
+    const variableFactsCollector = new VariableFactsCollector({
+      maxExamplePaths: config.variable.maxExamplePaths,
+      maxDistinctTracking: config.variable.maxDistinctTracking,
+    })
+    const componentFactsCollector = new ComponentFactsCollector()
+
+    runCollectorsByRun.set(enrichedResult.id, runFactsCollector)
+    variableCollectorsByRun.set(enrichedResult.id, variableFactsCollector)
+    componentCollectorsByRun.set(enrichedResult.id, componentFactsCollector)
+
+    // Create pipeline context per run
+    const ctx: PipelineContext = {
+      config,
+      stats: statsTracker,
+      run: runFactsCollector,
+      variable: variableFactsCollector,
+      allowVariableKeys: options?.allowVariableKeys,
+    }
+
     enrichedResult.componentResults.forEach((component) => {
       const componentId = component.componentId
       const format = component.detectedFormat?.format
@@ -161,15 +170,32 @@ export function extractObservations(
   })
 
   // Freeze facts into immutable snapshots
-  const variableFacts = freezeVariableFacts(variableFactsCollector)
-  const componentFacts = freezeComponentFacts(componentFactsCollector)
+  const variableFactsByRun = new Map<number, ReturnType<typeof freezeVariableFacts>>()
+  const componentFactsByRun = new Map<number, ReturnType<typeof freezeComponentFacts>>()
+  const runFactsByRun = new Map<number, ReturnType<typeof freezeRunFacts>>()
+
+  for (const [runId, collector] of variableCollectorsByRun.entries()) {
+    variableFactsByRun.set(runId, freezeVariableFacts(collector))
+  }
+  for (const [runId, collector] of componentCollectorsByRun.entries()) {
+    componentFactsByRun.set(runId, freezeComponentFacts(collector))
+  }
+  for (const [runId, collector] of runCollectorsByRun.entries()) {
+    runFactsByRun.set(runId, freezeRunFacts(collector))
+  }
+
+  const variableFacts = aggregateVariableFactsByRun(variableFactsByRun, {
+    maxExamplePaths: config.variable.maxExamplePaths,
+    maxDistinctTracking: config.variable.maxDistinctTracking,
+  })
+  const componentFacts = aggregateComponentFactsByRun(componentFactsByRun)
 
   // Materialize diagnostics from frozen facts (only if enabled)
   const runDiagnostics = diagnosticsEnabled
-    ? materializeRunDiagnostics(freezeRunFacts(runFactsCollector))
+    ? materializeRunDiagnostics(runFactsByRun, { maxExamplePaths: config.run.maxExamplePaths })
     : []
   const componentDiagnostics = diagnosticsEnabled
-    ? materializeComponentDiagnostics(componentFacts)
+    ? materializeComponentDiagnostics(componentFactsByRun)
     : new Map()
 
   return {

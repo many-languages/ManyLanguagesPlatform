@@ -39,6 +39,7 @@ export type VariableFacts = {
     }
     collisions: {
       variableKeyPathMap: Map<string, string>
+      variableKeyPathCounts: Map<string, Map<string, number>>
       variableKeyCollisionCounts: Map<string, number>
       variableKeyCollisionKeyPaths: Map<string, { first: string; second: string }>
     }

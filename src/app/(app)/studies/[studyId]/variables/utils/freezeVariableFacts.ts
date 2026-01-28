@@ -76,6 +76,14 @@ export function freezeVariableFacts(collector: VariableFactsCollector): Variable
       },
       collisions: {
         variableKeyPathMap: new Map(facts.invariants.collisions.variableKeyPathMap),
+        variableKeyPathCounts: new Map(
+          Array.from(facts.invariants.collisions.variableKeyPathCounts.entries()).map(
+            ([key, pathMap]) => [
+              key,
+              new Map(Array.from(pathMap.entries()).map(([path, count]) => [path, count])),
+            ]
+          )
+        ),
         variableKeyCollisionCounts: new Map(facts.invariants.collisions.variableKeyCollisionCounts),
         variableKeyCollisionKeyPaths: new Map(
           Array.from(facts.invariants.collisions.variableKeyCollisionKeyPaths.entries()).map(

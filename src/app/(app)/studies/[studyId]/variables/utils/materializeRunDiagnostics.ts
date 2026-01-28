@@ -1,6 +1,11 @@
 import type { Diagnostic, RunFacts } from "../types"
+import { aggregateRunFactsByRun } from "./aggregateFactsByRun"
 
-export function materializeRunDiagnostics(facts: RunFacts): Diagnostic[] {
+export function materializeRunDiagnostics(
+  facts: RunFacts | Map<number, RunFacts>,
+  opts?: { maxExamplePaths?: number }
+): Diagnostic[] {
+  const aggregated = facts instanceof Map ? aggregateRunFactsByRun(facts, opts) : facts
   const diags: Diagnostic[] = []
   const seen = new Set<string>()
   const pushOnce = (d: Diagnostic) => {
@@ -11,7 +16,7 @@ export function materializeRunDiagnostics(facts: RunFacts): Diagnostic[] {
   }
 
   // Limits -> errors
-  for (const e of facts.limits.values()) {
+  for (const e of aggregated.limits.values()) {
     if (e.kind === "MAX_NODES_EXCEEDED") {
       pushOnce({
         severity: "error",
@@ -37,7 +42,7 @@ export function materializeRunDiagnostics(facts: RunFacts): Diagnostic[] {
   }
 
   // Derived truncation warning
-  if (facts.limits.size > 0) {
+  if (aggregated.limits.size > 0) {
     pushOnce({
       severity: "warning",
       code: "TRUNCATED_EXTRACTION",
@@ -47,17 +52,20 @@ export function materializeRunDiagnostics(facts: RunFacts): Diagnostic[] {
   }
 
   // Deep nesting (max)
-  if (facts.deepNesting.maxDepth > facts.deepNesting.threshold) {
+  if (aggregated.deepNesting.maxDepth > aggregated.deepNesting.threshold) {
     pushOnce({
       severity: "warning",
       code: "DEEP_NESTING",
-      message: `Nesting depth ${facts.deepNesting.maxDepth} exceeds threshold (${facts.deepNesting.threshold})`,
-      metadata: { depth: facts.deepNesting.maxDepth, threshold: facts.deepNesting.threshold },
+      message: `Nesting depth ${aggregated.deepNesting.maxDepth} exceeds threshold (${aggregated.deepNesting.threshold})`,
+      metadata: {
+        depth: aggregated.deepNesting.maxDepth,
+        threshold: aggregated.deepNesting.threshold,
+      },
     })
   }
 
   // Skipped non-json types
-  for (const [jsType, data] of facts.skippedNonJson.entries()) {
+  for (const [jsType, data] of aggregated.skippedNonJson.entries()) {
     const message =
       data.count === 1
         ? `Skipped non-JSON type '${jsType}' at path: ${data.examplePaths[0]}`

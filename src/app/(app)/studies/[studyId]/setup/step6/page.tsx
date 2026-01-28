@@ -6,11 +6,16 @@ import { getStudyVariablesRsc } from "../../variables/queries/getStudyVariables"
 import { getPilotResultByIdRsc } from "../../utils/getPilotResultById"
 import db from "db"
 
+import { getStudyRsc } from "../../../queries/getStudy"
+
 async function Step6ContentWrapper({ studyId }: { studyId: number }) {
   // Fetch feedback template server-side
   const feedbackTemplate = await getFeedbackTemplateRsc(studyId)
 
-  const study = await db.study.findUnique({
+  // We need the full study object for the content component (setup flags)
+  const study = await getStudyRsc(studyId)
+
+  const studyWithExtraction = await db.study.findUnique({
     where: { id: studyId },
     select: {
       jatosStudyUploads: {
@@ -31,13 +36,15 @@ async function Step6ContentWrapper({ studyId }: { studyId: number }) {
     },
   })
 
-  const latestUpload = study?.jatosStudyUploads[0] ?? null
+  const latestUploadWithExtraction = studyWithExtraction?.jatosStudyUploads[0] ?? null
 
-  const approvedExtraction = latestUpload?.approvedExtraction ?? null
+  const approvedExtraction = latestUploadWithExtraction?.approvedExtraction ?? null
   const pilotResultId =
-    Array.isArray(latestUpload?.approvedExtraction?.pilotDatasetSnapshot?.pilotRunIds) &&
-    latestUpload?.approvedExtraction?.pilotDatasetSnapshot?.pilotRunIds.length
-      ? (latestUpload?.approvedExtraction?.pilotDatasetSnapshot?.pilotRunIds[0] as number)
+    Array.isArray(
+      latestUploadWithExtraction?.approvedExtraction?.pilotDatasetSnapshot?.pilotRunIds
+    ) && latestUploadWithExtraction?.approvedExtraction?.pilotDatasetSnapshot?.pilotRunIds.length
+      ? (latestUploadWithExtraction?.approvedExtraction?.pilotDatasetSnapshot
+          ?.pilotRunIds[0] as number)
       : null
 
   const enrichedResult = pilotResultId ? await getPilotResultByIdRsc(studyId, pilotResultId) : null
@@ -48,12 +55,21 @@ async function Step6ContentWrapper({ studyId }: { studyId: number }) {
   return (
     <>
       <div className="flex items-center justify-between mb-4">
-        <SaveExitButton />
+        <SaveExitButton studyId={studyId} />
         <h2 className="text-xl font-semibold text-center flex-1">Step 6 – Feedback</h2>
         <div className="w-32" /> {/* Spacer to balance the layout */}
       </div>
       <Step6Content
-        initialFeedbackTemplate={feedbackTemplate}
+        study={study}
+        initialFeedbackTemplate={
+          feedbackTemplate
+            ? {
+                ...feedbackTemplate,
+                missingKeys: (feedbackTemplate.missingKeys as string[]) ?? [],
+                extraKeys: (feedbackTemplate.extraKeys as string[]) ?? [],
+              }
+            : null
+        }
         approvedExtractionId={approvedExtraction?.id ?? null}
         approvedExtractionApprovedAt={approvedExtraction?.approvedAt ?? null}
         enrichedResult={enrichedResult}

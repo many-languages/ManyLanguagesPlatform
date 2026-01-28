@@ -1,43 +1,10 @@
-import { notFound } from "next/navigation"
-import StepIndicator from "./components/client/StepIndicator"
-import { StudySetupProvider } from "./components/client/StudySetupProvider"
-import { getStudyRsc } from "../../queries/getStudy"
-import { getCompletedSteps } from "./utils/setupStatus"
-
-export default async function StudySetupLayout({
-  children,
-  params,
-}: {
-  children: React.ReactNode
-  params: Promise<{ studyId: string }>
-}) {
-  const { studyId: studyIdRaw } = await params
-  const studyId = Number(studyIdRaw)
-
-  if (!Number.isFinite(studyId)) {
-    notFound()
-  }
-
-  try {
-    // Fetch study data once in layout - will be preserved across step navigation
-    const study = await getStudyRsc(studyId)
-
-    // Calculate completed steps for the indicator
-    const completedSteps = getCompletedSteps(study)
-
-    return (
-      <StudySetupProvider study={study} studyId={studyId}>
-        <div className="max-w-4xl mx-auto mt-10">
-          {/* Step indicator - client component detects current step from pathname */}
-          <StepIndicator completedSteps={completedSteps} />
-          <div className="card bg-base-200 p-6 shadow-md mt-4">{children}</div>
-        </div>
-      </StudySetupProvider>
-    )
-  } catch (error: any) {
-    if (error.name === "NotFoundError") {
-      notFound()
-    }
-    throw error
-  }
+export default function StudySetupLayout({ children }: { children: React.ReactNode }) {
+  // Layout now only provides the structural shell
+  // Data fetching and StepIndicator moved to template.tsx to ensure freshness on navigation
+  return (
+    <div className="max-w-4xl mx-auto mt-10">
+      {/* Template will inject StepIndicator here */}
+      <div className="card bg-base-200 p-6 shadow-md mt-4">{children}</div>
+    </div>
+  )
 }

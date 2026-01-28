@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation"
 import { useEffect, useRef, useState } from "react"
-import { useStudySetup } from "../../../components/client/StudySetupProvider"
+
 import { useMutation, useQuery } from "@blitzjs/rpc"
 import { toast } from "react-hot-toast"
 import { isSetupComplete } from "../../../utils/setupStatus"
@@ -17,6 +17,8 @@ import getCachedExtractionBundle from "../../../queries/getCachedExtractionBundl
 import runExtraction from "../../../mutations/runExtraction"
 import type { SerializedExtractionBundle } from "../../../utils/serializeExtractionBundle"
 import type { FeedbackVariable } from "../../../../feedback/types"
+
+import { StudyWithRelations } from "@/src/app/(app)/studies/queries/getStudy"
 
 interface Step6ContentProps {
   initialFeedbackTemplate?: {
@@ -36,6 +38,7 @@ interface Step6ContentProps {
   allPilotResults: EnrichedJatosStudyResult[]
   pilotResultId: number | null
   variables: FeedbackVariable[]
+  study: StudyWithRelations
 }
 
 export default function Step6Content({
@@ -46,9 +49,11 @@ export default function Step6Content({
   allPilotResults,
   pilotResultId,
   variables,
+  study,
 }: Step6ContentProps) {
   const router = useRouter()
-  const { study, studyId } = useStudySetup()
+  // const { study, studyId } = useStudySetup() // Removed context
+  const studyId = study.id
   const feedbackEditorRef = useRef<FeedbackFormEditorRef>(null)
   const [updateStudyStatusMutation] = useMutation(updateStudyStatus)
   const { refetch: refetchNotifications } = useNotificationMenuContext()
@@ -194,6 +199,7 @@ export default function Step6Content({
         }}
       />
       <StepNavigation
+        studyId={studyId}
         prev="step5"
         next="study"
         nextLabel="Finish Setup"

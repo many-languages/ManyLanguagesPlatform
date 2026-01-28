@@ -3,8 +3,13 @@ import { StudyWithRelations } from "../../../queries/getStudy"
 import { deriveStep1Completed } from "./deriveStep1Completed"
 
 // More flexible interface for studies with minimal researcher data
-export interface StudyWithMinimalRelations extends Study {
-  researchers?: { userId: number; role: string }[]
+// Using Partial<Study> allows us to pass lightweight objects from optimized queries
+export interface StudyWithMinimalRelations extends Partial<Study> {
+  // We need at least these for deriving step 1
+  title?: string
+  description?: string
+
+  researchers?: { userId?: number; role?: string; id?: number }[]
   FeedbackTemplate?: FeedbackTemplate[] | { id: number }[]
   latestJatosStudyUpload?: {
     step1Completed?: boolean
@@ -13,6 +18,10 @@ export interface StudyWithMinimalRelations extends Study {
     step4Completed?: boolean
     step5Completed?: boolean
     step6Completed?: boolean
+    // We might need these for logic
+    id?: number
+    jatosWorkerType?: string
+    jatosFileName?: string
   } | null
 }
 

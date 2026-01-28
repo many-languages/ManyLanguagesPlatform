@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { useMutation } from "@blitzjs/rpc"
 import { toast } from "react-hot-toast"
-import { useStudySetup } from "../../../setup/components/client/StudySetupProvider"
+
 import updateVariableCodebook from "../../mutations/updateVariableCodebook"
 import StepNavigation from "../../../setup/components/client/StepNavigation"
 import { Alert } from "@/src/app/components/Alert"
@@ -19,6 +19,8 @@ interface VariableCodebookEntry {
   description: string | null
   personalData: boolean
 }
+
+import { StudyWithRelations } from "@/src/app/(app)/studies/queries/getStudy"
 
 interface CodebookContentProps {
   initialVariables: Array<{
@@ -40,6 +42,7 @@ interface CodebookContentProps {
   } | null
   approvedExtractionId: number | null
   approvedExtractionApprovedAt: Date | string | null
+  study: StudyWithRelations
 }
 
 export default function CodebookContent({
@@ -47,9 +50,11 @@ export default function CodebookContent({
   codebook,
   approvedExtractionId,
   approvedExtractionApprovedAt,
+  study,
 }: CodebookContentProps) {
   const router = useRouter()
-  const { study, studyId } = useStudySetup()
+  // const { study, studyId } = useStudySetup() // Removed context
+  const studyId = study.id
   const step5Completed = study.latestJatosStudyUpload?.step5Completed ?? false
   const [variables, setVariables] = useState<VariableCodebookEntry[]>([])
   const [isSaving, setIsSaving] = useState(false)
@@ -220,7 +225,7 @@ export default function CodebookContent({
                     className="textarea textarea-bordered w-full"
                     rows={3}
                     placeholder="Describe what this variable measures or represents..."
-                    value={variable.description}
+                    value={variable.description ?? ""}
                     onChange={(e) => updateVariable(variable.id, "description", e.target.value)}
                   />
                 </div>
@@ -242,6 +247,7 @@ export default function CodebookContent({
       </div>
 
       <StepNavigation
+        studyId={studyId}
         prev="step4"
         next="step6"
         disableNext={

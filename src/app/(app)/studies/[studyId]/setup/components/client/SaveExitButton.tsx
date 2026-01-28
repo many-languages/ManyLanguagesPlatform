@@ -8,9 +8,7 @@ import { NavigationButton } from "@/src/app/components/NavigationButton"
  * SaveExitButton - A button that navigates back to the study page
  * Used in setup step pages to allow users to exit setup and return to the study page
  */
-export default function SaveExitButton() {
-  const { studyId } = useStudySetup()
-
+export default function SaveExitButton({ studyId }: { studyId: number }) {
   return (
     <NavigationButton
       href={`/studies/${studyId}` as Route}

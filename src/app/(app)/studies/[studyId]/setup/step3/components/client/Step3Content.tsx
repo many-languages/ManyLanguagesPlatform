@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation"
 import { toast } from "react-hot-toast"
 import { useSession } from "@blitzjs/auth"
 import { useMutation, useQuery } from "@blitzjs/rpc"
-import { useStudySetup } from "../../../components/client/StudySetupProvider"
+
 import updateSetupCompletion from "../../../mutations/updateSetupCompletion"
 import { checkPilotStatusAction } from "../../actions/checkPilotStatus"
 import getResearcherRunUrl from "../../../queries/getResearcherRunUrl"
@@ -14,8 +14,14 @@ import Step3Actions from "./Step3Actions"
 import StepNavigation from "../../../components/client/StepNavigation"
 import { useWindowResumeCheck } from "@/src/app/hooks/useWindowResumeCheck"
 
-export default function Step3Content() {
-  const { study } = useStudySetup()
+import { StudyWithRelations } from "@/src/app/(app)/studies/queries/getStudy"
+
+interface Step3ContentProps {
+  study: StudyWithRelations
+}
+
+export default function Step3Content({ study }: Step3ContentProps) {
+  // const { study } = useStudySetup() // Removed context
   const { userId } = useSession()
   const router = useRouter()
   const [updateSetupCompletionMutation] = useMutation(updateSetupCompletion)
@@ -158,6 +164,7 @@ export default function Step3Content() {
       />
 
       <StepNavigation
+        studyId={study.id}
         prev="step2"
         next="step4"
         disableNext={!jatosRunUrl || !pilotCompleted}

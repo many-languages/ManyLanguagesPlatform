@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
 import { useSession } from "@blitzjs/auth"
-import { useStudySetup } from "../../../components/client/StudySetupProvider"
+
 import JatosForm from "./JatosForm"
 import toast from "react-hot-toast"
 import { useMutation } from "@blitzjs/rpc"
@@ -18,9 +18,15 @@ import { Alert } from "@/src/app/components/Alert"
 import { FORM_ERROR } from "@/src/app/components/Form"
 import { generateAndSaveResearcherPilotRunUrl } from "../../../../utils/generateResearcherPilotRunUrl"
 
-export default function Step2Content() {
+import { StudyWithRelations } from "@/src/app/(app)/studies/queries/getStudy"
+
+interface Step2ContentProps {
+  study: StudyWithRelations
+}
+
+export default function Step2Content({ study }: Step2ContentProps) {
   const router = useRouter()
-  const { study } = useStudySetup()
+  // const { study } = useStudySetup()
   const { userId } = useSession()
   const [importJatosMutation] = useMutation(importJatos)
   const [checkJatosStudyUuidMutation] = useMutation(checkJatosStudyUuid)
@@ -170,7 +176,6 @@ export default function Step2Content() {
         submitText="Save and continue"
         cancelText="Back"
         onCancel={() => router.push(`/studies/${study.id}/setup/step1`)}
-        actionsClassName="justify-between"
         defaultValues={defaultValues}
         onSubmit={async (values) => {
           const file = values.studyFile as File | undefined

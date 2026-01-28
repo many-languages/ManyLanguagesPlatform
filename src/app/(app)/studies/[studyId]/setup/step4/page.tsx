@@ -2,20 +2,22 @@ import { Suspense } from "react"
 import { notFound } from "next/navigation"
 import Step4Content from "./components/client/Step4Content"
 import SaveExitButton from "../components/client/SaveExitButton"
+import { getStudyRsc } from "../../../queries/getStudy"
 import { getValidationDataRsc } from "../../debug/utils/getValidationData"
 
 async function Step4ContentWrapper({ studyId }: { studyId: number }) {
   try {
+    const study = await getStudyRsc(studyId)
     // Access verification happens inside getValidationDataRsc
     const validationData = await getValidationDataRsc(studyId)
     return (
       <>
         <div className="flex items-center justify-between mb-4">
-          <SaveExitButton />
+          <SaveExitButton studyId={studyId} />
           <h2 className="text-xl font-semibold text-center flex-1">Step 4 – Debug</h2>
           <div className="w-32" /> {/* Spacer to balance the layout */}
         </div>
-        <Step4Content validationData={validationData} />
+        <Step4Content validationData={validationData} study={study} />
       </>
     )
   } catch (error: any) {

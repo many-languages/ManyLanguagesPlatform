@@ -1,7 +1,7 @@
 "use client"
 
 import { useRouter } from "next/navigation"
-import { useStudySetup } from "../../../components/client/StudySetupProvider"
+
 import { useMutation, useQuery } from "@blitzjs/rpc"
 import approveExtraction from "../../../mutations/approveExtraction"
 import runExtraction from "../../../mutations/runExtraction"
@@ -16,13 +16,17 @@ import StructureAnalysisCard from "../../../../debug/components/client/structure
 import { createExtractionIndexStore } from "../../../../variables/utils/extractionIndexStore"
 import type { SerializedExtractionBundle } from "../../../utils/serializeExtractionBundle"
 
+import { StudyWithRelations } from "@/src/app/(app)/studies/queries/getStudy"
+
 interface Step4ContentProps {
   validationData: ValidationData
+  study: StudyWithRelations
 }
 
-export default function Step4Content({ validationData }: Step4ContentProps) {
+export default function Step4Content({ validationData, study }: Step4ContentProps) {
   const router = useRouter()
-  const { study, studyId } = useStudySetup()
+  // const { study, studyId } = useStudySetup() // Removed context
+  const studyId = study.id
   const [approveExtractionMutation] = useMutation(approveExtraction)
   const [runExtractionMutation] = useMutation(runExtraction)
   const latestUpload = study.latestJatosStudyUpload
@@ -143,6 +147,7 @@ export default function Step4Content({ validationData }: Step4ContentProps) {
         />
       )}
       <StepNavigation
+        studyId={studyId}
         prev="step3"
         next="step5"
         disableNext={!hasPilotResults}

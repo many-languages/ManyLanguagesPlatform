@@ -1,11 +1,11 @@
 "use client"
 
-import { useStudySetup } from "./StudySetupProvider"
 import { NavigationButton } from "@/src/app/components/NavigationButton"
 import { AsyncButton } from "@/src/app/components/AsyncButton"
 import type { Route } from "next"
 
 interface StepNavigationProps {
+  studyId: number
   prev?: string // e.g., "step2"
   next?: string // e.g., "step4" or "study" for final step
   disableNext?: boolean
@@ -16,6 +16,7 @@ interface StepNavigationProps {
 }
 
 export default function StepNavigation({
+  studyId,
   prev,
   next,
   disableNext,
@@ -24,7 +25,7 @@ export default function StepNavigation({
   onNext,
   nextTooltip,
 }: StepNavigationProps) {
-  const { studyId } = useStudySetup()
+  // const { studyId } = useStudySetup() // Removed context
 
   const getHref = (step: string): Route => {
     // Handle special case for final step navigation to study page

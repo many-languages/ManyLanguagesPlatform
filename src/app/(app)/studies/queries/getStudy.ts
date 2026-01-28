@@ -55,3 +55,50 @@ const getStudy = resolver.pipe(
 )
 
 export default getStudy
+
+// Optimized query for the setup shell (StepIndicator)
+// Fetches only what is needed to determine the completed steps
+export async function findStudySetupStatus(id: number) {
+  const study = await db.study.findUnique({
+    where: { id },
+    select: {
+      id: true,
+      title: true,
+      description: true,
+      startDate: true,
+      endDate: true,
+      sampleSize: true,
+      payment: true,
+      length: true,
+      jatosStudyUploads: {
+        orderBy: { createdAt: "desc" },
+        take: 1,
+        select: {
+          id: true,
+          step1Completed: true,
+          step2Completed: true,
+          step3Completed: true,
+          step4Completed: true,
+          step5Completed: true,
+          step6Completed: true,
+        },
+      },
+      // Relations needed for "step1Completed" derivation if not on upload
+      researchers: { select: { id: true } }, // Minimal
+    },
+  })
+
+  if (!study) throw new NotFoundError()
+
+  return {
+    ...study,
+    latestJatosStudyUpload: study.jatosStudyUploads[0] ?? null,
+  }
+}
+
+export const getStudySetupStatusRsc = cache(async (id: IdInput) => {
+  const { session } = await getBlitzContext()
+  if (!session.userId) throw new Error("Not authenticated")
+
+  return findStudySetupStatus(id)
+})

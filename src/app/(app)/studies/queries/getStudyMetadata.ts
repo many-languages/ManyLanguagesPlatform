@@ -3,25 +3,16 @@ import { resolver } from "@blitzjs/rpc"
 import db from "db"
 import { cache } from "react"
 import { z } from "zod"
-import { getBlitzContext } from "@/src/app/blitz-server"
-import { verifyResearcherStudyAccess } from "../[studyId]/utils/verifyResearchersStudyAccess"
+import { withStudyAccess } from "../[studyId]/utils/withStudyAccess"
 
 export const GetStudyMetadataSchema = z.object({
   studyId: z.number().int().positive(),
 })
 
-// Core database and API function
-const fetchStudyMetadata = cache(async (studyId: number, userId: number) => {
-  // 1) Get latest JATOS ID from uploads
+const fetchJatosStudyId = cache(async (studyId: number, userId: number) => {
   const study = await db.study.findFirst({
-    where: {
-      id: studyId,
-      researchers: {
-        some: { userId: userId },
-      },
-    },
+    where: { id: studyId, researchers: { some: { userId } } },
     select: {
-      id: true,
       jatosStudyUploads: {
         orderBy: { createdAt: "desc" },
         take: 1,
@@ -31,24 +22,27 @@ const fetchStudyMetadata = cache(async (studyId: number, userId: number) => {
   })
 
   if (!study) throw new Error("Study not found")
+
   const jatosStudyId = study.jatosStudyUploads[0]?.jatosStudyId ?? null
   if (!jatosStudyId) throw new Error("Study does not have JATOS ID")
 
-  // 2) Fetch metadata from JATOS API
+  return jatosStudyId
+})
+
+const fetchResultsMetadata = cache(async (jatosStudyId: number, userId: number) => {
   return await getResultsMetadata({ studyIds: [jatosStudyId] })
 })
 
 // Server-side helper for RSCs
-export const getStudyMetadataRsc = cache(async (studyId: number) => {
-  const { session } = await getBlitzContext()
-  const userId = session.userId
+export const getStudyMetadataRsc = async (studyId: number) => {
+  return await withStudyAccess(studyId, async (sId, uId) => {
+    const jatosStudyId = await fetchJatosStudyId(sId, uId)
 
-  if (!userId) throw new Error("Not authenticated")
+    if (!jatosStudyId) throw new Error("Study does not have a JATOS ID")
 
-  await verifyResearcherStudyAccess(studyId, userId)
-
-  return fetchStudyMetadata(studyId, userId)
-})
+    return await fetchResultsMetadata(jatosStudyId, uId)
+  })
+}
 
 // Blitz RPC for client usage (with role check)
 export default resolver.pipe(

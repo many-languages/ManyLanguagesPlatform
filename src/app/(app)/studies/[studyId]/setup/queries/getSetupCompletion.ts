@@ -2,15 +2,14 @@ import { resolver } from "@blitzjs/rpc"
 import db from "db"
 import { z } from "zod"
 import { cache } from "react"
-import { verifyResearcherStudyAccess } from "../../utils/verifyResearchersStudyAccess"
 import { deriveStep1Completed } from "../utils/deriveStep1Completed"
-import { getBlitzContext } from "@/src/app/blitz-server"
+import { withStudyAccess } from "../../utils/withStudyAccess"
 
 const GetSetupCompletion = z.object({
   studyId: z.number(),
 })
 
-const getCachedStudyData = cache(async (studyId: number, userId: number) => {
+const fetchStudyData = cache(async (studyId: number, userId: number) => {
   return await db.study.findUnique({
     where: {
       id: studyId,
@@ -39,30 +38,26 @@ const getCachedStudyData = cache(async (studyId: number, userId: number) => {
 
 // Server-side helper for RSCs
 export const getSetupCompletionRsc = async (studyId: number) => {
-  const { session } = await getBlitzContext()
-  const userId = session.userId
+  // Use the wrapper to handle Session + Verification + Type Narrowing
+  return await withStudyAccess(studyId, async (sId, uId) => {
+    const study = await fetchStudyData(sId, uId)
 
-  if (!userId) throw new Error("Not authenticated")
+    if (!study) {
+      throw new Error("Study not found")
+    }
 
-  await verifyResearcherStudyAccess(studyId, userId)
+    const latestUpload = study.jatosStudyUploads[0] ?? null
+    if (latestUpload) return latestUpload
 
-  const study = await getCachedStudyData(studyId, userId)
-
-  if (!study) {
-    throw new Error("Study not found")
-  }
-
-  const latestUpload = study.jatosStudyUploads[0] ?? null
-  if (latestUpload) return latestUpload
-
-  return {
-    step1Completed: deriveStep1Completed(study),
-    step2Completed: false,
-    step3Completed: false,
-    step4Completed: false,
-    step5Completed: false,
-    step6Completed: false,
-  }
+    return {
+      step1Completed: deriveStep1Completed(study),
+      step2Completed: false,
+      step3Completed: false,
+      step4Completed: false,
+      step5Completed: false,
+      step6Completed: false,
+    }
+  })
 }
 
 // Blitz RPC for client usage with useQuery

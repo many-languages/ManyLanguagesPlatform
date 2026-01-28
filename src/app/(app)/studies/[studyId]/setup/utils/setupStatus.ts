@@ -4,7 +4,7 @@ import { deriveStep1Completed } from "./deriveStep1Completed"
 
 // More flexible interface for studies with minimal researcher data
 export interface StudyWithMinimalRelations extends Study {
-  researchers?: { userId: number; role: string; jatosRunUrl?: string | null }[]
+  researchers?: { userId: number; role: string }[]
   FeedbackTemplate?: FeedbackTemplate[] | { id: number }[]
   latestJatosStudyUpload?: {
     step1Completed?: boolean

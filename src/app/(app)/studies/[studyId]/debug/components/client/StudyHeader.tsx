@@ -7,13 +7,12 @@ interface StudyHeaderProps {
     id: number
     title: string
     jatosStudyUUID?: string | null
-    jatosStudyId?: number | null
     latestJatosStudyUpload?: { jatosStudyId?: number | null } | null
   }
 }
 
 export default function StudyHeader({ study }: StudyHeaderProps) {
-  const jatosStudyId = study.latestJatosStudyUpload?.jatosStudyId ?? study.jatosStudyId ?? null
+  const jatosStudyId = study.latestJatosStudyUpload?.jatosStudyId ?? null
   return (
     <Card title={study.title} bgColor="bg-base-200">
       <p className="text-sm text-muted-content">

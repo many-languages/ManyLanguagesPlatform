@@ -1,20 +1,17 @@
-import { Study } from "db"
+import type { StudyWithLatestUpload } from "../../queries/getStudies"
 import StudyItem from "./StudyItem"
 
 interface StudyListProps {
   studies: Pick<
-    Study,
+    StudyWithLatestUpload,
     | "id"
     | "title"
     | "description"
     | "sampleSize"
     | "length"
     | "endDate"
-    | "jatosStudyUUID"
-    | "jatosStudyId"
-    | "jatosWorkerType"
-    | "jatosBatchId"
     | "archived"
+    | "latestJatosStudyUpload"
   >[]
   showJoinButton?: boolean
   showOpenButton?: boolean

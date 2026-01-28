@@ -1,4 +1,4 @@
-import { Study } from "db"
+import type { StudyWithLatestUpload } from "../../queries/getStudies"
 import CollapseCard from "../CollapseCard"
 import JoinStudyButton from "./JoinStudyButton"
 import { NavigationButton } from "@/src/app/components/NavigationButton"
@@ -6,18 +6,15 @@ import { ArchiveBoxIcon } from "@heroicons/react/24/outline"
 
 interface StudyItemProps {
   study: Pick<
-    Study,
+    StudyWithLatestUpload,
     | "id"
     | "title"
     | "description"
     | "sampleSize"
     | "length"
     | "endDate"
-    | "jatosStudyUUID"
-    | "jatosStudyId"
-    | "jatosWorkerType"
-    | "jatosBatchId"
     | "archived"
+    | "latestJatosStudyUpload"
   >
   showJoinButton?: boolean
   showOpenButton?: boolean
@@ -28,12 +25,19 @@ export default function StudyItem({
   showJoinButton,
   showOpenButton = true,
 }: StudyItemProps) {
-  const { jatosStudyId, jatosBatchId, jatosWorkerType } = study
-  const canJoinStudy =
-    Boolean(showJoinButton) &&
-    jatosStudyId !== null &&
-    jatosBatchId !== null &&
-    jatosWorkerType !== null
+  const latestUpload = study.latestJatosStudyUpload
+  const joinData =
+    latestUpload &&
+    latestUpload.jatosStudyId != null &&
+    latestUpload.jatosBatchId != null &&
+    latestUpload.jatosWorkerType != null
+      ? {
+          jatosStudyId: latestUpload.jatosStudyId,
+          jatosBatchId: latestUpload.jatosBatchId,
+          jatosWorkerType: latestUpload.jatosWorkerType,
+        }
+      : null
+  const canJoinStudy = Boolean(showJoinButton) && joinData !== null
 
   return (
     <CollapseCard
@@ -59,9 +63,9 @@ export default function StudyItem({
           {canJoinStudy && (
             <JoinStudyButton
               studyId={study.id}
-              jatosStudyId={jatosStudyId}
-              jatosBatchId={jatosBatchId}
-              jatosWorkerType={jatosWorkerType}
+              jatosStudyId={joinData!.jatosStudyId}
+              jatosBatchId={joinData!.jatosBatchId}
+              jatosWorkerType={joinData!.jatosWorkerType}
             />
           )}
         </>

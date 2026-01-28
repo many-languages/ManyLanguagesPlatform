@@ -15,7 +15,7 @@ export async function findStudyById(id: number) {
         take: 1,
       },
       researchers: {
-        select: { id: true, userId: true, role: true, jatosRunUrl: true },
+        select: { id: true, userId: true, role: true },
       },
       participations: {
         select: { userId: true },

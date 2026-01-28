@@ -16,7 +16,6 @@ export interface ValidationData {
   properties: JatosStudyProperties
   study: {
     id: number
-    jatosStudyId: number | null
     jatosStudyUUID: string | null
     title: string
     latestJatosStudyUpload?: { jatosStudyId: number | null } | null
@@ -91,7 +90,6 @@ export const getValidationDataRsc = cache(async (studyId: number): Promise<Valid
     properties,
     study: {
       id: study.id,
-      jatosStudyId,
       jatosStudyUUID: study.jatosStudyUUID,
       title: study.title,
       latestJatosStudyUpload: latestUpload

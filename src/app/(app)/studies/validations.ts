@@ -97,10 +97,6 @@ export const UpdateStudyStatus = z.object({
   status: z.enum(["OPEN", "CLOSED"]),
 })
 
-export const ClearJatosData = z.object({
-  studyId: Id,
-})
-
 // Query validations
 export const GetStudyParticipants = z.object({
   studyId: Id,

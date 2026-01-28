@@ -86,10 +86,44 @@ function buildVariableDiagnostics(
     }
   }
 
+  const variableNameByKey = new Map<string, string>()
+  for (const variable of variables) {
+    variableNameByKey.set(variable.variableKey, variable.variableName)
+  }
+
+  let crossRun:
+    | {
+        run: Diagnostic[]
+        component: Map<number, Diagnostic[]>
+        variable: Map<string, { variableName: string; diagnostics: Diagnostic[] }>
+      }
+    | undefined
+
+  if (extractionResult.crossRunDiagnostics) {
+    const crossRunVariableDiagnostics = new Map<
+      string,
+      { variableName: string; diagnostics: Diagnostic[] }
+    >()
+    for (const [variableKey, diags] of extractionResult.crossRunDiagnostics.variable.entries()) {
+      const variableName = variableNameByKey.get(variableKey) ?? variableKey
+      crossRunVariableDiagnostics.set(variableKey, {
+        variableName,
+        diagnostics: diags,
+      })
+    }
+
+    crossRun = {
+      run: extractionResult.crossRunDiagnostics.run,
+      component: extractionResult.crossRunDiagnostics.component,
+      variable: crossRunVariableDiagnostics,
+    }
+  }
+
   return {
     run: extractionResult.runDiagnostics,
     component: extractionResult.componentDiagnostics,
     variable: variableDiagnostics,
+    crossRun,
   }
 }
 

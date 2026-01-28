@@ -9,6 +9,11 @@ export type SerializedDiagnostics = {
   run: Diagnostic[]
   component: Array<[number, Diagnostic[]]>
   variable: Array<[string, { variableName: string; diagnostics: Diagnostic[] }]>
+  crossRun?: {
+    run: Diagnostic[]
+    component: Array<[number, Diagnostic[]]>
+    variable: Array<[string, { variableName: string; diagnostics: Diagnostic[] }]>
+  }
 }
 
 export type SerializedExtractionBundle = {
@@ -25,6 +30,13 @@ export function serializeExtractionBundle(bundle: ExtractionBundle): SerializedE
       run: bundle.diagnostics.run,
       component: Array.from(bundle.diagnostics.component.entries()),
       variable: Array.from(bundle.diagnostics.variable.entries()),
+      crossRun: bundle.diagnostics.crossRun
+        ? {
+            run: bundle.diagnostics.crossRun.run,
+            component: Array.from(bundle.diagnostics.crossRun.component.entries()),
+            variable: Array.from(bundle.diagnostics.crossRun.variable.entries()),
+          }
+        : undefined,
     },
   }
 }

@@ -16,6 +16,7 @@ import { freezeRunFacts } from "./freezeRunFacts"
 import { freezeComponentFacts } from "./freezeComponentFacts"
 import { materializeRunDiagnostics } from "./materializeRunDiagnostics"
 import { materializeComponentDiagnostics } from "./materializeComponentDiagnostics"
+import { materializeCrossRunDiagnostics } from "./materializeCrossRunDiagnostics"
 import { aggregateComponentFactsByRun, aggregateVariableFactsByRun } from "./aggregateFactsByRun"
 
 /**
@@ -197,6 +198,13 @@ export function extractObservations(
   const componentDiagnostics = diagnosticsEnabled
     ? materializeComponentDiagnostics(componentFactsByRun)
     : new Map()
+  const crossRunDiagnostics =
+    diagnosticsEnabled &&
+    materializeCrossRunDiagnostics({
+      runFactsByRun,
+      componentFactsByRun,
+      variableFactsByRun,
+    })
 
   return {
     observations: allObservations,
@@ -205,5 +213,6 @@ export function extractObservations(
     stats: statsTracker.getStats(),
     variableFacts,
     componentFacts,
+    crossRunDiagnostics: crossRunDiagnostics ?? undefined,
   }
 }

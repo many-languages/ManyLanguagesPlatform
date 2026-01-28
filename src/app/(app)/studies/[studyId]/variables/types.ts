@@ -146,6 +146,12 @@ export type DiagnosticCode =
   | "ROW_KEY_ID_ANOMALY"
   | "EMPTY_OR_NO_DATA"
   | "TRUNCATED_EXTRACTION"
+  | "CROSS_RUN_TRUNCATED_EXTRACTION"
+  | "CROSS_RUN_COMPONENT_MISSING"
+  | "CROSS_RUN_COMPONENT_FORMAT_MISMATCH"
+  | "CROSS_RUN_VARIABLE_MISSING"
+  | "CROSS_RUN_VARIABLE_TYPE_DRIFT"
+  | "CROSS_RUN_VARIABLE_NULL_ONLY"
 
 // Metadata structures for different diagnostic types
 export interface DiagnosticMetadata {
@@ -162,6 +168,14 @@ export interface DiagnosticMetadata {
   maxLength?: number // Maximum length
   depth?: number // Nesting depth
   nodeCount?: number // Number of nodes visited
+  runCount?: number // Number of runs compared
+  presentRunCount?: number // Number of iterations where item appears
+  missingRunCount?: number // Number of iterations where item is missing
+  runIds?: number[] // Run IDs involved
+  missingRunIds?: number[] // Run IDs missing the item
+  formats?: string[] // Formats seen across runs
+  typesByRun?: Record<string, string[]> // Per-run types (stringified runId -> types)
+  nullRatesByRun?: Record<string, number> // Per-run null rates (stringified runId -> rate)
 
   // Component-level diagnostic fields
   format?: string // Data format (json, csv, tsv, text, etc.)
@@ -199,6 +213,13 @@ export interface NewExtractionResult {
   stats: ExtractionStats
   variableFacts: VariableFacts // Snapshot of variable facts (immutable data for aggregation)
   componentFacts: ComponentFacts // Snapshot of component facts (immutable data for diagnostics)
+  crossRunDiagnostics?: CrossRunDiagnostics
+}
+
+export interface CrossRunDiagnostics {
+  run: Diagnostic[]
+  component: Map<number, Diagnostic[]>
+  variable: Map<string, Diagnostic[]>
 }
 
 export interface VariableExample {
@@ -299,5 +320,10 @@ export interface ExtractionBundle {
     run: Diagnostic[]
     component: Map<number, Diagnostic[]>
     variable: Map<string, { variableName: string; diagnostics: Diagnostic[] }>
+    crossRun?: {
+      run: Diagnostic[]
+      component: Map<number, Diagnostic[]>
+      variable: Map<string, { variableName: string; diagnostics: Diagnostic[] }>
+    }
   }
 }

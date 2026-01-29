@@ -7,12 +7,13 @@ import approveExtraction from "../../../mutations/approveExtraction"
 import runExtraction from "../../../mutations/runExtraction"
 import getCachedExtractionBundle from "../../../queries/getCachedExtractionBundle"
 import StepNavigation from "../../../components/client/StepNavigation"
-import type { ValidationData } from "../../../../debug/utils/getValidationData"
+import type { ValidationData } from "../../../../inspector/utils/getValidationData"
 import { useEffect, useMemo, useState } from "react"
 import { Alert } from "@/src/app/components/Alert"
 import { AsyncButton } from "@/src/app/components/AsyncButton"
 import Card from "@/src/app/components/Card"
 import type { SerializedExtractionBundle } from "../../../utils/serializeExtractionBundle"
+import Step4Instructions from "./Step4Instructions"
 
 import { StudyWithRelations } from "@/src/app/(app)/studies/queries/getStudy"
 
@@ -278,7 +279,7 @@ export default function Step4Content({ validationData, study }: Step4ContentProp
         next="step5"
         disableNext={!hasPilotResults || !activeBundle}
         onNext={handleComplete}
-        nextLabel={step4Completed ? "Continue" : "Approve Extraction"}
+        nextLabel="Approve Extraction"
       />
     </div>
   )

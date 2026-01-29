@@ -34,7 +34,6 @@ export default function VariableExtractionPreview({
         extractedVariables={extractionBundle.variables}
         indexStore={indexStore}
         observations={extractionBundle.observations}
-        diagnostics={extractionBundle.diagnostics}
         enrichedResult={enrichedResult}
       />
 

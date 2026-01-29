@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react"
 import { EnrichedJatosStudyResult } from "@/src/types/jatos"
 import { SerializedExtractionBundle } from "../../../../utils/serializeExtractionBundle"
-import StructureAnalysisCard from "../../../../../debug/components/client/structureAnalysis/StructureAnalysisCard"
+import StructureAnalysisCard from "../../../../../inspector/components/client/structureAnalysis/StructureAnalysisCard"
 import { createExtractionIndexStore } from "../../../../../variables/utils/extractionIndexStore"
 import { ExclamationCircleIcon } from "@heroicons/react/24/outline"
 import { ExtractionObservation } from "../../../../../variables/types"
@@ -65,23 +65,23 @@ export default function RunInspector({ runs, activeBundle }: RunInspectorProps) 
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex items-center gap-4 p-4 bg-base-100 rounded-lg shadow">
-        <label className="label">
-          <span className="label-text font-bold">Select Run:</span>
-        </label>
-        <select
-          className="select select-bordered w-full max-w-xs"
-          value={selectedRunId}
-          onChange={(e) => setSelectedRunId(Number(e.target.value))}
-        >
-          {runs.map((run) => (
-            <option key={run.id} value={run.id}>
-              Run #{run.id} ({new Date(run.startDate).toLocaleString()})
-            </option>
-          ))}
-        </select>
-
-        {selectedRun && <div className="badge badge-lg">Worker: {selectedRun.workerId}</div>}
+      <div className="bg-base-100 p-4 rounded-lg shadow">
+        <div className="form-control w-full">
+          <label className="label">
+            <span className="label-text font-bold">Select Run</span>
+          </label>
+          <select
+            className="select select-bordered w-full"
+            value={selectedRunId}
+            onChange={(e) => setSelectedRunId(Number(e.target.value))}
+          >
+            {runs.map((run) => (
+              <option key={run.id} value={run.id}>
+                Run #{run.id} ({new Date(run.startDate).toLocaleString()})
+              </option>
+            ))}
+          </select>
+        </div>
       </div>
 
       {selectedRun && runBundle && (
@@ -90,14 +90,9 @@ export default function RunInspector({ runs, activeBundle }: RunInspectorProps) 
           extractedVariables={runBundle.variables}
           indexStore={runBundle.indexStore}
           observations={runBundle.observations}
-          // For diagnostics, we pass the global ones for now as filtering them is complex
-          // without "runId" in every diagnostic metadata explicitly guaranteed.
-          diagnostics={{
-            run: activeBundle.diagnostics.run, // This might be "all runs" stats
-            component: new Map(activeBundle.diagnostics.component),
-            variable: new Map(activeBundle.diagnostics.variable),
-          }}
           enrichedResult={selectedRun}
+          bgColor="bg-base-100"
+          title={null}
         />
       )}
 

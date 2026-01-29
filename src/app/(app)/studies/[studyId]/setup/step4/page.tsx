@@ -3,7 +3,7 @@ import { notFound } from "next/navigation"
 import Step4Content from "./components/client/Step4Content"
 import SaveExitButton from "../components/client/SaveExitButton"
 import { getStudyRsc } from "../../../queries/getStudy"
-import { getValidationDataRsc } from "../../debug/utils/getValidationData"
+import { getValidationDataRsc } from "../../inspector/utils/getValidationData"
 
 async function Step4ContentWrapper({ studyId }: { studyId: number }) {
   try {

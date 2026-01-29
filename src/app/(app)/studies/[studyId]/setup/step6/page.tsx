@@ -3,7 +3,7 @@ import Step6Content from "./components/client/Step6Content"
 import SaveExitButton from "../components/client/SaveExitButton"
 import { getFeedbackTemplateRsc } from "../../feedback/queries/getFeedbackTemplate"
 import { getAllPilotResultsRsc } from "../../utils/getAllPilotResults"
-import { getVariablesByExtraction } from "../../codebook/utils/getVariablesByExtraction"
+import { getCodebookDataRsc } from "../../codebook/queries/getCodebookData"
 
 import { getStudyRsc } from "../../../queries/getStudy"
 
@@ -34,12 +34,12 @@ async function Step6ContentWrapper({ studyId }: { studyId: number }) {
   const enrichedResult = allPilotResults[0] ?? null
   const pilotResultId = enrichedResult?.id ?? null
 
-  const variables = approvedExtraction?.id
-    ? // Use new helper directly with ID, skipping DB lookup
-      await getVariablesByExtraction(approvedExtraction.id)
-    : []
+  const { variables } = await getCodebookDataRsc(studyId)
 
   const filteredVariables = variables.filter((v: any) => !v.personalData)
+  const hiddenVariables = variables
+    .filter((v: any) => v.personalData)
+    .map((v: any) => v.variableName)
 
   return (
     <>
@@ -69,6 +69,7 @@ async function Step6ContentWrapper({ studyId }: { studyId: number }) {
           type: v.type,
           variableKey: v.variableKey,
         }))}
+        hiddenVariables={hiddenVariables}
       />
     </>
   )

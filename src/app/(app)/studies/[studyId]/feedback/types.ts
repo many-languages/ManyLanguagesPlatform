@@ -42,7 +42,7 @@ export interface FeedbackCardProps {
 }
 
 export interface FeedbackFormEditorRef {
-  saveTemplate: () => Promise<void>
+  saveTemplate: () => Promise<boolean>
   isTemplateSaved: () => boolean
 }
 
@@ -66,9 +66,11 @@ export interface FeedbackFormEditorProps {
   } | null
   studyId: number
   onTemplateSaved?: () => void
+  onValidationChange?: (isValid: boolean) => void
   allPilotResults?: EnrichedJatosStudyResult[]
   variables: FeedbackVariable[]
   extractionBundle:
     | import("../setup/utils/serializeExtractionBundle").SerializedExtractionBundle
     | null
+  hiddenVariables?: string[]
 }

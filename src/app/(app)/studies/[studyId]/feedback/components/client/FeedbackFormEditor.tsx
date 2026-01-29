@@ -9,6 +9,7 @@ import DSLHelper from "./DSLHelper"
 import { useFeedbackTemplate } from "../../hooks/useFeedbackTemplate"
 import { useTemplatePreview } from "../../hooks/useTemplatePreview"
 import { validateDSL, DSLError } from "../../utils/dslValidator"
+import { toast } from "react-hot-toast"
 import type { FeedbackFormEditorProps, FeedbackFormEditorRef } from "../../types"
 import { buildPreviewContextFromBundle } from "../../utils/previewContext"
 import { buildRequiredKeysHash, extractRequiredVariableNames } from "../../utils/requiredKeys"
@@ -16,7 +17,16 @@ import { mdEditorStyles, mdEditorClassName } from "../../styles/feedbackStyles"
 
 const FeedbackFormEditor = forwardRef<FeedbackFormEditorRef, FeedbackFormEditorProps>(
   (
-    { initialTemplate, studyId, onTemplateSaved, allPilotResults, variables, extractionBundle },
+    {
+      initialTemplate,
+      studyId,
+      onTemplateSaved,
+      onValidationChange,
+      allPilotResults,
+      variables,
+      extractionBundle,
+      hiddenVariables,
+    },
     ref
   ) => {
     const [markdown, setMarkdown] = useState(
@@ -49,14 +59,19 @@ const FeedbackFormEditor = forwardRef<FeedbackFormEditorRef, FeedbackFormEditorP
 
     // Validate DSL syntax when markdown changes
     useEffect(() => {
-      const validationResult = validateDSL(debouncedMarkdown, variables)
+      const validationResult = validateDSL(
+        debouncedMarkdown,
+        variables,
+        new Set(hiddenVariables ?? [])
+      )
       setDslErrors(validationResult.errors)
+      onValidationChange?.(validationResult.isValid)
 
       // Auto-show errors if there are any
       if (validationResult.errors.length > 0) {
         setShowErrors(true)
       }
-    }, [debouncedMarkdown, variables])
+    }, [debouncedMarkdown, variables, hiddenVariables, onValidationChange])
 
     const handleInsertVariable = (variableSyntax: string) => {
       setMarkdown((prev) => prev + ` ${variableSyntax}`)
@@ -73,8 +88,16 @@ const FeedbackFormEditor = forwardRef<FeedbackFormEditorRef, FeedbackFormEditorP
       setTemplateSaved(false)
     }
 
-    const handleSave = async () => {
+    const handleSave = async (): Promise<boolean> => {
+      // Prevent saving if there are DSL errors
+      if (dslErrors.length > 0) {
+        toast.error("Cannot save template with validation errors. Please fix them first.")
+        setShowErrors(true)
+        return false
+      }
+
       await saveTemplate(markdown)
+      return true
     }
 
     // Expose methods to parent component
@@ -82,7 +105,7 @@ const FeedbackFormEditor = forwardRef<FeedbackFormEditorRef, FeedbackFormEditorP
       ref,
       () => ({
         saveTemplate: async () => {
-          await handleSave()
+          return await handleSave()
         },
         isTemplateSaved: () => templateSaved,
       }),
@@ -98,9 +121,17 @@ const FeedbackFormEditor = forwardRef<FeedbackFormEditorRef, FeedbackFormEditorP
       () => extractRequiredVariableNames(debouncedMarkdown),
       [debouncedMarkdown]
     )
+
+    // Filter variables to only include those that are allowed (passed in props)
+    // This prevents personal data from being shown in the preview even if the template references it
+    const effectiveVariableNames = useMemo(() => {
+      const allowedNames = new Set(variables.map((v) => v.variableName))
+      return requiredVariableNames.filter((name) => allowedNames.has(name))
+    }, [requiredVariableNames, variables])
+
     const requiredKeysHash = useMemo(
-      () => buildRequiredKeysHash(requiredVariableNames),
-      [requiredVariableNames]
+      () => buildRequiredKeysHash(effectiveVariableNames),
+      [effectiveVariableNames]
     )
 
     const contextCacheRef = useRef(
@@ -111,10 +142,10 @@ const FeedbackFormEditor = forwardRef<FeedbackFormEditorRef, FeedbackFormEditorP
       if (!extractionBundle) return null
       const cached = contextCacheRef.current.get(requiredKeysHash)
       if (cached) return cached
-      const built = buildPreviewContextFromBundle(extractionBundle, requiredVariableNames)
+      const built = buildPreviewContextFromBundle(extractionBundle, effectiveVariableNames)
       contextCacheRef.current.set(requiredKeysHash, built)
       return built
-    }, [extractionBundle, requiredKeysHash, requiredVariableNames])
+    }, [extractionBundle, requiredKeysHash, effectiveVariableNames])
 
     // Client-side rendering for live preview
     const renderedPreview = useTemplatePreview({
@@ -143,9 +174,20 @@ const FeedbackFormEditor = forwardRef<FeedbackFormEditorRef, FeedbackFormEditorP
             >
               Add Condition
             </button>
-            <button className="btn btn-sm btn-primary" onClick={handleSave} disabled={saving}>
-              {saving ? "Saving..." : initialTemplate ? "Update" : "Save"}
-            </button>
+            <div
+              className="tooltip tooltip-bottom"
+              data-tip={
+                dslErrors.length > 0 ? "Please fix validation errors before saving" : undefined
+              }
+            >
+              <button
+                className="btn btn-sm btn-primary"
+                onClick={() => handleSave()}
+                disabled={saving || dslErrors.length > 0}
+              >
+                {saving ? "Saving..." : initialTemplate ? "Update" : "Save"}
+              </button>
+            </div>
           </div>
         </div>
 

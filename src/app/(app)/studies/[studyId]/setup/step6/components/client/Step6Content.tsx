@@ -38,6 +38,7 @@ interface Step6ContentProps {
   allPilotResults: EnrichedJatosStudyResult[]
   pilotResultId: number | null
   variables: FeedbackVariable[]
+  hiddenVariables: string[]
   study: StudyWithRelations
 }
 
@@ -49,6 +50,7 @@ export default function Step6Content({
   allPilotResults,
   pilotResultId,
   variables,
+  hiddenVariables,
   study,
 }: Step6ContentProps) {
   const router = useRouter()
@@ -97,6 +99,8 @@ export default function Step6Content({
     { enabled: Boolean(pilotResultId) }
   )
 
+  const [isTemplateValid, setIsTemplateValid] = useState(true)
+
   useEffect(() => {
     if (!pilotResultId) return
     if (cachedBundleResult?.bundle) {
@@ -120,7 +124,11 @@ export default function Step6Content({
       const isSaved = feedbackEditorRef.current.isTemplateSaved()
       if (!isSaved) {
         // Auto-save template before finishing
-        await feedbackEditorRef.current.saveTemplate()
+        const success = await feedbackEditorRef.current.saveTemplate()
+        if (!success) {
+          // Save failed (likely due to validation errors), so we abort finish
+          return
+        }
         templateSavedDuringFinish = true
       }
     }
@@ -197,6 +205,8 @@ export default function Step6Content({
           // Refresh to get updated study data (step6Completed will be updated)
           router.refresh()
         }}
+        onValidationChange={setIsTemplateValid}
+        hiddenVariables={hiddenVariables}
       />
       <StepNavigation
         studyId={studyId}
@@ -204,7 +214,8 @@ export default function Step6Content({
         next="study"
         nextLabel="Finish Setup"
         onNext={handleFinish}
-        disableNext={false} // Always enabled since we auto-save
+        disableNext={!isTemplateValid}
+        nextTooltip="Please fix validation errors in the feedback template before finishing."
       />
     </>
   )

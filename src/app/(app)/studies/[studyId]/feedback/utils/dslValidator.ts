@@ -16,7 +16,11 @@ export interface ValidationResult {
 /**
  * Validates DSL syntax and checks for common errors
  */
-export function validateDSL(template: string, variables: FeedbackVariable[]): ValidationResult {
+export function validateDSL(
+  template: string,
+  variables: FeedbackVariable[],
+  hiddenVariables?: Set<string>
+): ValidationResult {
   const errors: DSLError[] = []
 
   const variableNames = new Set(variables.map((v) => v.variableName))
@@ -36,13 +40,23 @@ export function validateDSL(template: string, variables: FeedbackVariable[]): Va
 
     // Check if variable exists
     if (!variableNames.has(varName)) {
-      errors.push({
-        type: "variable",
-        message: `Variable '${varName}' does not exist in the data`,
-        start,
-        end,
-        severity: "error",
-      })
+      if (hiddenVariables?.has(varName)) {
+        errors.push({
+          type: "variable",
+          message: `Variable '${varName}' is marked as personal data and cannot be used`,
+          start,
+          end,
+          severity: "error",
+        })
+      } else {
+        errors.push({
+          type: "variable",
+          message: `Variable '${varName}' does not exist in the data`,
+          start,
+          end,
+          severity: "error",
+        })
+      }
     }
 
     // Check modifier validity

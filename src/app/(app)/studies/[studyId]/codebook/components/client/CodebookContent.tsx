@@ -102,25 +102,14 @@ export default function CodebookContent({
     setVariables((prev) => prev.map((v) => (v.id === id ? { ...v, [field]: value } : v)))
   }
 
-  const handleSave = async () => {
+  const handleSave = async (): Promise<boolean> => {
     if (variables.length === 0) {
       toast.error("No variables found. Please complete step 4 first.")
-      return
+      return false
     }
 
-    // Validate that all variables have descriptions
-    const missingDescriptions = variables.filter(
-      (v) => !v.description || v.description.trim() === ""
-    )
-
-    if (missingDescriptions.length > 0) {
-      toast.error(
-        `Please add descriptions for all variables. Missing: ${missingDescriptions
-          .map((v) => v.variableName)
-          .join(", ")}`
-      )
-      return
-    }
+    // Validation removed to allow partial saves
+    // The "Next" button logic (in StepNavigation below) handles the requirement for completion.
 
     setIsSaving(true)
     try {
@@ -135,10 +124,19 @@ export default function CodebookContent({
       })
       toast.success("Codebook saved successfully!")
       router.refresh()
+      return true
     } catch (error: any) {
       toast.error(error.message || "Failed to save codebook")
+      return false
     } finally {
       setIsSaving(false)
+    }
+  }
+
+  const handleNext = async () => {
+    const success = await handleSave()
+    if (success) {
+      router.push(`/studies/${studyId}/setup/step6`)
     }
   }
 
@@ -150,6 +148,10 @@ export default function CodebookContent({
       </Alert>
     )
   }
+
+  const hasMissingDescriptions = variables.some(
+    (v) => !v.description || v.description.trim() === ""
+  )
 
   return (
     <>
@@ -250,15 +252,10 @@ export default function CodebookContent({
         studyId={studyId}
         prev="step4"
         next="step6"
-        disableNext={
-          !step5Completed || variables.some((v) => !v.description || v.description.trim() === "")
-        }
+        onNext={handleNext}
+        disableNext={hasMissingDescriptions}
         nextTooltip={
-          variables.some((v) => !v.description || v.description.trim() === "")
-            ? "Please add descriptions for all variables and save before proceeding"
-            : !step5Completed
-            ? "Please save the codebook before proceeding"
-            : undefined
+          hasMissingDescriptions ? "Please add descriptions for all variables" : undefined
         }
       />
     </>

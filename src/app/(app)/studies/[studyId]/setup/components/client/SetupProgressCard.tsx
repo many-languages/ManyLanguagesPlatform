@@ -27,7 +27,7 @@ export default function SetupProgressCard({ study }: SetupProgressCardProps) {
 
   // Check if Step 6 needs revision (has template but Step 3, Step 4, or Step 5 is incomplete)
   // This happens when JATOS study is updated after feedback template was created
-  const hasFeedbackTemplate = (study.FeedbackTemplate?.length ?? 0) > 0
+  const hasFeedbackTemplate = Boolean(study.FeedbackTemplate)
   const step6NeedsRevision =
     hasFeedbackTemplate && (!step3Completed || !step4Completed || !step5Completed)
 

@@ -306,6 +306,7 @@ export interface ExtractedVariable {
   occurrences: number
   dataStructure: "array" | "object"
   componentIds: number[] // Component IDs where this variable was found
+  runIds: number[] // JATOS Study Result IDs (Runs) where this variable was found
   flags: VariableFlag[] // Diagnostic flags for this variable
   depth: number // Nesting depth (0 = root level)
   // Extraction context

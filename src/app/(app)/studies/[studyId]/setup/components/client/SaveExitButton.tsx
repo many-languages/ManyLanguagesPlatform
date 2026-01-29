@@ -1,7 +1,6 @@
 "use client"
 
 import type { Route } from "next"
-import { useStudySetup } from "./StudySetupProvider"
 import { NavigationButton } from "@/src/app/components/NavigationButton"
 
 /**

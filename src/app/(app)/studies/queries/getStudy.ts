@@ -84,7 +84,6 @@ export async function findStudySetupStatus(id: number) {
         },
       },
       // Relations needed for "step1Completed" derivation if not on upload
-      researchers: { select: { id: true } }, // Minimal
     },
   })
 

@@ -28,6 +28,7 @@ export function aggregateVariables(
     {
       keyPath: string[]
       componentIds: Set<number>
+      runIds: Set<number>
       minDepth: number
       examples: VariableExample[]
       count: number
@@ -42,6 +43,7 @@ export function aggregateVariables(
       variableMetadata.set(obs.variableKey, {
         keyPath: obs.keyPath,
         componentIds: new Set(),
+        runIds: new Set(),
         minDepth: Infinity,
         examples: [],
         count: 0,
@@ -50,6 +52,9 @@ export function aggregateVariables(
 
     const meta = variableMetadata.get(obs.variableKey)!
     meta.componentIds.add(obs.scopeKeys.componentId)
+    if (obs.scopeKeys.studyResultId !== undefined) {
+      meta.runIds.add(obs.scopeKeys.studyResultId)
+    }
     meta.minDepth = Math.min(meta.minDepth, obs.depth)
     meta.count++
 
@@ -107,6 +112,7 @@ export function aggregateVariables(
       occurrences: observationCount,
       dataStructure,
       componentIds,
+      runIds: Array.from(meta.runIds),
       flags,
       depth,
       isTopLevel,

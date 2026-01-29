@@ -1,6 +1,7 @@
 import { Study, FeedbackTemplate } from "@prisma/client"
 import { StudyWithRelations } from "../../../queries/getStudy"
 import { deriveStep1Completed } from "./deriveStep1Completed"
+import { STEP_KEYS, TOTAL_STEPS } from "./constants"
 
 // More flexible interface for studies with minimal researcher data
 // Using Partial<Study> allows us to pass lightweight objects from optimized queries
@@ -10,7 +11,7 @@ export interface StudyWithMinimalRelations extends Partial<Study> {
   description?: string
 
   researchers?: { userId?: number; role?: string; id?: number }[]
-  FeedbackTemplate?: FeedbackTemplate[] | { id: number }[]
+  FeedbackTemplate?: FeedbackTemplate | { id: number } | null
   latestJatosStudyUpload?: {
     step1Completed?: boolean
     step2Completed?: boolean
@@ -36,24 +37,38 @@ type StepFlags = {
 
 function resolveStepFlags(study: StudyWithRelations | StudyWithMinimalRelations): StepFlags {
   const upload = study.latestJatosStudyUpload
-  const getFlag = (key: keyof StepFlags) => {
-    const uploadValue = upload?.[key]
-    if (typeof uploadValue === "boolean") return uploadValue
-    if (key === "step1Completed") {
-      return deriveStep1Completed(study)
-    }
-    const studyValue = (study as Record<string, unknown>)[key]
-    return typeof studyValue === "boolean" ? studyValue : false
-  }
+  const flags = {} as StepFlags
 
-  return {
-    step1Completed: getFlag("step1Completed"),
-    step2Completed: getFlag("step2Completed"),
-    step3Completed: getFlag("step3Completed"),
-    step4Completed: getFlag("step4Completed"),
-    step5Completed: getFlag("step5Completed"),
-    step6Completed: getFlag("step6Completed"),
+  STEP_KEYS.forEach((key) => {
+    const uploadValue = upload?.[key]
+    if (typeof uploadValue === "boolean") {
+      flags[key] = uploadValue
+      return
+    }
+    flags[key] = key === "step1Completed" ? deriveStep1Completed(study) : false
+  })
+
+  return flags
+}
+
+function isSetupCompleteFromFlags(steps: StepFlags): boolean {
+  return STEP_KEYS.every((key) => steps[key])
+}
+
+function getIncompleteStepFromFlags(steps: StepFlags): number | null {
+  for (let index = 0; index < STEP_KEYS.length; index += 1) {
+    const key = STEP_KEYS[index]
+    if (!steps[key]) return index + 1
   }
+  return null
+}
+
+function getCompletedStepsFromFlags(steps: StepFlags): number[] {
+  const completed: number[] = []
+  STEP_KEYS.forEach((key, index) => {
+    if (steps[key]) completed.push(index + 1)
+  })
+  return completed
 }
 
 /**
@@ -62,14 +77,7 @@ function resolveStepFlags(study: StudyWithRelations | StudyWithMinimalRelations)
  */
 export function isSetupComplete(study: StudyWithRelations | StudyWithMinimalRelations): boolean {
   const steps = resolveStepFlags(study)
-  return !!(
-    steps.step1Completed &&
-    steps.step2Completed &&
-    steps.step3Completed &&
-    steps.step4Completed &&
-    steps.step5Completed &&
-    steps.step6Completed
-  )
+  return isSetupCompleteFromFlags(steps)
 }
 
 /**
@@ -80,13 +88,7 @@ export function getIncompleteStep(
   study: StudyWithRelations | StudyWithMinimalRelations
 ): number | null {
   const steps = resolveStepFlags(study)
-  if (!steps.step1Completed) return 1
-  if (!steps.step2Completed) return 2
-  if (!steps.step3Completed) return 3
-  if (!steps.step4Completed) return 4
-  if (!steps.step5Completed) return 5
-  if (!steps.step6Completed) return 6
-  return null // All complete
+  return getIncompleteStepFromFlags(steps)
 }
 
 /**
@@ -95,16 +97,7 @@ export function getIncompleteStep(
  */
 export function getCompletedSteps(study: StudyWithRelations | StudyWithMinimalRelations): number[] {
   const steps = resolveStepFlags(study)
-  const completed: number[] = []
-
-  if (steps.step1Completed) completed.push(1)
-  if (steps.step2Completed) completed.push(2)
-  if (steps.step3Completed) completed.push(3)
-  if (steps.step4Completed) completed.push(4)
-  if (steps.step5Completed) completed.push(5)
-  if (steps.step6Completed) completed.push(6)
-
-  return completed
+  return getCompletedStepsFromFlags(steps)
 }
 
 /**
@@ -112,17 +105,18 @@ export function getCompletedSteps(study: StudyWithRelations | StudyWithMinimalRe
  * Uses DB fields as source of truth
  */
 export function getSetupProgress(study: StudyWithRelations | StudyWithMinimalRelations) {
-  const incompleteStep = getIncompleteStep(study)
-  const isComplete = isSetupComplete(study)
-  const completedSteps = getCompletedSteps(study)
+  const steps = resolveStepFlags(study)
+  const incompleteStep = getIncompleteStepFromFlags(steps)
+  const isComplete = isSetupCompleteFromFlags(steps)
+  const completedSteps = getCompletedStepsFromFlags(steps)
 
   return {
     isComplete,
     incompleteStep,
-    totalSteps: 6,
+    totalSteps: TOTAL_STEPS,
     completedSteps: completedSteps.length,
     completedStepsList: completedSteps,
-    progressPercentage: (completedSteps.length / 6) * 100,
+    progressPercentage: (completedSteps.length / TOTAL_STEPS) * 100,
   }
 }
 
@@ -159,7 +153,7 @@ export function getPostStepNavigationUrl(
   }
 
   if (typeof returnTo === "number") {
-    if (returnTo < 1 || returnTo > 6) {
+    if (returnTo < 1 || returnTo > TOTAL_STEPS) {
       // Invalid step number, default to study page
       return `/studies/${studyId}`
     }
@@ -174,7 +168,7 @@ export function getPostStepNavigationUrl(
 
   // Default to next step if study not provided
   const nextStep = currentStep + 1
-  if (nextStep > 6) {
+  if (nextStep > TOTAL_STEPS) {
     return `/studies/${studyId}` // All steps complete, go to study page
   }
   return `/studies/${studyId}/setup/step${nextStep}`

@@ -6,6 +6,7 @@ import { extractVariableBundle } from "../../../../variables/utils/extractVariab
 import { createExtractionIndexStore } from "../../../../variables/utils/extractionIndexStore"
 import Card from "@/src/app/components/Card"
 import StructureAnalysisCard from "../structureAnalysis/StructureAnalysisCard"
+import StructureDiagnostics from "../structureAnalysis/StructureDiagnostics"
 import VariableStats from "./VariableStats"
 import VariableTable from "./VariableTable"
 import { useMemo } from "react"
@@ -36,6 +37,11 @@ export default function VariableExtractionPreview({
         observations={extractionBundle.observations}
         enrichedResult={enrichedResult}
       />
+
+      {/* Diagnostics Card */}
+      <Card title="Diagnostics" collapsible defaultOpen={true}>
+        <StructureDiagnostics diagnostics={extractionBundle.diagnostics} />
+      </Card>
 
       {/* Variable Extraction Preview Card */}
       <Card title="Variable Extraction Preview" collapsible defaultOpen={true}>

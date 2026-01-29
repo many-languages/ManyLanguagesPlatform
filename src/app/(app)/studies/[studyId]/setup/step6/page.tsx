@@ -2,7 +2,7 @@ import { notFound } from "next/navigation"
 import Step6Content from "./components/client/Step6Content"
 import SaveExitButton from "../components/client/SaveExitButton"
 import { getFeedbackTemplateRsc } from "../../feedback/queries/getFeedbackTemplate"
-import { getStudyVariablesRsc } from "../../variables/queries/getStudyVariables"
+import { getCodebookDataRsc } from "../../codebook/queries/getCodebookData"
 import { getPilotResultByIdRsc } from "../../utils/getPilotResultById"
 import db from "db"
 
@@ -50,7 +50,9 @@ async function Step6ContentWrapper({ studyId }: { studyId: number }) {
   const enrichedResult = pilotResultId ? await getPilotResultByIdRsc(studyId, pilotResultId) : null
 
   const allPilotResults = enrichedResult ? [enrichedResult] : []
-  const variables = await getStudyVariablesRsc(studyId)
+  const { variables } = await getCodebookDataRsc(studyId)
+
+  const filteredVariables = variables.filter((v) => !v.personalData)
 
   return (
     <>
@@ -75,7 +77,7 @@ async function Step6ContentWrapper({ studyId }: { studyId: number }) {
         enrichedResult={enrichedResult}
         allPilotResults={allPilotResults}
         pilotResultId={pilotResultId}
-        variables={variables.map((v) => ({
+        variables={filteredVariables.map((v) => ({
           variableName: v.variableName,
           type: v.type,
           variableKey: v.variableKey,

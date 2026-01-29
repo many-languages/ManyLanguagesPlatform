@@ -17,7 +17,7 @@ export default function Step3Instructions({
     <Card
       title={pilotCompleted === true ? "Want to run more pilots?" : "How to pilot your study?"}
       collapsible
-      bgColor="bg-base-300"
+      bgColor="bg-base-100"
       className="mb-6"
     >
       {pilotCompleted === true ? (

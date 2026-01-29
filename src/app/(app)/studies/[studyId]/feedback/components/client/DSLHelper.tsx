@@ -157,7 +157,13 @@ export default function DSLHelper({ variables }: DSLHelperProps) {
   }
 
   return (
-    <Card title="📚 DSL Reference & Examples" collapsible bgColor="bg-base-300" className="mt-4">
+    <Card
+      title="📚 DSL Reference & Examples"
+      collapsible
+      bgColor="bg-base-300"
+      className="mt-4"
+      defaultOpen={false}
+    >
       <div className="space-y-4">
         {/* Search and Filter */}
         <div className="flex gap-2">

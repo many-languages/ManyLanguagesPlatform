@@ -9,6 +9,7 @@ import updateVariableCodebook from "../../mutations/updateVariableCodebook"
 import StepNavigation from "../../../setup/components/client/StepNavigation"
 import { Alert } from "@/src/app/components/Alert"
 import { AsyncButton } from "@/src/app/components/AsyncButton"
+import Card from "@/src/app/components/Card"
 
 interface VariableCodebookEntry {
   id: number
@@ -60,6 +61,8 @@ export default function CodebookContent({
   const [isSaving, setIsSaving] = useState(false)
   const [updateVariableCodebookMutation] = useMutation(updateVariableCodebook)
 
+  const [codebookSaved, setCodebookSaved] = useState(true)
+
   const missingKeys = Array.isArray(codebook?.missingKeys)
     ? (codebook?.missingKeys as string[])
     : []
@@ -92,6 +95,7 @@ export default function CodebookContent({
         personalData: v.personalData ?? false,
       }))
     )
+    setCodebookSaved(true)
   }, [initialVariables])
 
   const updateVariable = (
@@ -100,6 +104,7 @@ export default function CodebookContent({
     value: string | boolean
   ) => {
     setVariables((prev) => prev.map((v) => (v.id === id ? { ...v, [field]: value } : v)))
+    setCodebookSaved(false)
   }
 
   const handleSave = async (): Promise<boolean> => {
@@ -123,6 +128,7 @@ export default function CodebookContent({
         })),
       })
       toast.success("Codebook saved successfully!")
+      setCodebookSaved(true)
       router.refresh()
       return true
     } catch (error: any) {
@@ -134,10 +140,12 @@ export default function CodebookContent({
   }
 
   const handleNext = async () => {
-    const success = await handleSave()
-    if (success) {
-      router.push(`/studies/${studyId}/setup/step6`)
+    // If not saved, try to save first
+    if (!codebookSaved) {
+      const success = await handleSave()
+      if (!success) return
     }
+    router.push(`/studies/${studyId}/setup/step6`)
   }
 
   if (variables.length === 0) {
@@ -155,6 +163,38 @@ export default function CodebookContent({
 
   return (
     <>
+      <Card title="How to create your codebook?" collapsible bgColor="bg-base-100" className="mb-6">
+        <ol className="list-decimal list-inside space-y-2 text-sm">
+          <li>
+            Describe each variable in your dataset. You cannot complete this step without
+            descriptions for all variables.
+          </li>
+          <li>
+            Mark any variables containing <strong>personal data</strong>. These will be excluded
+            from the feedback template (Step 6) to protect participant privacy.
+          </li>
+          <li>
+            You can <strong>save and continue later</strong> at any time.
+          </li>
+        </ol>
+      </Card>
+
+      <div className="flex items-center justify-between mb-4">
+        {codebookSaved ? (
+          <span className="badge badge-success">✓ Codebook saved</span>
+        ) : (
+          <span className="badge badge-warning">⚠ Codebook not saved</span>
+        )}
+        <AsyncButton
+          onClick={handleSave}
+          loadingText="Saving..."
+          disabled={isSaving}
+          className="btn btn-sm btn-primary"
+        >
+          {isSaving ? "Saving..." : "Save Codebook"}
+        </AsyncButton>
+      </div>
+
       {showInvalidKeys && (
         <Alert variant="warning">
           <div className="space-y-2">
@@ -184,11 +224,6 @@ export default function CodebookContent({
         </Alert>
       )}
       <div className="mb-6">
-        <p className="text-sm text-base-content/70 mb-4">
-          Please provide a description for each variable in your data to create a codebook. Mark
-          variables that contain or may contain personal data of participants.
-        </p>
-
         <div className="space-y-4">
           {variables.map((variable) => (
             <div key={variable.id} className="card bg-base-200 p-4">
@@ -235,17 +270,6 @@ export default function CodebookContent({
             </div>
           ))}
         </div>
-      </div>
-
-      <div className="flex justify-end mb-4">
-        <AsyncButton
-          onClick={handleSave}
-          loadingText="Saving..."
-          disabled={isSaving}
-          className="btn btn-primary"
-        >
-          Save Codebook
-        </AsyncButton>
       </div>
 
       <StepNavigation

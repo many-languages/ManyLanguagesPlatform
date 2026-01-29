@@ -13,6 +13,20 @@ export async function findStudyById(id: number) {
       jatosStudyUploads: {
         orderBy: { createdAt: "desc" },
         take: 1,
+        include: {
+          pilotLinks: {
+            select: { markerToken: true },
+          },
+          approvedExtraction: {
+            select: {
+              id: true,
+              approvedAt: true,
+              pilotDatasetSnapshot: {
+                select: { pilotRunIds: true },
+              },
+            },
+          },
+        },
       },
       researchers: {
         select: { id: true, userId: true, role: true },

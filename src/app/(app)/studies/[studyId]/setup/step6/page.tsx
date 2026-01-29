@@ -2,9 +2,8 @@ import { notFound } from "next/navigation"
 import Step6Content from "./components/client/Step6Content"
 import SaveExitButton from "../components/client/SaveExitButton"
 import { getFeedbackTemplateRsc } from "../../feedback/queries/getFeedbackTemplate"
-import { getCodebookDataRsc } from "../../codebook/queries/getCodebookData"
-import { getPilotResultByIdRsc } from "../../utils/getPilotResultById"
-import db from "db"
+import { getAllPilotResultsRsc } from "../../utils/getAllPilotResults"
+import { getVariablesByExtraction } from "../../codebook/utils/getVariablesByExtraction"
 
 import { getStudyRsc } from "../../../queries/getStudy"
 
@@ -12,47 +11,35 @@ async function Step6ContentWrapper({ studyId }: { studyId: number }) {
   // Fetch feedback template server-side
   const feedbackTemplate = await getFeedbackTemplateRsc(studyId)
 
-  // We need the full study object for the content component (setup flags)
+  // Master Query: Reuse the optimized getStudyRsc
+  // This now includes pilotLinks and approvedExtraction details due to our 'getStudy.ts' update
   const study = await getStudyRsc(studyId)
 
-  const studyWithExtraction = await db.study.findUnique({
-    where: { id: studyId },
-    select: {
-      jatosStudyUploads: {
-        orderBy: { createdAt: "desc" },
-        take: 1,
-        select: {
-          approvedExtraction: {
-            select: {
-              id: true,
-              approvedAt: true,
-              pilotDatasetSnapshot: {
-                select: { pilotRunIds: true },
-              },
-            },
-          },
-        },
-      },
-    },
-  })
-
-  const latestUploadWithExtraction = studyWithExtraction?.jatosStudyUploads[0] ?? null
-
+  const latestUploadWithExtraction = study.latestJatosStudyUpload
   const approvedExtraction = latestUploadWithExtraction?.approvedExtraction ?? null
-  const pilotResultId =
-    Array.isArray(
-      latestUploadWithExtraction?.approvedExtraction?.pilotDatasetSnapshot?.pilotRunIds
-    ) && latestUploadWithExtraction?.approvedExtraction?.pilotDatasetSnapshot?.pilotRunIds.length
-      ? (latestUploadWithExtraction?.approvedExtraction?.pilotDatasetSnapshot
-          ?.pilotRunIds[0] as number)
-      : null
 
-  const enrichedResult = pilotResultId ? await getPilotResultByIdRsc(studyId, pilotResultId) : null
+  const jatosStudyId = latestUploadWithExtraction?.jatosStudyId ?? null
+  const markerTokens =
+    latestUploadWithExtraction?.pilotLinks.map((link) => link.markerToken).filter(Boolean) ?? []
 
-  const allPilotResults = enrichedResult ? [enrichedResult] : []
-  const { variables } = await getCodebookDataRsc(studyId)
+  // Optimize: Pass the context to skip internal DB lookups
+  const allPilotResults =
+    jatosStudyId && markerTokens.length > 0
+      ? await getAllPilotResultsRsc(studyId, {
+          jatosStudyId,
+          markerTokens,
+        })
+      : []
 
-  const filteredVariables = variables.filter((v) => !v.personalData)
+  const enrichedResult = allPilotResults[0] ?? null
+  const pilotResultId = enrichedResult?.id ?? null
+
+  const variables = approvedExtraction?.id
+    ? // Use new helper directly with ID, skipping DB lookup
+      await getVariablesByExtraction(approvedExtraction.id)
+    : []
+
+  const filteredVariables = variables.filter((v: any) => !v.personalData)
 
   return (
     <>
@@ -77,7 +64,7 @@ async function Step6ContentWrapper({ studyId }: { studyId: number }) {
         enrichedResult={enrichedResult}
         allPilotResults={allPilotResults}
         pilotResultId={pilotResultId}
-        variables={filteredVariables.map((v) => ({
+        variables={filteredVariables.map((v: any) => ({
           variableName: v.variableName,
           type: v.type,
           variableKey: v.variableKey,

@@ -8,8 +8,9 @@ import {
   useReactTable,
   getPaginationRowModel,
   getFacetedMinMaxValues,
+  getExpandedRowModel,
 } from "@tanstack/react-table"
-import type { SortingState } from "@tanstack/react-table"
+import type { SortingState, ExpandedState, Row } from "@tanstack/react-table"
 import React from "react"
 
 import { ChevronUpIcon, ChevronDownIcon, ChevronUpDownIcon } from "@heroicons/react/24/outline"
@@ -30,22 +31,30 @@ type TableProps<TData> = {
     tfoot?: string
     th?: string
     td?: string
+    tr?: string
     paginationButton?: string
     pageInfo?: string
     goToPageInput?: string
     pageSizeSelect?: string
   }
+  renderSubComponent?: (props: { row: Row<TData> }) => React.ReactNode
+  getRowCanExpand?: (row: Row<TData>) => boolean
+  onRowClick?: (row: Row<TData>) => void
 }
 
-const Table = <TData,>({
+const Table = <TData extends unknown>({
   columns,
   data,
   classNames,
   enableSorting = true,
   enableFilters = true,
   addPagination = false,
+  renderSubComponent,
+  getRowCanExpand,
+  onRowClick,
 }: TableProps<TData>) => {
   const [sorting, setSorting] = React.useState<SortingState>([])
+  const [expanded, setExpanded] = React.useState<ExpandedState>({})
 
   const table = useReactTable({
     data,
@@ -56,11 +65,15 @@ const Table = <TData,>({
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     getFacetedUniqueValues: getFacetedUniqueValues(),
+    getExpandedRowModel: getExpandedRowModel(),
+    getRowCanExpand,
     ...(addPagination ? { getPaginationRowModel: getPaginationRowModel() } : {}),
     getFacetedMinMaxValues: getFacetedMinMaxValues(),
     state: {
       sorting: sorting,
+      expanded: expanded,
     },
+    onExpandedChange: setExpanded,
     initialState: {
       pagination: {
         // When pagination is disabled, set page size to show all rows
@@ -122,13 +135,23 @@ const Table = <TData,>({
             </tr>
           ) : (
             table.getRowModel().rows.map((row) => (
-              <tr key={row.id}>
-                {row.getVisibleCells().map((cell) => (
-                  <td key={cell.id} className={classNames?.td}>
-                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                  </td>
-                ))}
-              </tr>
+              <React.Fragment key={row.id}>
+                <tr
+                  className={`${classNames?.tr || ""} ${onRowClick ? "cursor-pointer" : ""}`}
+                  onClick={() => onRowClick && onRowClick(row)}
+                >
+                  {row.getVisibleCells().map((cell) => (
+                    <td key={cell.id} className={classNames?.td}>
+                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                    </td>
+                  ))}
+                </tr>
+                {row.getIsExpanded() && renderSubComponent && (
+                  <tr>
+                    <td colSpan={row.getVisibleCells().length}>{renderSubComponent({ row })}</td>
+                  </tr>
+                )}
+              </React.Fragment>
             ))
           )}
         </tbody>

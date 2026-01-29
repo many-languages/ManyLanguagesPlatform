@@ -16,6 +16,7 @@ export function deriveVariableFlags(diagnostics: Diagnostic[]): VariableFlag[] {
     "HIGH_OCCURRENCE",
     "HIGH_CARDINALITY",
     "LARGE_VALUES",
+    "UNEXPECTED_OBJECT_ARRAY_LEAF",
   ])
 
   for (const diagnostic of diagnostics) {

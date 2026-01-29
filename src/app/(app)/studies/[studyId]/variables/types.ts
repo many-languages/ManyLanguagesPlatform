@@ -236,6 +236,7 @@ export type VariableFlag = Extract<
   | "HIGH_OCCURRENCE"
   | "HIGH_CARDINALITY"
   | "LARGE_VALUES"
+  | "UNEXPECTED_OBJECT_ARRAY_LEAF"
 >
 
 export type VariableHeuristicThresholds = {

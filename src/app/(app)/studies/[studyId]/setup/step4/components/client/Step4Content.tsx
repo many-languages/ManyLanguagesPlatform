@@ -107,21 +107,22 @@ export default function Step4Content({ validationData, study }: Step4ContentProp
         ]
       : []
 
-    const allDiagnostics = [
-      ...allVariableDiags,
-      ...allComponentDiags,
-      ...allRunDiags,
-      ...allCrossRunDiags,
-    ]
-    const errorCount = allDiagnostics.filter((d) => d.severity === "error").length
-    const warningCount = allDiagnostics.filter((d) => d.severity === "warning").length
+    const allExtractionDiags = [...allVariableDiags, ...allComponentDiags, ...allRunDiags]
+    const variableErrorCount = allExtractionDiags.filter((d) => d.severity === "error").length
+    const variableWarningCount = allExtractionDiags.filter((d) => d.severity === "warning").length
+
+    const structuralErrorCount = allCrossRunDiags.filter((d) => d.severity === "error").length
+    const structuralWarningCount = allCrossRunDiags.filter((d) => d.severity === "warning").length
 
     return {
       runCount: validationData.pilotResults.length,
       variableCount: activeBundle.variables.length,
-      diagnosticCount: allDiagnostics.length,
-      errorCount,
-      warningCount,
+      variableIssueCount: allExtractionDiags.length,
+      variableErrorCount,
+      variableWarningCount,
+      structuralIssueCount: allCrossRunDiags.length,
+      structuralErrorCount,
+      structuralWarningCount,
     }
   }, [activeBundle, validationData.pilotResults.length])
 
@@ -210,13 +211,13 @@ export default function Step4Content({ validationData, study }: Step4ContentProp
               onClick={() => setActiveTab("diagnostics")}
             >
               Diagnostics
-              {dashboardStats.errorCount > 0 && (
+              {dashboardStats.structuralErrorCount > 0 && (
                 <span
                   className={`ml-2 badge badge-sm ${
                     activeTab === "diagnostics" ? "badge-primary" : "badge-error"
                   }`}
                 >
-                  {dashboardStats.errorCount}
+                  {dashboardStats.structuralErrorCount}
                 </span>
               )}
             </button>

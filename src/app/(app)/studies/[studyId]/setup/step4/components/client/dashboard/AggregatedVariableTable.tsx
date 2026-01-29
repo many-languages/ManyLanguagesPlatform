@@ -1,13 +1,14 @@
-import { useState } from "react"
+import { useMemo } from "react"
 import { ExtractedVariable } from "../../../../../variables/types"
 import {
   CodeBracketIcon,
   EyeIcon,
   ExclamationTriangleIcon,
-  ExclamationCircleIcon,
   ChevronDownIcon,
   ChevronUpIcon,
 } from "@heroicons/react/24/outline"
+import Table from "@/src/app/components/Table"
+import { ColumnDef, Row } from "@tanstack/react-table"
 
 interface AggregatedVariableTableProps {
   variables: ExtractedVariable[]
@@ -18,12 +19,6 @@ export default function AggregatedVariableTable({
   variables,
   totalRuns,
 }: AggregatedVariableTableProps) {
-  const [expandedVar, setExpandedVar] = useState<string | null>(null)
-
-  const toggleExpand = (variableKey: string) => {
-    setExpandedVar(expandedVar === variableKey ? null : variableKey)
-  }
-
   // Helper to determine presence color
   const getPresenceColor = (runIds: number[] = []) => {
     const count = runIds.length
@@ -34,122 +29,193 @@ export default function AggregatedVariableTable({
     return "progress-error"
   }
 
-  return (
-    <div className="overflow-x-auto bg-base-100 rounded-lg shadow">
-      <table className="table w-full">
-        <thead>
-          <tr>
-            <th className="w-8"></th>
-            <th>Variable</th>
-            <th>Type</th>
-            <th
-              className="tooltip tooltip-bottom"
-              data-tip="The number of pilot runs where this variable was found. 100% presence means every participant's data contains this field."
-            >
-              Presence
-            </th>
-            <th>Diagnostics</th>
-            <th>Depth</th>
-          </tr>
-        </thead>
-        <tbody>
-          {variables.map((variable) => (
-            <>
-              <tr
-                key={variable.variableKey}
-                className={`hover:bg-base-200 cursor-pointer ${
-                  expandedVar === variable.variableKey ? "bg-base-200" : ""
-                }`}
-                onClick={() => toggleExpand(variable.variableKey)}
+  const columns = useMemo<ColumnDef<ExtractedVariable>[]>(
+    () => [
+      {
+        id: "expander",
+        header: () => null,
+        cell: ({ row }) => (
+          <div className="flex justify-center">
+            {row.getIsExpanded() ? (
+              <ChevronUpIcon className="w-4 h-4" />
+            ) : (
+              <ChevronDownIcon className="w-4 h-4" />
+            )}
+          </div>
+        ),
+        enableSorting: false,
+      },
+      {
+        accessorKey: "variableName",
+        header: () => (
+          <div
+            className="tooltip tooltip-bottom whitespace-nowrap"
+            data-tip="The variable extracted from all pilot runs."
+          >
+            Variable
+          </div>
+        ),
+        cell: ({ row }) => (
+          <div className="font-mono text-sm">
+            {row.original.variableName}
+            {row.original.isTopLevel && (
+              <span className="ml-2 badge badge-xs badge-ghost">Top Level</span>
+            )}
+          </div>
+        ),
+      },
+      {
+        accessorKey: "type",
+        header: () => (
+          <div
+            className="tooltip tooltip-bottom whitespace-nowrap"
+            data-tip="The inferred data type for this variable (e.g., number, string, boolean)."
+          >
+            Type
+          </div>
+        ),
+        cell: ({ row }) => (
+          <div>
+            <span className="badge badge-outline font-mono">{row.original.type}</span>
+            {row.original.flags.includes("TYPE_DRIFT") && (
+              <span
+                className="ml-2 text-warning tooltip tooltip-right"
+                data-tip="Type varies between runs"
               >
-                <td>
-                  {expandedVar === variable.variableKey ? (
-                    <ChevronUpIcon className="w-4 h-4" />
-                  ) : (
-                    <ChevronDownIcon className="w-4 h-4" />
-                  )}
-                </td>
-                <td className="font-mono text-sm">
-                  {variable.variableName}
-                  {variable.isTopLevel && (
-                    <span className="ml-2 badge badge-xs badge-ghost">Top Level</span>
-                  )}
-                </td>
-                <td>
-                  <span className="badge badge-outline family-mono">{variable.type}</span>
-                  {variable.flags.includes("TYPE_DRIFT") && (
-                    <span
-                      className="ml-2 text-warning tooltip tooltip-right"
-                      data-tip="Type varies between runs"
-                    >
-                      <ExclamationTriangleIcon className="w-4 h-4 inline" />
-                    </span>
-                  )}
-                </td>
-                <td className="w-32">
-                  <div className="flex items-center gap-2">
-                    <progress
-                      className={`progress w-16 ${getPresenceColor(
-                        variable.runIds || variable.componentIds
-                      )}`}
-                      value={(variable.runIds || variable.componentIds).length}
-                      max={totalRuns}
-                    ></progress>
-                    <span className="text-xs text-base-content/70">
-                      {(variable.runIds || variable.componentIds).length}/{totalRuns}
-                    </span>
-                  </div>
-                </td>
-                <td>
-                  <div className="flex gap-1">
-                    {variable.flags.map((flag) => (
-                      <div key={flag} className="tooltip" data-tip={flag}>
-                        <span className="badge badge-warning badge-xs">{flag}</span>
-                      </div>
-                    ))}
-                    {(!variable.flags || variable.flags.length === 0) && (
-                      <span className="text-success text-xs">OK</span>
-                    )}
-                  </div>
-                </td>
-                <td className="text-xs text-base-content/60">{variable.depth}</td>
-              </tr>
-              {expandedVar === variable.variableKey && (
-                <tr className="bg-base-100/50">
-                  <td colSpan={6} className="p-0">
-                    <div className="p-4 bg-base-200/30">
-                      <h4 className="font-semibold text-xs uppercase mb-2">Examples</h4>
-                      <div className="space-y-1">
-                        {variable.examples.slice(0, 3).map((ex, i) => (
-                          <div key={i} className="text-xs font-mono flex gap-2">
-                            <span className="text-base-content/50">{ex.sourcePath}:</span>
-                            <span className="truncate max-w-md bg-base-100 px-1 rounded">
-                              {ex.value}
-                            </span>
-                          </div>
-                        ))}
-                      </div>
+                <ExclamationTriangleIcon className="w-4 h-4 inline" />
+              </span>
+            )}
+          </div>
+        ),
+      },
+      {
+        id: "presence",
+        header: () => (
+          <div
+            className="tooltip tooltip-bottom whitespace-nowrap"
+            data-tip="The number of pilot runs where this variable was found. 100% presence means every pilot data contains this field."
+          >
+            Presence
+          </div>
+        ),
+        accessorFn: (row) => (row.runIds || row.componentIds).length,
+        cell: ({ row }) => {
+          const runIds = row.original.runIds || row.original.componentIds
+          return (
+            <div className="flex items-center gap-2">
+              <progress
+                className={`progress w-16 ${getPresenceColor(runIds)}`}
+                value={runIds.length}
+                max={totalRuns}
+              ></progress>
+              <span className="text-xs text-base-content/70 whitespace-nowrap">
+                {runIds.length}/{totalRuns}
+              </span>
+            </div>
+          )
+        },
+      },
+      {
+        accessorKey: "occurrences",
+        header: () => (
+          <div
+            className="tooltip tooltip-bottom whitespace-nowrap"
+            data-tip="The total number of observations (data points) found for this variable across all runs and components."
+          >
+            Occurrences
+          </div>
+        ),
+        cell: ({ row }) => (
+          <span className="text-sm font-semibold">{row.original.occurrences.toLocaleString()}</span>
+        ),
+      },
+      {
+        id: "diagnostics",
+        header: () => (
+          <div
+            className="tooltip tooltip-bottom whitespace-nowrap"
+            data-tip="These checks are aggregated across all pilot runs for this variable based on the collected observations."
+          >
+            Diagnostics
+          </div>
+        ),
+        cell: ({ row }) => (
+          <div className="flex gap-1 flex-wrap">
+            {row.original.flags.map((flag) => (
+              <div key={flag} className="tooltip" data-tip={flag}>
+                <span className="badge badge-warning badge-xs">{flag}</span>
+              </div>
+            ))}
+            {(!row.original.flags || row.original.flags.length === 0) && (
+              <span className="text-success text-xs">OK</span>
+            )}
+          </div>
+        ),
+      },
+      {
+        accessorKey: "depth",
+        header: () => (
+          <div
+            className="tooltip tooltip-bottom whitespace-nowrap"
+            data-tip="The nesting level of the variable within the JSON structure (1 = top level)."
+          >
+            Depth
+          </div>
+        ),
+        cell: ({ row }) => (
+          <span className="text-xs text-base-content/60">{row.original.depth}</span>
+        ),
+      },
+    ],
+    [totalRuns]
+  )
 
-                      {variable.diagnostics && variable.diagnostics.length > 0 && (
-                        <div className="mt-3">
-                          <h4 className="font-semibold text-xs uppercase mb-1 text-warning">
-                            Issues
-                          </h4>
-                          <ul className="list-disc list-inside text-xs text-error">
-                            {variable.diagnostics.map((d, i) => (
-                              <li key={i}>{d.message}</li>
-                            ))}
-                          </ul>
-                        </div>
-                      )}
-                    </div>
-                  </td>
-                </tr>
-              )}
-            </>
+  const renderSubComponent = ({ row }: { row: Row<ExtractedVariable> }) => {
+    const variable = row.original
+    return (
+      <div className="p-4 bg-base-200/30 rounded-md m-2">
+        <h4 className="font-semibold text-xs uppercase mb-2">Examples</h4>
+        <div className="space-y-1">
+          {variable.examples.slice(0, 3).map((ex, i) => (
+            <div key={i} className="text-xs font-mono flex gap-2">
+              <span className="text-base-content/50">{ex.sourcePath}:</span>
+              <span className="truncate max-w-md bg-base-100 px-1 rounded">{ex.value}</span>
+            </div>
           ))}
-        </tbody>
-      </table>
+        </div>
+
+        {variable.diagnostics && variable.diagnostics.length > 0 && (
+          <div className="mt-3">
+            <h4 className="font-semibold text-xs uppercase mb-1 text-warning">Issues</h4>
+            <ul className="list-disc list-inside text-xs text-error">
+              {variable.diagnostics.map((d, i) => (
+                <li key={i}>{d.message}</li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </div>
+    )
+  }
+
+  return (
+    <div className="bg-base-100 rounded-lg shadow overflow-x-auto">
+      <Table
+        data={variables}
+        columns={columns}
+        enableSorting={true}
+        enableFilters={false}
+        renderSubComponent={renderSubComponent}
+        onRowClick={(row) => row.toggleExpanded()}
+        classNames={{
+          table: "table w-full",
+          thead: "bg-base-200/50 text-xs font-bold uppercase text-base-content/70",
+          tbody: "text-sm",
+          th: "px-4 py-3",
+          td: "px-4 py-2",
+          tr: "hover:bg-base-200 transition-colors",
+        }}
+      />
     </div>
   )
 }

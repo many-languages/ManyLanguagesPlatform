@@ -93,7 +93,7 @@ export default function Step6Content({
     templateUpdatedAt !== null &&
     templateUpdatedAt < approvedExtractionAt
 
-  const [cachedBundleResult] = useQuery(
+  const [cachedBundleResult, { isLoading: isCacheLoading }] = useQuery(
     getCachedExtractionBundle,
     { studyId, includeDiagnostics: false },
     { enabled: Boolean(pilotResultId) }
@@ -103,6 +103,8 @@ export default function Step6Content({
 
   useEffect(() => {
     if (!pilotResultId) return
+    if (isCacheLoading) return
+
     if (cachedBundleResult?.bundle) {
       setExtractionBundle(cachedBundleResult.bundle)
       return
@@ -115,7 +117,7 @@ export default function Step6Content({
       .catch((error) => {
         console.error("Failed to run extraction for preview:", error)
       })
-  }, [cachedBundleResult, pilotResultId, runExtractionMutation, studyId])
+  }, [cachedBundleResult, pilotResultId, runExtractionMutation, studyId, isCacheLoading])
 
   const handleFinish = async () => {
     let templateSavedDuringFinish = false

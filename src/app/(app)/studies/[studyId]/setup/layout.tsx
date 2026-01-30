@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation"
 import StepIndicator from "./components/client/StepIndicator"
-import { getStudySetupStatusRsc } from "../../queries/getStudy"
+import { getStudyRsc } from "../../queries/getStudy"
 import { getCompletedSteps } from "./utils/setupStatus"
 
 export default async function StudySetupLayout({
@@ -18,7 +18,7 @@ export default async function StudySetupLayout({
   }
 
   try {
-    const study = await getStudySetupStatusRsc(studyId)
+    const study = await getStudyRsc(studyId)
     const completedSteps = getCompletedSteps(study)
 
     return (

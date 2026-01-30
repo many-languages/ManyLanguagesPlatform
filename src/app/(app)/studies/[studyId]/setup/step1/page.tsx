@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation"
 import Step1Content from "./components/client/Step1Content"
+import SetupStepHeader from "../components/client/SetupStepHeader"
 import { getStudyRsc } from "../../../queries/getStudy"
 
 export default async function Step1Page({
@@ -23,7 +24,11 @@ export default async function Step1Page({
 
   return (
     <>
-      <h2 className="text-xl font-semibold mb-4 text-center">Step 1 – General information</h2>
+      <SetupStepHeader
+        studyId={studyId}
+        title="Step 1 – General information"
+        showSaveExit={false}
+      />
       <Step1Content study={study} studyId={studyId} isEditMode={isEditMode} returnTo={returnTo} />
     </>
   )

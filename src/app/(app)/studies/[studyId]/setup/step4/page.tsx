@@ -1,7 +1,7 @@
 import { Suspense } from "react"
 import { notFound } from "next/navigation"
 import Step4Content from "./components/client/Step4Content"
-import SaveExitButton from "../components/client/SaveExitButton"
+import SetupStepHeader from "../components/client/SetupStepHeader"
 import { getStudyRsc } from "../../../queries/getStudy"
 import { getValidationDataRsc } from "../../inspector/utils/getValidationData"
 
@@ -12,11 +12,7 @@ async function Step4ContentWrapper({ studyId }: { studyId: number }) {
     const validationData = await getValidationDataRsc(studyId)
     return (
       <>
-        <div className="flex items-center justify-between mb-4">
-          <SaveExitButton studyId={studyId} />
-          <h2 className="text-xl font-semibold text-center flex-1">Step 4 – Extraction Review</h2>
-          <div className="w-32" /> {/* Spacer to balance the layout */}
-        </div>
+        <SetupStepHeader studyId={studyId} title="Step 4 – Extraction Review" />
         <Step4Content validationData={validationData} study={study} />
       </>
     )

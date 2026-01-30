@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation"
 import CodebookContent from "../../codebook/components/client/CodebookContent"
-import SaveExitButton from "../components/client/SaveExitButton"
+import SetupStepHeader from "../components/client/SetupStepHeader"
 import { getCodebookDataRsc } from "../../codebook/queries/getCodebookData"
 
 import { getStudyRsc } from "../../../queries/getStudy"
@@ -13,11 +13,7 @@ async function Step5ContentWrapper({ studyId }: { studyId: number }) {
 
   return (
     <>
-      <div className="flex items-center justify-between mb-4">
-        <SaveExitButton studyId={studyId} />
-        <h2 className="text-xl font-semibold text-center flex-1">Step 5 – Codebook</h2>
-        <div className="w-32" /> {/* Spacer to balance the layout */}
-      </div>
+      <SetupStepHeader studyId={studyId} title="Step 5 – Codebook" />
       <CodebookContent
         study={study}
         initialVariables={variables.map((v) => ({

@@ -1,9 +1,10 @@
 import { invoke } from "@blitzjs/rpc"
 import type { Ctx } from "blitz"
-import saveResearcherJatosRunUrl from "../setup/mutations/saveResearcherJatosRunUrl"
+import createResearcherPilotLink from "../setup/mutations/createResearcherPilotLink"
 import { createPersonalStudyCodeAndSave } from "@/src/lib/jatos/api/createPersonalStudyCodeAndSave"
 
 interface GenerateRunUrlArgs {
+  studyId: number // Added
   studyResearcherId: number
   jatosStudyUploadId: number
   jatosStudyId: number
@@ -17,6 +18,7 @@ interface GenerateRunUrlArgs {
  * Returns the generated runUrl.
  */
 export async function generateAndSaveResearcherPilotRunUrl({
+  studyId,
   studyResearcherId,
   jatosStudyUploadId,
   jatosStudyId,
@@ -33,7 +35,8 @@ export async function generateAndSaveResearcherPilotRunUrl({
     onSave: async (url: string) => {
       if (typeof window !== "undefined") {
         // client-side
-        await invoke(saveResearcherJatosRunUrl, {
+        await invoke(createResearcherPilotLink, {
+          studyId,
           studyResearcherId,
           jatosStudyUploadId,
           jatosRunUrl: url,
@@ -42,8 +45,18 @@ export async function generateAndSaveResearcherPilotRunUrl({
       } else {
         // server-side
         if (!ctx) throw new Error("Missing Blitz context (ctx) for server-side call")
-        await saveResearcherJatosRunUrl(
-          { studyResearcherId, jatosStudyUploadId, jatosRunUrl: url, markerToken },
+        // Note: For server-side usage, we need the ctx.session.userId to be passed correctly by the mutation wrapper locally or via direct call
+        // But createResearcherPilotLink is a mutation resolver or function.
+        // If we call the function directly (exported as createResearcherPilotLink), it expects ctxUserId.
+        // The invoke() handles the resolver pipeline.
+        // If we call direct logic, we need to adapt.
+        // However, the previous code called the DEFAULT export (resolver) or the named export?
+        // Previous default was resolver.pipe(...)
+        // import saveResearcherJatosRunUrl from ... (default export)
+        // server-side call: await saveResearcherJatosRunUrl({args}, ctx) -> This is calling the resolver with ctx.
+
+        await createResearcherPilotLink(
+          { studyId, studyResearcherId, jatosStudyUploadId, jatosRunUrl: url, markerToken },
           ctx
         )
       }

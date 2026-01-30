@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation"
 import Step2Content from "./components/client/Step2Content"
-import SaveExitButton from "../components/client/SaveExitButton"
+import SetupStepHeader from "../components/client/SetupStepHeader"
 import { getStudyRsc } from "../../../queries/getStudy"
 
 export default async function Step2Page({ params }: { params: Promise<{ studyId: string }> }) {
@@ -15,11 +15,7 @@ export default async function Step2Page({ params }: { params: Promise<{ studyId:
 
   return (
     <>
-      <div className="flex items-center justify-between mb-4">
-        <SaveExitButton studyId={studyId} />
-        <h2 className="text-xl font-semibold text-center flex-1">Step 2 – JATOS setup</h2>
-        <div className="w-32" /> {/* Spacer to balance the layout */}
-      </div>
+      <SetupStepHeader studyId={studyId} title="Step 2 – JATOS setup" />
       <Step2Content study={study} />
     </>
   )

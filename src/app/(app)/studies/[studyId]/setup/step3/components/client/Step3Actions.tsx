@@ -7,6 +7,7 @@ import RunPilotButton from "./RunPilotButton"
 import GeneratePilotLinkButton from "./GeneratePilotLinkButton"
 
 interface Step3ActionsProps {
+  studyId: number // Added
   pilotCompleted: boolean | null
   jatosRunUrl: string | null
   researcherId: number // Required - Step3Content returns early if null
@@ -19,6 +20,7 @@ interface Step3ActionsProps {
 }
 
 export default function Step3Actions({
+  studyId,
   pilotCompleted,
   jatosRunUrl,
   researcherId,
@@ -45,6 +47,7 @@ export default function Step3Actions({
         {/* Generate Pilot Link button when no link exists */}
         <div className="flex justify-center">
           <GeneratePilotLinkButton
+            studyId={studyId}
             studyResearcherId={researcherId}
             jatosStudyUploadId={jatosStudyUploadId}
             jatosStudyId={jatosStudyId}
@@ -66,6 +69,7 @@ export default function Step3Actions({
           <>
             <div className="flex-shrink-0">
               <GeneratePilotLinkButton
+                studyId={studyId}
                 studyResearcherId={researcherId}
                 jatosStudyUploadId={jatosStudyUploadId}
                 jatosStudyId={jatosStudyId}

@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation"
 import Step6Content from "./components/client/Step6Content"
-import SaveExitButton from "../components/client/SaveExitButton"
+import SetupStepHeader from "../components/client/SetupStepHeader"
 import { getFeedbackTemplateRsc } from "../../feedback/queries/getFeedbackTemplate"
 import { getAllPilotResultsRsc } from "../../utils/getAllPilotResults"
 import { getCodebookDataRsc } from "../../codebook/queries/getCodebookData"
@@ -43,11 +43,7 @@ async function Step6ContentWrapper({ studyId }: { studyId: number }) {
 
   return (
     <>
-      <div className="flex items-center justify-between mb-4">
-        <SaveExitButton studyId={studyId} />
-        <h2 className="text-xl font-semibold text-center flex-1">Step 6 – Feedback</h2>
-        <div className="w-32" /> {/* Spacer to balance the layout */}
-      </div>
+      <SetupStepHeader studyId={studyId} title="Step 6 – Feedback" />
       <Step6Content
         study={study}
         initialFeedbackTemplate={

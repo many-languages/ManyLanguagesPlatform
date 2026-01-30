@@ -150,6 +150,7 @@ export default function Step3Content({ study }: Step3ContentProps) {
       />
 
       <Step3Actions
+        studyId={study.id}
         pilotCompleted={pilotCompleted}
         jatosRunUrl={jatosRunUrl}
         researcherId={researcherId!} // Safe: early return above ensures researcherId is non-null

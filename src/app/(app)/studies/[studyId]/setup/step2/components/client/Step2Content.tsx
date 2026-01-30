@@ -93,6 +93,7 @@ export default function Step2Content({ study }: Step2ContentProps) {
       const researcher = study.researchers?.find((r) => r.userId === userId)
       if (researcher?.id && jatosBatchId && latestUploadId) {
         await generateAndSaveResearcherPilotRunUrl({
+          studyId: study.id,
           studyResearcherId: researcher.id,
           jatosStudyUploadId: latestUploadId,
           jatosStudyId: uploadResult.jatosStudyId,

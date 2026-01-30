@@ -6,7 +6,7 @@ import ParticipantFeedbackData from "../feedback/components/ParticipantFeedbackD
 import { checkParticipantCompletionAction } from "../feedback/actions/checkParticipantCompletion"
 import { CheckCircleIcon } from "@heroicons/react/24/solid"
 import StudyInformationCard from "./client/StudyInformationCard"
-import RunStudyButton from "../setup/step3/components/client/RunStudyButton"
+import RunPilotButton from "../setup/step3/components/client/RunPilotButton"
 
 interface ParticipantDataProps {
   studyId: number
@@ -15,6 +15,9 @@ interface ParticipantDataProps {
 
 export default async function ParticipantData({ studyId, study }: ParticipantDataProps) {
   const setupComplete = isSetupComplete(study)
+  const latestUpload = study.latestJatosStudyUpload
+  const jatosStudyId = latestUpload?.jatosStudyId ?? null
+  const jatosWorkerType = latestUpload?.jatosWorkerType ?? null
 
   if (!setupComplete) {
     return (
@@ -39,11 +42,11 @@ export default async function ParticipantData({ studyId, study }: ParticipantDat
     const completionCheck = await checkParticipantCompletionAction(
       studyId,
       participant.pseudonym,
-      study.jatosStudyId!
+      jatosStudyId!
     )
 
     const isCompleted = completionCheck.success && completionCheck.completed
-    const isSingleRunStudy = study.jatosWorkerType === "SINGLE"
+    const isSingleRunStudy = jatosWorkerType === "SINGLE"
 
     // Hide button if study is completed and it's a SINGLE run study
     const shouldShowButton = !(isCompleted && isSingleRunStudy)
@@ -51,7 +54,7 @@ export default async function ParticipantData({ studyId, study }: ParticipantDat
     // Build actions for participant
     const participantActions = shouldShowButton ? (
       <div className="flex justify-center">
-        <RunStudyButton runUrl={participant.jatosRunUrl} isActive={participant.active} />
+        <RunPilotButton runUrl={participant.jatosRunUrl} isActive={participant.active} />
       </div>
     ) : undefined
 
@@ -77,7 +80,7 @@ export default async function ParticipantData({ studyId, study }: ParticipantDat
         <ParticipantFeedbackData
           studyId={studyId}
           pseudonym={participant.pseudonym}
-          jatosStudyId={study.jatosStudyId!}
+          jatosStudyId={jatosStudyId!}
         />
       </>
     )

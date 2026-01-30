@@ -5,22 +5,28 @@ import { useRouter } from "next/navigation"
 import { useMutation } from "@blitzjs/rpc"
 import { FORM_ERROR } from "@/src/app/components/Form"
 import toast from "react-hot-toast"
-import { useStudySetup } from "../../../components/client/StudySetupProvider"
+
 import updateStudy from "@/src/app/(app)/studies/mutations/updateStudy"
 import StudyInformationForm from "@/src/app/(app)/studies/[studyId]/setup/step1/components/client/StudyInformationForm"
 import { getPostStepNavigationUrl } from "../../../utils/setupStatus"
 
+import { StudyWithRelations } from "@/src/app/(app)/studies/queries/getStudy"
+
 interface Step1ContentProps {
+  study: StudyWithRelations
+  studyId: number
   isEditMode?: boolean
   returnTo?: string
 }
 
 export default function Step1Content({
+  study,
+  studyId,
   isEditMode = false,
   returnTo = "step2",
 }: Step1ContentProps) {
   const router = useRouter()
-  const { study, studyId } = useStudySetup()
+  // const { study, studyId } = useStudySetup() // Removed context usage
   const [updateStudyMutation] = useMutation(updateStudy)
 
   // Parse returnTo and get navigation URL

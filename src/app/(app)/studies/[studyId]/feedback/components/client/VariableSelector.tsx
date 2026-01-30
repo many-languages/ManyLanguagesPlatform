@@ -1,13 +1,12 @@
 "use client"
 
 import { useState, useMemo } from "react"
-import { EnrichedJatosStudyResult } from "@/src/types/jatos"
 import FilterBuilder from "./FilterBuilder"
-import { extractVariables } from "../../../variables/utils/extractVariable"
 import { SelectField, FilterButtonWithDisplay, SyntaxPreview } from "./shared"
+import type { FeedbackVariable } from "../../types"
 
 interface VariableSelectorProps {
-  enrichedResult: EnrichedJatosStudyResult
+  variables: FeedbackVariable[]
   onInsert: (variableSyntax: string) => void
   markdown?: string
 }
@@ -18,23 +17,17 @@ const MODIFIERS = [
   { key: "last", label: "Last Value", description: "Show only last occurrence" },
 ]
 
-export default function VariableSelector({
-  enrichedResult,
-  onInsert,
-  markdown,
-}: VariableSelectorProps) {
+export default function VariableSelector({ variables, onInsert, markdown }: VariableSelectorProps) {
   const [selectedVariable, setSelectedVariable] = useState("")
   const [selectedModifier, setSelectedModifier] = useState("all")
   const [showFilterBuilder, setShowFilterBuilder] = useState(false)
   const [currentFilterClause, setCurrentFilterClause] = useState("")
 
-  const variables = extractVariables(enrichedResult)
-
   const variableOptions = useMemo(
     () =>
       variables.map((v) => ({
         value: v.variableName,
-        label: `${v.variableName} (${v.occurrences} occurrences)`,
+        label: v.type ? `${v.variableName} (${v.type})` : v.variableName,
       })),
     [variables]
   )
@@ -126,7 +119,7 @@ export default function VariableSelector({
       {/* FilterBuilder Modal */}
       {showFilterBuilder && (
         <FilterBuilder
-          enrichedResult={enrichedResult}
+          variables={variables}
           onInsert={handleFilterInsert}
           onClose={() => setShowFilterBuilder(false)}
         />

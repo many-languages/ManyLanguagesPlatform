@@ -1,0 +1,121 @@
+"use client"
+
+import { useCallback, useMemo, useState } from "react"
+import type { ExtractedVariable, ExtractionObservation } from "../../../../variables/types"
+import type { ExtractionIndexStore } from "../../../../variables/utils/extractionIndexStore"
+import type { ColumnDef } from "@tanstack/react-table"
+import Table from "@/src/app/components/Table"
+import VariableValuesModal from "./VariableValuesModal"
+import { getTypeBadgeClass } from "../../../utils/badgeHelpers"
+import { VariableRow } from "../../../types"
+import { examplePreview } from "../../../utils/examplePreview"
+
+interface VariableTableProps {
+  extractedVariables: ExtractedVariable[]
+  indexStore: ExtractionIndexStore
+  observations: ExtractionObservation[]
+}
+
+export default function VariableTable({
+  extractedVariables,
+  indexStore,
+  observations,
+}: VariableTableProps) {
+  const [selectedVariable, setSelectedVariable] = useState<ExtractedVariable | null>(null)
+
+  const handleShowValues = useCallback((row: VariableRow) => {
+    setSelectedVariable(row._variable)
+  }, [])
+
+  const handleCloseModal = useCallback(() => setSelectedVariable(null), [])
+
+  const rows = useMemo<VariableRow[]>(
+    () =>
+      extractedVariables.map((v) => ({
+        variableKey: v.variableKey,
+        variableName: v.variableName,
+        type: v.type,
+        occurrences: v.occurrences,
+        examplePreview: examplePreview(v),
+        _variable: v,
+      })),
+    [extractedVariables]
+  )
+
+  const columns = useMemo<ColumnDef<VariableRow>[]>(
+    () => [
+      {
+        accessorKey: "variableName",
+        header: "Variable Name",
+        cell: ({ row }) => (
+          <span className="font-mono font-medium">{row.original.variableName}</span>
+        ),
+      },
+      {
+        accessorKey: "type",
+        header: "Type",
+        cell: ({ row }) => {
+          const badgeClass = getTypeBadgeClass(row.original.type)
+          return (
+            <div>
+              <span className={`badge ${badgeClass}`}>{row.original.type}</span>
+            </div>
+          )
+        },
+      },
+      { accessorKey: "occurrences", header: "Occurrences" },
+      {
+        accessorKey: "examplePreview",
+        header: "Example Value",
+        cell: ({ row }) => (
+          <span className="font-mono text-xs max-w-xs truncate block">
+            {row.original.examplePreview}
+          </span>
+        ),
+      },
+      {
+        id: "allValues",
+        header: "All Values",
+        cell: ({ row }) => (
+          <button className="btn btn-sm btn-outline" onClick={() => handleShowValues(row.original)}>
+            Show
+          </button>
+        ),
+        enableSorting: false,
+        enableColumnFilter: false,
+      },
+    ],
+    [handleShowValues]
+  )
+
+  if (rows.length === 0) {
+    return (
+      <div className="alert alert-info">
+        <span>No variables extracted from this result</span>
+      </div>
+    )
+  }
+
+  return (
+    <>
+      <div className="overflow-x-auto">
+        <Table
+          columns={columns}
+          data={rows}
+          enableSorting={true}
+          enableFilters={true}
+          addPagination={false}
+          classNames={{
+            table: "table table-zebra",
+          }}
+        />
+      </div>
+      <VariableValuesModal
+        selectedVariable={selectedVariable}
+        indexStore={indexStore}
+        observations={observations}
+        onClose={handleCloseModal}
+      />
+    </>
+  )
+}

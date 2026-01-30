@@ -1,15 +1,22 @@
 import type { EnrichedJatosStudyResult } from "@/src/types/jatos"
 
 // Re-export variable types from shared variables module
-export type { ExtractedVariable, AvailableVariable, AvailableField } from "../../variables/types"
+export type { ExtractedVariable } from "../../variables/types"
 
 // Template Types
 export interface FeedbackTemplate {
   id: number
   studyId: number
   content: string
-  createdAt: Date
-  updatedAt: Date
+  validatedExtractionId?: number | null
+  validationStatus?: "NEEDS_REVIEW" | "VALID" | "INVALID"
+  validatedAt?: Date | string | null
+  missingKeys?: string[] | null
+  extraKeys?: string[] | null
+  extractorVersion?: string | null
+  requiredVariableKeys?: string[] | null
+  createdAt: Date | string
+  updatedAt: Date | string
 }
 
 export interface FeedbackTemplateInput {
@@ -31,22 +38,39 @@ export interface FeedbackCardProps {
   title?: string
   className?: string
   allEnrichedResults?: EnrichedJatosStudyResult[]
+  requiredVariableKeyList?: string[]
 }
 
 export interface FeedbackFormEditorRef {
-  saveTemplate: () => Promise<void>
+  saveTemplate: () => Promise<boolean>
   isTemplateSaved: () => boolean
 }
 
+export interface FeedbackVariable {
+  variableName: string
+  type: string
+  variableKey?: string
+}
+
 export interface FeedbackFormEditorProps {
-  enrichedResult: EnrichedJatosStudyResult
   initialTemplate?: {
     id: number
     content: string
-    createdAt: Date
-    updatedAt: Date
+    createdAt: Date | string
+    updatedAt: Date | string
+    validatedExtractionId?: number | null
+    validationStatus?: "NEEDS_REVIEW" | "VALID" | "INVALID"
+    validatedAt?: Date | string | null
+    missingKeys?: string[] | null
+    extraKeys?: string[] | null
   } | null
   studyId: number
   onTemplateSaved?: () => void
-  allTestResults?: EnrichedJatosStudyResult[]
+  onValidationChange?: (isValid: boolean) => void
+  allPilotResults?: EnrichedJatosStudyResult[]
+  variables: FeedbackVariable[]
+  extractionBundle:
+    | import("../setup/utils/serializeExtractionBundle").SerializedExtractionBundle
+    | null
+  hiddenVariables?: string[]
 }

@@ -1,30 +1,36 @@
 import { notFound } from "next/navigation"
-import Step5Content from "./components/client/Step5Content"
-import SaveExitButton from "../components/client/SaveExitButton"
-import { getFeedbackTemplateRsc } from "../../feedback/queries/getFeedbackTemplate"
-import { getAllTestResultsRsc } from "@/src/app/(app)/studies/[studyId]/utils/getAllTestResults"
+import CodebookContent from "../../codebook/components/client/CodebookContent"
+import SetupStepHeader from "../components/client/SetupStepHeader"
+import { getCodebookDataRsc } from "../../codebook/queries/getCodebookData"
+
+import { getStudyRsc } from "../../../queries/getStudy"
 
 async function Step5ContentWrapper({ studyId }: { studyId: number }) {
-  // Fetch feedback template server-side
-  const feedbackTemplate = await getFeedbackTemplateRsc(studyId)
+  const { variables, codebook, approvedExtractionId, approvedExtractionApprovedAt } =
+    await getCodebookDataRsc(studyId)
 
-  // Fetch all test results
-  const allTestResults = await getAllTestResultsRsc(studyId)
-
-  // Select the latest test result (first one since sorted by id descending)
-  const latestTestResult = allTestResults.length > 0 ? allTestResults[0] : null
+  const study = await getStudyRsc(studyId)
 
   return (
     <>
-      <div className="flex items-center justify-between mb-4">
-        <SaveExitButton />
-        <h2 className="text-xl font-semibold text-center flex-1">Step 5 – Feedback</h2>
-        <div className="w-32" /> {/* Spacer to balance the layout */}
-      </div>
-      <Step5Content
-        initialFeedbackTemplate={feedbackTemplate}
-        enrichedResult={latestTestResult}
-        allTestResults={allTestResults}
+      <SetupStepHeader studyId={studyId} title="Step 5 – Codebook" />
+      <CodebookContent
+        study={study}
+        initialVariables={variables.map((v) => ({
+          ...v,
+          examples: (v.examples as { value: string; sourcePath: string }[] | null) ?? [],
+        }))}
+        codebook={
+          codebook
+            ? {
+                ...codebook,
+                missingKeys: (codebook.missingKeys as string[]) ?? [],
+                extraKeys: (codebook.extraKeys as string[]) ?? [],
+              }
+            : null
+        }
+        approvedExtractionId={approvedExtractionId}
+        approvedExtractionApprovedAt={approvedExtractionApprovedAt}
       />
     </>
   )

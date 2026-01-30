@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from "react"
 import { useRouter } from "next/navigation"
+import Link from "next/link"
 import Card from "@/src/app/components/Card"
 import Table from "@/src/app/components/Table"
 import { Alert } from "@/src/app/components/Alert"
@@ -188,6 +189,10 @@ export default function ResultsCard({
           </AsyncButton>
           {/* Download all data */}
           <DownloadResultsButton jatosStudyId={jatosStudyId} />
+          {/* Open Inspector */}
+          <Link href={`/studies/${studyId}/inspector`} className="btn btn-ghost">
+            Inspector
+          </Link>
         </div>
       }
     >

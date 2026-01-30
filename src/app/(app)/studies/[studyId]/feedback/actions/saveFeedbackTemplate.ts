@@ -2,15 +2,12 @@
 
 import { createFeedbackTemplateRsc } from "../mutations/createFeedbackTemplate"
 import { updateFeedbackTemplateRsc } from "../mutations/updateFeedbackTemplate"
-import { syncStudyVariablesRsc } from "../../variables/mutations/syncStudyVariables"
-import { extractVariables } from "../../variables/utils/extractVariable"
-import type { EnrichedJatosStudyResult } from "@/src/types/jatos"
 import type { FeedbackTemplate } from "../types"
+import { extractRequiredVariableNames } from "../utils/requiredKeys"
 
 export interface SaveTemplateInput {
   studyId: number
   content: string
-  enrichedResult: EnrichedJatosStudyResult
   initialTemplate?: {
     id: number
     content: string
@@ -29,35 +26,27 @@ export interface SaveTemplateResult {
 export async function saveFeedbackTemplateAction(
   input: SaveTemplateInput
 ): Promise<SaveTemplateResult> {
-  const { studyId, content, enrichedResult, initialTemplate } = input
+  const { studyId, content, initialTemplate } = input
 
   // Validate content
   if (!content.trim()) {
     throw new Error("Template content cannot be empty")
   }
 
+  const requiredVariableKeys = extractRequiredVariableNames(content.trim())
+
   // Save or update template
   const template = initialTemplate
     ? await updateFeedbackTemplateRsc({
         id: initialTemplate.id,
         content: content.trim(),
+        requiredVariableKeys,
       })
     : await createFeedbackTemplateRsc({
         studyId,
         content: content.trim(),
+        requiredVariableKeys,
       })
-
-  // Sync variables to database
-  const variables = extractVariables(enrichedResult)
-  await syncStudyVariablesRsc({
-    studyId,
-    variables: variables.map((v) => ({
-      name: v.variableName,
-      label: v.variableName,
-      type: v.type,
-      example: v.exampleValue,
-    })),
-  })
 
   return {
     template,

@@ -1,14 +1,13 @@
 "use client"
 
 import { useState, useMemo } from "react"
-import { EnrichedJatosStudyResult } from "@/src/types/jatos"
-import { extractAllVariables } from "../../../variables/utils/extractVariable"
 import { SelectField } from "./shared"
 import Card from "@/src/app/components/Card"
 import { dslHelperStyles } from "../../styles/feedbackStyles"
+import type { FeedbackVariable } from "../../types"
 
 interface DSLHelperProps {
-  enrichedResult: EnrichedJatosStudyResult
+  variables: FeedbackVariable[]
 }
 
 interface Example {
@@ -21,7 +20,7 @@ interface Example {
 /**
  * Collapsible reference panel showing DSL syntax examples and available variables
  */
-export default function DSLHelper({ enrichedResult }: DSLHelperProps) {
+export default function DSLHelper({ variables }: DSLHelperProps) {
   const [searchTerm, setSearchTerm] = useState("")
   const [selectedCategory, setSelectedCategory] = useState<string>("all")
 
@@ -131,8 +130,6 @@ export default function DSLHelper({ enrichedResult }: DSLHelperProps) {
     },
   ]
 
-  const availableVariables = extractAllVariables(enrichedResult)
-
   const categoryOptions = useMemo(
     () => [
       { value: "all", label: "All Categories" },
@@ -160,7 +157,13 @@ export default function DSLHelper({ enrichedResult }: DSLHelperProps) {
   }
 
   return (
-    <Card title="📚 DSL Reference & Examples" collapsible bgColor="bg-base-300" className="mt-4">
+    <Card
+      title="📚 DSL Reference & Examples"
+      collapsible
+      bgColor="bg-base-300"
+      className="mt-4"
+      defaultOpen={false}
+    >
       <div className="space-y-4">
         {/* Search and Filter */}
         <div className="flex gap-2">
@@ -182,18 +185,18 @@ export default function DSLHelper({ enrichedResult }: DSLHelperProps) {
         </div>
 
         {/* Available Variables */}
-        {availableVariables.length > 0 && (
+        {variables.length > 0 && (
           <div className="p-3 rounded-lg" style={dslHelperStyles.section}>
             <h4 className="font-semibold mb-2">Available Variables</h4>
             <div className="flex flex-wrap gap-1">
-              {availableVariables.map((variable) => (
+              {variables.map((variable) => (
                 <span
-                  key={variable.name}
+                  key={variable.variableName}
                   className="badge badge-outline text-xs cursor-pointer hover:badge-primary"
-                  onClick={() => copyToClipboard(`{{ var:${variable.name} }}`)}
-                  title={`Click to copy: {{ var:${variable.name} }}`}
+                  onClick={() => copyToClipboard(`{{ var:${variable.variableName} }}`)}
+                  title={`Click to copy: {{ var:${variable.variableName} }}`}
                 >
-                  {variable.name}
+                  {variable.variableName}
                 </span>
               ))}
             </div>

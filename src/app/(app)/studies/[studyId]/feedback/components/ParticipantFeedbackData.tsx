@@ -1,6 +1,7 @@
 import { getFeedbackTemplateRsc } from "../queries/getFeedbackTemplate"
 import ParticipantFeedback from "./client/ParticipantFeedback"
 import { fetchParticipantFeedbackAction } from "../actions/fetchParticipantFeedback"
+import { resolveRequiredVariableKeys } from "../utils/resolveRequiredVariableKeys"
 
 interface ParticipantFeedbackDataProps {
   studyId: number
@@ -21,6 +22,8 @@ export default async function ParticipantFeedbackData({
       return null
     }
 
+    const requiredVariableKeyList = await resolveRequiredVariableKeys(template)
+
     // Use the same server action for initial fetch - single source of truth
     const result = await fetchParticipantFeedbackAction(studyId, pseudonym, jatosStudyId)
 
@@ -37,6 +40,7 @@ export default async function ParticipantFeedbackData({
         initialEnrichedResult={result.data?.enrichedResult ?? null}
         template={template}
         initialAllEnrichedResults={result.data?.allEnrichedResults ?? []}
+        requiredVariableKeyList={requiredVariableKeyList}
       />
     )
   } catch (error) {

@@ -14,6 +14,7 @@ interface ParticipantFeedbackProps {
   initialEnrichedResult: EnrichedJatosStudyResult | null | undefined
   template: { content: string } | null | undefined
   initialAllEnrichedResults: EnrichedJatosStudyResult[]
+  requiredVariableKeyList?: string[]
 }
 
 export default function ParticipantFeedback({
@@ -23,6 +24,7 @@ export default function ParticipantFeedback({
   initialEnrichedResult,
   template,
   initialAllEnrichedResults,
+  requiredVariableKeyList,
 }: ParticipantFeedbackProps) {
   const [, startTransition] = useTransition()
   const [enrichedResult, setEnrichedResult] = useState(initialEnrichedResult)
@@ -135,6 +137,7 @@ export default function ParticipantFeedback({
       enrichedResult={enrichedResult}
       template={template}
       allEnrichedResults={allEnrichedResults}
+      requiredVariableKeyList={requiredVariableKeyList}
       onRefresh={fetchFullData}
     />
   )

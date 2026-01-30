@@ -1,5 +1,4 @@
-import { EnrichedJatosStudyResult } from "@/src/types/jatos"
-import { extractAvailableFields, extractAllVariables } from "../../variables/utils/extractVariable"
+import type { FeedbackVariable } from "../types"
 
 export interface DSLError {
   type: "variable" | "stat" | "conditional" | "filter" | "syntax"
@@ -19,13 +18,16 @@ export interface ValidationResult {
  */
 export function validateDSL(
   template: string,
-  enrichedResult: EnrichedJatosStudyResult
+  variables: FeedbackVariable[],
+  hiddenVariables?: Set<string>
 ): ValidationResult {
   const errors: DSLError[] = []
 
-  // Get available variables and fields from service
-  const availableVariables = extractAvailableVariables(enrichedResult)
-  const availableFields = extractAvailableFields(enrichedResult)
+  const variableNames = new Set(variables.map((v) => v.variableName))
+  const availableFields = variables.map((v) => ({
+    name: v.variableName,
+    type: v.type,
+  }))
 
   // Validate variables: {{ var:name:modifier | where: condition }}
   const varRegex =
@@ -37,14 +39,24 @@ export function validateDSL(
     const end = start + fullMatch.length
 
     // Check if variable exists
-    if (!availableVariables.includes(varName)) {
-      errors.push({
-        type: "variable",
-        message: `Variable '${varName}' does not exist in the data`,
-        start,
-        end,
-        severity: "error",
-      })
+    if (!variableNames.has(varName)) {
+      if (hiddenVariables?.has(varName)) {
+        errors.push({
+          type: "variable",
+          message: `Variable '${varName}' is marked as personal data and cannot be used`,
+          start,
+          end,
+          severity: "error",
+        })
+      } else {
+        errors.push({
+          type: "variable",
+          message: `Variable '${varName}' does not exist in the data`,
+          start,
+          end,
+          severity: "error",
+        })
+      }
     }
 
     // Check modifier validity
@@ -79,7 +91,7 @@ export function validateDSL(
     const end = start + fullMatch.length
 
     // Check if variable exists
-    if (!availableVariables.includes(varName)) {
+    if (!variableNames.has(varName)) {
       errors.push({
         type: "stat",
         message: `Variable '${varName}' does not exist in the data`,
@@ -322,13 +334,4 @@ function validateMalformedSyntax(template: string): DSLError[] {
   }
 
   return errors
-}
-
-/**
- * Extracts available variables from enriched result
- * Uses variable service to get variable names
- */
-function extractAvailableVariables(enrichedResult: EnrichedJatosStudyResult): string[] {
-  const variables = extractAllVariables(enrichedResult)
-  return variables.map((v) => v.name)
 }

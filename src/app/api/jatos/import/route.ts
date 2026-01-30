@@ -6,14 +6,12 @@
  * @route POST /api/jatos/import
  * @body FormData with "studyFile" field (File)
  * @returns JATOS study ID, UUID, and filename
- * @returns 409 if study already exists with conflict details
+ * @returns JATOS metadata; includes studyExists flag when applicable
  */
 import { NextResponse } from "next/server"
-import type {
-  JatosImportResponse,
-  JatosImportConflictResponse,
-  JatosApiError,
-} from "@/src/types/jatos-api"
+import { createHash } from "crypto"
+import JSZip from "jszip"
+import type { JatosImportResponse, JatosApiError } from "@/src/types/jatos-api"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -24,9 +22,29 @@ export const maxDuration = 60 // 60 seconds timeout
 const JATOS_BASE = process.env.JATOS_BASE!
 const JATOS_TOKEN = process.env.JATOS_TOKEN!
 
+async function computeBuildHash(file: File): Promise<string> {
+  const arrayBuffer = await file.arrayBuffer()
+  const zip = await JSZip.loadAsync(arrayBuffer)
+  const entries = Object.entries(zip.files)
+    .filter(([, entry]) => !entry.dir)
+    .sort(([a], [b]) => a.localeCompare(b))
+
+  const hash = createHash("sha256")
+
+  for (const [filename, entry] of entries) {
+    hash.update(filename)
+    hash.update("\0")
+    const content = await entry.async("uint8array")
+    hash.update(content)
+    hash.update("\0")
+  }
+
+  return hash.digest("hex")
+}
+
 export async function POST(
   req: Request
-): Promise<NextResponse<JatosImportResponse | JatosImportConflictResponse | JatosApiError>> {
+): Promise<NextResponse<JatosImportResponse | JatosApiError>> {
   try {
     const form = await req.formData()
     const file = form.get("studyFile") as File | null
@@ -49,6 +67,15 @@ export async function POST(
           2
         )}MB`,
       }
+      return NextResponse.json(errorResponse, { status: 400 })
+    }
+
+    let buildHash: string
+    try {
+      buildHash = await computeBuildHash(file)
+    } catch (error) {
+      console.error("Failed to hash JATOS study file:", error)
+      const errorResponse: JatosApiError = { error: "Failed to read JATOS .jzip archive" }
       return NextResponse.json(errorResponse, { status: 400 })
     }
 
@@ -84,25 +111,16 @@ export async function POST(
       return NextResponse.json(errorResponse, { status: 502 })
     }
 
-    // Check if study already exists on JATOS
-    if (json.studyExists) {
-      const conflictResponse: JatosImportConflictResponse = {
-        error: "Study already exists on JATOS server",
-        studyExists: true,
-        jatosStudyId: json.id,
-        jatosStudyUUID: json.uuid,
-        jatosFileName: file.name,
-        currentStudyTitle: json.currentStudyTitle,
-        uploadedStudyTitle: json.uploadedStudyTitle,
-      }
-      return NextResponse.json(conflictResponse, { status: 409 })
-    }
-
     // Normal success response
     const successResponse: JatosImportResponse = {
       jatosStudyId: json.id,
       jatosStudyUUID: json.uuid,
       jatosFileName: file.name,
+      buildHash,
+      hashAlgorithm: "sha256",
+      studyExists: json.studyExists ?? false,
+      currentStudyTitle: json.currentStudyTitle,
+      uploadedStudyTitle: json.uploadedStudyTitle,
     }
     return NextResponse.json(successResponse)
   } catch (error: any) {

@@ -10,6 +10,7 @@ interface ResearcherFeedbackProps {
   initialEnrichedResult: EnrichedJatosStudyResult | null | undefined
   template: { content: string } | null | undefined
   initialAllEnrichedResults: EnrichedJatosStudyResult[]
+  requiredVariableKeyList?: string[]
 }
 
 export default function ResearcherFeedback({
@@ -17,6 +18,7 @@ export default function ResearcherFeedback({
   initialEnrichedResult,
   template,
   initialAllEnrichedResults,
+  requiredVariableKeyList,
 }: ResearcherFeedbackProps) {
   const router = useRouter()
   const [, startTransition] = useTransition()
@@ -36,6 +38,7 @@ export default function ResearcherFeedback({
       template={template}
       title="Feedback Preview"
       allEnrichedResults={initialAllEnrichedResults}
+      requiredVariableKeyList={requiredVariableKeyList}
       onRefresh={handleRefresh}
       showEditButton={true}
     />

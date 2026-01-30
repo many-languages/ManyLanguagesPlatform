@@ -1,7 +1,6 @@
 "use client"
 
-import { useState, useEffect, useImperativeHandle, forwardRef } from "react"
-import { useMemo } from "react"
+import { useState, useEffect, useImperativeHandle, forwardRef, useRef, useMemo } from "react"
 import MDEditor from "@uiw/react-md-editor"
 import VariableSelector from "./VariableSelector"
 import StatsSelector from "./StatsSelector"
@@ -10,11 +9,26 @@ import DSLHelper from "./DSLHelper"
 import { useFeedbackTemplate } from "../../hooks/useFeedbackTemplate"
 import { useTemplatePreview } from "../../hooks/useTemplatePreview"
 import { validateDSL, DSLError } from "../../utils/dslValidator"
+import { toast } from "react-hot-toast"
 import type { FeedbackFormEditorProps, FeedbackFormEditorRef } from "../../types"
+import { buildPreviewContextFromBundle } from "../../utils/previewContext"
+import { buildRequiredKeysHash, extractRequiredVariableNames } from "../../utils/requiredKeys"
 import { mdEditorStyles, mdEditorClassName } from "../../styles/feedbackStyles"
 
 const FeedbackFormEditor = forwardRef<FeedbackFormEditorRef, FeedbackFormEditorProps>(
-  ({ enrichedResult, initialTemplate, studyId, onTemplateSaved, allTestResults }, ref) => {
+  (
+    {
+      initialTemplate,
+      studyId,
+      onTemplateSaved,
+      onValidationChange,
+      allPilotResults,
+      variables,
+      extractionBundle,
+      hiddenVariables,
+    },
+    ref
+  ) => {
     const [markdown, setMarkdown] = useState(
       "## Feedback Form\nWrite your feedback message here..."
     )
@@ -24,7 +38,6 @@ const FeedbackFormEditor = forwardRef<FeedbackFormEditorRef, FeedbackFormEditorP
 
     const { saveTemplate, saving, templateSaved, setTemplateSaved } = useFeedbackTemplate({
       studyId,
-      enrichedResult,
       initialTemplate,
       onSuccess: onTemplateSaved,
     })
@@ -37,16 +50,28 @@ const FeedbackFormEditor = forwardRef<FeedbackFormEditorRef, FeedbackFormEditorP
       }
     }, [initialTemplate])
 
+    const [debouncedMarkdown, setDebouncedMarkdown] = useState(markdown)
+
+    useEffect(() => {
+      const timeoutId = setTimeout(() => setDebouncedMarkdown(markdown), 250)
+      return () => clearTimeout(timeoutId)
+    }, [markdown])
+
     // Validate DSL syntax when markdown changes
     useEffect(() => {
-      const validationResult = validateDSL(markdown, enrichedResult)
+      const validationResult = validateDSL(
+        debouncedMarkdown,
+        variables,
+        new Set(hiddenVariables ?? [])
+      )
       setDslErrors(validationResult.errors)
+      onValidationChange?.(validationResult.isValid)
 
       // Auto-show errors if there are any
       if (validationResult.errors.length > 0) {
         setShowErrors(true)
       }
-    }, [markdown, enrichedResult])
+    }, [debouncedMarkdown, variables, hiddenVariables, onValidationChange])
 
     const handleInsertVariable = (variableSyntax: string) => {
       setMarkdown((prev) => prev + ` ${variableSyntax}`)
@@ -63,8 +88,16 @@ const FeedbackFormEditor = forwardRef<FeedbackFormEditorRef, FeedbackFormEditorP
       setTemplateSaved(false)
     }
 
-    const handleSave = async () => {
+    const handleSave = async (): Promise<boolean> => {
+      // Prevent saving if there are DSL errors
+      if (dslErrors.length > 0) {
+        toast.error("Cannot save template with validation errors. Please fix them first.")
+        setShowErrors(true)
+        return false
+      }
+
       await saveTemplate(markdown)
+      return true
     }
 
     // Expose methods to parent component
@@ -72,7 +105,7 @@ const FeedbackFormEditor = forwardRef<FeedbackFormEditorRef, FeedbackFormEditorP
       ref,
       () => ({
         saveTemplate: async () => {
-          await handleSave()
+          return await handleSave()
         },
         isTemplateSaved: () => templateSaved,
       }),
@@ -84,11 +117,40 @@ const FeedbackFormEditor = forwardRef<FeedbackFormEditorRef, FeedbackFormEditorP
       return /stat:[^}]+:across/.test(markdown)
     }, [markdown])
 
+    const requiredVariableNames = useMemo(
+      () => extractRequiredVariableNames(debouncedMarkdown),
+      [debouncedMarkdown]
+    )
+
+    // Filter variables to only include those that are allowed (passed in props)
+    // This prevents personal data from being shown in the preview even if the template references it
+    const effectiveVariableNames = useMemo(() => {
+      const allowedNames = new Set(variables.map((v) => v.variableName))
+      return requiredVariableNames.filter((name) => allowedNames.has(name))
+    }, [requiredVariableNames, variables])
+
+    const requiredKeysHash = useMemo(
+      () => buildRequiredKeysHash(effectiveVariableNames),
+      [effectiveVariableNames]
+    )
+
+    const contextCacheRef = useRef(
+      new Map<string, ReturnType<typeof buildPreviewContextFromBundle>>()
+    )
+
+    const previewContext = useMemo(() => {
+      if (!extractionBundle) return null
+      const cached = contextCacheRef.current.get(requiredKeysHash)
+      if (cached) return cached
+      const built = buildPreviewContextFromBundle(extractionBundle, effectiveVariableNames)
+      contextCacheRef.current.set(requiredKeysHash, built)
+      return built
+    }, [extractionBundle, requiredKeysHash, effectiveVariableNames])
+
     // Client-side rendering for live preview
     const renderedPreview = useTemplatePreview({
-      template: markdown,
-      enrichedResult,
-      allEnrichedResults: allTestResults,
+      template: debouncedMarkdown,
+      context: previewContext,
     })
 
     return (
@@ -101,24 +163,31 @@ const FeedbackFormEditor = forwardRef<FeedbackFormEditorRef, FeedbackFormEditorP
           )}
           <div className="flex items-center gap-2 flex-wrap">
             <VariableSelector
-              enrichedResult={enrichedResult}
+              variables={variables}
               onInsert={handleInsertVariable}
               markdown={markdown}
             />
-            <StatsSelector
-              enrichedResult={enrichedResult}
-              onInsert={handleInsertStat}
-              markdown={markdown}
-            />
+            <StatsSelector variables={variables} onInsert={handleInsertStat} markdown={markdown} />
             <button
               className="btn btn-sm btn-outline"
               onClick={() => setShowConditionalBuilder(true)}
             >
               Add Condition
             </button>
-            <button className="btn btn-sm btn-primary" onClick={handleSave} disabled={saving}>
-              {saving ? "Saving..." : initialTemplate ? "Update" : "Save"}
-            </button>
+            <div
+              className="tooltip tooltip-bottom"
+              data-tip={
+                dslErrors.length > 0 ? "Please fix validation errors before saving" : undefined
+              }
+            >
+              <button
+                className="btn btn-sm btn-primary"
+                onClick={() => handleSave()}
+                disabled={saving || dslErrors.length > 0}
+              >
+                {saving ? "Saving..." : initialTemplate ? "Update" : "Save"}
+              </button>
+            </div>
           </div>
         </div>
 
@@ -142,8 +211,8 @@ const FeedbackFormEditor = forwardRef<FeedbackFormEditorRef, FeedbackFormEditorP
               <h3 className="font-bold">Using "Across All Results" Statistics</h3>
               <div className="text-sm">
                 This template uses statistics calculated across all participants. In the preview
-                above, we're using all "test" results ({allTestResults?.length || 0} result
-                {allTestResults?.length !== 1 ? "s" : ""}). In actual participant feedback, it will
+                above, we're using all pilot results ({allPilotResults?.length || 0} result
+                {allPilotResults?.length !== 1 ? "s" : ""}). In actual participant feedback, it will
                 use all participant results from the study.
               </div>
             </div>
@@ -198,7 +267,7 @@ const FeedbackFormEditor = forwardRef<FeedbackFormEditorRef, FeedbackFormEditorP
         </div>
 
         {/* DSL Helper */}
-        <DSLHelper enrichedResult={enrichedResult} />
+        <DSLHelper variables={variables} />
 
         {/* Preview */}
         <div className="divider">Preview</div>
@@ -214,7 +283,7 @@ const FeedbackFormEditor = forwardRef<FeedbackFormEditorRef, FeedbackFormEditorP
         {/* Modals */}
         {showConditionalBuilder && (
           <ConditionalBuilder
-            enrichedResult={enrichedResult}
+            variables={variables}
             onInsert={handleInsertConditional}
             onClose={() => setShowConditionalBuilder(false)}
           />

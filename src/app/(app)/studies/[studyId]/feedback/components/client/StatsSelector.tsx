@@ -1,13 +1,12 @@
 "use client"
 
 import { useState, useMemo } from "react"
-import { EnrichedJatosStudyResult } from "@/src/types/jatos"
 import FilterBuilder from "./FilterBuilder"
-import { extractAllVariables } from "../../../variables/utils/extractVariable"
 import { SelectField, FilterButtonWithDisplay, SyntaxPreview } from "./shared"
+import type { FeedbackVariable } from "../../types"
 
 interface StatsSelectorProps {
-  enrichedResult: EnrichedJatosStudyResult
+  variables: FeedbackVariable[]
   onInsert: (statExpression: string) => void
   markdown?: string
 }
@@ -23,22 +22,20 @@ const METRICS = [
  * Component for selecting variables and their statistics
  * Shows dropdowns for variable selection and stat type, with insert button
  */
-export default function StatsSelector({ enrichedResult, onInsert, markdown }: StatsSelectorProps) {
+export default function StatsSelector({ variables, onInsert, markdown }: StatsSelectorProps) {
   const [selectedVariable, setSelectedVariable] = useState("")
   const [selectedMetric, setSelectedMetric] = useState("avg")
   const [selectedScope, setSelectedScope] = useState<"within" | "across">("within")
   const [showFilterBuilder, setShowFilterBuilder] = useState(false)
   const [currentFilterClause, setCurrentFilterClause] = useState("")
 
-  const availableVariables = extractAllVariables(enrichedResult)
-
   const variableOptions = useMemo(
     () =>
-      availableVariables.map((v) => ({
-        value: v.name,
-        label: `${v.name} (${v.type})`,
+      variables.map((v) => ({
+        value: v.variableName,
+        label: `${v.variableName} (${v.type})`,
       })),
-    [availableVariables]
+    [variables]
   )
 
   const getAvailableMetrics = (variableType: string) => {
@@ -48,6 +45,8 @@ export default function StatsSelector({ enrichedResult, onInsert, markdown }: St
       case "boolean":
         return METRICS.filter((metric) => metric.key === "count")
       case "string":
+      case "array":
+      case "object":
         return METRICS.filter((metric) => metric.key === "count")
       default:
         return METRICS.filter((metric) => metric.key === "count")
@@ -56,9 +55,9 @@ export default function StatsSelector({ enrichedResult, onInsert, markdown }: St
 
   const currentVariableType = useMemo(() => {
     return selectedVariable
-      ? availableVariables.find((v) => v.name === selectedVariable)?.type || "string"
+      ? variables.find((v) => v.variableName === selectedVariable)?.type || "string"
       : "string"
-  }, [selectedVariable, availableVariables])
+  }, [selectedVariable, variables])
 
   const metricOptions = useMemo(
     () =>
@@ -117,7 +116,7 @@ export default function StatsSelector({ enrichedResult, onInsert, markdown }: St
               setSelectedVariable(value)
               if (value) {
                 const variableType =
-                  availableVariables.find((v) => v.name === value)?.type || "string"
+                  variables.find((v) => v.variableName === value)?.type || "string"
                 const availableMetrics = getAvailableMetrics(variableType)
                 if (availableMetrics.length > 0) {
                   setSelectedMetric(availableMetrics[0].key)
@@ -145,7 +144,7 @@ export default function StatsSelector({ enrichedResult, onInsert, markdown }: St
             />
             {selectedScope === "across" && (
               <div className="text-xs text-warning mt-1">
-                ⚠️ In preview, this uses all "test" results. In actual feedback, it uses all
+                ⚠️ In preview, this uses all pilot results. In actual feedback, it uses all
                 participant results.
               </div>
             )}
@@ -173,7 +172,7 @@ export default function StatsSelector({ enrichedResult, onInsert, markdown }: St
       {/* FilterBuilder Modal */}
       {showFilterBuilder && (
         <FilterBuilder
-          enrichedResult={enrichedResult}
+          variables={variables}
           onInsert={handleFilterInsert}
           onClose={() => setShowFilterBuilder(false)}
         />

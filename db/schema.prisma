@@ -79,6 +79,11 @@ model Token {
   @@unique([hashedToken, type])
 }
 
+enum ExtractionSnapshotStatus {
+  DRAFT
+  APPROVED
+}
+
 enum StudyStatus {
   OPEN
   CLOSED
@@ -105,16 +110,13 @@ model Study {
   length     String // e.g. "30 minutes", stored as text
 
   // JATOS integration
-  jatosStudyId       Int? // ID returned from JATOS after import
-  jatosStudyUUID     String?          @unique // optional, JATOS also has UUIDs 
-  jatosFileName      String? // original uploaded filename
-  // JATOS component fields
-  jatosComponentId   Int?
-  jatosComponentUUID String?
-  // JATOS batches
-  jatosBatchId       Int?
-  // JATOS workers
-  jatosWorkerType    JatosWorkerType? @default(SINGLE)
+  jatosStudyUUID String? @unique // optional, JATOS also has UUIDs 
+
+  // JATOS study uploads (versioned builds)
+  jatosStudyUploads JatosStudyUpload[] @relation("StudyJatosUploads")
+  codebook          Codebook?
+
+  // Versioned data lives on JatosStudyUpload
 
   // Archival
   archived     Boolean   @default(false)
@@ -125,16 +127,7 @@ model Study {
   // Relations
   researchers      StudyResearcher[]
   participations   ParticipantStudy[]
-  FeedbackTemplate FeedbackTemplate[]
-  StudyVariable    StudyVariable[]
-
-  // Setup completion tracking
-  // These fields track explicit completion of each setup step
-  step1Completed Boolean @default(false) // General information completed (title + description)
-  step2Completed Boolean @default(false) // JATOS study imported (jatosStudyId + jatosStudyUUID exist)
-  step3Completed Boolean @default(false) // Test run completed (pilot test finished + test data available)
-  step4Completed Boolean @default(false) // Codebook completed (variable descriptions and personal data flags annotated)
-  step5Completed Boolean @default(false) // Feedback template created (FeedbackTemplate exists)
+  FeedbackTemplate FeedbackTemplate?
 
   @@index([archived, createdAt])
 }
@@ -179,28 +172,28 @@ model StudyResearcher {
   study Study @relation(fields: [studyId], references: [id], onDelete: Cascade)
   user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  jatosRunUrl String? // stored personal single link
-
-  role      ResearcherRole @default(PI)
-  createdAt DateTime       @default(now())
+  role       ResearcherRole @default(PI)
+  createdAt  DateTime       @default(now())
+  pilotLinks PilotLink[]
 
   @@unique([studyId, userId])
 }
 
 model StudyVariable {
-  id           Int      @id @default(autoincrement())
-  studyId      Int
-  name         String // e.g. "score" or "reaction_time"
-  label        String? // optional human-readable label
-  type         String? // e.g. "number", "string", "boolean"
-  example      String? // optional example value from trial run
-  description  String? // codebook description of the variable
-  personalData Boolean  @default(false) // whether this variable contains personal data
-  createdAt    DateTime @default(now())
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
 
-  study Study @relation(fields: [studyId], references: [id])
+  extractionSnapshotId Int
 
-  @@unique([studyId, name])
+  variableKey  String
+  variableName String
+  type         String
+  examples     Json?
+
+  extractionSnapshot ExtractionSnapshot @relation(fields: [extractionSnapshotId], references: [id], onDelete: Cascade)
+
+  @@unique([extractionSnapshotId, variableKey])
+  @@index([extractionSnapshotId])
 }
 
 model ParticipantStudy {
@@ -222,14 +215,70 @@ model ParticipantStudy {
   @@unique([userId, studyId])
 }
 
+enum ValidationStatus {
+  NEEDS_REVIEW
+  VALID
+  INVALID
+}
+
 model FeedbackTemplate {
-  id        Int      @id @default(autoincrement())
-  studyId   Int      @unique
-  content   String // raw markdown with placeholders, e.g. "Your score: {{score}}"
+  id      Int @id @default(autoincrement())
+  studyId Int @unique
+
+  validatedExtractionId Int?
+  validatedExtraction   ExtractionSnapshot? @relation("ValidatedExtraction", fields: [validatedExtractionId], references: [id], onDelete: SetNull)
+  validationStatus      ValidationStatus    @default(NEEDS_REVIEW)
+  validatedAt           DateTime?
+  missingKeys           Json? // string[]
+  extraKeys             Json? // string[]
+
+  content              String
+  requiredVariableKeys Json? // string[]
+  extractorVersion     String? // safety check
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  study Study @relation(fields: [studyId], references: [id])
+  study Study @relation(fields: [studyId], references: [id], onDelete: Cascade)
+}
+
+model Codebook {
+  id      Int @id @default(autoincrement())
+  studyId Int @unique
+
+  validatedExtractionId Int?
+  validatedExtraction   ExtractionSnapshot? @relation("ValidatedCodebookExtraction", fields: [validatedExtractionId], references: [id], onDelete: SetNull)
+  validationStatus      ValidationStatus    @default(NEEDS_REVIEW)
+  validatedAt           DateTime?
+  missingKeys           Json? // string[]
+  extraKeys             Json? // string[]
+  extractorVersion      String?
+
+  entries CodebookEntry[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  study Study @relation(fields: [studyId], references: [id], onDelete: Cascade)
+}
+
+model CodebookEntry {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  codebookId Int
+
+  variableKey  String
+  variableName String
+
+  description  String?
+  personalData Boolean @default(false)
+
+  codebook Codebook @relation(fields: [codebookId], references: [id], onDelete: Cascade)
+
+  @@unique([codebookId, variableKey])
+  @@index([codebookId])
 }
 
 model AdminInvite {
@@ -246,4 +295,111 @@ model AdminInvite {
 
   @@index([email])
   @@index([expiresAt])
+}
+
+model PilotLink {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+
+  studyResearcherId  Int
+  jatosStudyUploadId Int
+
+  jatosRunUrl String
+  markerToken String @unique
+
+  researcher       StudyResearcher  @relation(fields: [studyResearcherId], references: [id], onDelete: Cascade)
+  jatosStudyUpload JatosStudyUpload @relation(fields: [jatosStudyUploadId], references: [id], onDelete: Cascade)
+
+  @@index([studyResearcherId, createdAt])
+  @@index([jatosStudyUploadId, createdAt])
+}
+
+model PilotDatasetSnapshot {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+
+  jatosStudyUploadId Int
+
+  pilotDatasetHash String
+  pilotRunCount    Int
+  pilotRunIds      Json?
+  markerTokens     Json // string[]
+
+  jatosStudyUpload JatosStudyUpload @relation(fields: [jatosStudyUploadId], references: [id], onDelete: Cascade)
+
+  extractions ExtractionSnapshot[]
+
+  @@unique([jatosStudyUploadId, pilotDatasetHash])
+  @@index([jatosStudyUploadId, createdAt])
+}
+
+model ExtractionSnapshot {
+  id         Int       @id @default(autoincrement())
+  createdAt  DateTime  @default(now())
+  approvedAt DateTime?
+
+  status             ExtractionSnapshotStatus @default(DRAFT)
+  jatosStudyUploadId Int
+
+  pilotDatasetSnapshotId Int
+  pilotDatasetSnapshot   PilotDatasetSnapshot @relation(fields: [pilotDatasetSnapshotId], references: [id], onDelete: Restrict)
+
+  extractorVersion    String
+  extractorConfigHash String?
+  outputHash          String?
+  structureSummary    Json?
+  aggregates          Json?
+
+  jatosStudyUpload JatosStudyUpload @relation("UploadExtractions", fields: [jatosStudyUploadId], references: [id], onDelete: Cascade)
+  variables        StudyVariable[]
+
+  approvedForUpload          JatosStudyUpload?  @relation("ApprovedExtractionForUpload")
+  validatedFeedbackTemplates FeedbackTemplate[] @relation("ValidatedExtraction")
+  validatedCodebooks         Codebook[]         @relation("ValidatedCodebookExtraction")
+
+  @@index([jatosStudyUploadId, status, createdAt])
+}
+
+model JatosStudyUpload {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+
+  studyId       Int
+  versionNumber Int
+
+  jatosStudyId  Int
+  jatosFileName String
+
+  // JATOS component fields
+  jatosComponentId   Int?
+  jatosComponentUUID String?
+  // JATOS batches
+  jatosBatchId       Int?
+  // JATOS workers
+  jatosWorkerType    JatosWorkerType @default(SINGLE)
+
+  buildHash     String
+  hashAlgorithm String @default("sha256")
+
+  study Study @relation("StudyJatosUploads", fields: [studyId], references: [id], onDelete: Cascade)
+
+  pilotLinks            PilotLink[]
+  pilotDatasetSnapshots PilotDatasetSnapshot[]
+  extractionSnapshots   ExtractionSnapshot[]   @relation("UploadExtractions")
+
+  approvedExtractionId Int?                @unique
+  approvedExtraction   ExtractionSnapshot? @relation("ApprovedExtractionForUpload", fields: [approvedExtractionId], references: [id], onDelete: SetNull)
+
+  // Setup completion tracking (per upload)
+  step1Completed Boolean @default(false) // General information completed
+  step2Completed Boolean @default(false) // JATOS study imported
+  step3Completed Boolean @default(false) // Test run completed
+  step4Completed Boolean @default(false) // Debug completed
+  step5Completed Boolean @default(false) // Codebook completed
+  step6Completed Boolean @default(false) // Feedback template created
+
+  @@unique([studyId, versionNumber])
+  @@unique([studyId, buildHash])
+  @@index([studyId, createdAt])
+  @@index([buildHash])
 }

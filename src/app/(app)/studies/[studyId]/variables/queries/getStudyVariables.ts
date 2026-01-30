@@ -12,10 +12,26 @@ const GetStudyVariables = z.object({
 export const getStudyVariablesRsc = cache(async (studyId: number) => {
   await verifyResearcherStudyAccess(studyId)
 
-  // Get all variables for this study, ordered by name
+  const study = await db.study.findUnique({
+    where: { id: studyId },
+    select: {
+      jatosStudyUploads: {
+        orderBy: { createdAt: "desc" },
+        take: 1,
+        select: { approvedExtractionId: true },
+      },
+    },
+  })
+
+  const latestUpload = study?.jatosStudyUploads[0] ?? null
+  if (!latestUpload?.approvedExtractionId) {
+    return []
+  }
+
+  // Get variables for the approved extraction snapshot
   const variables = await db.studyVariable.findMany({
-    where: { studyId },
-    orderBy: { name: "asc" },
+    where: { extractionSnapshotId: latestUpload.approvedExtractionId },
+    orderBy: { variableName: "asc" },
   })
 
   return variables

@@ -11,16 +11,30 @@ interface GetStudiesInputType
 async function findStudies(
   args: Pick<Prisma.StudyFindManyArgs, "where" | "orderBy" | "skip" | "take" | "include">
 ) {
+  const include = {
+    ...(args.include ?? {}),
+    jatosStudyUploads: {
+      orderBy: { createdAt: "desc" },
+      take: 1,
+    },
+  }
   const [studies, count] = await Promise.all([
-    db.study.findMany(args),
+    db.study.findMany({ ...args, include }),
     db.study.count({ where: args.where }),
   ])
+
+  const studiesWithLatestUpload = studies.map((study) => ({
+    ...study,
+    latestJatosStudyUpload: study.jatosStudyUploads[0] ?? null,
+  }))
 
   const hasMore = (args.skip ?? 0) + (args.take ?? 100) < count
   const nextPage = hasMore ? { take: args.take, skip: (args.skip ?? 0) + (args.take ?? 100) } : null
 
-  return { studies, nextPage, hasMore, count }
+  return { studies: studiesWithLatestUpload, nextPage, hasMore, count }
 }
+
+export type StudyWithLatestUpload = Awaited<ReturnType<typeof findStudies>>["studies"][number]
 
 // Server helper (RSC use)
 export const getStudies = cache(async (args: GetStudiesInputType) => {

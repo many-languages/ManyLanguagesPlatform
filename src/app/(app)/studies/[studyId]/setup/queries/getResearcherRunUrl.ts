@@ -15,12 +15,32 @@ export const getResearcherRunUrlRsc = cache(async (studyId: number) => {
 
   const researcher = await db.studyResearcher.findFirst({
     where: { studyId, userId: session.userId },
-    select: { id: true, jatosRunUrl: true },
+    select: { id: true, studyId: true },
   })
 
   if (!researcher) throw new Error("You are not assigned to this study")
 
-  return researcher
+  const latestUpload = await db.jatosStudyUpload.findFirst({
+    where: { studyId: researcher.studyId },
+    orderBy: { createdAt: "desc" },
+    select: { id: true },
+  })
+
+  const latestPilotLink = latestUpload
+    ? await db.pilotLink.findFirst({
+        where: {
+          studyResearcherId: researcher.id,
+          jatosStudyUploadId: latestUpload.id,
+        },
+        orderBy: { createdAt: "desc" },
+        select: { jatosRunUrl: true },
+      })
+    : null
+
+  return {
+    id: researcher.id,
+    jatosRunUrl: latestPilotLink?.jatosRunUrl ?? null,
+  }
 })
 
 // Blitz RPC for client usage

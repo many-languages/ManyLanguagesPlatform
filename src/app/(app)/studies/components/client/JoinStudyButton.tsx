@@ -4,7 +4,7 @@ import { useMutation, useQuery } from "@blitzjs/rpc"
 import joinStudy from "../../mutations/joinStudy"
 import toast from "react-hot-toast"
 import isParticipantInStudy from "../../queries/isParticipantInStudy"
-import saveJatosRunUrl from "../../[studyId]/setup/mutations/saveJatosRunUrl"
+import saveParticipantRunUrl from "../../[studyId]/setup/mutations/saveParticipantRunUrl"
 import { createPersonalStudyCodeAndSave } from "@/src/lib/jatos/api/createPersonalStudyCodeAndSave"
 import { AsyncButton } from "@/src/app/components/AsyncButton"
 import { useRouter } from "next/navigation"
@@ -25,7 +25,7 @@ export default function JoinStudyButton({
   const router = useRouter()
   const [{ joined } = { joined: false }] = useQuery(isParticipantInStudy, { studyId })
   const [joinStudyMutation] = useMutation(joinStudy)
-  const [saveJatosRunUrlMutation] = useMutation(saveJatosRunUrl)
+  const [saveParticipantRunUrlMutation] = useMutation(saveParticipantRunUrl)
 
   const handleJoin = async () => {
     // 1) Join the study (creates ParticipantStudy entry)
@@ -40,7 +40,7 @@ export default function JoinStudyButton({
       type,
       comment: pseudonym,
       onSave: async (runUrl) => {
-        await saveJatosRunUrlMutation({ participantStudyId, jatosRunUrl: runUrl })
+        await saveParticipantRunUrlMutation({ participantStudyId, jatosRunUrl: runUrl })
       },
     })
 

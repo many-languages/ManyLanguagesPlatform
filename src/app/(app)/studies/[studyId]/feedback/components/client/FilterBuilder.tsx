@@ -1,12 +1,11 @@
 "use client"
 
 import { useState, useMemo } from "react"
-import { EnrichedJatosStudyResult } from "@/src/types/jatos"
-import { extractAvailableFields } from "../../../variables/utils/extractVariable"
 import { SelectField, SyntaxPreview } from "./shared"
+import type { FeedbackVariable } from "../../types"
 
 interface FilterBuilderProps {
-  enrichedResult: EnrichedJatosStudyResult
+  variables: FeedbackVariable[]
   onInsert: (filterClause: string) => void
   onClose: () => void
 }
@@ -41,20 +40,18 @@ const OPERATORS = {
 
 const MAX_CONDITIONS = 3
 
-export default function FilterBuilder({ enrichedResult, onInsert, onClose }: FilterBuilderProps) {
+export default function FilterBuilder({ variables, onInsert, onClose }: FilterBuilderProps) {
   const [conditions, setConditions] = useState<FilterCondition[]>([
     { field: "", operator: "==", value: "" },
   ])
 
-  const availableFields = extractAvailableFields(enrichedResult)
-
   const fieldOptions = useMemo(
     () =>
-      availableFields.map((f) => ({
-        value: f.name,
-        label: `${f.name} (${f.type})`,
+      variables.map((v) => ({
+        value: v.variableName,
+        label: `${v.variableName} (${v.type})`,
       })),
-    [availableFields]
+    [variables]
   )
 
   const updateCondition = (index: number, updates: Partial<FilterCondition>) => {
@@ -113,8 +110,10 @@ export default function FilterBuilder({ enrichedResult, onInsert, onClose }: Fil
   const getFieldType = (index: number): "string" | "number" | "boolean" => {
     const field = conditions[index]?.field
     if (!field) return "string"
-    const fieldInfo = availableFields.find((f) => f.name === field)
-    return (fieldInfo?.type as "string" | "number" | "boolean") || "string"
+    const variable = variables.find((v) => v.variableName === field)
+    // For arrays/objects, treat as string for filter operations
+    if (variable?.type === "array" || variable?.type === "object") return "string"
+    return (variable?.type as "string" | "number" | "boolean") || "string"
   }
 
   const getOperatorOptions = (index: number) => {

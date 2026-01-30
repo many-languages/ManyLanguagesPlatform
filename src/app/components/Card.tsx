@@ -3,7 +3,7 @@ import { ChevronDownIcon } from "@heroicons/react/24/outline"
 import clsx from "clsx"
 
 interface CardProps {
-  title: string
+  title: string | ReactNode
   children?: ReactNode
   tooltipContent?: string
   actions?: ReactNode
@@ -54,7 +54,7 @@ const Card = ({
           htmlFor={collapseId}
           className="flex items-center justify-between cursor-pointer px-6 py-4 text-xl font-medium gap-3 peer-checked:[&_svg]:rotate-180"
         >
-          <span>{title}</span>
+          {typeof title === "string" ? <span>{title}</span> : title}
           <ChevronDownIcon className="h-5 w-5 transition-transform duration-200" />
         </label>
         <div className="border-base-300 px-6 py-4 flex flex-col min-h-0 gap-3 hidden peer-checked:flex">
@@ -71,7 +71,7 @@ const Card = ({
   return (
     <div className={clsx("card base-content border-base-300 mt-2 shadow-sm", bgColor, className)}>
       <div className={clsx("card-body gap-3", bodyClassName)}>
-        <div className="card-title">{title}</div>
+        <div className="text-xl font-medium">{title}</div>
         {children}
         {renderActions()}
       </div>

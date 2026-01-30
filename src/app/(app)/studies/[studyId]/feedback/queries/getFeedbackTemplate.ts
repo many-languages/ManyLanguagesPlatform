@@ -16,6 +16,13 @@ export const getFeedbackTemplateRsc = cache(async (studyId: number) => {
     select: {
       id: true,
       content: true,
+      extractorVersion: true,
+      requiredVariableKeys: true,
+      validatedExtractionId: true,
+      validationStatus: true,
+      validatedAt: true,
+      missingKeys: true,
+      extraKeys: true,
       createdAt: true,
       updatedAt: true,
     },

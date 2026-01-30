@@ -1,14 +1,13 @@
 "use client"
 
 import { useState, useEffect, useCallback, useMemo } from "react"
-import { EnrichedJatosStudyResult } from "@/src/types/jatos"
 import VariableSelector from "./VariableSelector"
 import StatsSelector from "./StatsSelector"
-import { extractAvailableFields } from "../../../variables/utils/extractVariable"
 import { SelectField, FilterButtonWithDisplay, SyntaxPreview } from "./shared"
+import type { FeedbackVariable } from "../../types"
 
 interface ConditionalBuilderProps {
-  enrichedResult: EnrichedJatosStudyResult
+  variables: FeedbackVariable[]
   onInsert: (conditionalBlock: string) => void
   onClose: () => void
 }
@@ -26,7 +25,7 @@ const OPERATORS = [
  * Modal for building conditional if/else blocks
  */
 export default function ConditionalBuilder({
-  enrichedResult,
+  variables,
   onInsert,
   onClose,
 }: ConditionalBuilderProps) {
@@ -42,15 +41,13 @@ export default function ConditionalBuilder({
   const [focusedTextArea, setFocusedTextArea] = useState<"then" | "else">("then")
   const [currentFilterClause, setCurrentFilterClause] = useState("")
 
-  const availableFields = extractAvailableFields(enrichedResult, { includeExample: true })
-
   // Get available variables for the condition builder
   const getAvailableVariables = useCallback(() => {
-    return availableFields.map((field) => ({
-      name: field.name,
-      type: field.type,
+    return variables.map((v) => ({
+      name: v.variableName,
+      type: v.type,
     }))
-  }, [availableFields])
+  }, [variables])
 
   const variableOptions = useMemo(
     () =>
@@ -93,7 +90,10 @@ export default function ConditionalBuilder({
 
   // Get available operators based on variable type
   const getAvailableOperators = useCallback((variableType: string) => {
-    return OPERATORS.filter((op) => op.types.includes(variableType))
+    // For arrays/objects, treat as string for operator selection
+    const effectiveType =
+      variableType === "array" || variableType === "object" ? "string" : variableType
+    return OPERATORS.filter((op) => op.types.includes(effectiveType))
   }, [])
 
   // Get current variable type for operator filtering
@@ -205,8 +205,8 @@ export default function ConditionalBuilder({
   }
 
   const selectedFieldType = (fieldName: string) => {
-    const field = availableFields.find((f) => f.name === fieldName)
-    return field?.type || "string"
+    const variable = variables.find((v) => v.variableName === fieldName)
+    return variable?.type || "string"
   }
 
   return (
@@ -397,8 +397,8 @@ export default function ConditionalBuilder({
             </label>
             {/* Toolbar for Then Content */}
             <div className="flex gap-2 mb-2">
-              <VariableSelector enrichedResult={enrichedResult} onInsert={handleInsertVariable} />
-              <StatsSelector enrichedResult={enrichedResult} onInsert={handleInsertStat} />
+              <VariableSelector variables={variables} onInsert={handleInsertVariable} />
+              <StatsSelector variables={variables} onInsert={handleInsertStat} />
             </div>
             <textarea
               className="textarea textarea-bordered w-full h-24"
@@ -424,11 +424,8 @@ export default function ConditionalBuilder({
               <div>
                 {/* Toolbar for Else Content */}
                 <div className="flex gap-2 mb-2">
-                  <VariableSelector
-                    enrichedResult={enrichedResult}
-                    onInsert={handleInsertVariable}
-                  />
-                  <StatsSelector enrichedResult={enrichedResult} onInsert={handleInsertStat} />
+                  <VariableSelector variables={variables} onInsert={handleInsertVariable} />
+                  <StatsSelector variables={variables} onInsert={handleInsertStat} />
                 </div>
                 <textarea
                   className="textarea textarea-bordered w-full h-24"

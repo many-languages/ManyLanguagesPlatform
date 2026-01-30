@@ -35,6 +35,8 @@ export const ImportJatosSchema = BaseJatosFormSchema.extend({
   jatosStudyId: z.number(),
   jatosStudyUUID: z.string(),
   jatosFileName: z.string(),
+  buildHash: z.string().min(1),
+  hashAlgorithm: z.string().optional(),
 })
 
 export const StudyInformationFormSchema = z.object({
@@ -93,10 +95,6 @@ export const UpdateStudyBatch = z.object({
 export const UpdateStudyStatus = z.object({
   studyId: Id,
   status: z.enum(["OPEN", "CLOSED"]),
-})
-
-export const ClearJatosData = z.object({
-  studyId: Id,
 })
 
 // Query validations

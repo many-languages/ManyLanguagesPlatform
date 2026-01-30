@@ -54,7 +54,7 @@ export function Alert({ variant, title, children, className, onClose, role }: Al
   const alertRole = role || defaultRole
 
   return (
-    <div className={`alert alert-${variant} ${className || ""}`} role={alertRole}>
+    <div className={`alert alert-${variant} select-text ${className || ""}`} role={alertRole}>
       {title && <span className="font-semibold">{title}</span>}
       <div>{children}</div>
       {onClose && (

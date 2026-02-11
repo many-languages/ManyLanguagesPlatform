@@ -5,7 +5,7 @@
 [![DOI](https://zenodo.org/badge/665542257.svg)](https://doi.org/10.5281/zenodo.13916969)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Build Status](https://github.com/STAPLE-verse/STAPLE/actions/workflows/dry-run.yml/badge.svg)](https://github.com/STAPLE-verse/STAPLE/actions/workflows/dry-run.yml)
-[![Contributions Welcome](https://img.shields.io/badge/contributions-welcome-brightgreen.svg)](https://github.com/STAPLE-verse/STAPLE?tab=contributing-ov-file)
+[![Contributions Welcome](https://github.com/many-languages/ManyLanguagesPlatform/tree/main?tab=contributing-ov-file)
 
 
 
@@ -23,4 +23,4 @@ If you use the platform in your work, please cite it using the concept DOI or a 
 ### 🤝 Contributing
 
 We welcome contributions of all kinds — code, documentation, testing, and feedback.
-[See our contribution guidelines.](XXX)
+[See our contribution guidelines.](https://github.com/many-languages/ManyLanguagesPlatform/tree/main?tab=contributing-ov-file)

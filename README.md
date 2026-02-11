@@ -1,6 +1,6 @@
-## STAPLE: Software for Scientists
+## ManyLanguages Platform
 
-*A research project management platform for open, transparent, and collaborative science.*
+*A scalable infrastructure for managing research studies and open sharing of data*.
 
 [![DOI](https://zenodo.org/badge/665542257.svg)](https://doi.org/10.5281/zenodo.13916969)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)

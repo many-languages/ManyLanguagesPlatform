@@ -1,0 +1,23 @@
+cff-version: 1.2.0
+message: "If you use the platform in your research, please cite it using the following information."
+title: "ManyLanguages Platform"
+doi: "XXX"
+authors:
+  - family-names: "Buchanan"
+    given-names: "Erin M."
+    orcid: "https://orcid.org/0000-0002-9689-4189"
+  - family-names: "Kovacs"
+    given-names: "Marton"
+    orcid: "https://orcid.org/0000-0002-8142-8492"
+
+preferred-citation:
+  type: software
+  title: "ManyLanguages Platform"
+  authors:
+    - family-names: "Buchanan"
+      given-names: "Erin M."
+      orcid: "https://orcid.org/0000-0002-9689-4189"
+    - family-names: "Kovacs"
+      given-names: "Marton"
+      orcid: "https://orcid.org/0000-0002-8142-8492"
+  url: "https://github.com/many-languages/ManyLanguagesPlatform"

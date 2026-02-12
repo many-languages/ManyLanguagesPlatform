@@ -2,6 +2,7 @@ import { resolver } from "@blitzjs/rpc"
 import db from "db"
 import { z } from "zod"
 import { verifyResearcherStudyAccess } from "../../utils/verifyResearchersStudyAccess"
+import { Prisma } from "@prisma/client"
 
 const UpdateVariableCodebook = z.object({
   studyId: z.number(),
@@ -78,8 +79,8 @@ export async function updateVariableCodebookRsc(
         validationStatus: "NEEDS_REVIEW",
         validatedExtractionId: null,
         validatedAt: null,
-        missingKeys: null,
-        extraKeys: null,
+        missingKeys: Prisma.JsonNull,
+        extraKeys: Prisma.JsonNull,
         extractorVersion: null,
       },
     })

@@ -18,7 +18,7 @@ import MDEditor from "@uiw/react-md-editor"
 import type { AdminStudyWithLatestUpload } from "../queries/getAdminStudies"
 
 type StudyWithFeedbackTemplate = AdminStudyWithLatestUpload & {
-  FeedbackTemplate: FeedbackTemplate[] | null
+  FeedbackTemplate: FeedbackTemplate | null
 }
 
 function getSetupStatus(study: StudyWithFeedbackTemplate): string {
@@ -132,7 +132,7 @@ export default function AdminStudyManagementCard({
         createdAt: created?.toLocaleString() ?? "NA",
         setupStatus: getSetupStatus(study),
         dataCollectionStatus: study.status,
-        feedbackTemplate: study.FeedbackTemplate?.[0] || null,
+        feedbackTemplate: study.FeedbackTemplate || null,
       }
     })
   }, [studies])

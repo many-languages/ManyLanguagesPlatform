@@ -16,16 +16,19 @@ const UpdateVariableCodebook = z.object({
 })
 
 // Server-side helper for RSCs
-export async function updateVariableCodebookRsc(input: {
-  studyId: number
-  variables: Array<{
-    variableKey: string
-    variableName: string
-    description: string | null
-    personalData: boolean
-  }>
-}) {
-  await verifyResearcherStudyAccess(input.studyId)
+export async function updateVariableCodebookRsc(
+  input: {
+    studyId: number
+    variables: Array<{
+      variableKey: string
+      variableName: string
+      description: string | null
+      personalData: boolean
+    }>
+  },
+  ctx: any
+) {
+  await verifyResearcherStudyAccess(input.studyId, ctx)
 
   const study = await db.study.findUnique({
     where: { id: input.studyId },
@@ -132,7 +135,7 @@ export async function updateVariableCodebookRsc(input: {
 export default resolver.pipe(
   resolver.zod(UpdateVariableCodebook),
   resolver.authorize("RESEARCHER"),
-  async (input) => {
-    return updateVariableCodebookRsc(input)
+  async (input, ctx) => {
+    return updateVariableCodebookRsc(input, ctx)
   }
 )

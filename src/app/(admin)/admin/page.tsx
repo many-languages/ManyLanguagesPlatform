@@ -27,7 +27,10 @@ export default function AdminHomePage() {
           <div className="card-body">
             <p className="text-sm text-base-content/70">Access control</p>
             <h2 className="card-title">Add server actions</h2>
-            <p>Ensure every action checks `session.role === "ADMIN"` before mutating data.</p>
+            <p>
+              Ensure every action checks <code>session.role === &quot;ADMIN&quot;</code> before
+              mutating data.
+            </p>
           </div>
         </div>
         <div className="card bg-base-100 shadow">

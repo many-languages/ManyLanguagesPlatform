@@ -21,6 +21,17 @@ import type {
 } from "@/src/types/jatos"
 import { refetchEnrichedResultsAction } from "../../actions/results"
 
+// ✅ Define DaisyUI colors
+const colorClasses = [
+  "status-primary",
+  "status-secondary",
+  "status-accent",
+  "status-info",
+  "status-success",
+  "status-warning",
+  "status-error",
+]
+
 interface ResultsCardProps {
   jatosStudyId: number
   metadata: JatosMetadata
@@ -43,17 +54,6 @@ export default function ResultsCard({
   const [selectedComponentUuids, setSelectedComponentUuids] = useState<string[]>(
     properties.components?.map((c) => c.uuid) ?? []
   )
-
-  // ✅ Define DaisyUI colors
-  const colorClasses = [
-    "status-primary",
-    "status-secondary",
-    "status-accent",
-    "status-info",
-    "status-success",
-    "status-warning",
-    "status-error",
-  ]
 
   // ✅ Build a single unified component map with colors
   const componentsWithColors = useMemo(() => {

@@ -1,7 +1,7 @@
 import { useAuthenticatedBlitzContext } from "../blitz-server"
 
-export default async function AuthLayout({ children }: { children: React.ReactNode }) {
-  await useAuthenticatedBlitzContext({
+export default function AuthLayout({ children }: { children: React.ReactNode }) {
+  useAuthenticatedBlitzContext({
     redirectAuthenticatedTo: "/dashboard",
   })
   return (

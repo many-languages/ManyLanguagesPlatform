@@ -1,6 +1,14 @@
 "use client"
 
-import { useState, useEffect, useImperativeHandle, forwardRef, useRef, useMemo } from "react"
+import {
+  useState,
+  useEffect,
+  useImperativeHandle,
+  forwardRef,
+  useRef,
+  useMemo,
+  useCallback,
+} from "react"
 import MDEditor from "@uiw/react-md-editor"
 import VariableSelector from "./VariableSelector"
 import StatsSelector from "./StatsSelector"
@@ -48,7 +56,7 @@ const FeedbackFormEditor = forwardRef<FeedbackFormEditorRef, FeedbackFormEditorP
         setMarkdown(initialTemplate.content)
         setTemplateSaved(true) // Template already exists, so it's "saved"
       }
-    }, [initialTemplate])
+    }, [initialTemplate, setTemplateSaved])
 
     const [debouncedMarkdown, setDebouncedMarkdown] = useState(markdown)
 
@@ -88,8 +96,7 @@ const FeedbackFormEditor = forwardRef<FeedbackFormEditorRef, FeedbackFormEditorP
       setTemplateSaved(false)
     }
 
-    const handleSave = async (): Promise<boolean> => {
-      // Prevent saving if there are DSL errors
+    const handleSave = useCallback(async (): Promise<boolean> => {
       if (dslErrors.length > 0) {
         toast.error("Cannot save template with validation errors. Please fix them first.")
         setShowErrors(true)
@@ -98,7 +105,7 @@ const FeedbackFormEditor = forwardRef<FeedbackFormEditorRef, FeedbackFormEditorP
 
       await saveTemplate(markdown)
       return true
-    }
+    }, [dslErrors, saveTemplate, markdown])
 
     // Expose methods to parent component
     useImperativeHandle(
@@ -208,10 +215,10 @@ const FeedbackFormEditor = forwardRef<FeedbackFormEditorRef, FeedbackFormEditorP
               />
             </svg>
             <div>
-              <h3 className="font-bold">Using "Across All Results" Statistics</h3>
+              <h3 className="font-bold">Using &quot;Across All Results&quot; Statistics</h3>
               <div className="text-sm">
                 This template uses statistics calculated across all participants. In the preview
-                above, we're using all pilot results ({allPilotResults?.length || 0} result
+                above, we&apos;re using all pilot results ({allPilotResults?.length || 0} result
                 {allPilotResults?.length !== 1 ? "s" : ""}). In actual participant feedback, it will
                 use all participant results from the study.
               </div>

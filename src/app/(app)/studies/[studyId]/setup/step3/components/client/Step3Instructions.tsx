@@ -34,7 +34,9 @@ export default function Step3Instructions({
             </a>
           </li>
           {hasJatosSetup && (
-            <li>Generate a new pilot link using the "Generate Pilot Link" button below</li>
+            <li>
+              Generate a new pilot link using the &quot;Generate Pilot Link&quot; button below
+            </li>
           )}
         </ol>
       ) : (
@@ -52,10 +54,10 @@ export default function Step3Instructions({
               </a>
             </li>
           ) : (
-            <li>Click "Generate Pilot Link" below to create a pilot link</li>
+            <li>Click &quot;Generate Pilot Link&quot; below to create a pilot link</li>
           )}
           <li>Complete the entire survey as a pilot participant</li>
-          <li>Click "Check Pilot Status" to verify completion</li>
+          <li>Click &quot;Check Pilot Status&quot; to verify completion</li>
         </ol>
       )}
     </Card>

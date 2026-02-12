@@ -1,6 +1,7 @@
 "use client"
 
 import Link from "next/link"
+import Image from "next/image"
 import { useMemo } from "react"
 import { useMutation } from "@blitzjs/rpc"
 import { useRouter } from "next/navigation"
@@ -81,12 +82,13 @@ export default function AdminNavbar({ currentUser }: AdminNavbarProps) {
           <label tabIndex={0} className="btn btn-ghost btn-circle avatar placeholder">
             <div className="w-10 rounded-full">
               {gravatarUrl ? (
-                <img
+                <Image
                   src={gravatarUrl}
                   alt="Admin avatar"
                   className="rounded-full"
                   width={40}
                   height={40}
+                  unoptimized
                 />
               ) : (
                 <div className="w-10 h-10 rounded-full bg-base-300" />

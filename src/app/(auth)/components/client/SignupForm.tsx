@@ -13,7 +13,7 @@ import signup from "../../mutations/signup"
 import { Signup } from "../../validations"
 import { useMutation, useQuery } from "@blitzjs/rpc"
 import { useRouter } from "next/navigation"
-import { UserRole } from "db"
+import UserRole from "db"
 import Link from "next/link"
 import validateAdminInviteToken from "@/src/app/(admin)/admin/invitations/queries/validateAdminInviteToken"
 
@@ -69,14 +69,21 @@ export const SignupForm = () => {
     }
   }, [validationResult, debouncedToken])
 
-  const defaultValues = useMemo(
-    () => ({
+  const defaultValues = useMemo(() => {
+    if (tokenValidation?.valid && tokenValidation.inviteEmail) {
+      return {
+        email: tokenValidation.inviteEmail,
+        password: "",
+        role: UserRole.ADMIN,
+      }
+    }
+
+    return {
       email: "",
       password: "",
       role: UserRole.PARTICIPANT,
-    }),
-    []
-  )
+    }
+  }, [tokenValidation])
 
   const isAdminInvite = tokenValidation?.valid === true
 
@@ -96,6 +103,7 @@ export const SignupForm = () => {
       )}
 
       <Form
+        key={tokenValidation?.inviteEmail || "default"}
         schema={Signup}
         defaultValues={defaultValues}
         onSubmit={async (values) => {
@@ -119,16 +127,6 @@ export const SignupForm = () => {
         className="space-y-4"
       >
         {(form) => {
-          // Update form values when token is validated
-          useEffect(() => {
-            if (tokenValidation?.valid && tokenValidation.inviteEmail) {
-              form.setValue("email", tokenValidation.inviteEmail)
-              form.setValue("role", UserRole.ADMIN)
-            } else if (!adminInviteToken) {
-              form.setValue("role", UserRole.PARTICIPANT)
-            }
-          }, [tokenValidation, form, adminInviteToken])
-
           return (
             <>
               <div className="fieldset bg-base-200 border-base-300 rounded-box w-md border p-4">

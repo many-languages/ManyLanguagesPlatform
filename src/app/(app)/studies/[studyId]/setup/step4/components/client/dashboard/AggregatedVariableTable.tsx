@@ -1,4 +1,4 @@
-import { useMemo } from "react"
+import { useMemo, useCallback } from "react"
 import { ExtractedVariable } from "../../../../../variables/types"
 import {
   CodeBracketIcon,
@@ -20,14 +20,17 @@ export default function AggregatedVariableTable({
   totalRuns,
 }: AggregatedVariableTableProps) {
   // Helper to determine presence color
-  const getPresenceColor = (runIds: number[] = []) => {
-    const count = runIds.length
-    if (totalRuns === 0) return "progress-error"
-    const ratio = count / totalRuns
-    if (ratio === 1) return "progress-success"
-    if (ratio > 0.8) return "progress-warning"
-    return "progress-error"
-  }
+  const getPresenceColor = useCallback(
+    (runIds: number[] = []) => {
+      const count = runIds.length
+      if (totalRuns === 0) return "progress-error"
+      const ratio = count / totalRuns
+      if (ratio === 1) return "progress-success"
+      if (ratio > 0.8) return "progress-warning"
+      return "progress-error"
+    },
+    [totalRuns]
+  )
 
   const columns = useMemo<ColumnDef<ExtractedVariable>[]>(
     () => [
@@ -167,7 +170,7 @@ export default function AggregatedVariableTable({
         ),
       },
     ],
-    [totalRuns]
+    [totalRuns, getPresenceColor]
   )
 
   const renderSubComponent = ({ row }: { row: Row<ExtractedVariable> }) => {

@@ -23,7 +23,7 @@ const CheckboxFieldTable = <T,>({
     formState: { isSubmitting, errors },
   } = useFormContext()
 
-  const selectedIds = watch(name) || []
+  const selectedIds = useMemo(() => watch(name) || [], [watch, name])
   const error = errors[name]
 
   // ✅ Toggle one
@@ -96,7 +96,7 @@ const CheckboxFieldTable = <T,>({
       },
       ...extraColumns,
     ],
-    [selectedIds, toggleSelection, extraColumns, isSubmitting, toggleAll, options.length, watch]
+    [selectedIds, toggleSelection, extraColumns, isSubmitting, toggleAll, options.length]
   )
 
   const data = useMemo(

@@ -1,5 +1,6 @@
 "use client" // Error components must be Client components
 import React, { useEffect } from "react"
+import Link from "next/link"
 import { Alert } from "./components/Alert"
 
 export default function Error({ error, reset }: { error: Error; reset: () => void }) {
@@ -17,9 +18,9 @@ export default function Error({ error, reset }: { error: Error; reset: () => voi
         <button className="btn btn-error" onClick={() => reset()}>
           Try again
         </button>
-        <a href="/" className="btn btn-outline">
+        <Link href="/" className="btn btn-outline">
           Go Home
-        </a>
+        </Link>
       </div>
     </div>
   )

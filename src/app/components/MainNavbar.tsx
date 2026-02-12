@@ -2,6 +2,7 @@
 
 import Link from "next/link"
 import React, { useMemo } from "react"
+import Image from "next/image"
 import { useMutation } from "@blitzjs/rpc"
 import { useRouter } from "next/navigation"
 import logout from "../(auth)/mutations/logout"
@@ -98,12 +99,13 @@ const MainNavbar = ({ currentUser }: MainNavbarProps) => {
           <label tabIndex={0} className="btn btn-ghost btn-circle avatar placeholder">
             <div className="w-10 rounded-full">
               {gravatarUrl ? (
-                <img
+                <Image
                   src={gravatarUrl}
                   alt="User avatar"
                   className="rounded-full"
                   width={40}
                   height={40}
+                  unoptimized
                 />
               ) : (
                 <div className="w-10 h-10 rounded-full bg-base-300" />

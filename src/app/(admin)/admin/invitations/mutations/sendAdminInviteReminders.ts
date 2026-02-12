@@ -34,7 +34,8 @@ export default resolver.pipe(
 
     // Filter valid invites (not redeemed, not revoked, not expired)
     const validInvites = allInvites.filter(
-      (invite) => invite.redeemedAt === null && invite.revokedAt === null && invite.expiresAt > now
+      (invite: (typeof allInvites)[number]) =>
+        invite.redeemedAt === null && invite.revokedAt === null && invite.expiresAt > now
     )
 
     const sentEmails: string[] = []

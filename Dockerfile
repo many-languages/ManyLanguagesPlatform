@@ -25,10 +25,8 @@ FROM node:20-alpine AS runner
 
 WORKDIR /app
 
-# Install production dependencies only
-# Use --legacy-peer-deps to handle React 19 vs React 18 peer dependency conflicts
-COPY package*.json ./
-RUN npm ci --only=production --legacy-peer-deps && npm cache clean --force
+# Copy production dependencies from builder stage
+COPY --from=builder /app/node_modules ./node_modules
 
 # Copy built application and Prisma files
 COPY --from=builder /app/.next ./.next
@@ -51,4 +49,3 @@ ENV NODE_ENV production
 ENV PORT 3000
 
 CMD ["npm", "start"]
-

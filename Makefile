@@ -3,8 +3,11 @@
 # Use bash for better shell features
 SHELL := /bin/bash
 
-# Base compose file
-COMPOSE=docker compose -f docker-compose.yml
+# Base compose files and commands
+COMPOSE_BASE=docker compose -f docker-compose.yml
+COMPOSE_DEV=$(COMPOSE_BASE)
+COMPOSE_DEV_HTTPS=$(COMPOSE_BASE) -f docker-compose.override.https.yml
+COMPOSE_PROD=$(COMPOSE_BASE) -f docker-compose.prod.yml
 
 # Optional mail services
 EMAIL_ENABLED ?= false
@@ -40,7 +43,7 @@ dev:
 		cp .env.example .env 2>/dev/null || echo "Please create .env file manually. See .env.example for reference."; \
 	fi
 	@echo "📦 Starting Docker services..."
-	$(COMPOSE) $(MAIL_PROFILE_FLAG) up -d
+	$(COMPOSE_DEV) $(MAIL_PROFILE_FLAG) up -d
 	@echo ""
 	@echo "⏳ Waiting for services to be ready..."
 	@sleep 10
@@ -103,7 +106,7 @@ dev-https: certs
 		cp .env.example .env 2>/dev/null || echo "Please create .env file manually. See .env.example for reference."; \
 	fi
 	@echo "📦 Starting Docker services with HTTPS..."
-	$(COMPOSE) -f docker-compose.yml -f docker-compose.override.https.yml $(MAIL_PROFILE_FLAG) up -d
+	$(COMPOSE_DEV_HTTPS) $(MAIL_PROFILE_FLAG) up -d
 	@echo ""
 	@echo "⏳ Waiting for services to be ready..."
 	@sleep 10
@@ -184,7 +187,7 @@ prod:
 		echo "   See DEPLOYMENT.md for instructions."; \
 	fi
 	@echo "📦 Building and starting Docker services..."
-	$(COMPOSE) -f docker-compose.yml -f docker-compose.prod.yml up -d --build
+	$(COMPOSE_PROD) up -d --build
 	@echo ""
 	@echo "⏳ Waiting for services to be ready..."
 	@sleep 15
@@ -199,13 +202,13 @@ prod:
 # Stop containers
 stop:
 	@echo "🛑 Stopping containers..."
-	$(COMPOSE) down
+	$(COMPOSE_BASE) down
 	@echo "✅ Containers stopped"
 
 # View logs
 logs:
 	@echo "📊 Showing logs (Ctrl+C to exit)..."
-	$(COMPOSE) logs -f
+	$(COMPOSE_BASE) logs -f
 
 # Clean (remove containers and volumes)
 clean:
@@ -214,7 +217,7 @@ clean:
 	@read -p "Are you sure? [y/N] " -n 1 -r; \
 	echo; \
 	if [[ $$REPLY =~ ^[Yy]$$ ]]; then \
-		$(COMPOSE) down -v; \
+		$(COMPOSE_BASE) down -v; \
 		echo "✅ All containers and volumes removed!"; \
 	else \
 		echo "❌ Clean cancelled"; \
@@ -223,16 +226,16 @@ clean:
 # Build containers
 build:
 	@echo "🔨 Building containers..."
-	$(COMPOSE) build
+	$(COMPOSE_BASE) build
 	@echo "✅ Build complete"
 
 # Start services (without initial setup)
 up:
-	$(COMPOSE) up -d
+	$(COMPOSE_BASE) up -d
 
 # Stop and remove containers (keep volumes)
 down:
-	$(COMPOSE) down
+	$(COMPOSE_BASE) down
 
 # Validate JATOS token
 validate-token:
@@ -251,7 +254,7 @@ validate-token:
 	@echo "✅ JATOS_TOKEN found in .env file, validating..."
 	@JATOS_TOKEN=$$(grep "^JATOS_TOKEN=" .env | cut -d '=' -f2- | tr -d '"' | tr -d "'"); \
 	export JATOS_TOKEN; \
-	$(COMPOSE) --profile validation run --rm -e JATOS_TOKEN="$$JATOS_TOKEN" jatos-token-validator
+	$(COMPOSE_BASE) --profile validation run --rm -e JATOS_TOKEN="$$JATOS_TOKEN" jatos-token-validator
 
 # Prune unused Docker resources (safe - doesn't remove volumes)
 prune:
@@ -278,4 +281,3 @@ prune-all:
 	else \
 		echo "❌ Prune cancelled"; \
 	fi
-

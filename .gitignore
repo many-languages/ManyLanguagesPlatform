@@ -49,3 +49,6 @@ deploy/jatos/.env
 # Docker secrets (production)
 secrets/
 !secrets/README.md
+
+# Traefik certificate store
+traefik/acme.json

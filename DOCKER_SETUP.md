@@ -70,6 +70,22 @@ make dev
 # - JATOS: http://jatos.localhost
 ```
 
+## 🔁 Docker modes
+
+| Target                  | Description                                                                                                     |
+| ----------------------- | --------------------------------------------------------------------------------------------------------------- |
+| `make dev`              | Local development with HTTP (default compose file)                                                              |
+| `make dev-https`        | Local HTTPS using mkcert certificates (`docker-compose.local-https.yml`)                                        |
+| `make dev-https-online` | Online HTTPS via Traefik/Lightsail resolver (`docker-compose.online-https.yml`, needs real domains + TLS email) |
+| `make prod`             | Production stack with optimized builds plus Traefik/Let's Encrypt                                               |
+
+### Notes
+
+- `make dev-https` relies on mkcert certificates stored in `certs/` (generated via `make certs`).
+- `make dev-https-online` expects `APP_DOMAIN` and `JATOS_DOMAIN` to resolve to this host and `TLS_EMAIL` to be set (Traefik uses it for ACME contact info).
+- Traefik stores ACME metadata in `traefik/acme.json`. The Makefile target creates and locks the file, but you can also run `mkdir -p traefik && touch traefik/acme.json && chmod 600 traefik/acme.json` manually if needed.
+- Stop the stack (`make stop`) before switching between docker modes to avoid duplicate Traefik instances.
+
 ## 📋 Makefile Commands
 
 - `make dev` - Start development environment

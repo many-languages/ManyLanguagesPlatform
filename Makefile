@@ -6,7 +6,8 @@ SHELL := /bin/bash
 # Base compose files and commands
 COMPOSE_BASE=docker compose -f docker-compose.yml
 COMPOSE_DEV=$(COMPOSE_BASE)
-COMPOSE_DEV_HTTPS=$(COMPOSE_BASE) -f docker-compose.override.https.yml
+COMPOSE_DEV_HTTPS=$(COMPOSE_BASE) -f docker-compose.local-https.yml
+COMPOSE_DEV_HTTPS_ONLINE=$(COMPOSE_BASE) -f docker-compose.online-https.yml
 COMPOSE_PROD=$(COMPOSE_BASE) -f docker-compose.prod.yml
 
 # Optional mail services
@@ -20,15 +21,16 @@ endif
 # Default target
 help:
 	@echo "Usage:"
-	@echo "  make dev           Run entire stack (JATOS + Blitz app) in development mode (HTTP)"
-	@echo "  make dev-https     Run entire stack in development mode with HTTPS (mkcert)"
-	@echo "  make prod          Run entire stack in production mode"
-	@echo "  make stop          Stop containers"
-	@echo "  make logs          Tail logs"
-	@echo "  make clean         Remove containers and volumes (⚠️  data loss!)"
-	@echo "  make build         Build application containers"
-	@echo "  make validate-token Validate JATOS token (requires JATOS_TOKEN in .env)"
-	@echo "  make certs          Generate SSL certificates for HTTPS (requires mkcert)"
+	@echo "  make dev             Run entire stack (JATOS + Blitz app) in development mode (HTTP)"
+	@echo "  make dev-https       Run entire stack in development mode with HTTPS (mkcert)"
+	@echo "  make dev-https-online Run stack with HTTPS exposed to the internet (Lightsail/real-domain)"
+	@echo "  make prod            Run entire stack in production mode"
+	@echo "  make stop            Stop containers"
+	@echo "  make logs            Tail logs"
+	@echo "  make clean           Remove containers and volumes (⚠️  data loss!)"
+	@echo "  make build           Build application containers"
+	@echo "  make validate-token  Validate JATOS token (requires JATOS_TOKEN in .env)"
+	@echo "  make certs           Generate SSL certificates (for local HTTPS)"
 	@echo ""
 	@echo "Environment toggles:"
 	@echo "  EMAIL_ENABLED=true make dev    Enable Mailhog + SMTP during dev"
@@ -165,6 +167,57 @@ dev-https: certs
 	@echo "   make stop"
 	@echo ""
 	@echo "📖 For more information, see DEPLOYMENT.md"
+	@echo ""
+
+# Online HTTPS development (Lightsail-ready)
+dev-https-online:
+	@echo "🚀 Starting online HTTPS development environment..."
+	@if [ ! -f .env ]; then \
+		echo "⚠️  .env file not found. Creating from template..."; \
+		cp .env.example .env 2>/dev/null || echo "Please create .env file manually. See .env.example for reference."; \
+	fi
+	@if [ -z "${TLS_EMAIL}" ]; then \
+		echo "❌ TLS_EMAIL must be set when using dev-https-online (Traefik needs a contact email)"; \
+		exit 1; \
+	fi
+	@mkdir -p traefik
+	@touch traefik/acme.json
+	@chmod 600 traefik/acme.json
+	@echo "📦 Starting Docker services with TLS via Traefik (Lightsail/online)"
+	$(COMPOSE_DEV_HTTPS_ONLINE) $(MAIL_PROFILE_FLAG) up -d
+	@echo ""
+	@echo "⏳ Waiting for services to be ready..."
+	@sleep 10
+	@echo ""
+	@echo "✅ Services are starting!"
+	@echo ""
+	@echo "📋 Service URLs (HTTPS):"
+	@echo "   - Blitz app: https://${APP_DOMAIN:-app.localhost}"
+	@echo "   - JATOS: https://${JATOS_DOMAIN:-jatos.localhost}"
+	@echo ""
+	@echo "⚠️  Ensure DNS for ${APP_DOMAIN:-app.localhost} and ${JATOS_DOMAIN:-jatos.localhost} points to this host."
+	@echo ""
+	@echo "🔑 JATOS Token Setup (Required):"
+	@echo ""
+	@echo "   1. Wait for JATOS to be ready (30-60 seconds)"
+	@echo "      Check logs: make logs"
+	@echo ""
+	@echo "   2. Open JATOS UI in your browser:"
+	@echo "      https://${JATOS_DOMAIN:-jatos.localhost}"
+	@echo ""
+	@echo "   3. Login with default credentials:"
+	@echo "      Username: admin"
+	@echo "      Password: admin"
+	@echo ""
+	@echo "   4. Create or copy an API token"
+	@echo "   5. Add the token to your .env file:"
+	@echo "      JATOS_TOKEN=your-token-here"
+	@echo ""
+	@echo "   6. Restart the services:"
+	@echo "      make stop"
+	@echo "      make dev-https-online"
+	@echo ""
+	@echo "  Optional: run make validate-token once you have the token set."
 	@echo ""
 
 # Generate SSL certificates

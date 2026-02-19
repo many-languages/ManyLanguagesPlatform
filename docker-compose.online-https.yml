@@ -1,0 +1,55 @@
+services:
+  app:
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.services.app.loadbalancer.server.port=3000"
+      - "traefik.http.routers.app.rule=Host(`${APP_DOMAIN:-app.localhost}`)"
+      - "traefik.http.routers.app.entrypoints=websecure"
+      - "traefik.http.routers.app.tls=true"
+      - "traefik.http.routers.app.tls.certresolver=lightsail"
+      - "traefik.docker.network=default"
+    ports:
+      - "3000:3000"
+    environment:
+      NEXT_PUBLIC_JATOS_BASE: ${NEXT_PUBLIC_JATOS_BASE:-https://${JATOS_DOMAIN:-jatos.localhost}}
+    networks:
+      - default
+
+  jatos:
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.services.jatos.loadbalancer.server.port=9000"
+      - "traefik.http.routers.jatos.rule=Host(`${JATOS_DOMAIN:-jatos.localhost}`)"
+      - "traefik.http.routers.jatos.entrypoints=websecure"
+      - "traefik.http.routers.jatos.tls=true"
+      - "traefik.http.routers.jatos.tls.certresolver=lightsail"
+      - "traefik.docker.network=default"
+    networks:
+      - default
+
+  traefik:
+    image: traefik:v2.11
+    restart: unless-stopped
+    depends_on:
+      - jatos
+    command:
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--providers.docker.watch=true"
+      - "--providers.docker.network=default"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+      - "--entrypoints.web.http.redirections.entryPoint.to=websecure"
+      - "--entrypoints.web.http.redirections.entryPoint.scheme=https"
+      - "--certificatesresolvers.lightsail.acme.tlschallenge=true"
+      - "--certificatesresolvers.lightsail.acme.email=${TLS_EMAIL}"
+      - "--certificatesresolvers.lightsail.acme.storage=/acme/acme.json"
+      - "--log.level=INFO"
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - "./traefik/acme.json:/acme/acme.json"
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+    networks:
+      - default

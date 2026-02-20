@@ -3,6 +3,8 @@
 # Use bash for better shell features
 SHELL := /bin/bash
 
+-include .env
+
 # Base compose files and commands
 COMPOSE_BASE=docker compose -f docker-compose.yml
 COMPOSE_DEV=$(COMPOSE_BASE)

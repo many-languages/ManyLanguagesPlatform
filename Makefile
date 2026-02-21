@@ -1,4 +1,4 @@
-.PHONY: dev dev-https prod stop logs clean build up down validate-token help prune prune-all certs
+.PHONY: dev dev-https prod stop logs clean build up down validate-token validate-token-online help prune prune-all certs
 
 # Use bash for better shell features
 SHELL := /bin/bash
@@ -310,6 +310,16 @@ validate-token:
 	@JATOS_TOKEN=$$(grep "^JATOS_TOKEN=" .env | cut -d '=' -f2- | tr -d '"' | tr -d "'"); \
 	export JATOS_TOKEN; \
 	$(COMPOSE_BASE) --profile validation run --rm -e JATOS_TOKEN="$$JATOS_TOKEN" jatos-token-validator
+
+validate-token-online:
+	@echo "🔍 Validating JATOS token (online HTTPS stack)..."
+	@if [ ! -f .env ]; then \
+		echo "❌ .env file not found"; \
+		exit 1; \
+	fi
+	@JATOS_TOKEN=$$(grep "^JATOS_TOKEN=" .env | cut -d '=' -f2- | tr -d '"' | tr -d "'"); \
+	export JATOS_TOKEN; \
+	$(COMPOSE_DEV_HTTPS_ONLINE) --profile validation run --rm -e JATOS_TOKEN="$$JATOS_TOKEN" jatos-token-validator
 
 # Prune unused Docker resources (safe - doesn't remove volumes)
 prune:

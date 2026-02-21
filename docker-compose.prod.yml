@@ -40,6 +40,10 @@ services:
         npm start
 
   jatos:
+    environment:
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-jatos}
+      MYSQL_USER: ${MYSQL_USER:-jatos}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-devpass}
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.jatos.rule=Host(`${JATOS_DOMAIN}`)"

@@ -140,7 +140,7 @@ services:
       - .env
     environment:
       # Database - These override any values from .env file
-      DATABASE_URL: postgresql://${POSTGRES_USER:-blitz}:${POSTGRES_PASSWORD:-devpass}@postgres:5432/${POSTGRES_DB:-manylanguagesplatform}
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
 
       # JATOS configuration
       # Use internal Docker service name for JATOS

@@ -42,6 +42,8 @@ services:
   jatos-db:
     image: mysql:8.0
     restart: unless-stopped
+    env_file:
+      - .env
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-rootpass}
       MYSQL_DATABASE: ${MYSQL_DATABASE:-jatos}

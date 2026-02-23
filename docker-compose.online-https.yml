@@ -16,6 +16,8 @@ services:
       - default
 
   jatos:
+    env_file:
+      - .env
     environment:
       MYSQL_DATABASE: ${MYSQL_DATABASE:-jatos}
       MYSQL_USER: ${MYSQL_USER:-jatos}

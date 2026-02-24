@@ -1,5 +1,7 @@
 "use client"
 
+import DashboardNotificationsCard from "./DashboardNotificationsCard"
+
 type CurrentUser = {
   id: number
   firstname: string | null
@@ -24,6 +26,10 @@ export default function DashboardContent({ currentUser }: DashboardContentProps)
           ? `${currentUser.firstname} ${currentUser.lastname}`
           : currentUser?.username || ""}
       </h1>
+
+      <div className="max-w-2xl mx-auto mt-6">
+        <DashboardNotificationsCard />
+      </div>
     </main>
   )
 }

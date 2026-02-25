@@ -5,9 +5,10 @@ import PaginationControls from "./components/PaginationControls"
 import { getBlitzContext } from "../../blitz-server"
 import { redirect } from "next/navigation"
 import { Prisma } from "@/db"
-import StudiesFilterBar from "./components/client/StudiesFilterBar"
+import StudiesViewTabs from "./components/client/StudiesViewTabs"
 import { NavigationButton } from "@/src/app/components/NavigationButton"
 import { isSetupComplete } from "./[studyId]/setup/utils/setupStatus"
+import { parseStudyView, type StudyView } from "./utils/studyView"
 
 type SessionRole = "RESEARCHER" | "PARTICIPANT" | "ADMIN"
 
@@ -18,65 +19,48 @@ export const metadata = {
   title: "My Studies",
 }
 
-function buildExtraQuery(filters: {
-  showArchived: boolean
-  active: boolean
-  setupComplete: boolean
-}) {
-  const q: Record<string, string> = {}
-  if (filters.showArchived) q.showArchived = "1"
-  if (filters.active) q.active = "1"
-  if (filters.setupComplete) q.setupComplete = "1"
-  return q
-}
-
 async function StudiesContent({
   page,
   userId,
-  showArchived,
-  activeOnly,
-  setupCompleteOnly,
+  view,
 }: {
   page: number
   userId: number
-  showArchived: boolean
-  activeOnly: boolean
-  setupCompleteOnly: boolean
+  view: StudyView
 }) {
-  // Base visibility: studies I own or participate in
   const baseWhere: Prisma.StudyWhereInput = {
     OR: [{ researchers: { some: { userId } } }, { participations: { some: { userId } } }],
   }
 
-  // Apply archived filter
-  let where: Prisma.StudyWhereInput = showArchived
-    ? baseWhere
-    : { AND: [baseWhere, { archived: false }] }
-
-  // Apply active (OPEN) filter
-  if (activeOnly) {
-    where = { AND: [where, { status: "OPEN" }] }
+  let where: Prisma.StudyWhereInput
+  switch (view) {
+    case "archived":
+      where = { AND: [baseWhere, { archived: true }] }
+      break
+    case "active":
+      where = { AND: [baseWhere, { archived: false }, { status: "OPEN" }] }
+      break
+    case "incomplete":
+      where = { AND: [baseWhere, { archived: false }] }
+      break
+    default:
+      // all
+      where = { AND: [baseWhere, { archived: false }] }
   }
 
-  const extraQuery = buildExtraQuery({
-    showArchived,
-    active: activeOnly,
-    setupComplete: setupCompleteOnly,
-  })
+  const extraQuery = view !== "all" ? { view } : undefined
 
   let paginatedStudies: StudyWithLatestUpload[]
   let hasMore: boolean
 
-  if (setupCompleteOnly) {
-    // Setup completeness requires JS filtering (isSetupComplete uses latestJatosStudyUpload).
-    // Fetch up to MAX_STUDIES_FOR_SETUP_FILTER, filter, then paginate in memory.
+  if (view === "incomplete") {
     const result = await getStudies({
-      where,
+      where: { AND: [baseWhere, { archived: false }] },
       orderBy: { createdAt: "desc" },
       skip: 0,
       take: MAX_STUDIES_FOR_SETUP_FILTER,
     })
-    const filtered = result.studies.filter((s) => isSetupComplete(s as StudyWithLatestUpload))
+    const filtered = result.studies.filter((s) => !isSetupComplete(s as StudyWithLatestUpload))
     const start = page * ITEMS_PER_PAGE
     paginatedStudies = filtered.slice(start, start + ITEMS_PER_PAGE)
     hasMore = filtered.length > start + ITEMS_PER_PAGE
@@ -94,11 +78,7 @@ async function StudiesContent({
   return (
     <>
       <StudyList studies={paginatedStudies} showJoinButton={false} />
-      <PaginationControls
-        page={page}
-        hasMore={hasMore}
-        extraQuery={Object.keys(extraQuery).length > 0 ? extraQuery : undefined}
-      />
+      <PaginationControls page={page} hasMore={hasMore} extraQuery={extraQuery} />
     </>
   )
 }
@@ -106,27 +86,18 @@ async function StudiesContent({
 export default async function StudiesPage({
   searchParams,
 }: {
-  searchParams: Promise<{
-    page?: string
-    showArchived?: string
-    active?: string
-    setupComplete?: string
-  }>
+  searchParams: Promise<{ page?: string; view?: string }>
 }) {
   const params = await searchParams
   const page = Number(params.page || 0)
-  const showArchived = params.showArchived === "1" || params.showArchived === "true"
-  const activeOnly = params.active === "1"
-  const setupCompleteOnly = params.setupComplete === "1"
+  const view = parseStudyView(params.view)
 
   const { session } = await getBlitzContext()
   if (!session.userId) redirect("/login")
 
   const role = (session.role ?? "PARTICIPANT") as SessionRole
   const canManageStudies = role !== "PARTICIPANT"
-  const effectiveShowArchived = canManageStudies ? showArchived : false
-  const effectiveActiveOnly = canManageStudies ? activeOnly : false
-  const effectiveSetupCompleteOnly = canManageStudies ? setupCompleteOnly : false
+  const effectiveView = canManageStudies ? view : "all"
 
   return (
     <main>
@@ -140,16 +111,10 @@ export default async function StudiesPage({
           >
             Create Study
           </NavigationButton>
-          <StudiesFilterBar />
+          <StudiesViewTabs currentView={effectiveView} />
         </div>
       )}
-      <StudiesContent
-        page={page}
-        userId={session.userId}
-        showArchived={effectiveShowArchived}
-        activeOnly={effectiveActiveOnly}
-        setupCompleteOnly={effectiveSetupCompleteOnly}
-      />
+      <StudiesContent page={page} userId={session.userId} view={effectiveView} />
     </main>
   )
 }

@@ -1,6 +1,8 @@
 "use client"
 
 import DashboardNotificationsCard from "./DashboardNotificationsCard"
+import DashboardResearcherSummaryCard from "./DashboardResearcherSummaryCard"
+import type { ResearcherStudyCounts } from "../queries/getResearcherStudyCounts"
 
 type CurrentUser = {
   id: number
@@ -15,9 +17,10 @@ type CurrentUser = {
 
 interface DashboardContentProps {
   currentUser: CurrentUser
+  researcherCounts: ResearcherStudyCounts | null
 }
 
-export default function DashboardContent({ currentUser }: DashboardContentProps) {
+export default function DashboardContent({ currentUser, researcherCounts }: DashboardContentProps) {
   return (
     <main>
       <h1 className="text-3xl flex justify-center mb-2">
@@ -27,7 +30,8 @@ export default function DashboardContent({ currentUser }: DashboardContentProps)
           : currentUser?.username || ""}
       </h1>
 
-      <div className="max-w-2xl mx-auto mt-6">
+      <div className="max-w-2xl mx-auto mt-6 space-y-6">
+        {researcherCounts && <DashboardResearcherSummaryCard counts={researcherCounts} />}
         <DashboardNotificationsCard />
       </div>
     </main>

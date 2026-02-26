@@ -7,7 +7,7 @@ import React from "react"
 interface PaginationControlsProps {
   page: number
   hasMore: boolean
-  /** extra params to preserve/force across pagination (e.g. { showArchived: "1" }) */
+  /** extra params to preserve across pagination (e.g. { view: "active" }) */
   extraQuery?: Record<string, string | number | boolean | undefined>
 }
 

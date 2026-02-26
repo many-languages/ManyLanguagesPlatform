@@ -1,14 +1,17 @@
 import StudyList from "./components/client/StudyList"
 import { getStudies } from "./queries/getStudies"
 import type { StudyWithLatestUpload } from "./queries/getStudies"
+import { getParticipantStudiesWithStatus } from "./queries/getParticipantStudiesWithStatus"
 import PaginationControls from "./components/PaginationControls"
 import { getBlitzContext } from "../../blitz-server"
 import { redirect } from "next/navigation"
 import { Prisma } from "@/db"
 import StudiesViewTabs from "./components/client/StudiesViewTabs"
+import ParticipantStudiesViewTabs from "./components/client/ParticipantStudiesViewTabs"
 import { NavigationButton } from "@/src/app/components/NavigationButton"
 import { isSetupComplete } from "./[studyId]/setup/utils/setupStatus"
 import { parseStudyView, type StudyView } from "./utils/studyView"
+import { parseParticipantStudyView, type ParticipantStudyView } from "./utils/participantStudyView"
 
 type SessionRole = "RESEARCHER" | "PARTICIPANT" | "ADMIN"
 
@@ -19,7 +22,7 @@ export const metadata = {
   title: "My Studies",
 }
 
-async function StudiesContent({
+async function ResearcherStudiesContent({
   page,
   userId,
   view,
@@ -83,6 +86,31 @@ async function StudiesContent({
   )
 }
 
+async function ParticipantStudiesContent({
+  page,
+  userId,
+  view,
+}: {
+  page: number
+  userId: number
+  view: ParticipantStudyView
+}) {
+  const { studies, hasMore } = await getParticipantStudiesWithStatus(
+    userId,
+    view,
+    page,
+    ITEMS_PER_PAGE
+  )
+  const extraQuery = view !== "all" ? { view } : undefined
+
+  return (
+    <>
+      <StudyList studies={studies} showJoinButton={false} />
+      <PaginationControls page={page} hasMore={hasMore} extraQuery={extraQuery} />
+    </>
+  )
+}
+
 export default async function StudiesPage({
   searchParams,
 }: {
@@ -90,14 +118,15 @@ export default async function StudiesPage({
 }) {
   const params = await searchParams
   const page = Number(params.page || 0)
-  const view = parseStudyView(params.view)
 
   const { session } = await getBlitzContext()
   if (!session.userId) redirect("/login")
 
   const role = (session.role ?? "PARTICIPANT") as SessionRole
   const canManageStudies = role !== "PARTICIPANT"
-  const effectiveView = canManageStudies ? view : "all"
+  const isParticipant = role === "PARTICIPANT"
+  const participantView = parseParticipantStudyView(params.view)
+  const researcherView = parseStudyView(params.view)
 
   return (
     <main>
@@ -111,10 +140,19 @@ export default async function StudiesPage({
           >
             Create Study
           </NavigationButton>
-          <StudiesViewTabs currentView={effectiveView} />
+          <StudiesViewTabs currentView={researcherView} />
         </div>
       )}
-      <StudiesContent page={page} userId={session.userId} view={effectiveView} />
+      {isParticipant && (
+        <div className="flex flex-wrap justify-end items-center mb-6 gap-4">
+          <ParticipantStudiesViewTabs currentView={participantView} />
+        </div>
+      )}
+      {canManageStudies ? (
+        <ResearcherStudiesContent page={page} userId={session.userId} view={researcherView} />
+      ) : (
+        <ParticipantStudiesContent page={page} userId={session.userId} view={participantView} />
+      )}
     </main>
   )
 }

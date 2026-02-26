@@ -5,7 +5,9 @@ import DashboardResearcherSummaryCard from "./DashboardResearcherSummaryCard"
 import DashboardActiveStudiesCard from "./DashboardActiveStudiesCard"
 import DashboardUpcomingDeadlinesCard from "./DashboardUpcomingDeadlinesCard"
 import DashboardParticipantIncompleteStudiesCard from "./DashboardParticipantIncompleteStudiesCard"
+import DashboardParticipantSummaryCard from "./DashboardParticipantSummaryCard"
 import type { ResearcherStudyCounts } from "../queries/getResearcherStudyCounts"
+import type { ParticipantStudyCounts } from "../queries/getParticipantStudyCounts"
 import type { ActiveStudyWithResponseCount } from "../queries/getActiveStudiesWithResponseCounts"
 import type { UpcomingDeadlines } from "../queries/getUpcomingDeadlines"
 import type { ParticipantIncompleteStudies } from "../queries/getParticipantIncompleteStudies"
@@ -27,6 +29,7 @@ interface DashboardContentProps {
   activeStudiesWithResponses: ActiveStudyWithResponseCount[]
   upcomingDeadlines: UpcomingDeadlines
   participantIncompleteStudies: ParticipantIncompleteStudies
+  participantCounts: ParticipantStudyCounts | null
 }
 
 export default function DashboardContent({
@@ -35,6 +38,7 @@ export default function DashboardContent({
   activeStudiesWithResponses,
   upcomingDeadlines,
   participantIncompleteStudies,
+  participantCounts,
 }: DashboardContentProps) {
   const isParticipant = currentUser?.role === "PARTICIPANT"
 
@@ -49,6 +53,7 @@ export default function DashboardContent({
 
       <div className="max-w-4xl mx-auto mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
         {researcherCounts && <DashboardResearcherSummaryCard counts={researcherCounts} />}
+        {participantCounts && <DashboardParticipantSummaryCard counts={participantCounts} />}
         {activeStudiesWithResponses.length > 0 && (
           <DashboardActiveStudiesCard studies={activeStudiesWithResponses} />
         )}

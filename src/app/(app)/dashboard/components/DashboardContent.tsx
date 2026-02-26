@@ -4,9 +4,11 @@ import DashboardNotificationsCard from "./DashboardNotificationsCard"
 import DashboardResearcherSummaryCard from "./DashboardResearcherSummaryCard"
 import DashboardActiveStudiesCard from "./DashboardActiveStudiesCard"
 import DashboardUpcomingDeadlinesCard from "./DashboardUpcomingDeadlinesCard"
+import DashboardParticipantIncompleteStudiesCard from "./DashboardParticipantIncompleteStudiesCard"
 import type { ResearcherStudyCounts } from "../queries/getResearcherStudyCounts"
 import type { ActiveStudyWithResponseCount } from "../queries/getActiveStudiesWithResponseCounts"
 import type { UpcomingDeadlines } from "../queries/getUpcomingDeadlines"
+import type { ParticipantIncompleteStudies } from "../queries/getParticipantIncompleteStudies"
 
 type CurrentUser = {
   id: number
@@ -24,6 +26,7 @@ interface DashboardContentProps {
   researcherCounts: ResearcherStudyCounts | null
   activeStudiesWithResponses: ActiveStudyWithResponseCount[]
   upcomingDeadlines: UpcomingDeadlines
+  participantIncompleteStudies: ParticipantIncompleteStudies
 }
 
 export default function DashboardContent({
@@ -31,7 +34,10 @@ export default function DashboardContent({
   researcherCounts,
   activeStudiesWithResponses,
   upcomingDeadlines,
+  participantIncompleteStudies,
 }: DashboardContentProps) {
+  const isParticipant = currentUser?.role === "PARTICIPANT"
+
   return (
     <main>
       <h1 className="text-3xl flex justify-center mb-2">
@@ -47,6 +53,9 @@ export default function DashboardContent({
           <DashboardActiveStudiesCard studies={activeStudiesWithResponses} />
         )}
         {researcherCounts && <DashboardUpcomingDeadlinesCard deadlines={upcomingDeadlines} />}
+        {isParticipant && (
+          <DashboardParticipantIncompleteStudiesCard studies={participantIncompleteStudies} />
+        )}
         <DashboardNotificationsCard />
       </div>
     </main>

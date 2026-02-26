@@ -4,8 +4,23 @@ import { getCurrentUserRsc } from "../../users/queries/getCurrentUser"
 import { getResearcherStudyCounts } from "./queries/getResearcherStudyCounts"
 import { getActiveStudiesWithResponseCounts } from "./queries/getActiveStudiesWithResponseCounts"
 import { getUpcomingDeadlines, type UpcomingDeadlines } from "./queries/getUpcomingDeadlines"
+import {
+  getParticipantIncompleteStudies,
+  type ParticipantIncompleteStudies,
+} from "./queries/getParticipantIncompleteStudies"
 import DashboardContent from "./components/DashboardContent"
 import DashboardSkeleton from "./components/DashboardSkeleton"
+
+const emptyDeadlines: UpcomingDeadlines = {
+  endingSoon: [],
+  startingSoon: [],
+  recentlyPastEnd: [],
+}
+
+const emptyParticipantStudies: ParticipantIncompleteStudies = {
+  nearingDeadline: [],
+  passedDeadline: [],
+}
 
 export default async function DashboardPage() {
   const { session } = await getBlitzContext()
@@ -13,12 +28,7 @@ export default async function DashboardPage() {
   // Fetch user data server-side (will be cached if already fetched in layout)
   const currentUser = session.userId ? await getCurrentUserRsc().catch(() => null) : null
 
-  // Fetch researcher data only for researchers
-  const emptyDeadlines: UpcomingDeadlines = {
-    endingSoon: [],
-    startingSoon: [],
-    recentlyPastEnd: [],
-  }
+  // Fetch researcher data for researchers
   const [researcherCounts, activeStudiesWithResponses, upcomingDeadlines] =
     currentUser?.role === "RESEARCHER" && session.userId
       ? await Promise.all([
@@ -28,6 +38,12 @@ export default async function DashboardPage() {
         ])
       : [null, [], emptyDeadlines]
 
+  // Fetch participant data for participants
+  const participantIncompleteStudies =
+    currentUser?.role === "PARTICIPANT" && session.userId
+      ? await getParticipantIncompleteStudies(session.userId).catch(() => emptyParticipantStudies)
+      : emptyParticipantStudies
+
   return (
     <Suspense fallback={<DashboardSkeleton />}>
       <DashboardContent
@@ -35,6 +51,7 @@ export default async function DashboardPage() {
         researcherCounts={researcherCounts}
         activeStudiesWithResponses={activeStudiesWithResponses}
         upcomingDeadlines={upcomingDeadlines}
+        participantIncompleteStudies={participantIncompleteStudies}
       />
     </Suspense>
   )

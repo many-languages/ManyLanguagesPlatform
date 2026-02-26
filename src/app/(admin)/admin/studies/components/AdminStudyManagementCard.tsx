@@ -6,7 +6,7 @@ import Form from "@/src/app/components/Form"
 import CheckboxFieldTable from "@/src/app/(app)/studies/components/CheckboxFieldTable"
 import { FormErrorDisplay } from "@/src/app/components/FormErrorDisplay"
 import { AdminStudySchema, AdminStudyFormValues } from "../validations"
-import { FeedbackTemplate } from "db"
+import { Codebook, CodebookEntry, FeedbackTemplate } from "db"
 import { useFormContext } from "react-hook-form"
 import { useRouter } from "next/navigation"
 import { useMutation } from "@blitzjs/rpc"
@@ -16,44 +16,99 @@ import disableDataCollection from "../mutations/disableDataCollection"
 import Modal from "@/src/app/components/Modal"
 import MDEditor from "@uiw/react-md-editor"
 import type { AdminStudyWithLatestUpload } from "../queries/getAdminStudies"
-import { STEP_NAMES } from "@/src/app/(app)/studies/[studyId]/setup/utils/constants"
+import {
+  getSetupStatusLabel,
+  isSetupComplete,
+} from "@/src/app/(app)/studies/[studyId]/setup/utils/setupStatus"
+import type { StudyWithMinimalRelations } from "@/src/app/(app)/studies/[studyId]/setup/utils/setupStatus"
+
+type CodebookWithEntries = Codebook & { entries: CodebookEntry[] }
 
 type StudyWithFeedbackTemplate = AdminStudyWithLatestUpload & {
-  FeedbackTemplate: FeedbackTemplate[] | null
+  FeedbackTemplate: FeedbackTemplate | null
+  codebook: CodebookWithEntries | null
 }
 
-function getSetupStatus(study: StudyWithFeedbackTemplate): string {
-  const latestUpload = study.latestJatosStudyUpload
-  const {
-    step1Completed = false,
-    step2Completed = false,
-    step3Completed = false,
-    step4Completed = false,
-    step5Completed = false,
-    step6Completed = false,
-  } = latestUpload ?? {}
+function CodebookButton({
+  codebook,
+  studyTitle,
+}: {
+  codebook: CodebookWithEntries | null
+  studyTitle: string
+}) {
+  const [isOpen, setIsOpen] = useState(false)
 
-  // Check if all steps are completed
-  if (
-    step1Completed &&
-    step2Completed &&
-    step3Completed &&
-    step4Completed &&
-    step5Completed &&
-    step6Completed
-  ) {
-    return "finished"
+  if (!codebook?.entries?.length) {
+    return <span className="text-base-content/50">Not available</span>
   }
 
-  // Find the last completed step and show it with its descriptive name
-  if (step6Completed) return `Step 6: ${STEP_NAMES[6]}`
-  if (step5Completed) return `Step 5: ${STEP_NAMES[5]}`
-  if (step4Completed) return `Step 4: ${STEP_NAMES[4]}`
-  if (step3Completed) return `Step 3: ${STEP_NAMES[3]}`
-  if (step2Completed) return `Step 2: ${STEP_NAMES[2]}`
-  if (step1Completed) return `Step 1: ${STEP_NAMES[1]}`
+  return (
+    <>
+      <button
+        type="button"
+        className="btn btn-sm btn-outline btn-primary"
+        onClick={() => setIsOpen(true)}
+      >
+        View Codebook
+      </button>
+      <CodebookModal
+        open={isOpen}
+        onClose={() => setIsOpen(false)}
+        entries={codebook.entries}
+        studyTitle={studyTitle}
+      />
+    </>
+  )
+}
 
-  return "Not started"
+function CodebookModal({
+  open,
+  onClose,
+  entries,
+  studyTitle,
+}: {
+  open: boolean
+  onClose: () => void
+  entries: Array<{
+    variableKey: string
+    variableName: string
+    description: string | null
+    personalData: boolean
+  }>
+  studyTitle: string
+}) {
+  return (
+    <Modal open={open} size="max-w-4xl">
+      <div className="flex flex-col h-full">
+        <div className="flex items-center justify-between mb-4 pb-4 border-b">
+          <h3 className="text-lg font-semibold">Codebook – {studyTitle}</h3>
+          <button type="button" className="btn btn-sm btn-circle btn-ghost" onClick={onClose}>
+            ✕
+          </button>
+        </div>
+        <div className="flex-1 overflow-auto">
+          <table className="table table-zebra">
+            <thead>
+              <tr>
+                <th>Variable name</th>
+                <th>Description</th>
+                <th>Private</th>
+              </tr>
+            </thead>
+            <tbody>
+              {entries.map((entry) => (
+                <tr key={entry.variableKey}>
+                  <td className="font-medium">{entry.variableName}</td>
+                  <td>{entry.description ?? "—"}</td>
+                  <td>{entry.personalData ? "Yes" : "No"}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </Modal>
+  )
 }
 
 function FeedbackTemplateButton({
@@ -131,9 +186,10 @@ export default function AdminStudyManagementCard({
         label: study.title?.trim() || "NA",
         jatosStudyUUID: study.jatosStudyUUID ?? "NA",
         createdAt: created?.toLocaleString() ?? "NA",
-        setupStatus: getSetupStatus(study),
+        setupStatus: getSetupStatusLabel(study as StudyWithMinimalRelations),
         dataCollectionStatus: study.status,
-        feedbackTemplate: study.FeedbackTemplate?.[0] || null,
+        codebook: study.codebook ?? null,
+        feedbackTemplate: study.FeedbackTemplate ?? null,
       }
     })
   }, [studies])
@@ -175,6 +231,13 @@ export default function AdminStudyManagementCard({
           const label = isEnabled ? "Enabled" : "Disabled"
           return <span className={badgeClass}>{label}</span>
         },
+      },
+      {
+        id: "codebook",
+        header: "Codebook",
+        cell: ({ row }: any) => (
+          <CodebookButton codebook={row.original.codebook} studyTitle={row.original.label} />
+        ),
       },
       {
         id: "feedbackTemplate",
@@ -251,24 +314,9 @@ function StudyActions({ studies }: { studies: StudyWithFeedbackTemplate[] }) {
 
     // Validate that all selected studies have finished setup
     const selectedStudiesToEnable = studies.filter((s) => ids.includes(s.id))
-    const unfinishedStudies = selectedStudiesToEnable.filter((s) => {
-      const latestUpload = s.latestJatosStudyUpload
-      const step1Completed = latestUpload?.step1Completed ?? false
-      const step2Completed = latestUpload?.step2Completed ?? false
-      const step3Completed = latestUpload?.step3Completed ?? false
-      const step4Completed = latestUpload?.step4Completed ?? false
-      const step5Completed = latestUpload?.step5Completed ?? false
-      const step6Completed = latestUpload?.step6Completed ?? false
-
-      return !(
-        step1Completed &&
-        step2Completed &&
-        step3Completed &&
-        step4Completed &&
-        step5Completed &&
-        step6Completed
-      )
-    })
+    const unfinishedStudies = selectedStudiesToEnable.filter(
+      (s) => !isSetupComplete(s as StudyWithMinimalRelations)
+    )
 
     if (unfinishedStudies.length > 0) {
       const unfinishedTitles = unfinishedStudies

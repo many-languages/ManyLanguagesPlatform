@@ -16,6 +16,7 @@ import disableDataCollection from "../mutations/disableDataCollection"
 import Modal from "@/src/app/components/Modal"
 import MDEditor from "@uiw/react-md-editor"
 import type { AdminStudyWithLatestUpload } from "../queries/getAdminStudies"
+import { STEP_NAMES } from "@/src/app/(app)/studies/[studyId]/setup/utils/constants"
 
 type StudyWithFeedbackTemplate = AdminStudyWithLatestUpload & {
   FeedbackTemplate: FeedbackTemplate[] | null
@@ -44,13 +45,13 @@ function getSetupStatus(study: StudyWithFeedbackTemplate): string {
     return "finished"
   }
 
-  // Find the latest completed step
-  if (step6Completed) return "Step 6"
-  if (step5Completed) return "Step 5"
-  if (step4Completed) return "Step 4"
-  if (step3Completed) return "Step 3"
-  if (step2Completed) return "Step 2"
-  if (step1Completed) return "Step 1"
+  // Find the last completed step and show it with its descriptive name
+  if (step6Completed) return `Step 6: ${STEP_NAMES[6]}`
+  if (step5Completed) return `Step 5: ${STEP_NAMES[5]}`
+  if (step4Completed) return `Step 4: ${STEP_NAMES[4]}`
+  if (step3Completed) return `Step 3: ${STEP_NAMES[3]}`
+  if (step2Completed) return `Step 2: ${STEP_NAMES[2]}`
+  if (step1Completed) return `Step 1: ${STEP_NAMES[1]}`
 
   return "Not started"
 }

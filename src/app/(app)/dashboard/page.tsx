@@ -12,6 +12,10 @@ import {
   getParticipantStudyCounts,
   type ParticipantStudyCounts,
 } from "./queries/getParticipantStudyCounts"
+import {
+  getParticipantCompletedNotPaidStudies,
+  type ParticipantCompletedNotPaidStudy,
+} from "./queries/getParticipantCompletedNotPaidStudies"
 import DashboardContent from "./components/DashboardContent"
 import DashboardSkeleton from "./components/DashboardSkeleton"
 
@@ -43,13 +47,16 @@ export default async function DashboardPage() {
       : [null, [], emptyDeadlines]
 
   // Fetch participant data for participants
-  const [participantIncompleteStudies, participantCounts] =
+  const [participantIncompleteStudies, participantCounts, participantCompletedNotPaid] =
     currentUser?.role === "PARTICIPANT" && session.userId
       ? await Promise.all([
           getParticipantIncompleteStudies(session.userId).catch(() => emptyParticipantStudies),
           getParticipantStudyCounts(session.userId).catch(() => null),
+          getParticipantCompletedNotPaidStudies(session.userId).catch(
+            () => [] as ParticipantCompletedNotPaidStudy[]
+          ),
         ])
-      : [emptyParticipantStudies, null]
+      : [emptyParticipantStudies, null, []]
 
   return (
     <Suspense fallback={<DashboardSkeleton />}>
@@ -60,6 +67,7 @@ export default async function DashboardPage() {
         upcomingDeadlines={upcomingDeadlines}
         participantIncompleteStudies={participantIncompleteStudies}
         participantCounts={participantCounts}
+        participantCompletedNotPaid={participantCompletedNotPaid}
       />
     </Suspense>
   )

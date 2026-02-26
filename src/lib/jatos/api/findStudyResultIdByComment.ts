@@ -33,3 +33,18 @@ export function hasCompletedStudy(
   if (!studyMeta) return false
   return studyMeta.studyResults?.some((r) => r.comment?.trim() === pseudonym.trim()) ?? false
 }
+
+/**
+ * Finds the JATOS study result for a participant (by pseudonym) in a specific study.
+ * Returns the result object with completion date (endDate as Unix ms) or null.
+ */
+export function findStudyResultByPseudonym(
+  metadata: JatosMetadata,
+  jatosStudyId: number,
+  pseudonym: string
+): { endDate: number } | null {
+  const studyMeta = metadata.data?.find((s) => s.studyId === jatosStudyId)
+  if (!studyMeta) return null
+  const match = studyMeta.studyResults?.find((r) => r.comment?.trim() === pseudonym.trim())
+  return match ? { endDate: match.endDate } : null
+}

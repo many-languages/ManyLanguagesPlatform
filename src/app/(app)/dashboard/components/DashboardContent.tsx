@@ -2,7 +2,7 @@
 
 import DashboardNotificationsCard from "./DashboardNotificationsCard"
 import DashboardResearcherSummaryCard from "./DashboardResearcherSummaryCard"
-import DashboardActiveStudiesCard from "./DashboardActiveStudiesCard"
+import DashboardActiveStudiesCard from "@/src/app/(app)/dashboard/components/DashboardActiveStudiesCard"
 import DashboardUpcomingDeadlinesCard from "./DashboardUpcomingDeadlinesCard"
 import DashboardParticipantIncompleteStudiesCard from "./DashboardParticipantIncompleteStudiesCard"
 import DashboardParticipantSummaryCard from "./DashboardParticipantSummaryCard"

@@ -1,4 +1,5 @@
 import Link from "next/link"
+import type { Route } from "next"
 import {
   RectangleStackIcon,
   SignalIcon,
@@ -18,7 +19,7 @@ interface StatItemProps {
 function StatItem({ href, icon, label, count }: StatItemProps) {
   return (
     <Link
-      href={href}
+      href={href as Route}
       className="flex items-center gap-3 p-3 rounded-lg hover:bg-base-300 transition-colors"
     >
       <span className="text-base-content/70">{icon}</span>

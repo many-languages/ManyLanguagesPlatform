@@ -8,10 +8,7 @@ import {
   getParticipantIncompleteStudies,
   type ParticipantIncompleteStudies,
 } from "./queries/getParticipantIncompleteStudies"
-import {
-  getParticipantStudyCounts,
-  type ParticipantStudyCounts,
-} from "./queries/getParticipantStudyCounts"
+import { getParticipantStudyCounts } from "./queries/getParticipantStudyCounts"
 import {
   getParticipantCompletedNotPaidStudies,
   type ParticipantCompletedNotPaidStudy,

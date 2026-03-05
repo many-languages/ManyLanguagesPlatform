@@ -9,7 +9,9 @@ import enableDataCollection from "../mutations/enableDataCollection"
 import disableDataCollection from "../mutations/disableDataCollection"
 import approveStudy from "../mutations/approveStudy"
 import rejectStudy from "../mutations/rejectStudy"
+import deleteStudy from "../mutations/deleteStudy"
 import { AdminStudyFormValues } from "../validations"
+import { ConfirmButton } from "@/src/app/components/ConfirmButton"
 import { isSetupComplete } from "@/src/app/(app)/studies/[studyId]/setup/utils/setupStatus"
 import type { StudyWithMinimalRelations } from "@/src/app/(app)/studies/[studyId]/setup/utils/setupStatus"
 import type { AdminStudyWithLatestUpload } from "../queries/getAdminStudies"
@@ -42,7 +44,7 @@ async function withStudyAction(
     setValue([])
     router.refresh()
   } catch (error) {
-    toast.error(options.errorMessage)
+    toast.error(error instanceof Error ? error.message : options.errorMessage)
   } finally {
     options.setLoading(false)
   }
@@ -65,10 +67,12 @@ export default function StudyActions({ studies }: { studies: StudyWithFeedbackTe
   const [disableMutation] = useMutation(disableDataCollection)
   const [approveMutation] = useMutation(approveStudy)
   const [rejectMutation] = useMutation(rejectStudy)
+  const [deleteMutation] = useMutation(deleteStudy)
   const [isEnabling, setIsEnabling] = useState(false)
   const [isDisabling, setIsDisabling] = useState(false)
   const [isApproving, setIsApproving] = useState(false)
   const [isRejecting, setIsRejecting] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
 
   const selectedIds = watch("selectedStudyIds")
   const selectedStudies = studies.filter((s) => selectedIds.includes(s.id))
@@ -84,6 +88,9 @@ export default function StudyActions({ studies }: { studies: StudyWithFeedbackTe
     selectedStudies.length > 0 && selectedStudies.every((s) => s.status === "CLOSED")
   const mixed = selectedStudies.length > 0 && !allEnabled && !allDisabled
 
+  const canDelete =
+    selectedStudies.length > 0 &&
+    selectedStudies.every((s) => !isSetupComplete(s as StudyWithMinimalRelations) || s.archived)
   const showApproveButton = hasPendingWithSetupComplete
   const showRejectButton = hasPending
   const showDisableButton = allApproved && (allEnabled || mixed)
@@ -152,7 +159,29 @@ export default function StudyActions({ studies }: { studies: StudyWithFeedbackTe
       setLoading: setIsDisabling,
     })
 
-  const isSubmitting = isEnabling || isDisabling || isApproving || isRejecting
+  const handleDelete = () =>
+    runWithStudyAction({
+      action: async (ids) => {
+        const invalid = studies.filter(
+          (s) =>
+            ids.includes(s.id) && isSetupComplete(s as StudyWithMinimalRelations) && !s.archived
+        )
+        if (invalid.length > 0) {
+          const titles = invalid.map((s) => s.title?.trim() || `Study #${s.id}`).join(", ")
+          toast.error(
+            `Cannot delete. Only studies with incomplete setup or archived studies can be deleted: ${titles}`,
+            { duration: 5000 }
+          )
+          return null
+        }
+        return deleteMutation({ studyIds: ids })
+      },
+      successMessage: (count) => `Deleted ${count} study/studies`,
+      errorMessage: "Failed to delete studies.",
+      setLoading: setIsDeleting,
+    })
+
+  const isSubmitting = isEnabling || isDisabling || isApproving || isRejecting || isDeleting
 
   if (selectedIds.length === 0) {
     return null
@@ -199,6 +228,17 @@ export default function StudyActions({ studies }: { studies: StudyWithFeedbackTe
         >
           {isEnabling ? "Enabling..." : "Enable data collection"}
         </button>
+      )}
+      {canDelete && (
+        <ConfirmButton
+          onConfirm={handleDelete}
+          confirmMessage="This will permanently delete the selected study/studies and all related data from the database. This cannot be undone. Continue?"
+          loadingText="Deleting"
+          className="btn btn-error"
+          disabled={isSubmitting}
+        >
+          Delete study
+        </ConfirmButton>
       )}
     </div>
   )

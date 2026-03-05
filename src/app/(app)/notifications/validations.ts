@@ -17,10 +17,22 @@ export const dataCollectionStatusChangedSchema = z.object({
   changedAt: z.string().optional(),
 })
 
+export const adminStudyApprovedSchema = z.object({
+  studyTitle: z.string(),
+  reviewedAt: z.string().optional(),
+})
+
+export const adminStudyRejectedSchema = z.object({
+  studyTitle: z.string(),
+  reviewedAt: z.string().optional(),
+})
+
 export const templateSchemaMap: Record<string, z.ZodSchema<any>> = {
   dataCollectionStarted: dataCollectionStartedSchema,
   studySetupCompleted: studySetupCompletedSchema,
   dataCollectionStatusChanged: dataCollectionStatusChangedSchema,
+  adminStudyApproved: adminStudyApprovedSchema,
+  adminStudyRejected: adminStudyRejectedSchema,
 }
 
 export const getTemplateSchema = (templateId: string) => {

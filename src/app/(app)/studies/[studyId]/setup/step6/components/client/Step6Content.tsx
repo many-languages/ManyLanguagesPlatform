@@ -5,8 +5,6 @@ import { useEffect, useRef, useState } from "react"
 
 import { useMutation, useQuery } from "@blitzjs/rpc"
 import { toast } from "react-hot-toast"
-import { isSetupComplete } from "../../../utils/setupStatus"
-import updateStudyStatus from "@/src/app/(app)/studies/mutations/updateStudyStatus"
 import StepNavigation from "../../../components/client/StepNavigation"
 import { Alert } from "@/src/app/components/Alert"
 import type { EnrichedJatosStudyResult } from "@/src/types/jatos"
@@ -54,10 +52,8 @@ export default function Step6Content({
   study,
 }: Step6ContentProps) {
   const router = useRouter()
-  // const { study, studyId } = useStudySetup() // Removed context
   const studyId = study.id
   const feedbackEditorRef = useRef<FeedbackFormEditorRef>(null)
-  const [updateStudyStatusMutation] = useMutation(updateStudyStatus)
   const { refetch: refetchNotifications } = useNotificationMenuContext()
   const [runExtractionMutation] = useMutation(runExtraction)
   const [extractionBundle, setExtractionBundle] = useState<SerializedExtractionBundle | null>(null)
@@ -135,7 +131,7 @@ export default function Step6Content({
       }
     }
 
-    const canAutoOpen =
+    const setupComplete =
       !!study &&
       step1Completed &&
       step2Completed &&
@@ -144,21 +140,17 @@ export default function Step6Content({
       step5Completed &&
       (step6Completed || templateSavedDuringFinish || !!initialFeedbackTemplate)
 
-    // Check if setup is now complete and auto-open study
-    if (canAutoOpen) {
-      try {
-        await updateStudyStatusMutation({ studyId, status: "OPEN" })
-        await refetchNotifications()
-        router.replace(`/studies/${studyId}`)
-        toast.success("Setup complete! Study is now open for participants.")
-      } catch (error) {
-        console.error("Failed to open study:", error)
-        toast.error("Setup complete, but failed to open study automatically.")
-      }
-    }
-
     await refetchNotifications()
     router.replace(`/studies/${studyId}`)
+
+    if (setupComplete) {
+      const isApproved = study.adminApproved === true
+      toast.success(
+        isApproved
+          ? "Setup complete! You can activate your study when ready."
+          : "Setup complete. Your study is pending admin approval."
+      )
+    }
   }
 
   // Show warning if no pilot data found

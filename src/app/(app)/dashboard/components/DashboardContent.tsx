@@ -48,13 +48,6 @@ export default function DashboardContent({
 
   return (
     <main>
-      <h1 className="text-3xl flex justify-center mb-2">
-        Welcome{" "}
-        {currentUser?.firstname && currentUser?.lastname
-          ? `${currentUser.firstname} ${currentUser.lastname}`
-          : currentUser?.username || ""}
-      </h1>
-
       <div className="max-w-6xl mx-auto mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
         {researcherCounts && <DashboardResearcherSummaryCard counts={researcherCounts} />}
         {participantCounts && <DashboardParticipantSummaryCard counts={participantCounts} />}

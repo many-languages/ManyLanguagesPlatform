@@ -51,10 +51,13 @@ export default async function ParticipantData({ studyId, study }: ParticipantDat
     // Hide button if study is completed and it's a SINGLE run study
     const shouldShowButton = !(isCompleted && isSingleRunStudy)
 
+    // Disable run button when study is deactivated (participants who haven't run yet cannot start)
+    const canRunStudy = participant.active && study.status === "OPEN"
+
     // Build actions for participant
     const participantActions = shouldShowButton ? (
       <div className="flex justify-center">
-        <RunPilotButton runUrl={participant.jatosRunUrl} isActive={participant.active} />
+        <RunPilotButton runUrl={participant.jatosRunUrl} isActive={canRunStudy} />
       </div>
     ) : undefined
 

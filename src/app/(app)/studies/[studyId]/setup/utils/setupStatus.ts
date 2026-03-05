@@ -1,7 +1,7 @@
 import { Study, FeedbackTemplate } from "@prisma/client"
 import { StudyWithRelations } from "../../../queries/getStudy"
 import { deriveStep1Completed } from "./deriveStep1Completed"
-import { STEP_KEYS, TOTAL_STEPS } from "./constants"
+import { STEP_KEYS, STEP_NAMES, TOTAL_STEPS } from "./constants"
 
 // More flexible interface for studies with minimal researcher data
 // Using Partial<Study> allows us to pass lightweight objects from optimized queries
@@ -98,6 +98,22 @@ export function getIncompleteStep(
 export function getCompletedSteps(study: StudyWithRelations | StudyWithMinimalRelations): number[] {
   const steps = resolveStepFlags(study)
   return getCompletedStepsFromFlags(steps)
+}
+
+/**
+ * Returns a human-readable setup status label for display (e.g. in admin tables)
+ * Uses DB fields as source of truth
+ */
+export function getSetupStatusLabel(study: StudyWithRelations | StudyWithMinimalRelations): string {
+  const steps = resolveStepFlags(study)
+  const isComplete = isSetupCompleteFromFlags(steps)
+  const completedSteps = getCompletedStepsFromFlags(steps)
+
+  if (isComplete) return "finished"
+  if (completedSteps.length === 0) return "Not started"
+
+  const lastCompletedStep = Math.max(...completedSteps)
+  return `Step ${lastCompletedStep}: ${STEP_NAMES[lastCompletedStep]}`
 }
 
 /**

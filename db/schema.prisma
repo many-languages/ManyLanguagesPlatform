@@ -40,6 +40,7 @@ model User {
   studies                StudyResearcher[] // researcher memberships
   participations         ParticipantStudy[] // participant memberships
   Study                  Study[]
+  adminReviewedStudies   Study[]                 @relation("StudyAdminReviewer")
   notificationRecipients NotificationRecipient[]
   AdminInvite            AdminInvite[]
 }
@@ -117,6 +118,12 @@ model Study {
   codebook          Codebook?
 
   // Versioned data lives on JatosStudyUpload
+
+  // Admin approval (null = pending, true = approved, false = rejected)
+  adminApproved     Boolean? // null = awaiting admin review
+  adminReviewedAt   DateTime?
+  adminReviewedById Int?
+  adminReviewedBy   User?     @relation("StudyAdminReviewer", fields: [adminReviewedById], references: [id])
 
   // Archival
   archived     Boolean   @default(false)

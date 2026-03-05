@@ -9,6 +9,13 @@ async function findAdminStudies() {
   const studies = await db.study.findMany({
     include: {
       FeedbackTemplate: true,
+      codebook: {
+        include: {
+          entries: {
+            orderBy: { variableName: "asc" },
+          },
+        },
+      },
       jatosStudyUploads: {
         orderBy: { createdAt: "desc" },
         take: 1,

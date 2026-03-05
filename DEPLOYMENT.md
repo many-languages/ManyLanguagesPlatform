@@ -185,6 +185,42 @@ For production, you should:
 4. **Set up SSL certificates** for HTTPS
 5. **Configure `NEXT_PUBLIC_JATOS_BASE`** to match your public JATOS URL
 
+## Scheduled Jobs (Study Status)
+
+The platform uses a cron job to automatically open studies at their `startDate` and close them at their `endDate`. Add `CRON_SECRET` to your `.env` file (see `.env.example`).
+
+### Docker (default)
+
+When using `make dev` or `docker compose up`, the `cron-study-status` service runs automatically. It calls the API every 15 minutes. No extra setup needed.
+
+### System cron (VPS / bare metal)
+
+If you deploy without Docker, add a crontab entry:
+
+```bash
+*/15 * * * * curl -s -H "X-Cron-Secret: $CRON_SECRET" https://your-domain/api/cron/study-status
+```
+
+Or with `Authorization: Bearer`:
+
+```bash
+*/15 * * * * curl -s -H "Authorization: Bearer $CRON_SECRET" https://your-domain/api/cron/study-status
+```
+
+### AWS EventBridge
+
+For production on AWS, use EventBridge Scheduler to call the endpoint every 15 minutes:
+
+- **Target**: `https://<your-app-domain>/api/cron/study-status`
+- **Header**: `X-Cron-Secret: <CRON_SECRET>` or `Authorization: Bearer <CRON_SECRET>`
+- **Schedule**: `rate(15 minutes)` or cron `0/15 * * * ? *`
+
+### Manual test (local)
+
+```bash
+curl -s -H "X-Cron-Secret: your-secret" http://localhost:3000/api/cron/study-status
+```
+
 ## Service URLs
 
 After starting the services:

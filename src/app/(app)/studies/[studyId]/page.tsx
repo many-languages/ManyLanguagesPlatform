@@ -6,6 +6,7 @@ import ResearcherData from "./components/ResearcherData"
 import ParticipantData from "./components/ParticipantData"
 import SetupProgressCard from "./setup/components/client/SetupProgressCard"
 import StudyHeader from "./components/StudyHeader"
+import StudyStatusControl from "./components/client/StudyStatusControl"
 
 export default async function StudyPage({ params }: { params: Promise<{ studyId: string }> }) {
   const { studyId: studyIdRaw } = await params
@@ -31,6 +32,13 @@ export default async function StudyPage({ params }: { params: Promise<{ studyId:
       <main>
         {/* Study header */}
         <StudyHeader study={study} />
+
+        {/* Review status and activate/deactivate for researchers */}
+        {userRole === "RESEARCHER" && (
+          <div className="mt-4 flex justify-center">
+            <StudyStatusControl study={study} />
+          </div>
+        )}
 
         {/* Setup Progress Card for researchers */}
         {userRole === "RESEARCHER" && <SetupProgressCard study={study} />}

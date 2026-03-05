@@ -1,26 +1,25 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useMemo } from "react"
 import Card from "@/src/app/components/Card"
 import Form from "@/src/app/components/Form"
 import CheckboxFieldTable from "@/src/app/(app)/studies/components/CheckboxFieldTable"
 import { FormErrorDisplay } from "@/src/app/components/FormErrorDisplay"
-import { AdminStudySchema, AdminStudyFormValues } from "../validations"
+import { AdminStudySchema } from "../validations"
 import { Codebook, CodebookEntry, FeedbackTemplate } from "db"
-import { useFormContext } from "react-hook-form"
-import { useRouter } from "next/navigation"
-import { useMutation } from "@blitzjs/rpc"
-import toast from "react-hot-toast"
-import enableDataCollection from "../mutations/enableDataCollection"
-import disableDataCollection from "../mutations/disableDataCollection"
 import Modal from "@/src/app/components/Modal"
+import ViewDetailsButton from "@/src/app/components/ViewDetailsButton"
+import StatusBadge from "@/src/app/components/StatusBadge"
+import {
+  getAdminApprovalVariant,
+  getSetupStatusProps,
+  getDataCollectionProps,
+} from "@/src/lib/utils/statusBadgePresets"
 import MDEditor from "@uiw/react-md-editor"
 import type { AdminStudyWithLatestUpload } from "../queries/getAdminStudies"
-import {
-  getSetupStatusLabel,
-  isSetupComplete,
-} from "@/src/app/(app)/studies/[studyId]/setup/utils/setupStatus"
+import { getSetupStatusLabel } from "@/src/app/(app)/studies/[studyId]/setup/utils/setupStatus"
 import type { StudyWithMinimalRelations } from "@/src/app/(app)/studies/[studyId]/setup/utils/setupStatus"
+import StudyActions from "./StudyActions"
 
 type CodebookWithEntries = Codebook & { entries: CodebookEntry[] }
 
@@ -29,35 +28,13 @@ type StudyWithFeedbackTemplate = AdminStudyWithLatestUpload & {
   codebook: CodebookWithEntries | null
 }
 
-function CodebookButton({
-  codebook,
-  studyTitle,
-}: {
-  codebook: CodebookWithEntries | null
-  studyTitle: string
-}) {
-  const [isOpen, setIsOpen] = useState(false)
-
-  if (!codebook?.entries?.length) {
-    return <span className="text-base-content/50">Not available</span>
-  }
-
+function CodebookButton({ codebook }: { codebook: CodebookWithEntries | null }) {
   return (
-    <>
-      <button
-        type="button"
-        className="btn btn-sm btn-outline btn-primary"
-        onClick={() => setIsOpen(true)}
-      >
-        View Codebook
-      </button>
-      <CodebookModal
-        open={isOpen}
-        onClose={() => setIsOpen(false)}
-        entries={codebook.entries}
-        studyTitle={studyTitle}
-      />
-    </>
+    <ViewDetailsButton hasData={!!codebook?.entries?.length} buttonLabel="View Codebook">
+      {({ open, onClose }) => (
+        <CodebookModal open={open} onClose={onClose} entries={codebook!.entries} />
+      )}
+    </ViewDetailsButton>
   )
 }
 
@@ -65,7 +42,6 @@ function CodebookModal({
   open,
   onClose,
   entries,
-  studyTitle,
 }: {
   open: boolean
   onClose: () => void
@@ -75,13 +51,11 @@ function CodebookModal({
     description: string | null
     personalData: boolean
   }>
-  studyTitle: string
 }) {
   return (
     <Modal open={open} size="max-w-4xl">
       <div className="flex flex-col h-full">
-        <div className="flex items-center justify-between mb-4 pb-4 border-b">
-          <h3 className="text-lg font-semibold">Codebook – {studyTitle}</h3>
+        <div className="flex items-center justify-end mb-4 pb-4 border-b">
           <button type="button" className="btn btn-sm btn-circle btn-ghost" onClick={onClose}>
             ✕
           </button>
@@ -113,35 +87,15 @@ function CodebookModal({
 
 function FeedbackTemplateButton({
   feedbackTemplate,
-  studyId,
-  studyTitle,
 }: {
   feedbackTemplate: { content: string } | null
-  studyId: number
-  studyTitle: string
 }) {
-  const [isOpen, setIsOpen] = useState(false)
-
-  if (!feedbackTemplate) {
-    return <span className="text-base-content/50">Not available</span>
-  }
-
   return (
-    <>
-      <button
-        type="button"
-        className="btn btn-sm btn-outline btn-primary"
-        onClick={() => setIsOpen(true)}
-      >
-        View Template
-      </button>
-      <FeedbackTemplateModal
-        open={isOpen}
-        onClose={() => setIsOpen(false)}
-        content={feedbackTemplate.content}
-        studyTitle={studyTitle}
-      />
-    </>
+    <ViewDetailsButton hasData={!!feedbackTemplate} buttonLabel="View Template">
+      {({ open, onClose }) => (
+        <FeedbackTemplateModal open={open} onClose={onClose} content={feedbackTemplate!.content} />
+      )}
+    </ViewDetailsButton>
   )
 }
 
@@ -149,12 +103,10 @@ function FeedbackTemplateModal({
   open,
   onClose,
   content,
-  studyTitle,
 }: {
   open: boolean
   onClose: () => void
   content: string
-  studyTitle: string
 }) {
   return (
     <Modal open={open} size="max-w-4xl">
@@ -181,12 +133,17 @@ export default function AdminStudyManagementCard({
     return studies.map((study) => {
       const created = study.createdAt ? new Date(study.createdAt) : null
 
+      const adminApproved = study.adminApproved
+      const approvalLabel =
+        adminApproved === true ? "Approved" : adminApproved === false ? "Rejected" : "Pending"
+
       return {
         id: study.id,
         label: study.title?.trim() || "NA",
         jatosStudyUUID: study.jatosStudyUUID ?? "NA",
         createdAt: created?.toLocaleString() ?? "NA",
         setupStatus: getSetupStatusLabel(study as StudyWithMinimalRelations),
+        adminApproval: approvalLabel,
         dataCollectionStatus: study.status,
         codebook: study.codebook ?? null,
         feedbackTemplate: study.FeedbackTemplate ?? null,
@@ -206,18 +163,21 @@ export default function AdminStudyManagementCard({
         },
       },
       {
+        id: "adminApproval",
+        header: "Admin Approval",
+        accessorKey: "adminApproval",
+        cell: ({ row }: any) => {
+          const label = row.original.adminApproval as string
+          return <StatusBadge label={label} variant={getAdminApprovalVariant(label)} />
+        },
+      },
+      {
         id: "setupStatus",
         header: "Setup Status",
         accessorKey: "setupStatus",
         cell: ({ row }: any) => {
-          const status = row.original.setupStatus as string
-          const isFinished = status === "finished"
-          const badgeClass = isFinished
-            ? "badge badge-success"
-            : status === "Not started"
-            ? "badge badge-ghost"
-            : "badge badge-info"
-          return <span className={badgeClass}>{status}</span>
+          const props = getSetupStatusProps(row.original.setupStatus as string)
+          return <StatusBadge {...props} />
         },
       },
       {
@@ -225,34 +185,21 @@ export default function AdminStudyManagementCard({
         header: "Data Collection",
         accessorKey: "dataCollectionStatus",
         cell: ({ row }: any) => {
-          const status = row.original.dataCollectionStatus as string
-          const isEnabled = status === "OPEN"
-          const badgeClass = isEnabled ? "badge badge-success" : "badge badge-error"
-          const label = isEnabled ? "Enabled" : "Disabled"
-          return <span className={badgeClass}>{label}</span>
+          const props = getDataCollectionProps(row.original.dataCollectionStatus as string)
+          return <StatusBadge {...props} />
         },
       },
       {
         id: "codebook",
         header: "Codebook",
-        cell: ({ row }: any) => (
-          <CodebookButton codebook={row.original.codebook} studyTitle={row.original.label} />
-        ),
+        cell: ({ row }: any) => <CodebookButton codebook={row.original.codebook} />,
       },
       {
         id: "feedbackTemplate",
         header: "Feedback Template",
-        cell: ({ row }: any) => {
-          const feedbackTemplate = row.original.feedbackTemplate
-          const studyId = row.original.id
-          return (
-            <FeedbackTemplateButton
-              feedbackTemplate={feedbackTemplate}
-              studyId={studyId}
-              studyTitle={row.original.label}
-            />
-          )
-        },
+        cell: ({ row }: any) => (
+          <FeedbackTemplateButton feedbackTemplate={row.original.feedbackTemplate} />
+        ),
       },
       {
         id: "createdAt",
@@ -284,112 +231,5 @@ export default function AdminStudyManagementCard({
         <FormErrorDisplay />
       </Card>
     </Form>
-  )
-}
-
-function StudyActions({ studies }: { studies: StudyWithFeedbackTemplate[] }) {
-  const router = useRouter()
-  const { watch, setValue, trigger } = useFormContext<AdminStudyFormValues>()
-  const [enableMutation] = useMutation(enableDataCollection)
-  const [disableMutation] = useMutation(disableDataCollection)
-  const [isEnabling, setIsEnabling] = useState(false)
-  const [isDisabling, setIsDisabling] = useState(false)
-
-  const selectedIds = watch("selectedStudyIds")
-
-  // Determine which buttons to show based on selected studies' status
-  const selectedStudies = studies.filter((s) => selectedIds.includes(s.id))
-  const allEnabled = selectedStudies.length > 0 && selectedStudies.every((s) => s.status === "OPEN")
-  const allDisabled =
-    selectedStudies.length > 0 && selectedStudies.every((s) => s.status === "CLOSED")
-  const mixed = selectedStudies.length > 0 && !allEnabled && !allDisabled
-
-  const showDisableButton = allEnabled || mixed
-  const showEnableButton = allDisabled || mixed
-
-  const handleEnable = async () => {
-    const ids = watch("selectedStudyIds")
-    const valid = await trigger("selectedStudyIds")
-    if (!valid) return
-
-    // Validate that all selected studies have finished setup
-    const selectedStudiesToEnable = studies.filter((s) => ids.includes(s.id))
-    const unfinishedStudies = selectedStudiesToEnable.filter(
-      (s) => !isSetupComplete(s as StudyWithMinimalRelations)
-    )
-
-    if (unfinishedStudies.length > 0) {
-      const unfinishedTitles = unfinishedStudies
-        .map((s) => s.title?.trim() || `Study #${s.id}`)
-        .join(", ")
-      toast.error(
-        `Cannot enable data collection. The following studies have not finished setup: ${unfinishedTitles}`,
-        { duration: 5000 }
-      )
-      return
-    }
-
-    try {
-      setIsEnabling(true)
-      const result = await enableMutation({ studyIds: ids })
-      toast.success(`Enabled data collection for ${result.updated} study/studies`)
-      setValue("selectedStudyIds", [])
-      router.refresh()
-    } catch (error) {
-      const message = error instanceof Error ? error.message : "Failed to enable data collection."
-      toast.error(message)
-    } finally {
-      setIsEnabling(false)
-    }
-  }
-
-  const handleDisable = async () => {
-    const ids = watch("selectedStudyIds")
-    const valid = await trigger("selectedStudyIds")
-    if (!valid) return
-    try {
-      setIsDisabling(true)
-      const result = await disableMutation({ studyIds: ids })
-      toast.success(`Disabled data collection for ${result.updated} study/studies`)
-      setValue("selectedStudyIds", [])
-      router.refresh()
-    } catch (error) {
-      const message = error instanceof Error ? error.message : "Failed to disable data collection."
-      toast.error(message)
-    } finally {
-      setIsDisabling(false)
-    }
-  }
-
-  const isSubmitting = isEnabling || isDisabling
-
-  // Don't show buttons if nothing is selected
-  if (selectedIds.length === 0) {
-    return null
-  }
-
-  return (
-    <div className="flex gap-2 justify-end">
-      {showDisableButton && (
-        <button
-          type="button"
-          className="btn btn-error btn-outline"
-          disabled={isSubmitting}
-          onClick={handleDisable}
-        >
-          {isDisabling ? "Disabling..." : "Disable data collection"}
-        </button>
-      )}
-      {showEnableButton && (
-        <button
-          type="button"
-          className="btn btn-success btn-outline"
-          disabled={isSubmitting}
-          onClick={handleEnable}
-        >
-          {isEnabling ? "Enabling..." : "Enable data collection"}
-        </button>
-      )}
-    </div>
   )
 }

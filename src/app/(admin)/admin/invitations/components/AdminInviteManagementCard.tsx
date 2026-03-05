@@ -12,6 +12,8 @@ import { useFormContext } from "react-hook-form"
 import { useRouter } from "next/navigation"
 import { useMutation } from "@blitzjs/rpc"
 import toast from "react-hot-toast"
+import StatusBadge from "@/src/app/components/StatusBadge"
+import { getInviteStatusProps } from "@/src/lib/utils/statusBadgePresets"
 
 type InviteLite = {
   id: number
@@ -82,16 +84,10 @@ export default function AdminInviteManagementCard({ invites }: { invites: Invite
         id: "status",
         header: "Status",
         cell: ({ row }: any) => {
-          const status = row.original.status as string
-          const badgeClass =
-            status === "pending"
-              ? "badge badge-info"
-              : status === "redeemed"
-              ? "badge badge-success"
-              : status === "revoked"
-              ? "badge badge-error"
-              : "badge badge-warning"
-          return <span className={badgeClass}>{status}</span>
+          const props = getInviteStatusProps(
+            row.original.status as "pending" | "redeemed" | "revoked" | "expired"
+          )
+          return <StatusBadge {...props} />
         },
       },
     ],

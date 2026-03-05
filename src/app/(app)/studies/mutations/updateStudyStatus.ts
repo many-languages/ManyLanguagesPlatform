@@ -19,8 +19,10 @@ export default resolver.pipe(
     const existingStudy = await db.study.findUnique({
       where: { id: studyId },
       select: {
+        id: true,
         status: true,
         title: true,
+        adminApproved: true,
       },
     })
 
@@ -30,6 +32,13 @@ export default resolver.pipe(
 
     if (existingStudy.status === status) {
       return existingStudy
+    }
+
+    // Require admin approval before allowing status = OPEN
+    if (status === "OPEN" && existingStudy.adminApproved !== true) {
+      throw new Error(
+        "Study must be approved by an administrator before data collection can be activated."
+      )
     }
 
     const study = await db.study.update({

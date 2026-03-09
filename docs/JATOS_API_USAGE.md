@@ -155,7 +155,6 @@ export async function POST(
 - `JatosImportResponse` - Import success response
 - `JatosImportConflictResponse` - Import conflict (409) response
 - `CreatePersonalStudyCodeResponse` - Study code creation response
-- `CreateComponentResponse` - Component creation response
 - `GetStudyCodeResponse` - Study code retrieval response
 - `CreatePersonalLinksResponse` - Personal links creation response
 
@@ -350,7 +349,6 @@ const code = data.code
 | `/api/jatos/get-study-code`            | GET    | Get study code        | No (calls JATOS directly)  |
 | `/api/jatos/create-personal-studycode` | POST   | Create personal code  | No (calls JATOS directly)  |
 | `/api/jatos/create-personal-links`     | POST   | Create multiple codes | No (calls JATOS directly)  |
-| `/api/jatos/create-component`          | POST   | Create component      | No (calls JATOS directly)  |
 | `/api/jatos/delete-study`              | DELETE | Delete study          | Yes (`deleteStudy`)        |
 | `/api/jatos/get-all-results`           | POST   | Get all results ZIP   | No (calls JATOS directly)  |
 | `/api/jatos/get-asset-structure`       | GET    | Get asset structure   | No (calls JATOS directly)  |

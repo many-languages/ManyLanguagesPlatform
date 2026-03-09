@@ -46,14 +46,6 @@ export interface CreatePersonalStudyCodeResponse {
 }
 
 /**
- * Response from /api/jatos/create-component
- */
-export interface CreateComponentResponse {
-  jatosComponentId: number
-  jatosComponentUUID: string
-}
-
-/**
  * Response from /api/jatos/get-study-code
  */
 export interface GetStudyCodeResponse {

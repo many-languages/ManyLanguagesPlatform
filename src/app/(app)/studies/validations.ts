@@ -72,16 +72,6 @@ export const ArchiveStudy = z.object({ id: Id })
 
 export const UnarchiveStudy = z.object({ id: Id })
 
-export const StudyComponentFormSchema = z.object({
-  htmlFilePath: z.string().min(1, "Please select an HTML file"),
-})
-
-export const UpdateStudyComponent = z.object({
-  id: Id,
-  jatosComponentId: z.number(),
-  jatosComponentUUID: z.string().optional(),
-})
-
 // Mutation validations
 export const JoinStudy = z.object({
   studyId: Id,

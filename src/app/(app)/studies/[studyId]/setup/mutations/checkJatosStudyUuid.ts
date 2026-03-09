@@ -3,6 +3,9 @@ import db from "db"
 import { z } from "zod"
 import { verifyResearcherStudyAccess } from "../../utils/verifyResearchersStudyAccess"
 import { checkJatosStudyExists } from "@/src/lib/jatos/api/checkJatosStudyExists"
+import { getResultsMetadata } from "@/src/lib/jatos/api/getResultsMetadata"
+import { hasParticipantResponses } from "@/src/lib/jatos/api/studyHasParticipantResponses"
+import type { JatosStudyResult } from "@/src/types/jatos"
 
 const CheckJatosStudyUuid = z.object({
   studyId: z.number().int().positive(),
@@ -60,6 +63,28 @@ export default resolver.pipe(
       return {
         ok: false,
         error: "This JATOS study was not found on the server. Please re-import it first.",
+      }
+    }
+
+    // Block update if study has participant responses (non-pilot, FINISHED)
+    if (mode === "update" && existsOnJatos) {
+      try {
+        const metadata = await getResultsMetadata({ studyUuids: [trimmed] })
+        const studies =
+          (metadata as { data?: Array<{ studyResults?: JatosStudyResult[] }> })?.data ?? []
+        const hasResponses = studies.some((s) => hasParticipantResponses(s.studyResults ?? []))
+        if (hasResponses) {
+          return {
+            ok: false,
+            error:
+              "This study already has participant responses. Please create a new study instead of overwriting.",
+          }
+        }
+      } catch (error: any) {
+        return {
+          ok: false,
+          error: `Failed to check for existing responses: ${error?.message || "Unknown error"}`,
+        }
       }
     }
 

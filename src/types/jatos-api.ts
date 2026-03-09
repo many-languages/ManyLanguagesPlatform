@@ -13,6 +13,7 @@ export interface JatosApiError {
 
 /**
  * Response from /api/jatos/import
+ * Uses POST /jatos/api/v1/studies; studyExists is derived from HTTP status (200=overwrite, 201=create)
  */
 export interface JatosImportResponse {
   jatosStudyId: number

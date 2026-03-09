@@ -2,11 +2,12 @@
  * JATOS API Route: Import Study
  *
  * Imports a JATOS study file (.jzip) to the JATOS server.
+ * Uses POST /jatos/api/v1/studies (new API with ApiEnvelopeStudy response).
+ * 200 = study overwritten, 201 = study created.
  *
  * @route POST /api/jatos/import
  * @body FormData with "studyFile" field (File)
- * @returns JATOS study ID, UUID, and filename
- * @returns JATOS metadata; includes studyExists flag when applicable
+ * @returns JATOS study ID, UUID, filename; studyExists derived from HTTP status
  */
 import { NextResponse } from "next/server"
 import { createHash } from "crypto"
@@ -79,11 +80,11 @@ export async function POST(
       return NextResponse.json(errorResponse, { status: 400 })
     }
 
-    // Forward to JATOS
+    // Forward to JATOS (POST /jatos/api/v1/studies - new API)
     const out = new FormData()
     out.append("study", file, file.name)
 
-    const jatosUrl = `${JATOS_BASE}/jatos/api/v1/study`
+    const jatosUrl = `${JATOS_BASE}/jatos/api/v1/studies`
     const res = await fetch(jatosUrl, {
       method: "POST",
       headers: { accept: "application/json", Authorization: `Bearer ${JATOS_TOKEN}` },
@@ -97,30 +98,30 @@ export async function POST(
       return NextResponse.json(errorResponse, { status: res.status })
     }
 
+    // New API returns ApiEnvelopeStudy: { apiVersion, data: Study }
     const json = JSON.parse(text) as {
-      id: number
-      uuid?: string
-      studyExists?: boolean
-      currentStudyTitle?: string
-      uploadedStudyTitle?: string
-      uploadedDirExists?: boolean
+      data?: { id?: number; uuid?: string; title?: string }
     }
+    const data = json.data
 
-    if (!json.uuid) {
-      const errorResponse: JatosApiError = { error: "Missing uuid in JATOS response" }
+    if (!data?.uuid || data.id == null) {
+      const errorResponse: JatosApiError = {
+        error: "Missing id or uuid in JATOS response",
+      }
       return NextResponse.json(errorResponse, { status: 502 })
     }
 
-    // Normal success response
+    // 200 = study overwritten (existed), 201 = study created (new)
+    const studyExists = res.status === 200
+
     const successResponse: JatosImportResponse = {
-      jatosStudyId: json.id,
-      jatosStudyUUID: json.uuid,
+      jatosStudyId: data.id,
+      jatosStudyUUID: data.uuid,
       jatosFileName: file.name,
       buildHash,
       hashAlgorithm: "sha256",
-      studyExists: json.studyExists ?? false,
-      currentStudyTitle: json.currentStudyTitle,
-      uploadedStudyTitle: json.uploadedStudyTitle,
+      studyExists,
+      uploadedStudyTitle: data.title,
     }
     return NextResponse.json(successResponse)
   } catch (error: any) {

@@ -38,7 +38,8 @@ export async function validateCodebookAgainstExtraction(
   const missingKeys = Array.from(extractionKeys).filter((key) => !entryKeys.has(key))
   const extraKeys = Array.from(entryKeys).filter((key) => !extractionKeys.has(key))
 
-  const status = missingKeys.length === 0 && extraKeys.length === 0 ? "VALID" : "INVALID"
+  // Only missingKeys make the codebook INVALID; extraKeys are informational
+  const status = missingKeys.length === 0 ? "VALID" : "INVALID"
 
   await tx.codebook.update({
     where: { id: codebook.id },

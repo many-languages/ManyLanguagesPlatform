@@ -119,16 +119,13 @@ export default function Step6Content({
     let templateSavedDuringFinish = false
 
     if (feedbackEditorRef.current) {
-      const isSaved = feedbackEditorRef.current.isTemplateSaved()
-      if (!isSaved) {
-        // Auto-save template before finishing
-        const success = await feedbackEditorRef.current.saveTemplate()
-        if (!success) {
-          // Save failed (likely due to validation errors), so we abort finish
-          return
-        }
-        templateSavedDuringFinish = true
+      // Always save to re-validate and update step6Completed (fixes stale step flags)
+      const success = await feedbackEditorRef.current.saveTemplate()
+      if (!success) {
+        // Save failed (likely due to validation errors), so we abort finish
+        return
       }
+      templateSavedDuringFinish = true
     }
 
     const setupComplete =

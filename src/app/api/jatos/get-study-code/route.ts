@@ -2,19 +2,18 @@
  * JATOS API Route: Get Study Code
  *
  * Gets an available study code from JATOS for a specific study and worker type.
+ * Uses fetchStudyCodes (POST /jatos/api/v1/studies/{id}/studyCodes).
  *
  * @route GET /api/jatos/get-study-code
  * @queryParams studyId (JATOS study ID), type (worker type, default: "gs")
- * @returns Available study code with metadata
+ * @returns Available study code
  */
 import { NextResponse } from "next/server"
+import { fetchStudyCodes, FetchStudyCodesError } from "@/src/lib/jatos/api/fetchStudyCodes"
 import type { GetStudyCodeResponse, JatosApiError } from "@/src/types/jatos-api"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
-
-const JATOS_BASE = process.env.JATOS_BASE!
-const JATOS_TOKEN = process.env.JATOS_TOKEN!
 
 export async function GET(
   req: Request
@@ -22,33 +21,16 @@ export async function GET(
   try {
     const { searchParams } = new URL(req.url)
     const studyId = searchParams.get("studyId")
-    const type = searchParams.get("type") ?? "gs" // default to GeneralSingle
+    const type = (searchParams.get("type") ?? "gs") as "gs" | "gm"
 
     if (!studyId) {
       const errorResponse: JatosApiError = { error: "Missing studyId" }
       return NextResponse.json(errorResponse, { status: 400 })
     }
 
-    // 🔹 Request study codes from JATOS
-    const res = await fetch(
-      `${JATOS_BASE}/jatos/api/v1/studies/${studyId}/studyCodes?type=${type}`,
-      {
-        headers: {
-          Accept: "application/json",
-          Authorization: `Bearer ${JATOS_TOKEN}`,
-        },
-      }
-    )
+    const codes = await fetchStudyCodes({ studyId, type, amount: 1 })
 
-    const json = await res.json()
-    if (!res.ok) {
-      const errorResponse: JatosApiError = { error: String(json) }
-      return NextResponse.json(errorResponse, { status: res.status })
-    }
-
-    // Extract the first available code (usually only one for general types)
-    const studyCode = json?.[0]?.code ?? null
-    if (!studyCode) {
+    if (codes.length === 0) {
       const errorResponse: JatosApiError = { error: "No study code found" }
       return NextResponse.json(errorResponse, { status: 404 })
     }
@@ -56,15 +38,17 @@ export async function GET(
     const successResponse: GetStudyCodeResponse = {
       studyId,
       type,
-      code: studyCode,
-      codeType: json[0]?.codeType,
-      batchId: json[0]?.batchId,
+      code: codes[0],
     }
     return NextResponse.json(successResponse)
-  } catch (err: any) {
+  } catch (err) {
+    if (err instanceof FetchStudyCodesError) {
+      const errorResponse: JatosApiError = { error: err.message }
+      return NextResponse.json(errorResponse, { status: err.status })
+    }
     console.error("Error fetching JATOS study code:", err)
     const errorResponse: JatosApiError = {
-      error: err.message ?? "Unexpected error",
+      error: err instanceof Error ? err.message : "Unexpected error",
     }
     return NextResponse.json(errorResponse, { status: 500 })
   }

@@ -33,7 +33,8 @@ export async function validateFeedbackTemplateAgainstExtraction(
   const missingKeys = requiredKeys.filter((key) => !availableNames.has(key))
   const extraKeys = variables.map((v) => v.variableName).filter((key) => !requiredSet.has(key))
 
-  const status = missingKeys.length === 0 && extraKeys.length === 0 ? "VALID" : "INVALID"
+  // Only missingKeys make the template INVALID; extraKeys are informational
+  const status = missingKeys.length === 0 ? "VALID" : "INVALID"
 
   await tx.feedbackTemplate.update({
     where: { id: template.id },

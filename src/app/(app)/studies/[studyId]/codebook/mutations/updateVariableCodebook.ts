@@ -2,6 +2,8 @@ import { resolver } from "@blitzjs/rpc"
 import db from "db"
 import { z } from "zod"
 import { verifyResearcherStudyAccess } from "../../utils/verifyResearchersStudyAccess"
+import { validateCodebookAgainstExtraction } from "../utils/validateCodebookAgainstExtraction"
+import { EXTRACTOR_VERSION } from "../../setup/utils/extractionCache"
 
 const UpdateVariableCodebook = z.object({
   studyId: z.number(),
@@ -39,13 +41,14 @@ export async function updateVariableCodebookRsc(input: {
   })
 
   const latestUpload = study?.jatosStudyUploads[0] ?? null
-  if (!latestUpload?.approvedExtractionId) {
+  const approvedExtractionId = latestUpload?.approvedExtractionId
+  if (!latestUpload || !approvedExtractionId) {
     throw new Error("No approved extraction found for this study.")
   }
 
   const extractionVariables = await db.studyVariable.findMany({
     where: {
-      extractionSnapshotId: latestUpload.approvedExtractionId,
+      extractionSnapshotId: approvedExtractionId,
     },
     select: { variableKey: true },
   })
@@ -68,19 +71,7 @@ export async function updateVariableCodebookRsc(input: {
       select: { id: true },
     }))
 
-  await db.$transaction(async (tx) => {
-    await tx.codebook.update({
-      where: { id: codebook.id },
-      data: {
-        validationStatus: "NEEDS_REVIEW",
-        validatedExtractionId: null,
-        validatedAt: null,
-        missingKeys: null,
-        extraKeys: null,
-        extractorVersion: null,
-      },
-    })
-
+  const codebookValidation = await db.$transaction(async (tx) => {
     await tx.codebookEntry.deleteMany({
       where: {
         codebookId: codebook.id,
@@ -112,18 +103,25 @@ export async function updateVariableCodebookRsc(input: {
         })
       )
     )
+
+    return validateCodebookAgainstExtraction(tx, {
+      studyId: input.studyId,
+      extractionSnapshotId: approvedExtractionId,
+      extractorVersion: EXTRACTOR_VERSION,
+    })
   })
 
   const allHaveDescriptions = input.variables.every(
     (v) => v.description && v.description.trim() !== ""
   )
 
-  if (allHaveDescriptions && input.variables.length > 0) {
-    await db.jatosStudyUpload.update({
-      where: { id: latestUpload.id },
-      data: { step5Completed: true },
-    })
-  }
+  const step5Completed =
+    codebookValidation?.status !== "INVALID" && allHaveDescriptions && input.variables.length > 0
+
+  await db.jatosStudyUpload.update({
+    where: { id: latestUpload.id },
+    data: { step5Completed },
+  })
 
   return { success: true }
 }

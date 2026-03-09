@@ -1,8 +1,10 @@
 import { resolver } from "@blitzjs/rpc"
-import db from "db"
+import db, { Prisma } from "db"
 import { UpdateFeedbackTemplateSchema } from "../validations"
 import type { FeedbackTemplate } from "../types"
 import { verifyResearcherStudyAccess } from "../../utils/verifyResearchersStudyAccess"
+import { validateFeedbackTemplateAgainstExtraction } from "../utils/validateTemplateAgainstExtraction"
+import { EXTRACTOR_VERSION } from "../../setup/utils/extractionCache"
 
 // Server-side helper for RSCs
 export async function updateFeedbackTemplateRsc(input: {
@@ -23,41 +25,50 @@ export async function updateFeedbackTemplateRsc(input: {
   // Verify the user is a researcher on this study
   await verifyResearcherStudyAccess(existingTemplate.studyId)
 
-  const template = await db.feedbackTemplate.update({
-    where: { id: input.id },
-    data: {
-      content: input.content,
-      validationStatus: "NEEDS_REVIEW",
-      validatedExtractionId: null,
-      validatedAt: null,
-      missingKeys: null,
-      extraKeys: null,
-      extractorVersion: null,
-      requiredVariableKeys: input.requiredVariableKeys,
-    },
-    select: {
-      id: true,
-      studyId: true,
-      content: true,
-      createdAt: true,
-      updatedAt: true,
-    },
-  })
-
-  // Mark step 6 as complete after successful update
-  const latestUpload = await db.jatosStudyUpload.findFirst({
-    where: { studyId: template.studyId },
-    orderBy: { createdAt: "desc" },
-    select: { id: true },
-  })
-  if (latestUpload) {
-    await db.jatosStudyUpload.update({
-      where: { id: latestUpload.id },
-      data: { step6Completed: true },
+  const template = await db.$transaction(async (tx) => {
+    await tx.feedbackTemplate.update({
+      where: { id: input.id },
+      data: {
+        content: input.content,
+        validationStatus: "NEEDS_REVIEW",
+        validatedExtractionId: null,
+        validatedAt: null,
+        missingKeys: Prisma.DbNull,
+        extraKeys: Prisma.DbNull,
+        extractorVersion: null,
+        requiredVariableKeys: input.requiredVariableKeys,
+      },
     })
-  }
 
-  return template
+    const latestUpload = await tx.jatosStudyUpload.findFirst({
+      where: { studyId: existingTemplate.studyId },
+      orderBy: { createdAt: "desc" },
+      select: { id: true, approvedExtractionId: true },
+    })
+
+    let step6Completed = true
+    if (latestUpload?.approvedExtractionId) {
+      const feedbackValidation = await validateFeedbackTemplateAgainstExtraction(tx, {
+        studyId: existingTemplate.studyId,
+        extractionSnapshotId: latestUpload.approvedExtractionId,
+        extractorVersion: EXTRACTOR_VERSION,
+      })
+      step6Completed = feedbackValidation?.status !== "INVALID"
+    }
+
+    if (latestUpload) {
+      await tx.jatosStudyUpload.update({
+        where: { id: latestUpload.id },
+        data: { step6Completed },
+      })
+    }
+
+    return tx.feedbackTemplate.findUniqueOrThrow({
+      where: { id: input.id },
+    })
+  })
+
+  return template as FeedbackTemplate
 }
 
 // Blitz RPC for client usage

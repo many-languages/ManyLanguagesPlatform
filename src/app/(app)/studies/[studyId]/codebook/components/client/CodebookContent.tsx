@@ -140,11 +140,9 @@ export default function CodebookContent({
   }
 
   const handleNext = async () => {
-    // If not saved, try to save first
-    if (!codebookSaved) {
-      const success = await handleSave()
-      if (!success) return
-    }
+    // Always save to update step5Completed (fixes stale step flags)
+    const success = await handleSave()
+    if (!success) return
     router.push(`/studies/${studyId}/setup/step6`)
   }
 

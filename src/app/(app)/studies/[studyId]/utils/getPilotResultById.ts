@@ -51,7 +51,7 @@ export const getPilotResultByIdRsc = cache(
         throw new Error("Pilot result not found")
       }
 
-      const { data: arrayBuffer } = await getResultsData({ studyResultIds: String(testResultId) })
+      const { data: arrayBuffer } = await getResultsData({ studyResultIds: testResultId })
       const blob = new Blob([arrayBuffer])
       const files = await parseJatosZip(blob)
       const enriched = matchJatosDataToMetadata(metadata, files)

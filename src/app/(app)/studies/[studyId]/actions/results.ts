@@ -15,7 +15,7 @@ export async function refetchEnrichedResultsAction(
 > {
   try {
     // Fetch ZIP from JATOS (server-side)
-    const result = await getResultsData({ studyIds: String(jatosStudyId) })
+    const result = await getResultsData({ studyIds: jatosStudyId })
 
     if (!result.success) {
       return { success: false, error: "Failed to fetch results from JATOS" }

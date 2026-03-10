@@ -85,7 +85,7 @@ export const getAllPilotResultsRsc = cache(
       }
 
       // Get IDs of pilot results
-      const pilotResultIds = pilotResults.map((result: JatosStudyResult) => result.id).join(",")
+      const pilotResultIds = pilotResults.map((result: JatosStudyResult) => result.id)
 
       // Get and parse raw data
       const { data: arrayBuffer } = await getResultsData({ studyResultIds: pilotResultIds })

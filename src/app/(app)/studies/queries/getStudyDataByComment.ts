@@ -42,7 +42,7 @@ export const getStudyDataByCommentRsc = cache(async (studyId: number, comment: s
   if (!studyResultId) throw new Error(`No result found with comment "${comment}"`)
 
   // 3) Get and parse raw data
-  const { data: arrayBuffer } = await getResultsData({ studyResultIds: String(studyResultId) })
+  const { data: arrayBuffer } = await getResultsData({ studyResultIds: studyResultId })
   const blob = new Blob([arrayBuffer])
   const files = await parseJatosZip(blob)
 

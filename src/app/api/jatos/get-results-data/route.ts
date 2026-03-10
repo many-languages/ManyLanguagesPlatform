@@ -5,7 +5,7 @@
  * This route wraps the server-side lib function for client-side usage.
  *
  * @route POST /api/jatos/get-results-data
- * @queryParams studyIds (query parameter or body)
+ * @body { studyIds?: number | number[], studyResultIds?: number | number[], ... } (integers per JATOS spec)
  * @returns Binary ZIP file with results data
  */
 import { getResultsData } from "@/src/lib/jatos/api/getResultsData"
@@ -17,8 +17,15 @@ export const dynamic = "force-dynamic"
 
 export async function POST(req: NextRequest): Promise<NextResponse<ArrayBuffer | JatosApiError>> {
   try {
-    const url = new URL(req.url)
-    const params = Object.fromEntries(url.searchParams.entries())
+    let params: Record<string, unknown> = {}
+    try {
+      params = (await req.json()) as Record<string, unknown>
+    } catch {
+      const errorResponse: JatosApiError = {
+        error: "Request body must be JSON with integer ID params (e.g. { studyIds: 123 })",
+      }
+      return NextResponse.json(errorResponse, { status: 400 })
+    }
 
     const result = await getResultsData(params)
 
@@ -30,10 +37,10 @@ export async function POST(req: NextRequest): Promise<NextResponse<ArrayBuffer |
       },
     })
   } catch (error: any) {
+    const message = error?.message || "Failed to fetch results data"
+    const isValidationError = typeof message === "string" && message.includes("must be an integer")
     console.error("Error fetching results data:", error)
-    const errorResponse: JatosApiError = {
-      error: error.message || "Failed to fetch results data",
-    }
-    return NextResponse.json(errorResponse, { status: 500 })
+    const errorResponse: JatosApiError = { error: message }
+    return NextResponse.json(errorResponse, { status: isValidationError ? 400 : 500 })
   }
 }

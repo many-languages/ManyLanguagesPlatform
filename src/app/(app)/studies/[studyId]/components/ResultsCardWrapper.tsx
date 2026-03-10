@@ -24,7 +24,7 @@ const getEnrichedResultsRsc = cache(
   async (jatosStudyId: number, metadata: JatosMetadata): Promise<EnrichedJatosStudyResult[]> => {
     try {
       // Fetch ZIP from JATOS (server-side)
-      const result = await getResultsData({ studyIds: String(jatosStudyId) })
+      const result = await getResultsData({ studyIds: jatosStudyId })
 
       if (!result.success) {
         throw new Error("Failed to fetch results from JATOS")

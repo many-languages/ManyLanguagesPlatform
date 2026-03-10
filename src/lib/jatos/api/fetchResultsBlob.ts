@@ -21,8 +21,10 @@
  * @throws Error if fetch fails
  */
 export async function fetchResultsBlob(jatosStudyId: number): Promise<Blob> {
-  const res = await fetch(`/api/jatos/get-results-data?studyIds=${jatosStudyId}`, {
+  const res = await fetch("/api/jatos/get-results-data", {
     method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ studyIds: jatosStudyId }),
   })
 
   if (!res.ok) {

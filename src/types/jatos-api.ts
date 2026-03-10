@@ -57,22 +57,6 @@ export interface GetStudyCodeResponse {
 }
 
 /**
- * Response from /api/jatos/create-personal-links
- */
-export interface CreatePersonalLinksResponse {
-  studyId: number
-  type: string
-  amount: number
-  codes: Array<{
-    id: number
-    code: string
-    codeType: string
-    batchId: number
-    active: boolean
-  }>
-}
-
-/**
  * Response from /api/jatos/get-results-metadata
  */
 export type GetResultsMetadataResponse = Array<{

@@ -1,12 +1,10 @@
 // Barrel export for JATOS utilities
-export * from "./api/assignPersonalLinks"
 export * from "./api/checkPilotCompletion"
 export * from "./api/deleteStudy"
 export * from "./api/fetchHtmlFiles"
 export * from "./api/fetchJatosBatchId"
 export * from "./api/fetchStudyAssets"
 export * from "./api/findStudyResultIdByComment"
-export * from "./api/generateAndAssignPersonalLinks"
 export * from "./api/generateGeneralLinks"
 export * from "./api/generateJatosRunUrl"
 export * from "./api/getComponentMap"

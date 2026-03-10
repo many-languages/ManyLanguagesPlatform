@@ -71,7 +71,7 @@ export async function fetchParticipantFeedbackAction(
     }
 
     // Get all enriched results for "across" scope statistics
-    const allResultsResult = await getResultsData({ studyIds: String(jatosStudyId) })
+    const allResultsResult = await getResultsData({ studyIds: jatosStudyId })
     let allEnrichedResults: EnrichedJatosStudyResult[] = []
 
     if (allResultsResult.success) {

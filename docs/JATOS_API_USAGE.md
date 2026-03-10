@@ -156,7 +156,6 @@ export async function POST(
 - `JatosImportConflictResponse` - Import conflict (409) response
 - `CreatePersonalStudyCodeResponse` - Study code creation response
 - `GetStudyCodeResponse` - Study code retrieval response
-- `CreatePersonalLinksResponse` - Personal links creation response
 
 ---
 
@@ -340,18 +339,17 @@ const code = data.code
 
 ## API Route Reference
 
-| Route                                  | Method | Purpose               | Wraps Lib Function?        |
-| -------------------------------------- | ------ | --------------------- | -------------------------- |
-| `/api/jatos/import`                    | POST   | Import study file     | No (calls JATOS directly)  |
-| `/api/jatos/get-results-metadata`      | POST   | Get results metadata  | Yes (`getResultsMetadata`) |
-| `/api/jatos/get-results-data`          | POST   | Get results ZIP file  | Yes (`getResultsData`)     |
-| `/api/jatos/get-study-properties`      | GET    | Get study properties  | Yes (`getStudyProperties`) |
-| `/api/jatos/get-study-code`            | GET    | Get study code        | No (calls JATOS directly)  |
-| `/api/jatos/create-personal-studycode` | POST   | Create personal code  | No (calls JATOS directly)  |
-| `/api/jatos/create-personal-links`     | POST   | Create multiple codes | No (calls JATOS directly)  |
-| `/api/jatos/delete-study`              | DELETE | Delete study          | Yes (`deleteStudy`)        |
-| `/api/jatos/get-all-results`           | POST   | Get all results ZIP   | No (calls JATOS directly)  |
-| `/api/jatos/get-asset-structure`       | GET    | Get asset structure   | No (calls JATOS directly)  |
+| Route                                  | Method | Purpose              | Wraps Lib Function?        |
+| -------------------------------------- | ------ | -------------------- | -------------------------- |
+| `/api/jatos/import`                    | POST   | Import study file    | No (calls JATOS directly)  |
+| `/api/jatos/get-results-metadata`      | POST   | Get results metadata | Yes (`getResultsMetadata`) |
+| `/api/jatos/get-results-data`          | POST   | Get results ZIP file | Yes (`getResultsData`)     |
+| `/api/jatos/get-study-properties`      | GET    | Get study properties | Yes (`getStudyProperties`) |
+| `/api/jatos/get-study-code`            | GET    | Get study code       | No (calls JATOS directly)  |
+| `/api/jatos/create-personal-studycode` | POST   | Create personal code | No (calls JATOS directly)  |
+| `/api/jatos/delete-study`              | DELETE | Delete study         | Yes (`deleteStudy`)        |
+| `/api/jatos/get-all-results`           | POST   | Get all results ZIP  | No (calls JATOS directly)  |
+| `/api/jatos/get-asset-structure`       | GET    | Get asset structure  | No (calls JATOS directly)  |
 
 ---
 

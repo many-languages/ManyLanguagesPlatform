@@ -451,7 +451,7 @@ make clean
 
 ### Required Variables
 
-- `JATOS_TOKEN` - JATOS API token (must be created manually)
+- `JATOS_TOKEN` - JATOS API token (must be created manually via JATOS UI)
 - `DATABASE_URL` - PostgreSQL connection string (auto-constructed in docker-compose)
 - `SESSION_SECRET_KEY` - Blitz session encryption key
 

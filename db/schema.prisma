@@ -43,6 +43,7 @@ model User {
   adminReviewedStudies   Study[]                 @relation("StudyAdminReviewer")
   notificationRecipients NotificationRecipient[]
   AdminInvite            AdminInvite[]
+  ResearcherJatos        ResearcherJatos?
 }
 
 model Session {
@@ -93,6 +94,14 @@ enum StudyStatus {
 enum JatosWorkerType {
   SINGLE
   MULTIPLE
+}
+
+model ResearcherJatos {
+  id          Int @id @default(autoincrement())
+  userId      Int @unique // 1:1 with User (researchers only)
+  jatosUserId Int // JATOS user ID (from POST /users)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Study {

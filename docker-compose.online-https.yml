@@ -11,6 +11,10 @@ services:
     ports:
       - "3000:3000"
     mem_limit: 2g
+    deploy:
+      resources:
+        limits:
+          memory: 2g
     environment:
       NEXT_PUBLIC_JATOS_BASE: ${NEXT_PUBLIC_JATOS_BASE:-https://${JATOS_DOMAIN:-jatos.localhost}}
       NODE_OPTIONS: "--max-old-space-size=768"

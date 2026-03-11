@@ -10,8 +10,12 @@ services:
       - "traefik.docker.network=default"
     ports:
       - "3000:3000"
+    mem_limit: 2g
     environment:
       NEXT_PUBLIC_JATOS_BASE: ${NEXT_PUBLIC_JATOS_BASE:-https://${JATOS_DOMAIN:-jatos.localhost}}
+      NODE_OPTIONS: "--max-old-space-size=768"
+      NEXT_TELEMETRY_DISABLED: "1"
+      WATCHPACK_POLLING: "true"
     networks:
       - default
 
@@ -42,12 +46,14 @@ services:
       - "--providers.docker=true"
       - "--providers.docker.exposedbydefault=false"
       - "--providers.docker.watch=true"
+      - "--providers.docker.allowEmptyServices=true"
       - "--providers.docker.network=default"
       - "--entrypoints.web.address=:80"
       - "--entrypoints.websecure.address=:443"
       - "--entrypoints.web.http.redirections.entryPoint.to=websecure"
       - "--entrypoints.web.http.redirections.entryPoint.scheme=https"
       - "--certificatesresolvers.lightsail.acme.tlschallenge=true"
+      - "--certificatesresolvers.lightsail.acme.httpchallenge.entrypoint=web"
       - "--certificatesresolvers.lightsail.acme.email=${TLS_EMAIL}"
       - "--certificatesresolvers.lightsail.acme.storage=/acme/acme.json"
       - "--log.level=INFO"

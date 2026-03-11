@@ -1,0 +1,9 @@
+include "application.conf"
+
+jatos.db.url = "jdbc:mysql://jatos-db:3306/${MYSQL_DATABASE}?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC"
+jatos.db.username = "${MYSQL_USER}"
+jatos.db.password = "${MYSQL_PASSWORD}"
+jatos.db.driver = "com.mysql.cj.jdbc.Driver"
+
+jatos.http.bindAddress = "0.0.0.0"
+jatos.http.port = 9000

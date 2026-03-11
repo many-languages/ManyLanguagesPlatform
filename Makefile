@@ -1,4 +1,4 @@
-.PHONY: dev dev-https prod stop logs clean build up down validate-token validate-token-online help prune prune-all certs
+.PHONY: dev dev-https prod stop logs clean build up down validate-token validate-token-online help prune prune-all certs env-file jatos-conf
 
 # Use bash for better shell features
 SHELL := /bin/bash
@@ -11,6 +11,7 @@ COMPOSE_DEV=$(COMPOSE_BASE)
 COMPOSE_DEV_HTTPS=$(COMPOSE_BASE) -f docker-compose.local-https.yml
 COMPOSE_DEV_HTTPS_ONLINE=$(COMPOSE_BASE) -f docker-compose.online-https.yml
 COMPOSE_PROD=$(COMPOSE_BASE) -f docker-compose.prod.yml
+JATOS_CONF_SCRIPT=scripts/render-jatos-conf.sh
 
 # Optional mail services
 EMAIL_ENABLED ?= false
@@ -19,6 +20,17 @@ MAIL_PROFILE_FLAG=--profile mail
 else
 MAIL_PROFILE_FLAG=
 endif
+
+# Ensure .env exists before rendering configs
+env-file:
+	@if [ ! -f .env ]; then \
+		echo "⚠️  .env file not found. Creating from template..."; \
+		cp .env.example .env 2>/dev/null || echo "Please create .env file manually. See .env.example for reference."; \
+	fi
+
+jatos-conf: env-file
+	@echo "🧩 Syncing JATOS config with .env..."
+	@bash $(JATOS_CONF_SCRIPT)
 
 # Default target
 help:
@@ -40,12 +52,8 @@ help:
 	@echo "For more information, see DEPLOYMENT.md"
 
 # Development mode
-dev:
+dev: jatos-conf
 	@echo "🚀 Starting development environment..."
-	@if [ ! -f .env ]; then \
-		echo "⚠️  .env file not found. Creating from template..."; \
-		cp .env.example .env 2>/dev/null || echo "Please create .env file manually. See .env.example for reference."; \
-	fi
 	@echo "📦 Starting Docker services..."
 	$(COMPOSE_DEV) $(MAIL_PROFILE_FLAG) up -d
 	@echo ""
@@ -103,12 +111,8 @@ dev:
 	@echo ""
 
 # Development mode with HTTPS
-dev-https: certs
+dev-https: certs jatos-conf
 	@echo "🚀 Starting development environment with HTTPS..."
-	@if [ ! -f .env ]; then \
-		echo "⚠️  .env file not found. Creating from template..."; \
-		cp .env.example .env 2>/dev/null || echo "Please create .env file manually. See .env.example for reference."; \
-	fi
 	@echo "📦 Starting Docker services with HTTPS..."
 	$(COMPOSE_DEV_HTTPS) $(MAIL_PROFILE_FLAG) up -d
 	@echo ""
@@ -172,12 +176,8 @@ dev-https: certs
 	@echo ""
 
 # Online HTTPS development (Lightsail-ready)
-dev-https-online:
+dev-https-online: jatos-conf
 	@echo "🚀 Starting online HTTPS development environment..."
-	@if [ ! -f .env ]; then \
-		echo "⚠️  .env file not found. Creating from template..."; \
-		cp .env.example .env 2>/dev/null || echo "Please create .env file manually. See .env.example for reference."; \
-	fi
 	@if [ -z "${TLS_EMAIL}" ]; then \
 		echo "❌ TLS_EMAIL must be set when using dev-https-online (Traefik needs a contact email)"; \
 		exit 1; \

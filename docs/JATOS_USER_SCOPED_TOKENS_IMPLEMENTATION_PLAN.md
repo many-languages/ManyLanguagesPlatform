@@ -115,14 +115,15 @@ model User {
 ```ts
 export async function provisionResearcherJatos(userId: number): Promise<{
   jatosUserId: number
-  encryptedToken: string
 }>
 ```
 
-1. Create JATOS user (username: `mlp-researcher-{userId}`, name: `MLP Researcher ${userId}`)
-2. Generate token for user
-3. Encrypt and store in `ResearcherJatos` (or return for caller to store)
-4. Returns `{ jatosUserId, encryptedToken }` for caller to store
+1. If `ResearcherJatos` already exists for user: return existing `jatosUserId` (idempotent)
+2. Create JATOS user (username: `mlp-researcher-{userId}`, name: `MLP Researcher ${userId}`)
+3. Store in `ResearcherJatos` (userId, jatosUserId)
+4. Returns `{ jatosUserId }` for caller
+
+Tokens are generated Just-In-Time via `getOrGenerateJatosToken` when API calls are made.
 
 **Provisioning timing:** Lazy—when a researcher first needs JATOS access (e.g. when added to StudyResearcher, or when importing a study).
 
@@ -134,7 +135,7 @@ After creating/updating `JatosStudyUpload`:
 
 - Get all researchers on the study (StudyResearcher records)
 - For each researcher: call `ensureResearcherJatosMember(userId, jatosStudyId)` which:
-  - If `User.researcherJatos` is null → provision (create JATOS user, mint token, store in ResearcherJatos)
+  - If `User.researcherJatos` is null → provision (create JATOS user, store in ResearcherJatos)
   - Add researcher's `jatosUserId` to study via `PUT /studies/{id}/members/{jatosUserId}`
 
 **Note:** At study creation (`createStudy`), only the PI is added—no JATOS study exists yet. Membership sync happens at import. Any future "add collaborator" mutation must call `ensureResearcherJatosMember` after creating StudyResearcher.
@@ -149,15 +150,12 @@ export async function ensureResearcherJatosMember(
 ```
 
 - If `ResearcherJatos` exists for user: add `jatosUserId` as member
-- If not: call `provisionResearcherJatos(userId)`, store in DB, then add as member
+- If not: call `provisionResearcherJatos(userId)` (creates JATOS user and stores in DB), then add as member
 
 **StudyResearcher lifecycle:** When a researcher is added to or removed from a study, sync JATOS membership.
 
 **Files to update:**
-
-| File                                    | Change                                                                           |
-| --------------------------------------- | -------------------------------------------------------------------------------- |
-| Mutations that create `StudyResearcher` | After create: call `addResearcherToJatosStudy(userId, jatosStudyId)`             |
+| Mutations that create `StudyResearcher` | After create: call `addResearcherToJatosStudy(userId, jatosStudyId)` |
 | Mutations that delete `StudyResearcher` | Before/after delete: call `removeResearcherFromJatosStudy(userId, jatosStudyId)` |
 
 **Helper:** `addResearcherToJatosStudy` / `removeResearcherFromJatosStudy` — ensure researcher has ResearcherJatos, then add/remove via members API.

@@ -21,7 +21,7 @@ export const getPilotResultByIdRsc = cache(
     testResultId: number,
     jatosStudyIdContext?: number
   ): Promise<EnrichedJatosStudyResult> => {
-    return await withStudyAccess(studyId, async (sId) => {
+    return await withStudyAccess(studyId, async (sId, _uId, token) => {
       let jatosStudyId = jatosStudyIdContext
 
       if (!jatosStudyId) {
@@ -42,7 +42,7 @@ export const getPilotResultByIdRsc = cache(
 
       if (!jatosStudyId) throw new Error("Study does not have JATOS ID")
 
-      const metadata = await getResultsMetadata({ studyIds: [jatosStudyId] })
+      const metadata = await getResultsMetadata({ studyIds: [jatosStudyId] }, { token })
       const testResult = metadata.data?.[0]?.studyResults?.find(
         (result: JatosStudyResult) => result.id === testResultId && isPilotComment(result.comment)
       )
@@ -51,7 +51,10 @@ export const getPilotResultByIdRsc = cache(
         throw new Error("Pilot result not found")
       }
 
-      const { data: arrayBuffer } = await getResultsData({ studyResultIds: testResultId })
+      const { data: arrayBuffer } = await getResultsData(
+        { studyResultIds: testResultId },
+        { token }
+      )
       const blob = new Blob([arrayBuffer])
       const files = await parseJatosZip(blob)
       const enriched = matchJatosDataToMetadata(metadata, files)

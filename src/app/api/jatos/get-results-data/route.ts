@@ -2,7 +2,7 @@
  * JATOS API Route: Get Results Data
  *
  * Fetches raw results data (ZIP file) from JATOS for specified studies.
- * This route wraps the server-side lib function for client-side usage.
+ * Researcher-only: uses researcher's JIT token.
  *
  * @route POST /api/jatos/get-results-data
  * @body { studyIds?: number | number[], studyResultIds?: number | number[], ... } (integers per JATOS spec)
@@ -10,6 +10,8 @@
  */
 import { getResultsData } from "@/src/lib/jatos/api/getResultsData"
 import { NextRequest, NextResponse } from "next/server"
+import { getBlitzContext } from "@/src/app/blitz-server"
+import { getTokenForResearcher } from "@/src/lib/jatos/getTokenForResearcher"
 import type { JatosApiError } from "@/src/types/jatos-api"
 
 export const runtime = "nodejs"
@@ -17,6 +19,15 @@ export const dynamic = "force-dynamic"
 
 export async function POST(req: NextRequest): Promise<NextResponse<ArrayBuffer | JatosApiError>> {
   try {
+    const { session } = await getBlitzContext()
+    const userId = session.userId
+    if (userId == null) {
+      const errorResponse: JatosApiError = { error: "Not authenticated" }
+      return NextResponse.json(errorResponse, { status: 401 })
+    }
+
+    const token = await getTokenForResearcher(userId)
+
     let params: Record<string, unknown> = {}
     try {
       params = (await req.json()) as Record<string, unknown>
@@ -27,7 +38,7 @@ export async function POST(req: NextRequest): Promise<NextResponse<ArrayBuffer |
       return NextResponse.json(errorResponse, { status: 400 })
     }
 
-    const result = await getResultsData(params)
+    const result = await getResultsData(params, { token })
 
     return new NextResponse(result.data, {
       status: 200,

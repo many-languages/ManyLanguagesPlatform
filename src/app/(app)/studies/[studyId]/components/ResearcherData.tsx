@@ -1,6 +1,7 @@
 import { getResultsMetadata } from "@/src/lib/jatos/api/getResultsMetadata"
 import { getStudyProperties } from "@/src/lib/jatos/api/getStudyProperties"
 import { getStudyParticipantsRsc } from "../../queries/getStudyParticipants"
+import { withStudyAccess } from "../utils/withStudyAccess"
 import StudySummary from "./client/StudySummary"
 import ParticipantManagementCard from "./client/ParticipantManagementCard"
 import ResultsCardWrapper from "./ResultsCardWrapper"
@@ -40,35 +41,46 @@ export default async function ResearcherData({ studyId, study }: ResearcherDataP
   let participants: Awaited<ReturnType<typeof getStudyParticipantsRsc>> = []
   let metadata: Awaited<ReturnType<typeof getResultsMetadata>> | null = null
   let properties: Awaited<ReturnType<typeof getStudyProperties>> | null = null
+  let token: string | null = null
 
   try {
-    const results = await Promise.allSettled([
-      getStudyParticipantsRsc(studyId),
-      getResultsMetadata({ studyIds: [jatosStudyId] }),
-      getStudyProperties(study.jatosStudyUUID),
-    ])
+    const {
+      participants: p,
+      metadata: m,
+      properties: prop,
+      token: t,
+    } = await withStudyAccess(studyId, async (_sId, _uId, tok) => {
+      const [pRes, mRes, propRes] = await Promise.allSettled([
+        getStudyParticipantsRsc(studyId),
+        getResultsMetadata({ studyIds: [jatosStudyId] }, { token: tok }),
+        getStudyProperties(study.jatosStudyUUID, { token: tok }),
+      ])
+      return {
+        participants: pRes.status === "fulfilled" ? pRes.value : [],
+        metadata: mRes.status === "fulfilled" ? mRes.value : null,
+        properties: propRes.status === "fulfilled" ? propRes.value : null,
+        token: tok,
+      }
+    })
+    participants = p
+    metadata = m
+    properties = prop
+    token = t
 
-    // Handle participants result
-    if (results[0].status === "fulfilled") {
-      participants = results[0].value
-    } else {
-      console.error("Failed to fetch participants:", results[0].reason)
-      // Continue with empty array - participants are optional for display
+    // Handle participants - already extracted above
+    if (participants.length === 0 && metadata === null) {
+      console.error("Failed to fetch participants")
     }
 
-    // Handle metadata result
-    if (results[1].status === "fulfilled") {
-      metadata = results[1].value
-    } else {
-      console.error("Failed to fetch results metadata:", results[1].reason)
+    // Handle metadata - already extracted above
+    if (metadata === null) {
+      console.error("Failed to fetch results metadata")
       // Continue without metadata - will show empty summary
     }
 
     // Handle properties result - this is critical, so we need it
-    if (results[2].status === "fulfilled") {
-      properties = results[2].value
-    } else {
-      console.error("Failed to fetch study properties:", results[2].reason)
+    if (properties === null) {
+      console.error("Failed to fetch study properties")
       // Return error alert if properties fail
       return (
         <Alert variant="error" className="mt-4">
@@ -116,6 +128,7 @@ export default async function ResearcherData({ studyId, study }: ResearcherDataP
         metadata={metadata}
         properties={properties}
         studyId={studyId}
+        token={token ?? undefined}
       />
 
       {/* Feedback preview with pilot results */}

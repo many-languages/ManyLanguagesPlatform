@@ -29,7 +29,7 @@ export interface PilotResultsContext {
 // Server-side helper to get all pilot results for a study
 export const getAllPilotResultsRsc = cache(
   async (studyId: number, context?: PilotResultsContext): Promise<EnrichedJatosStudyResult[]> => {
-    return await withStudyAccess(studyId, async (sId, uId) => {
+    return await withStudyAccess(studyId, async (sId, _uId, token) => {
       let jatosStudyId: number
       let markerTokens: Set<string>
 
@@ -71,7 +71,7 @@ export const getAllPilotResultsRsc = cache(
       }
 
       // Get metadata
-      const metadata = await getResultsMetadata({ studyIds: [jatosStudyId] })
+      const metadata = await getResultsMetadata({ studyIds: [jatosStudyId] }, { token })
 
       // Filter for pilot results (comment starts with "pilot:")
       const pilotResults =
@@ -88,7 +88,10 @@ export const getAllPilotResultsRsc = cache(
       const pilotResultIds = pilotResults.map((result: JatosStudyResult) => result.id)
 
       // Get and parse raw data
-      const { data: arrayBuffer } = await getResultsData({ studyResultIds: pilotResultIds })
+      const { data: arrayBuffer } = await getResultsData(
+        { studyResultIds: pilotResultIds },
+        { token }
+      )
       const blob = new Blob([arrayBuffer])
       const files = await parseJatosZip(blob)
 

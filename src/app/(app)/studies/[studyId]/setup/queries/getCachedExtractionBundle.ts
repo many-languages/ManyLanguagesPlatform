@@ -24,7 +24,7 @@ export async function getCachedExtractionBundleRsc(input: {
   studyId: number
   includeDiagnostics?: boolean
 }): Promise<GetCachedExtractionBundleResult> {
-  return withStudyAccess(input.studyId, async () => {
+  return withStudyAccess(input.studyId, async (_sId, _uId, _token) => {
     const study = await db.study.findUnique({
       where: { id: input.studyId },
       select: {

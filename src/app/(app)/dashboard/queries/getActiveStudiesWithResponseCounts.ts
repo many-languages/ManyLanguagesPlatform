@@ -2,6 +2,7 @@ import { Ctx } from "blitz"
 import db from "db"
 import { Prisma } from "db"
 import { getResultsMetadata } from "@/src/lib/jatos/api/getResultsMetadata"
+import { getTokenForResearcher } from "@/src/lib/jatos/getTokenForResearcher"
 import { countNonPilotResponses } from "@/src/lib/jatos/api/studyHasParticipantResponses"
 import type { JatosMetadata } from "@/src/types/jatos"
 
@@ -57,7 +58,8 @@ export async function getActiveStudiesWithResponseCounts(
 
   let metadata: JatosMetadata
   try {
-    metadata = await getResultsMetadata({ studyUuids })
+    const token = await getTokenForResearcher(userId)
+    metadata = await getResultsMetadata({ studyUuids }, { token })
   } catch (error) {
     console.error("Failed to fetch JATOS metadata for active studies:", error)
     return studies.map((s) => ({

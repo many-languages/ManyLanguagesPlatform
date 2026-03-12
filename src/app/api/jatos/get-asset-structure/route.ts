@@ -2,19 +2,21 @@
  * JATOS API Route: Get Asset Structure
  *
  * Fetches the asset structure (file tree) for a JATOS study.
+ * Researcher-only: uses researcher's JIT token.
  *
  * @route GET /api/jatos/get-asset-structure
  * @queryParams studyId (JATOS study ID)
  * @returns Asset structure tree
  */
 import { NextResponse } from "next/server"
+import { getBlitzContext } from "@/src/app/blitz-server"
+import { getTokenForResearcher } from "@/src/lib/jatos/getTokenForResearcher"
 import type { JatosApiError } from "@/src/types/jatos-api"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
 
 const JATOS_BASE = process.env.JATOS_BASE!
-const JATOS_TOKEN = process.env.JATOS_TOKEN!
 
 export async function GET(req: Request): Promise<NextResponse<unknown | JatosApiError>> {
   const { searchParams } = new URL(req.url)
@@ -26,11 +28,20 @@ export async function GET(req: Request): Promise<NextResponse<unknown | JatosApi
   }
 
   try {
+    const { session } = await getBlitzContext()
+    const userId = session.userId
+    if (userId == null) {
+      const errorResponse: JatosApiError = { error: "Not authenticated" }
+      return NextResponse.json(errorResponse, { status: 401 })
+    }
+
+    const token = await getTokenForResearcher(userId)
+
     const res = await fetch(`${JATOS_BASE}/jatos/api/v1/studies/${studyId}/assets/structure`, {
       method: "GET",
       headers: {
         Accept: "application/json",
-        Authorization: `Bearer ${JATOS_TOKEN}`,
+        Authorization: `Bearer ${token}`,
       },
     })
 

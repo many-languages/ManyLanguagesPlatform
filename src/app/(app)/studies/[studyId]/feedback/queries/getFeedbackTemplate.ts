@@ -6,7 +6,7 @@ import { withStudyAccess } from "../../utils/withStudyAccess"
 
 // Server-side helper for RSCs
 export const getFeedbackTemplateRsc = cache(async (studyId: number) => {
-  return withStudyAccess(studyId, async () => {
+  return withStudyAccess(studyId, async (_sId, _uId, _token) => {
     // Get the most recent feedback template for this study
     // If you want to support multiple templates, you can return all of them
     const template = await db.feedbackTemplate.findFirst({

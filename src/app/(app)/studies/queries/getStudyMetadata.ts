@@ -29,18 +29,18 @@ const fetchJatosStudyId = cache(async (studyId: number, userId: number) => {
   return jatosStudyId
 })
 
-const fetchResultsMetadata = cache(async (jatosStudyId: number, userId: number) => {
-  return await getResultsMetadata({ studyIds: [jatosStudyId] })
+const fetchResultsMetadata = cache(async (jatosStudyId: number, _userId: number, token: string) => {
+  return await getResultsMetadata({ studyIds: [jatosStudyId] }, { token })
 })
 
 // Server-side helper for RSCs
 export const getStudyMetadataRsc = async (studyId: number) => {
-  return await withStudyAccess(studyId, async (sId, uId) => {
+  return await withStudyAccess(studyId, async (sId, uId, token) => {
     const jatosStudyId = await fetchJatosStudyId(sId, uId)
 
     if (!jatosStudyId) throw new Error("Study does not have a JATOS ID")
 
-    return await fetchResultsMetadata(jatosStudyId, uId)
+    return await fetchResultsMetadata(jatosStudyId, uId, token)
   })
 }
 

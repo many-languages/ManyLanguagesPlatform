@@ -27,7 +27,7 @@ export async function updateVariableCodebookRsc(input: {
     personalData: boolean
   }>
 }) {
-  return withStudyAccess(input.studyId, async () => {
+  return withStudyAccess(input.studyId, async (_sId, _uId, _token) => {
     const study = await db.study.findUnique({
       where: { id: input.studyId },
       select: {

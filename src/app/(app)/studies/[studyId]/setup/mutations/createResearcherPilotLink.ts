@@ -59,16 +59,19 @@ export default resolver.pipe(
   resolver.authorize("RESEARCHER"),
   async ({ studyId, studyResearcherId, jatosStudyUploadId, jatosRunUrl, markerToken }) => {
     // 3. Use withStudyAccess to ensure the user has general access to the study
-    return await withStudyAccess(studyId, async (verifiedStudyId: number, userId: number) => {
-      // 4. Call the core logic with the trusted userId
-      return await createResearcherPilotLink(
-        verifiedStudyId,
-        studyResearcherId,
-        jatosStudyUploadId,
-        jatosRunUrl,
-        markerToken,
-        userId
-      )
-    })
+    return await withStudyAccess(
+      studyId,
+      async (verifiedStudyId: number, userId: number, _token) => {
+        // 4. Call the core logic with the trusted userId
+        return await createResearcherPilotLink(
+          verifiedStudyId,
+          studyResearcherId,
+          jatosStudyUploadId,
+          jatosRunUrl,
+          markerToken,
+          userId
+        )
+      }
+    )
   }
 )

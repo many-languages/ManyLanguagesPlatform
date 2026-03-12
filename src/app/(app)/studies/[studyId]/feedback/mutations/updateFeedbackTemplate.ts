@@ -23,7 +23,7 @@ export async function updateFeedbackTemplateRsc(input: {
   }
 
   // Verify the user is a researcher on this study
-  return withStudyAccess(existingTemplate.studyId, async () => {
+  return withStudyAccess(existingTemplate.studyId, async (_sId, _uId, _token) => {
     const template = await db.$transaction(async (tx) => {
       await tx.feedbackTemplate.update({
         where: { id: input.id },

@@ -17,14 +17,19 @@ interface ResultsCardWrapperProps {
   metadata: JatosMetadata
   properties: JatosStudyProperties
   studyId: number
+  token?: string
 }
 
 // Cached server-side function to fetch enriched results
 const getEnrichedResultsRsc = cache(
-  async (jatosStudyId: number, metadata: JatosMetadata): Promise<EnrichedJatosStudyResult[]> => {
+  async (
+    jatosStudyId: number,
+    metadata: JatosMetadata,
+    options?: { token?: string }
+  ): Promise<EnrichedJatosStudyResult[]> => {
     try {
       // Fetch ZIP from JATOS (server-side)
-      const result = await getResultsData({ studyIds: jatosStudyId })
+      const result = await getResultsData({ studyIds: jatosStudyId }, options)
 
       if (!result.success) {
         throw new Error("Failed to fetch results from JATOS")
@@ -47,9 +52,10 @@ async function ResultsCardContent({
   metadata,
   properties,
   studyId,
+  token,
 }: ResultsCardWrapperProps) {
   try {
-    const enrichedResults = await getEnrichedResultsRsc(jatosStudyId, metadata)
+    const enrichedResults = await getEnrichedResultsRsc(jatosStudyId, metadata, { token })
 
     return (
       <ResultsCard

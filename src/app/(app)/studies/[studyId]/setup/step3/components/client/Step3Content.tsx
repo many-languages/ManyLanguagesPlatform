@@ -79,6 +79,7 @@ export default function Step3Content({ study }: Step3ContentProps) {
       }
 
       const result = await checkPilotStatusAction({
+        studyId: study.id,
         jatosStudyUUID: study.jatosStudyUUID,
         jatosStudyUploadId,
       })

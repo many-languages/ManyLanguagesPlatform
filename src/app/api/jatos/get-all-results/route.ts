@@ -2,6 +2,7 @@
  * JATOS API Route: Get All Results
  *
  * Fetches all results from JATOS as a ZIP file for specified studies.
+ * Researcher-only: uses researcher's JIT token.
  * Supports both query parameters and JSON body.
  *
  * @route POST /api/jatos/get-all-results
@@ -9,16 +10,26 @@
  * @returns Binary ZIP file with all results
  */
 import { NextRequest, NextResponse } from "next/server"
+import { getBlitzContext } from "@/src/app/blitz-server"
+import { getTokenForResearcher } from "@/src/lib/jatos/getTokenForResearcher"
 import type { JatosApiError } from "@/src/types/jatos-api"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
 
 const JATOS_BASE = process.env.JATOS_BASE
-const JATOS_TOKEN = process.env.JATOS_TOKEN
 
 export async function POST(req: NextRequest): Promise<NextResponse<ArrayBuffer | JatosApiError>> {
   try {
+    const { session } = await getBlitzContext()
+    const userId = session.userId
+    if (userId == null) {
+      const errorResponse: JatosApiError = { error: "Not authenticated" }
+      return NextResponse.json(errorResponse, { status: 401 })
+    }
+
+    const token = await getTokenForResearcher(userId)
+
     // Try to parse JSON body (if present)
     let body: any = {}
     try {
@@ -50,7 +61,7 @@ export async function POST(req: NextRequest): Promise<NextResponse<ArrayBuffer |
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${JATOS_TOKEN}`,
+        Authorization: `Bearer ${token}`,
       },
       body: JSON.stringify(mergedPayload),
     })

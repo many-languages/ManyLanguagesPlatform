@@ -4,6 +4,7 @@ import { z } from "zod"
 import { verifyResearcherStudyAccess } from "../../utils/verifyResearchersStudyAccess"
 import { checkJatosStudyExists } from "@/src/lib/jatos/api/checkJatosStudyExists"
 import { getResultsMetadata } from "@/src/lib/jatos/api/getResultsMetadata"
+import { getTokenForResearcher } from "@/src/lib/jatos/getTokenForResearcher"
 import { hasParticipantResponses } from "@/src/lib/jatos/api/studyHasParticipantResponses"
 import type { JatosStudyResult } from "@/src/types/jatos"
 
@@ -69,7 +70,8 @@ export default resolver.pipe(
     // Block update if study has participant responses (non-pilot, FINISHED)
     if (mode === "update" && existsOnJatos) {
       try {
-        const metadata = await getResultsMetadata({ studyUuids: [trimmed] })
+        const token = await getTokenForResearcher(ctx.session.userId!)
+        const metadata = await getResultsMetadata({ studyUuids: [trimmed] }, { token })
         const studies =
           (metadata as { data?: Array<{ studyResults?: JatosStudyResult[] }> })?.data ?? []
         const hasResponses = studies.some((s) => hasParticipantResponses(s.studyResults ?? []))

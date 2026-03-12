@@ -31,7 +31,7 @@ export interface ValidationData {
  * Fetch all data needed for the debug/validation page
  */
 export const getValidationDataRsc = cache(async (studyId: number): Promise<ValidationData> => {
-  return withStudyAccess(studyId, async () => {
+  return withStudyAccess(studyId, async (_sId, _uId, token) => {
     const study = await db.study.findUnique({
       where: { id: studyId },
       select: {
@@ -75,13 +75,13 @@ export const getValidationDataRsc = cache(async (studyId: number): Promise<Valid
     }
 
     // Fetch metadata
-    const metadata = await getResultsMetadata({ studyIds: [jatosStudyId] })
+    const metadata = await getResultsMetadata({ studyIds: [jatosStudyId] }, { token })
 
     // Fetch pilot results (enriched with data)
     const pilotResults = await getAllPilotResultsRsc(studyId)
 
     // Fetch study properties
-    const properties = await getStudyProperties(study.jatosStudyUUID)
+    const properties = await getStudyProperties(study.jatosStudyUUID, { token })
 
     return {
       metadata,

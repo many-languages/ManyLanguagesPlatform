@@ -1,7 +1,7 @@
 import { fetchStudyAssets } from "./fetchStudyAssets"
 
-export async function fetchHtmlFiles(studyId: number) {
-  const root = await fetchStudyAssets(studyId)
+export async function fetchHtmlFiles(studyId: number, options?: { token?: string }) {
+  const root = await fetchStudyAssets(studyId, options)
   const htmlFiles: { label: string; value: string }[] = []
 
   const traverse = (node: any, path = "") => {

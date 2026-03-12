@@ -1,6 +1,3 @@
-const JATOS_BASE = process.env.JATOS_BASE
-const JATOS_TOKEN = process.env.JATOS_TOKEN
-
 const INT_ID_KEYS = [
   "studyIds",
   "studyResultIds",
@@ -34,8 +31,13 @@ function validateResultIdsParams(params: Record<string, unknown>): void {
  * Fetch raw result data from JATOS (data.txt contents as ZIP).
  * ID params (studyIds, studyResultIds, etc.) must be integers or integer arrays per JATOS spec.
  */
-export async function getResultsData(params: Record<string, unknown>) {
-  if (!JATOS_BASE || !JATOS_TOKEN) {
+export async function getResultsData(
+  params: Record<string, unknown>,
+  options?: { token?: string }
+) {
+  const JATOS_BASE = process.env.JATOS_BASE
+  const token = options?.token ?? process.env.JATOS_TOKEN
+  if (!JATOS_BASE || !token) {
     throw new Error("Missing JATOS_BASE or JATOS_TOKEN environment variables.")
   }
 
@@ -49,7 +51,7 @@ export async function getResultsData(params: Record<string, unknown>) {
     headers: {
       // ✅ Don't force application/json for the response — only for the body
       "Content-Type": "application/json",
-      Authorization: `Bearer ${JATOS_TOKEN}`,
+      Authorization: `Bearer ${token}`,
     },
     body: JSON.stringify(params),
   })

@@ -28,14 +28,16 @@ export async function POST(
     }
 
     const token = await getServiceAccountToken()
-    const codes = await fetchStudyCodes({
-      studyId: jatosStudyId,
-      type: type as "ps" | "pm",
-      amount: 1,
-      batchId: jatosBatchId,
-      comment,
-      token,
-    })
+    const codes = await fetchStudyCodes(
+      {
+        studyId: jatosStudyId,
+        type: type as "ps" | "pm",
+        amount: 1,
+        batchId: jatosBatchId,
+        comment,
+      },
+      { token }
+    )
 
     if (codes.length === 0) {
       const errorResponse: JatosApiError = { error: "No study code found" }

@@ -30,7 +30,7 @@ export async function GET(
     }
 
     const token = await getServiceAccountToken()
-    const codes = await fetchStudyCodes({ studyId, type, amount: 1, token })
+    const codes = await fetchStudyCodes({ studyId, type, amount: 1 }, { token })
 
     if (codes.length === 0) {
       const errorResponse: JatosApiError = { error: "No study code found" }

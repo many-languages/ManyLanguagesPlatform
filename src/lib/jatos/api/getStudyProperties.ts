@@ -1,14 +1,16 @@
 import type { JatosStudyProperties } from "@/src/types/jatos"
 
-const JATOS_BASE = process.env.JATOS_BASE!
-const JATOS_TOKEN = process.env.JATOS_TOKEN!
-
 /**
  * Fetches JATOS study properties (server-side utility).
  * Returns the `data` field only, excluding `apiVersion`.
  */
-export async function getStudyProperties(studyId: string): Promise<JatosStudyProperties> {
-  if (!JATOS_BASE || !JATOS_TOKEN) {
+export async function getStudyProperties(
+  studyId: string,
+  options?: { token?: string }
+): Promise<JatosStudyProperties> {
+  const JATOS_BASE = process.env.JATOS_BASE
+  const token = options?.token ?? process.env.JATOS_TOKEN
+  if (!JATOS_BASE || !token) {
     throw new Error("Missing JATOS_BASE or JATOS_TOKEN environment variables.")
   }
 
@@ -18,7 +20,7 @@ export async function getStudyProperties(studyId: string): Promise<JatosStudyPro
     method: "GET",
     headers: {
       Accept: "application/json",
-      Authorization: `Bearer ${JATOS_TOKEN}`,
+      Authorization: `Bearer ${token}`,
     },
     cache: "no-store",
   })

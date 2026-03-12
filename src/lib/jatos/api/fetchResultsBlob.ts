@@ -17,13 +17,21 @@
  * Fetches results data as a blob from JATOS API.
  *
  * @param jatosStudyId - The JATOS study ID to fetch results for
+ * @param options - optional token for JATOS API auth
  * @returns Blob containing the results ZIP file
  * @throws Error if fetch fails
  */
-export async function fetchResultsBlob(jatosStudyId: number): Promise<Blob> {
+export async function fetchResultsBlob(
+  jatosStudyId: number,
+  options?: { token?: string }
+): Promise<Blob> {
+  const headers: Record<string, string> = { "Content-Type": "application/json" }
+  if (options?.token) {
+    headers.Authorization = `Bearer ${options.token}`
+  }
   const res = await fetch("/api/jatos/get-results-data", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers,
     body: JSON.stringify({ studyIds: jatosStudyId }),
   })
 

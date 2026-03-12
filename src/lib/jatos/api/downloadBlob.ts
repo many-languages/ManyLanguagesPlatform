@@ -17,20 +17,34 @@
 
 import type { JatosApiError } from "@/src/types/jatos-api"
 
+export interface DownloadBlobOptions extends Omit<RequestInit, "headers"> {
+  token?: string
+  headers?: HeadersInit
+}
+
 /**
  * Downloads a binary file from an API endpoint and triggers browser download.
  *
  * @param url - Full URL to fetch (including /api/jatos prefix if needed)
  * @param filename - Suggested filename for download
- * @param options - Optional fetch options
+ * @param options - Optional fetch options and token for JATOS API auth
  * @throws Error if download fails
  */
 export async function downloadBlob(
   url: string,
   filename: string,
-  options?: RequestInit
+  options?: DownloadBlobOptions
 ): Promise<void> {
-  const res = await fetch(url, options)
+  const { token, headers: customHeaders, ...restOptions } = options ?? {}
+  const headers: Record<string, string> = { ...(customHeaders as Record<string, string>) }
+  if (token) {
+    headers.Authorization = `Bearer ${token}`
+  }
+  const fetchOptions: RequestInit = {
+    ...restOptions,
+    ...(Object.keys(headers).length > 0 && { headers }),
+  }
+  const res = await fetch(url, fetchOptions)
 
   if (!res.ok) {
     // Try to parse error response

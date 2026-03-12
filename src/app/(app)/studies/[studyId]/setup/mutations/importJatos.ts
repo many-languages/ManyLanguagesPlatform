@@ -3,6 +3,7 @@ import db from "db"
 import { ImportJatosSchema } from "../../../validations"
 import { verifyResearcherStudyAccess } from "../../utils/verifyResearchersStudyAccess"
 import { deriveStep1Completed } from "../utils/deriveStep1Completed"
+import { ensureResearcherJatosMember } from "@/src/lib/jatos/provisioning/ensureResearcherJatosMember"
 
 export default resolver.pipe(
   resolver.zod(ImportJatosSchema),
@@ -101,6 +102,14 @@ export default resolver.pipe(
 
         return { study, upload }
       })
+
+      // Sync JATOS membership for all researchers on this study (outside transaction)
+      const researchers = await db.studyResearcher.findMany({
+        where: { studyId },
+        select: { userId: true },
+      })
+
+      await Promise.all(researchers.map((r) => ensureResearcherJatosMember(r.userId, jatosStudyId)))
 
       return { study: result.study, latestUpload: result.upload }
     } catch (e: any) {

@@ -19,7 +19,7 @@ export default resolver.pipe(
     } = input
 
     // Authorization check
-    await verifyResearcherStudyAccess(studyId)
+    await verifyResearcherStudyAccess(studyId, ctx.session.userId!)
 
     try {
       const result = await db.$transaction(async (tx) => {

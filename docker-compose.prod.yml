@@ -35,6 +35,8 @@ services:
         npx prisma generate &&
         echo 'Running database migrations...' &&
         npx prisma migrate deploy &&
+        echo 'Ensuring JATOS service account...' &&
+        npx tsx scripts/ensure-service-account.ts &&
         echo '✅ Migrations completed successfully!' &&
         echo 'Starting production server...' &&
         npm start

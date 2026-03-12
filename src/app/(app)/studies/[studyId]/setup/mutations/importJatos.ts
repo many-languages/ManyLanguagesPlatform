@@ -3,7 +3,9 @@ import db from "db"
 import { ImportJatosSchema } from "../../../validations"
 import { verifyResearcherStudyAccess } from "../../utils/verifyResearchersStudyAccess"
 import { deriveStep1Completed } from "../utils/deriveStep1Completed"
+import { addStudyMember } from "@/src/lib/jatos/api/admin/addStudyMember"
 import { ensureResearcherJatosMember } from "@/src/lib/jatos/provisioning/ensureResearcherJatosMember"
+import { getServiceAccountJatosUserId } from "@/src/lib/jatos/serviceAccount"
 
 export default resolver.pipe(
   resolver.zod(ImportJatosSchema),
@@ -110,6 +112,15 @@ export default resolver.pipe(
       })
 
       await Promise.all(researchers.map((r) => ensureResearcherJatosMember(r.userId, jatosStudyId)))
+
+      const jatosUserId = await getServiceAccountJatosUserId()
+      if (jatosUserId != null) {
+        await addStudyMember({
+          studyId: jatosStudyId,
+          userId: jatosUserId,
+          // role: "READER" — when JATOS supports it
+        })
+      }
 
       return { study: result.study, latestUpload: result.upload }
     } catch (e: any) {

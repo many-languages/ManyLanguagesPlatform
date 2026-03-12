@@ -10,6 +10,7 @@
  */
 import { NextResponse } from "next/server"
 import { fetchStudyCodes, FetchStudyCodesError } from "@/src/lib/jatos/api/fetchStudyCodes"
+import { getServiceAccountToken } from "@/src/lib/jatos/serviceAccount"
 import type { GetStudyCodeResponse, JatosApiError } from "@/src/types/jatos-api"
 
 export const runtime = "nodejs"
@@ -28,7 +29,8 @@ export async function GET(
       return NextResponse.json(errorResponse, { status: 400 })
     }
 
-    const codes = await fetchStudyCodes({ studyId, type, amount: 1 })
+    const token = await getServiceAccountToken()
+    const codes = await fetchStudyCodes({ studyId, type, amount: 1, token })
 
     if (codes.length === 0) {
       const errorResponse: JatosApiError = { error: "No study code found" }

@@ -203,6 +203,8 @@ services:
         npx prisma generate &&
         echo 'Running database migrations...' &&
         npx prisma migrate deploy &&
+        echo 'Ensuring JATOS service account...' &&
+        npx tsx scripts/ensure-service-account.ts &&
         echo '✅ Migrations completed successfully!' &&
         echo "DATABASE_URL is set to: postgresql://${POSTGRES_USER:-blitz}:***@postgres:5432/${POSTGRES_DB:-manylanguagesplatform}" &&
         echo 'Starting development server...' &&

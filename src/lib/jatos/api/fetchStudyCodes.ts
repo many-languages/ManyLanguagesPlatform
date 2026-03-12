@@ -1,5 +1,4 @@
 const JATOS_BASE = process.env.JATOS_BASE!
-const JATOS_TOKEN = process.env.JATOS_TOKEN!
 
 export class FetchStudyCodesError extends Error {
   constructor(message: string, public readonly status: number) {
@@ -14,6 +13,7 @@ export interface FetchStudyCodesParams {
   amount?: number
   batchId?: number
   comment?: string
+  token?: string
 }
 
 /**
@@ -25,9 +25,10 @@ export interface FetchStudyCodesParams {
  * @throws Error on JATOS API errors or invalid response
  */
 export async function fetchStudyCodes(params: FetchStudyCodesParams): Promise<string[]> {
-  const { studyId, type, amount = 1, batchId, comment } = params
+  const { studyId, type, amount = 1, batchId, comment, token } = params
 
-  if (!JATOS_BASE || !JATOS_TOKEN) {
+  const authToken = token ?? process.env.JATOS_TOKEN
+  if (!JATOS_BASE || !authToken) {
     throw new Error("Missing JATOS_BASE or JATOS_TOKEN environment variables.")
   }
 
@@ -45,7 +46,7 @@ export async function fetchStudyCodes(params: FetchStudyCodesParams): Promise<st
       headers: {
         "Content-Type": "application/json",
         Accept: "application/json",
-        Authorization: `Bearer ${JATOS_TOKEN}`,
+        Authorization: `Bearer ${authToken}`,
       },
       body: JSON.stringify(body),
       cache: "no-store",

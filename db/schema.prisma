@@ -10,6 +10,11 @@ generator client {
   provider = "prisma-client-js"
 }
 
+model SystemConfig {
+  key   String @id
+  value String
+}
+
 // --------------------------------------
 
 enum UserRole {

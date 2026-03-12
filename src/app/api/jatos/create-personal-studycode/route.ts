@@ -11,6 +11,7 @@
  */
 import { NextResponse } from "next/server"
 import { fetchStudyCodes, FetchStudyCodesError } from "@/src/lib/jatos/api/fetchStudyCodes"
+import { getServiceAccountToken } from "@/src/lib/jatos/serviceAccount"
 import type { CreatePersonalStudyCodeResponse, JatosApiError } from "@/src/types/jatos-api"
 
 export const runtime = "nodejs"
@@ -26,12 +27,14 @@ export async function POST(
       return NextResponse.json({ error: "Missing required field: jatosStudyId" }, { status: 400 })
     }
 
+    const token = await getServiceAccountToken()
     const codes = await fetchStudyCodes({
       studyId: jatosStudyId,
       type: type as "ps" | "pm",
       amount: 1,
       batchId: jatosBatchId,
       comment,
+      token,
     })
 
     if (codes.length === 0) {

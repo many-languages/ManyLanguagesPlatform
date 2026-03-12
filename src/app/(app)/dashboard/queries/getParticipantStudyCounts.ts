@@ -2,6 +2,7 @@ import { Ctx } from "blitz"
 import db from "db"
 import { getResultsMetadata } from "@/src/lib/jatos/api/getResultsMetadata"
 import { hasCompletedStudy } from "@/src/lib/jatos/api/findStudyResultIdByComment"
+import { getServiceAccountToken } from "@/src/lib/jatos/serviceAccount"
 
 export type ParticipantStudyCounts = {
   all: number
@@ -47,7 +48,8 @@ export async function getParticipantStudyCounts(userId: number): Promise<Partici
   let metadata: Awaited<ReturnType<typeof getResultsMetadata>> | null = null
   try {
     if (jatosStudyIds.length > 0) {
-      metadata = await getResultsMetadata({ studyIds: jatosStudyIds })
+      const token = await getServiceAccountToken()
+      metadata = await getResultsMetadata({ studyIds: jatosStudyIds }, { token })
     }
   } catch (error) {
     console.error("JATOS metadata fetch failed for participant study counts:", error)

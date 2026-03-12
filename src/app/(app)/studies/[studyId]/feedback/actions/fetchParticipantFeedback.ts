@@ -1,12 +1,12 @@
 "use server"
 
 import { getParticipantPseudonymRsc } from "../../../queries/getParticipantPseudonym"
-import { getStudyDataByCommentRsc } from "../../../queries/getStudyDataByComment"
 import { findStudyResultIdByComment } from "@/src/lib/jatos/api/findStudyResultIdByComment"
 import { getResultsMetadata } from "@/src/lib/jatos/api/getResultsMetadata"
 import { getResultsData } from "@/src/lib/jatos/api/getResultsData"
 import { parseJatosZip } from "@/src/lib/jatos/api/parseJatosZip"
 import { matchJatosDataToMetadata } from "@/src/lib/jatos/api/matchJatosDataToMetadata"
+import { getServiceAccountToken } from "@/src/lib/jatos/serviceAccount"
 import type { EnrichedJatosStudyResult } from "@/src/types/jatos"
 
 export async function fetchParticipantFeedbackAction(
@@ -36,8 +36,10 @@ export async function fetchParticipantFeedbackAction(
       }
     }
 
+    const token = await getServiceAccountToken()
+
     // Get metadata to check if results exist
-    const metadata = await getResultsMetadata({ studyIds: [jatosStudyId] })
+    const metadata = await getResultsMetadata({ studyIds: [jatosStudyId] }, { token })
 
     // Check if results exist for this participant's pseudonym
     const resultId = findStudyResultIdByComment(metadata, pseudonym)
@@ -55,11 +57,14 @@ export async function fetchParticipantFeedbackAction(
       }
     }
 
-    // Results exist, fetch the complete feedback data
+    // Results exist, fetch the complete feedback data (participant flow uses service account token)
     let enrichedResult: EnrichedJatosStudyResult | null = null
     try {
-      const result = await getStudyDataByCommentRsc(studyId, pseudonym)
-      enrichedResult = result.enrichedResult ?? null
+      const { data: arrayBuffer } = await getResultsData({ studyResultIds: resultId }, { token })
+      const blob = new Blob([arrayBuffer])
+      const files = await parseJatosZip(blob)
+      const enriched = matchJatosDataToMetadata(metadata, files)
+      enrichedResult = enriched.find((r) => r.id === resultId) ?? null
     } catch (error) {
       // This shouldn't happen if resultId exists, but handle gracefully
       console.error("Error fetching enriched result:", error)
@@ -71,7 +76,7 @@ export async function fetchParticipantFeedbackAction(
     }
 
     // Get all enriched results for "across" scope statistics
-    const allResultsResult = await getResultsData({ studyIds: jatosStudyId })
+    const allResultsResult = await getResultsData({ studyIds: jatosStudyId }, { token })
     let allEnrichedResults: EnrichedJatosStudyResult[] = []
 
     if (allResultsResult.success) {

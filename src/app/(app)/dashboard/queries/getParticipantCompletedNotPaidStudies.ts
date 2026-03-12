@@ -5,6 +5,7 @@ import {
   hasCompletedStudy,
   findStudyResultByPseudonym,
 } from "@/src/lib/jatos/api/findStudyResultIdByComment"
+import { getServiceAccountToken } from "@/src/lib/jatos/serviceAccount"
 
 export type ParticipantCompletedNotPaidStudy = {
   id: number
@@ -52,7 +53,8 @@ export async function getParticipantCompletedNotPaidStudies(
   let metadata: Awaited<ReturnType<typeof getResultsMetadata>> | null = null
   try {
     if (jatosStudyIds.length > 0) {
-      metadata = await getResultsMetadata({ studyIds: jatosStudyIds })
+      const token = await getServiceAccountToken()
+      metadata = await getResultsMetadata({ studyIds: jatosStudyIds }, { token })
     }
   } catch (error) {
     console.error("JATOS metadata fetch failed for completed-not-paid studies:", error)

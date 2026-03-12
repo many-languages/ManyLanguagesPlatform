@@ -3,6 +3,7 @@
 import { getParticipantPseudonymRsc } from "../../../queries/getParticipantPseudonym"
 import { findStudyResultIdByComment } from "@/src/lib/jatos/api/findStudyResultIdByComment"
 import { getResultsMetadata } from "@/src/lib/jatos/api/getResultsMetadata"
+import { getServiceAccountToken } from "@/src/lib/jatos/serviceAccount"
 
 /**
  * Lightweight action to check if participant has completed the study.
@@ -33,7 +34,8 @@ export async function checkParticipantCompletionAction(
     }
 
     // Get metadata to check if results exist (lightweight - no ZIP download)
-    const metadata = await getResultsMetadata({ studyIds: [jatosStudyId] })
+    const token = await getServiceAccountToken()
+    const metadata = await getResultsMetadata({ studyIds: [jatosStudyId] }, { token })
 
     // Check if results exist for this participant's pseudonym
     const resultId = findStudyResultIdByComment(metadata, pseudonym)

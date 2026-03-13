@@ -2,12 +2,19 @@ import JSZip from "jszip"
 
 /**
  * Parse a ZIP archive returned by JATOS /results/data endpoint.
- * Accepts either a Blob (from fetch) or an ArrayBuffer.
+ * Accepts Blob, ArrayBuffer, or Node Buffer.
  * Returns an array of { filename, content } objects.
  */
-export async function parseJatosZip(rawData: Blob | ArrayBuffer) {
-  // Normalize input
-  const arrayBuffer = rawData instanceof Blob ? await rawData.arrayBuffer() : rawData
+export async function parseJatosZip(rawData: Blob | ArrayBuffer | Buffer) {
+  // Normalize input to ArrayBuffer
+  let arrayBuffer: ArrayBuffer
+  if (rawData instanceof Blob) {
+    arrayBuffer = await rawData.arrayBuffer()
+  } else if (Buffer.isBuffer(rawData)) {
+    arrayBuffer = rawData.buffer.slice(rawData.byteOffset, rawData.byteOffset + rawData.byteLength)
+  } else {
+    arrayBuffer = rawData
+  }
 
   // Load ZIP into memory
   const zip = await JSZip.loadAsync(arrayBuffer)

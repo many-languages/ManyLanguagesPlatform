@@ -84,6 +84,82 @@ async function getStudyJatosInfo(studyId: number): Promise<{
   return { jatosStudyId: upload.jatosStudyId, jatosStudyUUID: study.jatosStudyUUID }
 }
 
+async function withResearcherToken<T>(
+  input: { studyId: number; userId: number },
+  callback: (ctx: { studyId: number; userId: number; token: string }) => Promise<T>
+): Promise<T> {
+  await assertResearcherCanAccessStudy(input)
+  const token = await getTokenForResearcher(input.userId)
+  return callback({ ...input, token })
+}
+
+async function withParticipantToken<T>(
+  input: {
+    studyId: number
+    pseudonym: string
+    userId: number
+    jatosStudyId: number
+  },
+  callback: (ctx: {
+    studyId: number
+    pseudonym: string
+    userId: number
+    jatosStudyId: number
+    token: string
+  }) => Promise<T>
+): Promise<T> {
+  await assertParticipantCanAccessStudy({
+    studyId: input.studyId,
+    pseudonym: input.pseudonym,
+    userId: input.userId,
+  })
+  const token = await getTokenForStudyService(input.jatosStudyId)
+  return callback({ ...input, token })
+}
+
+/**
+ * Shared JATOS flow for creating a personal study code and saving the run URL.
+ * Access checks and token selection are done by the caller (via withParticipantToken / withResearcherToken).
+ */
+async function createPersonalStudyCodeInternal(input: {
+  token: string
+  jatosStudyId: number
+  jatosBatchId?: number
+  type: "ps" | "pm"
+  comment: string
+  onSave: (runUrl: string) => Promise<void>
+}): Promise<string> {
+  const codes = await fetchStudyCodes(
+    {
+      studyId: input.jatosStudyId,
+      type: input.type,
+      amount: 1,
+      batchId: input.jatosBatchId,
+      comment: input.comment,
+    },
+    { token: input.token }
+  )
+  if (codes.length === 0) throw new Error("No study code found")
+  const runUrl = generateJatosRunUrl(codes[0])
+  await input.onSave(runUrl)
+  return runUrl
+}
+
+/**
+ * Fetches ZIP from JATOS, parses it, and enriches with metadata.
+ * Caller fetches metadata separately — some callers already have it or need filtered/validated metadata.
+ */
+async function fetchZipParseAndEnrich(input: {
+  metadata: JatosMetadata
+  token: string
+  getResultsParams: Record<string, unknown>
+}): Promise<EnrichedJatosStudyResult[]> {
+  const result = await getResultsData(input.getResultsParams, { token: input.token })
+  if (!result.success) throw new Error("Failed to fetch results from JATOS")
+  const files = await parseJatosZip(result.data)
+  return matchJatosDataToMetadata(input.metadata, files)
+}
+
 // --- Public use-case methods ---
 
 export async function getResultsMetadataForResearcher({
@@ -97,17 +173,17 @@ export async function getResultsMetadataForResearcher({
   studyIds?: number[]
   studyUuids?: string[]
 }) {
-  await assertResearcherCanAccessStudy({ studyId, userId })
-  const token = await getTokenForResearcher(userId)
-  const params: Record<string, unknown> = {}
-  if (studyIds?.length) params.studyIds = studyIds
-  if (studyUuids?.length) params.studyUuids = studyUuids
-  if (Object.keys(params).length === 0) {
-    const info = await getStudyJatosInfo(studyId)
-    if (!info) throw new Error("Study does not have JATOS ID")
-    params.studyIds = [info.jatosStudyId]
-  }
-  return getResultsMetadata(params, { token })
+  return withResearcherToken({ studyId, userId }, async ({ studyId, token }) => {
+    const params: Record<string, unknown> = {}
+    if (studyIds?.length) params.studyIds = studyIds
+    if (studyUuids?.length) params.studyUuids = studyUuids
+    if (Object.keys(params).length === 0) {
+      const info = await getStudyJatosInfo(studyId)
+      if (!info) throw new Error("Study does not have JATOS ID")
+      params.studyIds = [info.jatosStudyId]
+    }
+    return getResultsMetadata(params, { token })
+  })
 }
 
 /**
@@ -169,11 +245,14 @@ export async function checkParticipantCompletionForParticipant({
   userId: number
 }): Promise<{ success: boolean; completed: boolean; error?: string }> {
   try {
-    await assertParticipantCanAccessStudy({ studyId, pseudonym, userId })
-    const token = await getTokenForStudyService(jatosStudyId)
-    const metadata = await getResultsMetadata({ studyIds: [jatosStudyId] }, { token })
-    const resultId = findStudyResultIdByComment(metadata, pseudonym)
-    return { success: true, completed: resultId !== null }
+    return await withParticipantToken(
+      { studyId, pseudonym, userId, jatosStudyId },
+      async ({ jatosStudyId, pseudonym, token }) => {
+        const metadata = await getResultsMetadata({ studyIds: [jatosStudyId] }, { token })
+        const resultId = findStudyResultIdByComment(metadata, pseudonym)
+        return { success: true, completed: resultId !== null }
+      }
+    )
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to check completion"
     return { success: false, completed: false, error: message }
@@ -189,11 +268,11 @@ export async function getStudyPropertiesForResearcher({
   userId: number
   jatosStudyUUID?: string
 }): Promise<JatosStudyProperties> {
-  await assertResearcherCanAccessStudy({ studyId, userId })
-  const token = await getTokenForResearcher(userId)
-  const uuid = jatosStudyUUID ?? (await getStudyJatosInfo(studyId))?.jatosStudyUUID
-  if (!uuid) throw new Error("Study does not have JATOS UUID")
-  return getStudyProperties(uuid, { token })
+  return withResearcherToken({ studyId, userId }, async ({ studyId, token }) => {
+    const uuid = jatosStudyUUID ?? (await getStudyJatosInfo(studyId))?.jatosStudyUUID
+    if (!uuid) throw new Error("Study does not have JATOS UUID")
+    return getStudyProperties(uuid, { token })
+  })
 }
 
 export async function getBatchIdForResearcher({
@@ -232,47 +311,51 @@ export async function getParticipantFeedback({
   }
   error?: string
 }> {
-  await assertParticipantCanAccessStudy({ studyId, pseudonym, userId })
+  return withParticipantToken(
+    { studyId, pseudonym, userId, jatosStudyId },
+    async ({ jatosStudyId, pseudonym, token }) => {
+      const metadata = await getResultsMetadata({ studyIds: [jatosStudyId] }, { token })
+      const resultId = findStudyResultIdByComment(metadata, pseudonym)
+      const completed = resultId !== null
 
-  const token = await getTokenForStudyService(jatosStudyId)
-  const metadata = await getResultsMetadata({ studyIds: [jatosStudyId] }, { token })
-  const resultId = findStudyResultIdByComment(metadata, pseudonym)
-  const completed = resultId !== null
+      if (!completed) {
+        return {
+          success: true,
+          completed: false,
+          data: { enrichedResult: null, allEnrichedResults: [] },
+        }
+      }
 
-  if (!completed) {
-    return {
-      success: true,
-      completed: false,
-      data: { enrichedResult: null, allEnrichedResults: [] },
+      let enrichedResult: EnrichedJatosStudyResult | null = null
+      try {
+        const enriched = await fetchZipParseAndEnrich({
+          metadata,
+          token,
+          getResultsParams: { studyResultIds: resultId },
+        })
+        enrichedResult = enriched.find((r) => r.id === resultId) ?? null
+      } catch (error) {
+        console.error("Error fetching enriched result:", error)
+        return {
+          success: false,
+          completed: true,
+          error: "Failed to fetch participant results",
+        }
+      }
+
+      const allEnrichedResults = await fetchZipParseAndEnrich({
+        metadata,
+        token,
+        getResultsParams: { studyIds: jatosStudyId },
+      })
+
+      return {
+        success: true,
+        completed: true,
+        data: { enrichedResult, allEnrichedResults },
+      }
     }
-  }
-
-  let enrichedResult: EnrichedJatosStudyResult | null = null
-  try {
-    const { data: arrayBuffer } = await getResultsData({ studyResultIds: resultId }, { token })
-    const blob = new Blob([arrayBuffer])
-    const files = await parseJatosZip(blob)
-    const enriched = matchJatosDataToMetadata(metadata, files)
-    enrichedResult = enriched.find((r) => r.id === resultId) ?? null
-  } catch (error) {
-    console.error("Error fetching enriched result:", error)
-    return {
-      success: false,
-      completed: true,
-      error: "Failed to fetch participant results",
-    }
-  }
-
-  // getResultsData throws on failure; on success always returns { success: true, data, contentType }
-  const allResultsResult = await getResultsData({ studyIds: jatosStudyId }, { token })
-  const files = await parseJatosZip(allResultsResult.data)
-  const allEnrichedResults = matchJatosDataToMetadata(metadata, files)
-
-  return {
-    success: true,
-    completed: true,
-    data: { enrichedResult, allEnrichedResults },
-  }
+  )
 }
 
 export async function createPersonalStudyCodeForParticipant({
@@ -292,16 +375,18 @@ export async function createPersonalStudyCodeForParticipant({
   comment: string
   onSave: (runUrl: string) => Promise<void>
 }): Promise<string> {
-  await assertParticipantCanAccessStudy({ studyId, pseudonym: comment, userId })
-  const token = await getTokenForStudyService(jatosStudyId)
-  const codes = await fetchStudyCodes(
-    { studyId: jatosStudyId, type, amount: 1, batchId: jatosBatchId, comment },
-    { token }
+  return withParticipantToken(
+    { studyId, pseudonym: comment, userId, jatosStudyId },
+    async ({ jatosStudyId, token }) =>
+      createPersonalStudyCodeInternal({
+        token,
+        jatosStudyId,
+        jatosBatchId,
+        type,
+        comment,
+        onSave,
+      })
   )
-  if (codes.length === 0) throw new Error("No study code found")
-  const runUrl = generateJatosRunUrl(codes[0])
-  await onSave(runUrl)
-  return runUrl
 }
 
 export async function createPersonalStudyCodeForResearcher({
@@ -321,16 +406,16 @@ export async function createPersonalStudyCodeForResearcher({
   comment: string
   onSave: (runUrl: string) => Promise<void>
 }): Promise<string> {
-  await assertResearcherCanAccessStudy({ studyId, userId })
-  const token = await getTokenForResearcher(userId)
-  const codes = await fetchStudyCodes(
-    { studyId: jatosStudyId, type, amount: 1, batchId: jatosBatchId, comment },
-    { token }
+  return withResearcherToken({ studyId, userId }, async ({ token }) =>
+    createPersonalStudyCodeInternal({
+      token,
+      jatosStudyId,
+      jatosBatchId,
+      type,
+      comment,
+      onSave,
+    })
   )
-  if (codes.length === 0) throw new Error("No study code found")
-  const runUrl = generateJatosRunUrl(codes[0])
-  await onSave(runUrl)
-  return runUrl
 }
 
 export type DownloadPayload = {
@@ -346,21 +431,21 @@ export async function downloadAllResultsForResearcher({
   studyId: number
   userId: number
 }): Promise<DownloadPayload> {
-  await assertResearcherCanAccessStudy({ studyId, userId })
-  const info = await getStudyJatosInfo(studyId)
-  if (!info) throw new Error("Study does not have JATOS ID")
+  return withResearcherToken({ studyId, userId }, async ({ studyId, token }) => {
+    const info = await getStudyJatosInfo(studyId)
+    if (!info) throw new Error("Study does not have JATOS ID")
 
-  const token = await getTokenForResearcher(userId)
-  const result = await getResultsData({ studyIds: [info.jatosStudyId] }, { token })
-  if (!result.success) throw new Error("Failed to fetch results from JATOS")
+    const result = await getResultsData({ studyIds: [info.jatosStudyId] }, { token })
+    if (!result.success) throw new Error("Failed to fetch results from JATOS")
 
-  const buffer = Buffer.from(result.data)
-  const base64 = buffer.toString("base64")
-  return {
-    filename: `study_${info.jatosStudyId}_results.zip`,
-    mimeType: result.contentType || "application/zip",
-    base64,
-  }
+    const buffer = Buffer.from(result.data)
+    const base64 = buffer.toString("base64")
+    return {
+      filename: `study_${info.jatosStudyId}_results.zip`,
+      mimeType: result.contentType || "application/zip",
+      base64,
+    }
+  })
 }
 
 export async function getGeneralLinksForResearcher({
@@ -382,25 +467,25 @@ export async function getGeneralLinksForResearcher({
   baseRunUrl: string
   links: { participantId: number; pseudonym: string; runUrl: string }[]
 }> {
-  await assertResearcherCanAccessStudy({ studyId, userId })
-  const token = await getTokenForResearcher(userId)
-  const codes = await fetchStudyCodes({ studyId: jatosStudyId, type, amount: 1 }, { token })
-  if (codes.length === 0) throw new Error("No general study code found")
+  return withResearcherToken({ studyId, userId }, async ({ token }) => {
+    const codes = await fetchStudyCodes({ studyId: jatosStudyId, type, amount: 1 }, { token })
+    if (codes.length === 0) throw new Error("No general study code found")
 
-  const baseRunUrl = generateJatosRunUrl(codes[0])
-  const links = participants.map((p) => ({
-    participantId: p.id,
-    pseudonym: p.pseudonym,
-    runUrl: `${baseRunUrl}?participantId=${encodeURIComponent(p.pseudonym)}`,
-  }))
+    const baseRunUrl = generateJatosRunUrl(codes[0])
+    const links = participants.map((p) => ({
+      participantId: p.id,
+      pseudonym: p.pseudonym,
+      runUrl: `${baseRunUrl}?participantId=${encodeURIComponent(p.pseudonym)}`,
+    }))
 
-  return {
-    type,
-    studyId,
-    baseCode: codes[0],
-    baseRunUrl,
-    links,
-  }
+    return {
+      type,
+      studyId,
+      baseCode: codes[0],
+      baseRunUrl,
+      links,
+    }
+  })
 }
 
 export async function getEnrichedResultsForResearcher({
@@ -412,13 +497,14 @@ export async function getEnrichedResultsForResearcher({
   userId: number
   jatosStudyId: number
 }): Promise<EnrichedJatosStudyResult[]> {
-  await assertResearcherCanAccessStudy({ studyId, userId })
-  const token = await getTokenForResearcher(userId)
-  const metadata = await getResultsMetadata({ studyIds: [jatosStudyId] }, { token })
-  const result = await getResultsData({ studyIds: [jatosStudyId] }, { token })
-  if (!result.success) throw new Error("Failed to fetch results from JATOS")
-  const files = await parseJatosZip(result.data)
-  return matchJatosDataToMetadata(metadata, files)
+  return withResearcherToken({ studyId, userId }, async ({ token }) => {
+    const metadata = await getResultsMetadata({ studyIds: [jatosStudyId] }, { token })
+    return fetchZipParseAndEnrich({
+      metadata,
+      token,
+      getResultsParams: { studyIds: [jatosStudyId] },
+    })
+  })
 }
 
 export async function getHtmlFilesForResearcher({
@@ -430,11 +516,11 @@ export async function getHtmlFilesForResearcher({
   userId: number
   jatosStudyId: number
 }): Promise<{ label: string; value: string }[]> {
-  await assertResearcherCanAccessStudy({ studyId, userId })
-  const token = await getTokenForResearcher(userId)
-  const response = await getAssetStructure(jatosStudyId, { token })
-  const root = (response as { data?: AssetNode })?.data ?? response
-  return extractHtmlFilesFromStructure(root as AssetNode)
+  return withResearcherToken({ studyId, userId }, async ({ token }) => {
+    const response = await getAssetStructure(jatosStudyId, { token })
+    const root = (response as { data?: AssetNode })?.data ?? response
+    return extractHtmlFilesFromStructure(root as AssetNode)
+  })
 }
 
 export async function getStudyDataByCommentForResearcher({
@@ -446,22 +532,23 @@ export async function getStudyDataByCommentForResearcher({
   userId: number
   comment: string
 }) {
-  await assertResearcherCanAccessStudy({ studyId, userId })
-  const info = await getStudyJatosInfo(studyId)
-  if (!info) throw new Error("Study does not have JATOS ID")
+  return withResearcherToken({ studyId, userId }, async ({ studyId, token }) => {
+    const info = await getStudyJatosInfo(studyId)
+    if (!info) throw new Error("Study does not have JATOS ID")
 
-  const token = await getTokenForResearcher(userId)
-  const metadata = await getResultsMetadata({ studyIds: [info.jatosStudyId] }, { token })
-  const studyResultId = findStudyResultIdByComment(metadata, comment)
-  if (!studyResultId) throw new Error(`No result found with comment "${comment}"`)
+    const metadata = await getResultsMetadata({ studyIds: [info.jatosStudyId] }, { token })
+    const studyResultId = findStudyResultIdByComment(metadata, comment)
+    if (!studyResultId) throw new Error(`No result found with comment "${comment}"`)
 
-  const { data: arrayBuffer } = await getResultsData({ studyResultIds: studyResultId }, { token })
-  const blob = new Blob([arrayBuffer])
-  const files = await parseJatosZip(blob)
-  const enriched = matchJatosDataToMetadata(metadata, files)
-  const result = enriched.find((r) => r.id === studyResultId)
+    const enriched = await fetchZipParseAndEnrich({
+      metadata,
+      token,
+      getResultsParams: { studyResultIds: studyResultId },
+    })
+    const result = enriched.find((r) => r.id === studyResultId)
 
-  return { studyResultId, metadata, enrichedResult: result }
+    return { studyResultId, metadata, enrichedResult: result }
+  })
 }
 
 export interface PilotResultsContext {
@@ -478,59 +565,61 @@ export async function getAllPilotResultsForResearcher({
   userId: number
   context?: PilotResultsContext
 }): Promise<EnrichedJatosStudyResult[]> {
-  await assertResearcherCanAccessStudy({ studyId, userId })
+  return withResearcherToken({ studyId, userId }, async ({ studyId, token }) => {
+    let jatosStudyId: number
+    let markerTokens: Set<string>
 
-  let jatosStudyId: number
-  let markerTokens: Set<string>
-
-  if (context) {
-    jatosStudyId = context.jatosStudyId
-    markerTokens = new Set(context.markerTokens)
-  } else {
-    const study = await db.study.findUnique({
-      where: { id: studyId },
-      select: {
-        jatosStudyUploads: {
-          orderBy: { createdAt: "desc" },
-          take: 1,
-          select: {
-            jatosStudyId: true,
-            pilotLinks: { select: { markerToken: true } },
+    if (context) {
+      jatosStudyId = context.jatosStudyId
+      markerTokens = new Set(context.markerTokens)
+    } else {
+      const study = await db.study.findUnique({
+        where: { id: studyId },
+        select: {
+          jatosStudyUploads: {
+            orderBy: { createdAt: "desc" },
+            take: 1,
+            select: {
+              jatosStudyId: true,
+              pilotLinks: { select: { markerToken: true } },
+            },
           },
         },
-      },
+      })
+      const latestUpload = study?.jatosStudyUploads[0] ?? null
+      const foundJatosStudyId = latestUpload?.jatosStudyId ?? null
+      if (!foundJatosStudyId) throw new Error("Study does not have JATOS ID")
+      jatosStudyId = foundJatosStudyId
+      markerTokens = new Set(
+        latestUpload?.pilotLinks.map((l) => l.markerToken).filter(Boolean) ?? []
+      )
+    }
+
+    if (markerTokens.size === 0) return []
+
+    const metadata = await getResultsMetadata({ studyIds: [jatosStudyId] }, { token })
+    const pilotResults =
+      metadata.data?.[0]?.studyResults?.filter((result: JatosStudyResult) => {
+        const markerToken = extractPilotMarkerToken(result.comment)
+        return markerToken ? markerTokens.has(markerToken) : false
+      }) || []
+
+    if (pilotResults.length === 0) return []
+
+    const pilotResultIds = pilotResults.map((r: JatosStudyResult) => r.id)
+    const allEnriched = await fetchZipParseAndEnrich({
+      metadata,
+      token,
+      getResultsParams: { studyResultIds: pilotResultIds },
     })
-    const latestUpload = study?.jatosStudyUploads[0] ?? null
-    const foundJatosStudyId = latestUpload?.jatosStudyId ?? null
-    if (!foundJatosStudyId) throw new Error("Study does not have JATOS ID")
-    jatosStudyId = foundJatosStudyId
-    markerTokens = new Set(latestUpload?.pilotLinks.map((l) => l.markerToken).filter(Boolean) ?? [])
-  }
 
-  if (markerTokens.size === 0) return []
-
-  const token = await getTokenForResearcher(userId)
-  const metadata = await getResultsMetadata({ studyIds: [jatosStudyId] }, { token })
-  const pilotResults =
-    metadata.data?.[0]?.studyResults?.filter((result: JatosStudyResult) => {
-      const token = extractPilotMarkerToken(result.comment)
-      return token ? markerTokens.has(token) : false
-    }) || []
-
-  if (pilotResults.length === 0) return []
-
-  const pilotResultIds = pilotResults.map((r: JatosStudyResult) => r.id)
-  const { data: arrayBuffer } = await getResultsData({ studyResultIds: pilotResultIds }, { token })
-  const blob = new Blob([arrayBuffer])
-  const files = await parseJatosZip(blob)
-  const allEnriched = matchJatosDataToMetadata(metadata, files)
-
-  return allEnriched
-    .filter((r) => {
-      const token = extractPilotMarkerToken(r.comment)
-      return token ? markerTokens.has(token) : false
-    })
-    .sort((a, b) => b.id - a.id)
+    return allEnriched
+      .filter((r) => {
+        const markerToken = extractPilotMarkerToken(r.comment)
+        return markerToken ? markerTokens.has(markerToken) : false
+      })
+      .sort((a, b) => b.id - a.id)
+  })
 }
 
 export async function getPilotResultByIdForResearcher({
@@ -544,30 +633,30 @@ export async function getPilotResultByIdForResearcher({
   testResultId: number
   jatosStudyIdContext?: number
 }): Promise<EnrichedJatosStudyResult> {
-  await assertResearcherCanAccessStudy({ studyId, userId })
+  return withResearcherToken({ studyId, userId }, async ({ studyId, token }) => {
+    let jatosStudyId = jatosStudyIdContext
+    if (!jatosStudyId) {
+      const info = await getStudyJatosInfo(studyId)
+      if (!info) throw new Error("Study does not have JATOS ID")
+      jatosStudyId = info.jatosStudyId
+    }
 
-  let jatosStudyId = jatosStudyIdContext
-  if (!jatosStudyId) {
-    const info = await getStudyJatosInfo(studyId)
-    if (!info) throw new Error("Study does not have JATOS ID")
-    jatosStudyId = info.jatosStudyId
-  }
+    const metadata = await getResultsMetadata({ studyIds: [jatosStudyId] }, { token })
+    const testResult = metadata.data?.[0]?.studyResults?.find(
+      (r: JatosStudyResult) => r.id === testResultId && isPilotComment(r.comment)
+    )
+    if (!testResult) throw new Error("Pilot result not found")
 
-  const token = await getTokenForResearcher(userId)
-  const metadata = await getResultsMetadata({ studyIds: [jatosStudyId] }, { token })
-  const testResult = metadata.data?.[0]?.studyResults?.find(
-    (r: JatosStudyResult) => r.id === testResultId && isPilotComment(r.comment)
-  )
-  if (!testResult) throw new Error("Pilot result not found")
+    const enriched = await fetchZipParseAndEnrich({
+      metadata,
+      token,
+      getResultsParams: { studyResultIds: testResultId },
+    })
+    const match = enriched.find((r) => r.id === testResultId)
+    if (!match) throw new Error("Failed to load pilot result data")
 
-  const { data: arrayBuffer } = await getResultsData({ studyResultIds: testResultId }, { token })
-  const blob = new Blob([arrayBuffer])
-  const files = await parseJatosZip(blob)
-  const enriched = matchJatosDataToMetadata(metadata, files)
-  const match = enriched.find((r) => r.id === testResultId)
-  if (!match) throw new Error("Failed to load pilot result data")
-
-  return match
+    return match
+  })
 }
 
 export async function checkPilotStatusForResearcher({
@@ -581,20 +670,19 @@ export async function checkPilotStatusForResearcher({
   jatosStudyUUID: string
   jatosStudyUploadId: number
 }): Promise<{ success: boolean; completed: boolean | null; error?: string }> {
-  await assertResearcherCanAccessStudy({ studyId, userId })
+  return withResearcherToken({ studyId, userId }, async ({ token }) => {
+    const pilotLinks = await db.pilotLink.findMany({
+      where: { jatosStudyUploadId },
+      select: { markerToken: true },
+    })
+    const markerTokens = new Set(pilotLinks.map((l) => l.markerToken))
+    if (markerTokens.size === 0) {
+      return { success: true, completed: false }
+    }
 
-  const pilotLinks = await db.pilotLink.findMany({
-    where: { jatosStudyUploadId },
-    select: { markerToken: true },
+    const metadata = await getResultsMetadata({ studyUuids: [jatosStudyUUID] }, { token })
+
+    const completed = checkPilotCompletionFromMetadata(metadata, jatosStudyUUID, markerTokens)
+    return { success: true, completed }
   })
-  const markerTokens = new Set(pilotLinks.map((l) => l.markerToken))
-  if (markerTokens.size === 0) {
-    return { success: true, completed: false }
-  }
-
-  const token = await getTokenForResearcher(userId)
-  const metadata = await getResultsMetadata({ studyUuids: [jatosStudyUUID] }, { token })
-
-  const completed = checkPilotCompletionFromMetadata(metadata, jatosStudyUUID, markerTokens)
-  return { success: true, completed }
 }

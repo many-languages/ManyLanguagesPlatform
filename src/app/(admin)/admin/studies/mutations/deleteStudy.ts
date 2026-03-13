@@ -4,6 +4,7 @@ import { resolver } from "@blitzjs/rpc"
 import db from "db"
 import { z } from "zod"
 import { getAuthorizedSession } from "@/src/app/(auth)/utils/getAuthorizedSession"
+import { removeResearcherFromJatosStudy } from "@/src/lib/jatos/provisioning/removeResearcherFromJatosStudy"
 import { isSetupComplete } from "@/src/app/(app)/studies/[studyId]/setup/utils/setupStatus"
 import type { StudyWithMinimalRelations } from "@/src/app/(app)/studies/[studyId]/setup/utils/setupStatus"
 
@@ -21,8 +22,9 @@ export default resolver.pipe(
       where: { id: { in: studyIds } },
       include: {
         FeedbackTemplate: true,
+        researchers: { select: { userId: true } },
         jatosStudyUploads: {
-          orderBy: { createdAt: "desc" },
+          orderBy: { versionNumber: "desc" },
           take: 1,
         },
       },
@@ -48,6 +50,17 @@ export default resolver.pipe(
     }
 
     const idsToDelete = deletable.map((s) => s.id)
+
+    // Sync JATOS: remove researchers from JATOS study membership (before delete)
+    for (const study of deletable) {
+      const jatosStudyId = study.jatosStudyUploads[0]?.jatosStudyId
+      if (jatosStudyId != null) {
+        await Promise.all(
+          study.researchers.map((r) => removeResearcherFromJatosStudy(r.userId, jatosStudyId))
+        )
+      }
+    }
+
     const result = await db.study.deleteMany({
       where: { id: { in: idsToDelete } },
     })

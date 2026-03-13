@@ -37,6 +37,9 @@ COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
 COPY --from=builder /app/next.config.js ./
 COPY --from=builder /app/tsconfig.json ./
+# Scripts and src for ensure-service-account at startup (runs before npm start)
+COPY --from=builder /app/scripts ./scripts
+COPY --from=builder /app/src ./src
 
 # Create non-root user
 RUN addgroup --system --gid 1001 nodejs

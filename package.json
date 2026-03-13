@@ -6,6 +6,7 @@
     "dev": "blitz dev",
     "build": "blitz build",
     "start": "blitz start",
+    "ensure-service-account": "tsx scripts/ensure-service-account.ts",
     "studio": "blitz prisma studio",
     "lint": "eslint . --ext .js,.ts,.tsx",
     "test": "vitest run --passWithNoTests",

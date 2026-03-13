@@ -1,5 +1,6 @@
+import { getAdminToken } from "../getAdminToken"
 import { provisionResearcherJatos } from "./provisionResearcherJatos"
-import { addStudyMember } from "../api/admin/addStudyMember"
+import { addStudyMember } from "../client/addStudyMember"
 
 /**
  * Ensures a researcher is a member of a JATOS study.
@@ -11,5 +12,5 @@ export async function ensureResearcherJatosMember(
   jatosStudyId: number
 ): Promise<void> {
   const { jatosUserId } = await provisionResearcherJatos(userId)
-  await addStudyMember({ studyId: jatosStudyId, userId: jatosUserId })
+  await addStudyMember({ studyId: jatosStudyId, userId: jatosUserId }, { token: getAdminToken() })
 }

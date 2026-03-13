@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest"
 import { removeResearcherFromJatosStudy } from "./removeResearcherFromJatosStudy"
-import * as removeStudyMemberModule from "../api/admin/removeStudyMember"
+import * as removeStudyMemberModule from "../client/removeStudyMember"
 
 const mockFindUnique = vi.fn()
 
@@ -15,6 +15,7 @@ vi.mock("db", () => ({
 describe("removeResearcherFromJatosStudy", () => {
   beforeEach(() => {
     vi.resetAllMocks()
+    process.env.JATOS_TOKEN = "admin-token"
   })
 
   afterEach(() => {
@@ -33,7 +34,10 @@ describe("removeResearcherFromJatosStudy", () => {
       where: { userId: 42 },
       select: { jatosUserId: true },
     })
-    expect(removeSpy).toHaveBeenCalledWith({ studyId: 5, userId: 101 })
+    expect(removeSpy).toHaveBeenCalledWith(
+      { studyId: 5, userId: 101 },
+      expect.objectContaining({ token: expect.any(String) })
+    )
   })
 
   it("no-op when researcher has no ResearcherJatos record", async () => {

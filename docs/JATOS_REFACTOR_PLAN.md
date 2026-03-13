@@ -6,7 +6,7 @@ This plan describes the refactor from the current mixed architecture (API routes
 
 **Goals:**
 
-- Use **Approach A only**: Server actions / Blitz mutations / queries call JATOS integration directly. No API routes for JATOS.
+- Use **Approach A only**: Server actions / Blitz mutations / queries call JATOS integration directly. No API routes for JATOS — except one deliberate exception for the import route (see [Import decision](#importjatosstudy-decision)).
 - Single service layer for access checks, actor resolution, and token strategy.
 - Strict token separation: researcher, study-service, admin (provisioning only).
 - Use-case-based public API; implementation details stay internal.
@@ -86,6 +86,7 @@ Internal helpers (not exported):
 - All methods require `auth: JatosAuth` where `type JatosAuth = { token: string }`
 - Token is never optional
 - No framework coupling (session, app DB)
+- Includes both study data endpoints and admin endpoints (createJatosUser, addStudyMember, etc.) — caller provides the appropriate token
 
 ### Narrow Inputs
 
@@ -118,27 +119,28 @@ src/lib/jatos/
   jatosClient.ts              # Barrel only — re-exports from client/
   jatosAccessService.ts       # Use-case methods
 
-  client/                     # Transport implementation
+  client/                     # All JATOS transport (auth-injected, single request per method)
     getResultsMetadata.ts
     getResultsData.ts
     getStudyProperties.ts
     fetchStudyCodes.ts
     getAssetStructure.ts
+    uploadStudy.ts           # Admin: POST /studies (FormData); used by import
     deleteStudy.ts
+    createJatosUser.ts        # Admin: POST /users
+    createJatosUserToken.ts   # Admin: POST /users/{id}/tokens
+    addStudyMember.ts         # Admin: PUT /studies/{id}/members/{userId}
+    removeStudyMember.ts      # Admin: DELETE /studies/{id}/members/{userId}
     callJatosApi.ts           # Optional: shared outbound helper (URL, auth, error normalization)
 
-  provisioning/               # Admin provisioning + orchestration
+  provisioning/               # Workflows/orchestration using client (with getAdminToken)
     provisionResearcherJatos.ts
     ensureResearcherJatosMember.ts
     ensureServiceAccount.ts
+    removeResearcherFromJatosStudy.ts
+    importJatosStudy.ts       # JATOS upload + DB; called by POST /api/jatos/import route
     provisionResearcherJatos.test.ts
     ...
-
-  admin/                      # Raw JATOS admin API calls (resolve this split early)
-    createJatosUser.ts
-    createJatosUserToken.ts
-    addStudyMember.ts
-    removeStudyMember.ts
 
   parsers/                    # Pure parsing
     parseJatosZip.ts
@@ -157,12 +159,10 @@ src/lib/jatos/
     extractJatosStudyUuid.ts           # Move from api/
 ```
 
-**admin/ vs provisioning/ split (resolve early):**
+**client/ vs provisioning/ split:**
 
-- `admin/` = raw JATOS admin API calls (create user, mint token, add/remove member)
-- `provisioning/` = workflows/orchestration using those calls (ensureResearcherJatosMember, etc.)
-
-If you do not need both, collapse them now. But pick one model and stick to it. Do not postpone this — it will create confusion fast.
+- `client/` = all JATOS transport (study data + admin endpoints). Auth-injected — caller passes token. Provisioning calls `jatosClient.createJatosUser(..., { token: getAdminToken() })` etc.
+- `provisioning/` = workflows/orchestration that use client with `getAdminToken()` (ensureResearcherJatosMember, provisionResearcherJatos, etc.)
 
 ---
 
@@ -170,27 +170,32 @@ If you do not need both, collapse them now. But pick one model and stick to it. 
 
 ### → jatosClient (client/\*.ts)
 
-| Current                     | New                            | Notes                                |
-| --------------------------- | ------------------------------ | ------------------------------------ |
-| `api/getResultsMetadata.ts` | `client/getResultsMetadata.ts` | Require `auth: JatosAuth`            |
-| `api/getResultsData.ts`     | `client/getResultsData.ts`     | Same                                 |
-| `api/getStudyProperties.ts` | `client/getStudyProperties.ts` | Same                                 |
-| `api/fetchStudyCodes.ts`    | `client/fetchStudyCodes.ts`    | Same                                 |
-| `api/deleteStudy.ts`        | `client/deleteStudy.ts`        | Same                                 |
-| (from route)                | `client/getAssetStructure.ts`  | `GET /studies/{id}/assets/structure` |
+| Current                             | New                              | Notes                                                  |
+| ----------------------------------- | -------------------------------- | ------------------------------------------------------ |
+| `api/getResultsMetadata.ts`         | `client/getResultsMetadata.ts`   | Require `auth: JatosAuth`                              |
+| `api/getResultsData.ts`             | `client/getResultsData.ts`       | Same                                                   |
+| `api/getStudyProperties.ts`         | `client/getStudyProperties.ts`   | Same                                                   |
+| `api/fetchStudyCodes.ts`            | `client/fetchStudyCodes.ts`      | Same                                                   |
+| `api/deleteStudy.ts`                | `client/deleteStudy.ts`          | Same                                                   |
+| (from route)                        | `client/getAssetStructure.ts`    | `GET /studies/{id}/assets/structure`                   |
+| (from import route)                 | `client/uploadStudy.ts`          | POST /studies with FormData; require `auth: JatosAuth` |
+| `api/admin/createJatosUser.ts`      | `client/createJatosUser.ts`      | Require `auth: JatosAuth`                              |
+| `api/admin/createJatosUserToken.ts` | `client/createJatosUserToken.ts` | Same                                                   |
+| `api/admin/addStudyMember.ts`       | `client/addStudyMember.ts`       | Same                                                   |
+| `api/admin/removeStudyMember.ts`    | `client/removeStudyMember.ts`    | Same                                                   |
 
 ### → jatosAccessService
 
-| Current                          | New                                                                             | Notes                                                 |
-| -------------------------------- | ------------------------------------------------------------------------------- | ----------------------------------------------------- |
-| `withStudyAccess` callbacks      | `getResultsMetadataForResearcher`, etc.                                         | Replace with service methods                          |
-| `fetchParticipantFeedback`       | `getParticipantFeedback`                                                        | Move logic into service                               |
-| `createPersonalStudyCodeAndSave` | `createPersonalStudyCodeForParticipant`, `createPersonalStudyCodeForResearcher` | —                                                     |
-| `generateGeneralLinks`           | `getGeneralLinksForResearcher`                                                  | —                                                     |
-| `fetchHtmlFiles`                 | `getHtmlFilesForResearcher`                                                     | assert → token → getAssetStructure → extractHtmlFiles |
-| `fetchJatosBatchId`              | `getBatchIdForResearcher` / `getStudyPropertiesForResearcher`                   | —                                                     |
-| Download flow                    | `downloadAllResultsForResearcher`                                               | Returns structured `DownloadPayload` (see below)      |
-| Upload flow                      | See [Import decision](#importjatosstudy-decision)                               | —                                                     |
+| Current                          | New                                                                                                    | Notes                                                 |
+| -------------------------------- | ------------------------------------------------------------------------------------------------------ | ----------------------------------------------------- |
+| `withStudyAccess` callbacks      | `getResultsMetadataForResearcher`, etc.                                                                | Replace with service methods                          |
+| `fetchParticipantFeedback`       | `getParticipantFeedback`                                                                               | Move logic into service                               |
+| `createPersonalStudyCodeAndSave` | `createPersonalStudyCodeForParticipant`, `createPersonalStudyCodeForResearcher`                        | —                                                     |
+| `generateGeneralLinks`           | `getGeneralLinksForResearcher`                                                                         | —                                                     |
+| `fetchHtmlFiles`                 | `getHtmlFilesForResearcher`                                                                            | assert → token → getAssetStructure → extractHtmlFiles |
+| `fetchJatosBatchId`              | `getBatchIdForResearcher` / `getStudyPropertiesForResearcher`                                          | —                                                     |
+| Download flow                    | `downloadAllResultsForResearcher`                                                                      | Returns structured `DownloadPayload` (see below)      |
+| Upload flow                      | `provisioning/importJatosStudy.ts` — route calls it; see [Import decision](#importjatosstudy-decision) | —                                                     |
 
 ### → utils/parsers
 
@@ -235,28 +240,53 @@ If you do not need both, collapse them now. But pick one model and stick to it. 
 
 ### API Routes to Remove
 
-| Route                                       | Replaced by                                       |
-| ------------------------------------------- | ------------------------------------------------- |
-| `GET/POST /api/jatos/get-results-metadata`  | Direct service call                               |
-| `POST /api/jatos/get-results-data`          | Direct service call                               |
-| `GET /api/jatos/get-study-properties`       | Direct service call                               |
-| `GET /api/jatos/get-asset-structure`        | Direct service call                               |
-| `GET /api/jatos/get-study-code`             | Direct service call                               |
-| `POST /api/jatos/get-all-results`           | Direct service call                               |
-| `POST /api/jatos/create-personal-studycode` | Direct service call                               |
-| `DELETE /api/jatos/delete-study`            | Direct service call                               |
-| `POST /api/jatos/import`                    | See [Import decision](#importjatosstudy-decision) |
+| Route                                       | Replaced by                           |
+| ------------------------------------------- | ------------------------------------- |
+| `GET/POST /api/jatos/get-results-metadata`  | Direct service call                   |
+| `POST /api/jatos/get-results-data`          | Direct service call                   |
+| `GET /api/jatos/get-study-properties`       | Direct service call                   |
+| `GET /api/jatos/get-asset-structure`        | Direct service call                   |
+| `GET /api/jatos/get-study-code`             | Direct service call                   |
+| `POST /api/jatos/get-all-results`           | Direct service call                   |
+| `POST /api/jatos/create-personal-studycode` | Direct service call                   |
+| `DELETE /api/jatos/delete-study`            | Direct service call                   |
+| `POST /api/jatos/import`                    | **Keep** — sole exception (see below) |
 
 ### importJatosStudy decision
 
-File upload (FormData) needs a hard decision. Do not leave a half-refactored exception that becomes an architectural leak.
+**Chosen approach: Dedicated route handler (Option 2)**
 
-**Choose one and commit:**
+File upload (FormData) requires multipart handling. We keep **one** route handler (`POST /api/jatos/import`) as a deliberate, documented exception.
 
-1. **Server action handles FormData directly** — If your stack (Blitz/Next) handles multipart upload ergonomically in a server action, use that. The mutation calls the same provisioning/service layer.
-2. **Dedicated route handler for multipart upload only** — If server actions are awkward for large file uploads, keep _one_ route handler (`POST /api/jatos/import`) that accepts FormData and calls the same provisioning layer. Make it a deliberate, documented exception.
+**Rationale:**
 
-Either way, the import logic (admin token, JATOS API call, DB updates) lives in one place. The route/action is only the transport boundary.
+- **Large files:** JATOS .jzip files can be 100MB. The route already has `maxDuration: 60` and a 100MB limit. Server actions default to 1MB and have had FormData truncation issues.
+- **Blitz RPC:** Mutations serialize to JSON; they cannot accept `File` or `FormData`.
+- **Proven:** The current route works. Refactor extracts logic to a service layer; the route stays as a thin transport boundary.
+
+**Implementation:**
+
+1. **Service layer:** Add `importJatosStudyForResearcher({ file, studyId, userId, jatosWorkerType })` in `provisioning/importJatosStudy.ts`. It:
+
+   - Computes build hash from the file (extract `computeBuildHash` to `utils/` or keep in provisioning)
+   - Calls `jatosClient.uploadStudy(file, { token: getAdminToken() })` — add `client/uploadStudy.ts` for POST /jatos/api/v1/studies
+   - Performs DB updates (Study, JatosStudyUpload) — logic from current `importJatos` mutation
+   - Syncs researcher membership and service account via `ensureResearcherJatosMember`, `addStudyMember`
+   - Returns `JatosImportResponse`
+
+2. **Route handler:** `POST /api/jatos/import` remains. It:
+
+   - Receives FormData (`studyFile`, `studyId`, `jatosWorkerType`)
+   - Resolves session (userId) from cookies
+   - Validates researcher access to study
+   - Calls the import service
+   - Returns JSON result
+
+3. **Client:** `Step2Content` continues to call `uploadStudyFile` (which fetches the route). FormData includes `studyFile`, `studyId`, `jatosWorkerType`. The route returns the full import result. The client no longer calls `importJatosMutation` for the upload flow — the service handles JATOS + DB. The client uses the route result for follow-up steps (batch ID, setup completion, pilot link) as today.
+
+4. **Document:** Add this exception to `JATOS_API_USAGE.md` and keep it referenced here.
+
+**Key principle:** All import logic (admin token, JATOS API call, DB updates) lives in the service layer. The route is only the transport boundary for FormData.
 
 ---
 
@@ -264,11 +294,11 @@ Either way, the import logic (admin token, JATOS API call, DB updates) lives in 
 
 ### Phase 1: Foundation
 
-1. Resolve `admin/` vs `provisioning/` split (see [Folder Structure](#folder-structure)). Do not postpone.
-2. Create `client/` folder and migrate transport modules with `JatosAuth` required.
-3. Create `tokenBroker.ts` consolidating `getTokenForResearcher`, `getTokenForStudyService`, `getAdminToken`. Keep it broker-sized; provisioning details stay in `provisioning/*`.
-4. Create `jatosClient.ts` barrel.
-5. Add `client/getAssetStructure.ts` (extract from route).
+1. Create `client/` folder and migrate all transport modules with `JatosAuth` required (study data + admin endpoints).
+2. Create `tokenBroker.ts` consolidating `getTokenForResearcher`, `getTokenForStudyService`, `getAdminToken`. Keep it broker-sized; provisioning details stay in `provisioning/*`.
+3. Create `jatosClient.ts` barrel.
+4. Add `client/getAssetStructure.ts` (extract from route).
+5. Migrate `api/admin/*` into `client/` (createJatosUser, createJatosUserToken, addStudyMember, removeStudyMember).
 
 ### Phase 2: jatosAccessService
 
@@ -284,20 +314,22 @@ Either way, the import logic (admin token, JATOS API call, DB updates) lives in 
 
 ### Phase 4: Remove API Routes and Dead Code
 
-1. Delete `/api/jatos/*` routes per [Import decision](#importjatosstudy-decision) — keep `import` route only if you chose the dedicated route handler option.
-2. Delete deprecated `api/*` files.
-3. Update `lib/jatos/index.ts` exports.
+1. Delete `/api/jatos/*` routes except `POST /api/jatos/import` (see [Import decision](#importjatosstudy-decision)).
+2. Create `provisioning/importJatosStudy.ts`; refactor the import route to call it; extend FormData to include `studyId`, `jatosWorkerType`.
+3. Delete deprecated `api/*` files. Update the client `uploadStudyFile` helper to post FormData with `studyFile`, `studyId`, `jatosWorkerType` to the import route.
+4. Update `lib/jatos/index.ts` exports.
 
 ### Phase 5: Cleanup
 
 1. Update tests.
-2. Update `JATOS_API_USAGE.md` and `JATOS_USER_SCOPED_TOKENS_IMPLEMENTATION_PLAN.md`.
+2. Update `JATOS_API_USAGE.md` — document the import route as the sole JATOS API route exception.
+3. Update `JATOS_USER_SCOPED_TOKENS_IMPLEMENTATION_PLAN.md`.
 
 ---
 
 ## Critical Constraints
 
-1. **Admin token isolation:** `getAdminToken()` is never called by jatosAccessService. Only for provisioning, token minting, user creation, study membership.
+1. **Admin token isolation:** `getAdminToken()` is never called by jatosAccessService. Only provisioning and tokenBroker use it — they call `jatosClient.createJatosUser`, `jatosClient.addStudyMember`, etc. with `{ token: getAdminToken() }`.
 
 2. **Provisioning behind broker:** jatosAccessService never knows about provisioning. It only calls `tokenBroker.getTokenForResearcher(userId)` etc. Provisioning (ensureResearcherJatosMember, etc.) is internal to tokenBroker.
 
@@ -313,14 +345,14 @@ Either way, the import logic (admin token, JATOS API call, DB updates) lives in 
 
 ## Call Site Updates
 
-| Current                                                                             | New                                                                                                                                                                        |
-| ----------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `withStudyAccess(studyId, (sId, uId, token) => getResultsMetadata(..., { token }))` | `jatosAccessService.getResultsMetadataForResearcher({ studyId, userId })`                                                                                                  |
-| `fetchParticipantFeedback` action                                                   | `jatosAccessService.getParticipantFeedback({ studyId, pseudonym, jatosStudyId })`                                                                                          |
-| `DownloadResultsButton` → `downloadBlob('/api/jatos/...')`                          | Mutation → `jatosAccessService.downloadAllResultsForResearcher({ studyId, userId })` → returns `DownloadPayload`; mutation adapts for UI (decode base64, trigger download) |
-| `JoinStudyButton` → `createPersonalStudyCodeAndSave`                                | Mutation → `jatosAccessService.createPersonalStudyCodeForParticipant(...)`                                                                                                 |
-| `Step2Content` → `uploadStudyFile`, `fetchJatosBatchId`                             | Mutations → service methods                                                                                                                                                |
-| `generateResearcherPilotRunUrl` → `createPersonalStudyCodeAndSave`                  | `jatosAccessService.createPersonalStudyCodeForResearcher(...)`                                                                                                             |
+| Current                                                                             | New                                                                                                                                                                              |
+| ----------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `withStudyAccess(studyId, (sId, uId, token) => getResultsMetadata(..., { token }))` | `jatosAccessService.getResultsMetadataForResearcher({ studyId, userId })`                                                                                                        |
+| `fetchParticipantFeedback` action                                                   | `jatosAccessService.getParticipantFeedback({ studyId, pseudonym, jatosStudyId })`                                                                                                |
+| `DownloadResultsButton` → `downloadBlob('/api/jatos/...')`                          | Mutation → `jatosAccessService.downloadAllResultsForResearcher({ studyId, userId })` → returns `DownloadPayload`; mutation adapts for UI (decode base64, trigger download)       |
+| `JoinStudyButton` → `createPersonalStudyCodeAndSave`                                | Mutation → `jatosAccessService.createPersonalStudyCodeForParticipant(...)`                                                                                                       |
+| `Step2Content` → `uploadStudyFile`, `fetchJatosBatchId`                             | `uploadStudyFile` (route) for FormData — posts `studyFile`, `studyId`, `jatosWorkerType`; route calls import service. `fetchJatosBatchId` → mutation → `getBatchIdForResearcher` |
+| `generateResearcherPilotRunUrl` → `createPersonalStudyCodeAndSave`                  | `jatosAccessService.createPersonalStudyCodeForResearcher(...)`                                                                                                                   |
 
 ---
 

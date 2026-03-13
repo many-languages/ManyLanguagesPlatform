@@ -1,5 +1,6 @@
 import db from "db"
-import { removeStudyMember } from "../api/admin/removeStudyMember"
+import { getAdminToken } from "../getAdminToken"
+import { removeStudyMember } from "../client/removeStudyMember"
 
 /**
  * Removes a researcher from a JATOS study's members.
@@ -19,8 +20,11 @@ export async function removeResearcherFromJatosStudy(
     return
   }
 
-  await removeStudyMember({
-    studyId: jatosStudyId,
-    userId: researcherJatos.jatosUserId,
-  })
+  await removeStudyMember(
+    {
+      studyId: jatosStudyId,
+      userId: researcherJatos.jatosUserId,
+    },
+    { token: getAdminToken() }
+  )
 }

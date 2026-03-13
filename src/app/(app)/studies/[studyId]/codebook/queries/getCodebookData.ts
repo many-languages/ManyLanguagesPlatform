@@ -10,7 +10,7 @@ const GetCodebookData = z.object({
 
 // Server-side helper for RSCs
 export const getCodebookDataRsc = cache(async (studyId: number) => {
-  return withStudyAccess(studyId, async (_sId, _uId, _token) => {
+  return withStudyAccess(studyId, async (_sId, _uId) => {
     const study = await db.study.findUnique({
       where: { id: studyId },
       select: {

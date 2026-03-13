@@ -1,11 +1,10 @@
 import { Ctx } from "blitz"
 import db from "db"
-import { getResultsMetadata } from "@/src/lib/jatos/api/getResultsMetadata"
+import { getResultsMetadataForParticipantDashboard } from "@/src/lib/jatos/jatosAccessService"
 import {
   hasCompletedStudy,
   findStudyResultByPseudonym,
-} from "@/src/lib/jatos/api/findStudyResultIdByComment"
-import { getServiceAccountToken } from "@/src/lib/jatos/serviceAccount"
+} from "@/src/lib/jatos/utils/findStudyResultIdByComment"
 
 export type ParticipantCompletedNotPaidStudy = {
   id: number
@@ -50,12 +49,9 @@ export async function getParticipantCompletedNotPaidStudies(
     .map((p) => p.study.jatosStudyUploads[0]?.jatosStudyId)
     .filter((id): id is number => id != null)
 
-  let metadata: Awaited<ReturnType<typeof getResultsMetadata>> | null = null
+  let metadata: Awaited<ReturnType<typeof getResultsMetadataForParticipantDashboard>> = null
   try {
-    if (jatosStudyIds.length > 0) {
-      const token = await getServiceAccountToken()
-      metadata = await getResultsMetadata({ studyIds: jatosStudyIds }, { token })
-    }
+    metadata = await getResultsMetadataForParticipantDashboard({ userId, jatosStudyIds })
   } catch (error) {
     console.error("JATOS metadata fetch failed for completed-not-paid studies:", error)
     return []

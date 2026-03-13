@@ -2,10 +2,9 @@ import { resolver } from "@blitzjs/rpc"
 import db from "db"
 import { z } from "zod"
 import { verifyResearcherStudyAccess } from "../../utils/verifyResearchersStudyAccess"
-import { checkJatosStudyExists } from "@/src/lib/jatos/api/checkJatosStudyExists"
-import { getResultsMetadata } from "@/src/lib/jatos/api/getResultsMetadata"
-import { getTokenForResearcher } from "@/src/lib/jatos/getTokenForResearcher"
-import { hasParticipantResponses } from "@/src/lib/jatos/api/studyHasParticipantResponses"
+import { checkJatosStudyExistsAdmin } from "@/src/lib/jatos/provisioning/checkJatosStudyExistsAdmin"
+import { getResultsMetadataForResearcher } from "@/src/lib/jatos/jatosAccessService"
+import { hasParticipantResponses } from "@/src/lib/jatos/utils/studyHasParticipantResponses"
 import type { JatosStudyResult } from "@/src/types/jatos"
 
 const CheckJatosStudyUuid = z.object({
@@ -44,12 +43,13 @@ export default resolver.pipe(
 
     let existsOnJatos = false
     try {
-      const result = await checkJatosStudyExists(trimmed)
+      const result = await checkJatosStudyExistsAdmin(trimmed)
       existsOnJatos = result.exists
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : "Unknown error"
       return {
         ok: false,
-        error: `Failed to verify JATOS study on the server: ${error?.message || "Unknown error"}`,
+        error: `Failed to verify JATOS study on the server: ${message}`,
       }
     }
 
@@ -70,8 +70,11 @@ export default resolver.pipe(
     // Block update if study has participant responses (non-pilot, FINISHED)
     if (mode === "update" && existsOnJatos) {
       try {
-        const token = await getTokenForResearcher(ctx.session.userId!)
-        const metadata = await getResultsMetadata({ studyUuids: [trimmed] }, { token })
+        const metadata = await getResultsMetadataForResearcher({
+          studyId,
+          userId: ctx.session.userId!,
+          studyUuids: [trimmed],
+        })
         const studies =
           (metadata as { data?: Array<{ studyResults?: JatosStudyResult[] }> })?.data ?? []
         const hasResponses = studies.some((s) => hasParticipantResponses(s.studyResults ?? []))
@@ -82,10 +85,11 @@ export default resolver.pipe(
               "This study already has participant responses. Please create a new study instead of overwriting.",
           }
         }
-      } catch (error: any) {
+      } catch (error: unknown) {
+        const message = error instanceof Error ? error.message : "Unknown error"
         return {
           ok: false,
-          error: `Failed to check for existing responses: ${error?.message || "Unknown error"}`,
+          error: `Failed to check for existing responses: ${message}`,
         }
       }
     }

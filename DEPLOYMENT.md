@@ -66,6 +66,7 @@ This will:
 - Start all Docker containers
 - Wait for services to be ready
 - Run database migrations automatically
+- Provision the JATOS service account (if not already present)
 - Start the development server
 
 ### 4. Create JATOS API token
@@ -119,6 +120,14 @@ make validate-token
 
 This will verify that the token is valid and can communicate with JATOS.
 
+### 6. Validate full setup (optional)
+
+To check JATOS, service account, and production secrets in one go:
+
+```bash
+make validate-setup
+```
+
 ## Development Mode
 
 Development mode includes:
@@ -159,6 +168,42 @@ make prune-all
 ```
 
 See the [Maintenance](#maintenance) section for more details.
+
+## JATOS Service Account
+
+The app uses a **JATOS service account** for participant-facing operations (e.g. feedback, completion checks, study code creation at join). This account is provisioned **automatically at startup** — no manual steps required.
+
+On each app start (dev and prod), after `prisma migrate deploy`, the startup sequence runs `ensure-service-account`. This script:
+
+- Creates a JATOS user for the service account if it does not exist
+- Stores the JATOS user ID in the database (`SystemConfig` key `jatosServiceUserID`)
+- Is idempotent: on subsequent starts, it reuses the existing account without calling JATOS
+
+**Requirements:** JATOS must be reachable when the app starts. In development, the app waits ~45 seconds for JATOS to be ready. The script retries up to 5 times (10s apart) if JATOS is not yet available.
+
+### Migration for Existing Deployments
+
+If you are upgrading from a deployment that predates the service account feature, run these steps **after** deploying the new code and letting the app start once (so `ensureServiceAccount` runs and creates the service account):
+
+1. **Provision existing researchers** — Create JATOS users and sync membership for researchers who already have studies:
+
+   ```bash
+   npm run provision-researchers
+   ```
+
+   (Or `npx tsx scripts/provision-existing-researchers.ts` when the script is available.)
+
+2. **Add service account to existing studies** — Add the service account as a member of every study that has a JATOS upload:
+
+   ```bash
+   npm run provision-service-studies
+   ```
+
+   (Or `npx tsx scripts/provision-service-account-studies.ts` when the script is available.)
+
+**Run order:** Deploy new code → first startup (service account created) → `provision-researchers` → `provision-service-studies`.
+
+New deployments (fresh installs) do not need these steps; the service account is added to studies automatically when studies are imported.
 
 ## Production Mode
 

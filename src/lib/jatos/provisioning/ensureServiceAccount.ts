@@ -1,5 +1,6 @@
 import db from "db"
-import { createJatosUser } from "../api/admin/createJatosUser"
+import { getAdminToken } from "../getAdminToken"
+import { createJatosUser } from "../client/createJatosUser"
 
 const SERVICE_ACCOUNT_KEY = "jatosServiceUserID"
 
@@ -17,10 +18,13 @@ export async function ensureServiceAccount(): Promise<number> {
     return parseInt(existing.value, 10)
   }
 
-  const { id } = await createJatosUser({
-    username: "mlp-service-account",
-    name: "MLP Service Account",
-  })
+  const { id } = await createJatosUser(
+    {
+      username: "mlp-service-account",
+      name: "MLP Service Account",
+    },
+    { token: getAdminToken() }
+  )
 
   await db.systemConfig.create({
     data: { key: SERVICE_ACCOUNT_KEY, value: String(id) },

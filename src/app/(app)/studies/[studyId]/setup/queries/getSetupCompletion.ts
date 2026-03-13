@@ -39,7 +39,7 @@ const fetchStudyData = cache(async (studyId: number, userId: number) => {
 // Server-side helper for RSCs
 export const getSetupCompletionRsc = async (studyId: number) => {
   // Use the wrapper to handle Session + Verification + Type Narrowing
-  return await withStudyAccess(studyId, async (sId, uId, _token) => {
+  return await withStudyAccess(studyId, async (sId, uId) => {
     const study = await fetchStudyData(sId, uId)
 
     if (!study) {

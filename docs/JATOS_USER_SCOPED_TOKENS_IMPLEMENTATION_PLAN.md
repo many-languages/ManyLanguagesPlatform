@@ -1,5 +1,20 @@
 # JATOS User-Scoped API Tokens Implementation Plan
 
+## Post-Refactor Status (Updated)
+
+The JATOS integration has been refactored per [JATOS_REFACTOR_PLAN.md](./JATOS_REFACTOR_PLAN.md). Key changes:
+
+- **Architecture**: `jatosAccessService` (use-case API) → `tokenBroker` (token resolution) → `jatosClient` (client/\*.ts, auth-injected transport).
+- **Admin libs**: Now in `src/lib/jatos/client/` (createJatosUser, createJatosUserToken, addStudyMember, removeStudyMember). All require `auth: JatosAuth`.
+- **Token resolution**: Consolidated in `tokenBroker.ts` — `getTokenForResearcher(userId)`, `getTokenForStudyService(studyId)`, `getAdminToken()`.
+- **Import flow**: `provisioning/importJatosStudy.ts` — called by `POST /api/jatos/import` (sole API route). No `importJatos` mutation.
+- **API routes**: All removed except `POST /api/jatos/import`. Researcher/participant flows use server actions that call `jatosAccessService` directly.
+- **Call sites**: Use `jatosAccessService.*ForResearcher` or `*ForParticipant`; no direct API route calls for study data.
+
+See [JATOS_API_USAGE.md](./JATOS_API_USAGE.md) for current usage patterns.
+
+---
+
 ## Overview
 
 This plan describes how to migrate from using a single JATOS admin token for all operations to a **defense-in-depth model with three token types**:
@@ -61,14 +76,14 @@ No `encryptedJatosToken` — researcher tokens are generated JIT and cached in m
 
 ### Phase 2: Admin Provisioning API — DONE
 
-**Admin API libs** (all use `JATOS_TOKEN`):
+**Admin API libs** (in `src/lib/jatos/client/`, all require `auth: JatosAuth`; provisioning passes `getAdminToken()`):
 
-| File                                              | Purpose                                                 |
-| ------------------------------------------------- | ------------------------------------------------------- |
-| `src/lib/jatos/api/admin/createJatosUser.ts`      | `POST /users` — create JATOS user                       |
-| `src/lib/jatos/api/admin/createJatosUserToken.ts` | `POST /users/{id}/tokens` — mint API token              |
-| `src/lib/jatos/api/admin/addStudyMember.ts`       | `PUT /studies/{id}/members/{userId}` — add member       |
-| `src/lib/jatos/api/admin/removeStudyMember.ts`    | `DELETE /studies/{id}/members/{userId}` — remove member |
+| File                                           | Purpose                                                 |
+| ---------------------------------------------- | ------------------------------------------------------- |
+| `src/lib/jatos/client/createJatosUser.ts`      | `POST /users` — create JATOS user                       |
+| `src/lib/jatos/client/createJatosUserToken.ts` | `POST /users/{id}/tokens` — mint API token              |
+| `src/lib/jatos/client/addStudyMember.ts`       | `PUT /studies/{id}/members/{userId}` — add member       |
+| `src/lib/jatos/client/removeStudyMember.ts`    | `DELETE /studies/{id}/members/{userId}` — remove member |
 
 **Provisioning orchestration:**
 
@@ -76,13 +91,14 @@ No `encryptedJatosToken` — researcher tokens are generated JIT and cached in m
 | ----------------------------------------------------------- | -------------------------------------------------------- |
 | `src/lib/jatos/provisioning/provisionResearcherJatos.ts`    | Idempotent: create JATOS user + `ResearcherJatos` record |
 | `src/lib/jatos/provisioning/ensureResearcherJatosMember.ts` | Provision if needed + add as study member                |
+| `src/lib/jatos/provisioning/importJatosStudy.ts`            | Full import: JATOS upload + DB + membership sync         |
 
 **Integration points:**
 
 - **Signup** (`src/app/(auth)/mutations/signup.ts`): Best-effort `provisionResearcherJatos` for new researchers.
-- **Import** (`src/app/(app)/studies/[studyId]/setup/mutations/importJatos.ts`): `ensureResearcherJatosMember` for all study researchers after import.
+- **Import** (`src/app/api/jatos/import/route.ts`): Calls `importJatosStudyForResearcher` which does JATOS upload, DB updates, and `ensureResearcherJatosMember` for all study researchers.
 
-**JIT token cache** (`src/lib/jatos/tokenCache.ts`): Exists and tested, but not yet wired into production flows. All JATOS API calls currently still use `JATOS_TOKEN` directly.
+**Token resolution** (`src/lib/jatos/tokenBroker.ts`): `getTokenForResearcher`, `getTokenForStudyService`, `getAdminToken`. JIT token cache is internal to tokenBroker. Researcher and service account flows use these; jatosAccessService never calls `getAdminToken()`.
 
 All admin API libs and provisioning functions have tests.
 
@@ -171,9 +187,9 @@ This reuses `tokenCache.ts` — the service account is just another JATOS user w
 
 At study import time, the service account must be added as a member of the newly imported study.
 
-**Update:** `src/app/(app)/studies/[studyId]/setup/mutations/importJatos.ts`
+**Update:** `src/lib/jatos/provisioning/importJatosStudy.ts` (already includes this)
 
-After the existing researcher membership sync, add:
+After the existing researcher membership sync:
 
 ```ts
 const jatosUserId = await getServiceAccountJatosUserId()
@@ -235,54 +251,15 @@ Token selection is based on **who is the actor**, not on the operation type:
 
 ---
 
-### Phase 5: Lib Function Updates
+### Phase 5: Lib Function Updates — Done (Refactor)
 
-All JATOS lib functions that make API calls must accept an optional `token` parameter. **Lib functions are token-agnostic** — they work identically regardless of which token type is passed. The call site determines the token.
+**Current state:** All JATOS transport lives in `src/lib/jatos/client/*.ts`. Each client method **requires** `auth: JatosAuth` (no optional token). The call site (jatosAccessService or provisioning) resolves the token via tokenBroker and passes it.
 
-**Pattern:**
+**Pattern:** `client/*.ts` methods: `(params, auth: JatosAuth) => ...`. Token is always required.
 
-```ts
-export async function getResultsMetadata(
-  params: GetResultsMetadataParams,
-  options?: { token?: string }
-) {
-  const token = options?.token ?? process.env.JATOS_TOKEN!
-  // use token in Authorization header
-}
-```
+**jatosAccessService** calls `getTokenForResearcher(userId)` or `getTokenForStudyService(studyId)` and passes the token to client methods. Provisioning uses `getAdminToken()` for admin-only calls.
 
-**Files to update:**
-
-| File                                                | Notes                                          |
-| --------------------------------------------------- | ---------------------------------------------- |
-| `src/lib/jatos/api/getResultsMetadata.ts`           | Add `token` option                             |
-| `src/lib/jatos/api/getResultsData.ts`               | Add `token` option                             |
-| `src/lib/jatos/api/getStudyProperties.ts`           | Add `token` option                             |
-| `src/lib/jatos/api/getComponentMap.ts`              | Add `token` option                             |
-| `src/lib/jatos/api/fetchHtmlFiles.ts`               | Add `token` option                             |
-| `src/lib/jatos/api/fetchStudyAssets.ts`             | Add `token` option                             |
-| `src/lib/jatos/api/fetchResultsBlob.ts`             | Add `token` option                             |
-| `src/lib/jatos/api/checkPilotCompletion.ts`         | Add `token` option                             |
-| `src/lib/jatos/api/studyHasParticipantResponses.ts` | Add `token` option (uses `getResultsMetadata`) |
-| `src/lib/jatos/api/fetchStudyCodes.ts`              | Add `token` option                             |
-| `src/lib/jatos/api/deleteStudy.ts`                  | Add `token` option                             |
-| `src/lib/jatos/api/deleteExistingJatosStudy.ts`     | Add `token` option                             |
-| `src/lib/jatos/api/downloadBlob.ts`                 | Add `token` option (if it calls JATOS)         |
-
-**No changes needed:**
-
-| File                                              | Reason                              |
-| ------------------------------------------------- | ----------------------------------- |
-| `src/lib/jatos/api/checkJatosStudyExists.ts`      | Admin-only (provisioning)           |
-| `src/lib/jatos/api/uploadStudyFile.ts`            | Admin-only (import)                 |
-| `src/lib/jatos/api/generateGeneralLinks.ts`       | Builds URL only, no API call        |
-| `src/lib/jatos/api/generateJatosRunUrl.ts`        | Builds URL only, no API call        |
-| `src/lib/jatos/api/findStudyResultIdByComment.ts` | Operates on metadata, no JATOS call |
-| `src/lib/jatos/api/matchJatosDataToMetadata.ts`   | No JATOS call                       |
-| `src/lib/jatos/api/parseJatosZip.ts`              | No JATOS call                       |
-| `src/lib/jatos/api/extractJatosStudyUuid.ts`      | No JATOS call                       |
-
-**Tests:** For each updated lib, add a test that verifies the function uses the passed token (mock fetch, assert `Authorization: Bearer <token>`).
+**Removed in refactor:** `fetchHtmlFiles`, `fetchStudyAssets`, `fetchResultsBlob`, `downloadBlob`, `deleteExistingJatosStudy`, `createPersonalStudyCodeAndSave`, `fetchJatosBatchId`, `generateGeneralLinks`, `client.ts`.
 
 ---
 
@@ -372,27 +349,14 @@ async function resolveJatosToken(session: Session, studyId?: number): Promise<st
 
 If a specific query is shared between contexts, apply this pattern at the call site. The lib function itself remains token-agnostic.
 
-#### 6.4 API Route Updates
+#### 6.4 API Route Updates — Post-Refactor
 
-API routes that proxy to JATOS need to resolve the appropriate token. Since routes are internal (called from server actions via `callJatosApi`), there are two approaches:
+**Current state:** All JATOS API routes except `import` have been removed. Researcher and participant flows use server actions that call `jatosAccessService` directly (Approach A). No routes proxy to JATOS for study data.
 
-**Approach A (preferred for new code):** Server action calls the lib function directly with the right token, bypassing the API route. This is simpler and avoids passing token context through the route.
-
-**Approach B (for existing routes):** Route reads the session to determine the actor, then resolves the token.
-
-| Route                       | Actor           | Token resolution                                                                            |
-| --------------------------- | --------------- | ------------------------------------------------------------------------------------------- |
-| `get-results-metadata`      | Varies          | Session-based: researcher → `getTokenForResearcher`, participant → `getServiceAccountToken` |
-| `get-results-data`          | Varies          | Same as above                                                                               |
-| `get-study-properties`      | Varies          | Same as above                                                                               |
-| `get-study-code`            | Service account | `getServiceAccountToken()` (used for general links)                                         |
-| `get-all-results`           | Researcher      | `getTokenForResearcher(session.userId)`                                                     |
-| `get-asset-structure`       | Researcher      | `getTokenForResearcher(session.userId)`                                                     |
-| `create-personal-studycode` | Participant     | `getServiceAccountToken()`                                                                  |
-| `delete-study`              | Researcher      | `getTokenForResearcher(session.userId)`                                                     |
-| `import`                    | Admin           | `JATOS_TOKEN` (unchanged)                                                                   |
-
-**Auth note:** Routes that need to determine the actor must read the session. This means adding auth to routes that currently lack it. For routes where the actor is always the same (e.g., `create-personal-studycode` is always participant, `delete-study` is always researcher), the token can be resolved without session-based branching.
+| Route                    | Status   | Notes                                                                                                                                            |
+| ------------------------ | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `POST /api/jatos/import` | **Kept** | Sole exception. FormData upload. Calls `importJatosStudyForResearcher` which uses `getAdminToken()` for JATOS upload, then DB + membership sync. |
+| All other routes         | Removed  | Replaced by `jatosAccessService` + server actions                                                                                                |
 
 ---
 
@@ -426,20 +390,7 @@ export async function removeResearcherFromJatosStudy(
 
 #### 7.2 Service Account Membership at Import
 
-**Update:** `src/app/(app)/studies/[studyId]/setup/mutations/importJatos.ts`
-
-After the existing researcher membership sync:
-
-```ts
-const jatosUserId = await getServiceAccountJatosUserId()
-if (jatosUserId != null) {
-  await addStudyMember({
-    studyId: jatosStudyId,
-    userId: jatosUserId,
-    // role: "READER" — when JATOS supports it
-  })
-}
-```
+**Current implementation:** `src/lib/jatos/provisioning/importJatosStudy.ts` already adds the service account as study member after researcher sync.
 
 ---
 

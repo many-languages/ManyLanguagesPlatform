@@ -1,5 +1,5 @@
 import db from "db"
-import { getOrGenerateJatosToken } from "./tokenCache"
+import { getServiceAccountToken as getTokenFromBroker } from "./tokenBroker"
 
 const SERVICE_ACCOUNT_KEY = "jatosServiceUserID"
 
@@ -25,16 +25,8 @@ export async function getServiceAccountJatosUserId(): Promise<number | null> {
 
 /**
  * Returns a valid JATOS API token for the service account.
- * Uses JIT generation via tokenCache (55-min cache, regenerated via admin token when expired).
- * Falls back to JATOS_TOKEN if the service account is not yet provisioned.
+ * Delegates to tokenBroker. Prefer getTokenForStudyService(studyId) when study context is available.
  */
 export async function getServiceAccountToken(): Promise<string> {
-  const jatosUserId = await getServiceAccountJatosUserId()
-
-  if (jatosUserId == null) {
-    console.warn("[JATOS] Service account not provisioned, falling back to JATOS_TOKEN")
-    return process.env.JATOS_TOKEN!
-  }
-
-  return getOrGenerateJatosToken(jatosUserId, "service-account")
+  return getTokenFromBroker()
 }

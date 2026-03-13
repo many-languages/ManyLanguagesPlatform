@@ -1,7 +1,10 @@
-import { getResultsMetadata } from "@/src/lib/jatos/api/getResultsMetadata"
-import { getStudyProperties } from "@/src/lib/jatos/api/getStudyProperties"
+import { getBlitzContext } from "@/src/app/blitz-server"
+import {
+  getResultsMetadataForResearcher,
+  getStudyPropertiesForResearcher,
+  getEnrichedResultsForResearcher,
+} from "@/src/lib/jatos/jatosAccessService"
 import { getStudyParticipantsRsc } from "../../queries/getStudyParticipants"
-import { withStudyAccess } from "../utils/withStudyAccess"
 import StudySummary from "./client/StudySummary"
 import ParticipantManagementCard from "./client/ParticipantManagementCard"
 import ResultsCardWrapper from "./ResultsCardWrapper"
@@ -37,35 +40,41 @@ export default async function ResearcherData({ studyId, study }: ResearcherDataP
     return null
   }
 
+  const { session } = await getBlitzContext()
+  const userId = session.userId
+  if (userId == null) {
+    return (
+      <Alert variant="error" className="mt-4">
+        <p>You must be logged in to view this study.</p>
+      </Alert>
+    )
+  }
+
   // Fetch all JATOS-related data in parallel with explicit error handling
   let participants: Awaited<ReturnType<typeof getStudyParticipantsRsc>> = []
-  let metadata: Awaited<ReturnType<typeof getResultsMetadata>> | null = null
-  let properties: Awaited<ReturnType<typeof getStudyProperties>> | null = null
-  let token: string | null = null
+  let metadata: Awaited<ReturnType<typeof getResultsMetadataForResearcher>> | null = null
+  let properties: Awaited<ReturnType<typeof getStudyPropertiesForResearcher>> | null = null
+  let enrichedResults: Awaited<ReturnType<typeof getEnrichedResultsForResearcher>> = []
 
   try {
-    const {
-      participants: p,
-      metadata: m,
-      properties: prop,
-      token: t,
-    } = await withStudyAccess(studyId, async (_sId, _uId, tok) => {
-      const [pRes, mRes, propRes] = await Promise.allSettled([
-        getStudyParticipantsRsc(studyId),
-        getResultsMetadata({ studyIds: [jatosStudyId] }, { token: tok }),
-        getStudyProperties(study.jatosStudyUUID, { token: tok }),
-      ])
-      return {
-        participants: pRes.status === "fulfilled" ? pRes.value : [],
-        metadata: mRes.status === "fulfilled" ? mRes.value : null,
-        properties: propRes.status === "fulfilled" ? propRes.value : null,
-        token: tok,
-      }
-    })
-    participants = p
-    metadata = m
-    properties = prop
-    token = t
+    const [pRes, mRes, propRes, enrichedRes] = await Promise.allSettled([
+      getStudyParticipantsRsc(studyId),
+      getResultsMetadataForResearcher({
+        studyId,
+        userId,
+        studyIds: [jatosStudyId],
+      }),
+      getStudyPropertiesForResearcher({
+        studyId,
+        userId,
+        jatosStudyUUID: study.jatosStudyUUID ?? undefined,
+      }),
+      getEnrichedResultsForResearcher({ studyId, userId, jatosStudyId }),
+    ])
+    participants = pRes.status === "fulfilled" ? pRes.value : []
+    metadata = mRes.status === "fulfilled" ? mRes.value : null
+    properties = propRes.status === "fulfilled" ? propRes.value : null
+    enrichedResults = enrichedRes.status === "fulfilled" ? enrichedRes.value : []
 
     // Handle participants - already extracted above
     if (participants.length === 0 && metadata === null) {
@@ -128,7 +137,7 @@ export default async function ResearcherData({ studyId, study }: ResearcherDataP
         metadata={metadata}
         properties={properties}
         studyId={studyId}
-        token={token ?? undefined}
+        initialEnrichedResults={enrichedResults}
       />
 
       {/* Feedback preview with pilot results */}

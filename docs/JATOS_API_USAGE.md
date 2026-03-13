@@ -2,430 +2,181 @@
 
 ## Overview
 
-This document provides guidelines for using JATOS API integration in the codebase. Following these patterns ensures consistency, maintainability, and proper separation of server/client concerns.
+This document describes how JATOS integration works after the refactor. The architecture uses **server-only integration**: mutations, server actions, and queries call JATOS via `jatosAccessService` directly. There is **one deliberate exception**: the import route for FormData uploads.
 
 ---
 
-## Two-Pattern Architecture
+## Architecture
 
-### Pattern A: Server-Side Direct Lib Functions
+### Layers
 
-**Use for**: Server components, server actions, RSC helpers
-
-**Location**: `src/lib/jatos/api/*.ts`
-
-**Characteristics**:
-
-- Direct `fetch()` calls to JATOS API
-- Use `process.env.JATOS_BASE` and `process.env.JATOS_TOKEN`
-- Some marked with `"use server"` directive
-- Return typed data directly
-- No HTTP wrapper layer
-
-**Example**:
-
-```typescript
-// Server component or RSC helper
-import { getResultsMetadata } from "@/src/lib/jatos/api/getResultsMetadata"
-
-const metadata = await getResultsMetadata({ studyIds: [studyId] })
+```
+Mutation / Server Action / Query
+    ↓
+jatosAccessService (use-case API)
+    → assertResearcherCanAccessStudy / assertParticipantCanAccessStudy
+    → tokenBroker.getTokenForResearcher(userId) / getTokenForStudyService(studyId)
+    → jatosClient.method(params, auth)
+    ↓
+jatosClient (client/*.ts) — auth-injected, transport-only
+    → Single JATOS HTTP request per method
+    → Requires JatosAuth { token: string }
+    ↓
+tokenBroker — token resolution only
+    → getTokenForResearcher(userId)
+    → getTokenForStudyService(studyId)
+    → getAdminToken() — provisioning only
 ```
 
-**When to use**:
+### Key Principles
 
-- ✅ Server components fetching initial data
-- ✅ Server-side queries/mutations
-- ✅ RSC helper functions
-- ✅ Server actions
+- **No API routes for JATOS** — except the import route (see below).
+- **Use-case API** — Call `jatosAccessService.*ForResearcher` or `*ForParticipant`, not low-level client methods.
+- **Narrow inputs** — Pass `userId`, `studyId`, `pseudonym`, etc., not session objects.
+- **Token separation** — `getAdminToken()` is never called by jatosAccessService; only provisioning uses it.
 
 ---
 
-### Pattern B: Client-Side API Routes
+## Sole API Route Exception: Import
 
-**Use for**: Client components that need to call JATOS API
+### POST /api/jatos/import
 
-**Location**: `src/app/api/jatos/*/route.ts`
+**Purpose**: Import a JATOS study file (.jzip). FormData upload requires a route handler; server actions cannot accept `File` or `FormData` directly.
 
-**Characteristics**:
+**Location**: `src/app/api/jatos/import/route.ts`
 
-- Next.js API route handlers (GET/POST/DELETE)
-- Can wrap lib functions OR call JATOS directly
-- Consistent error handling with `JatosApiError` type
-- Return typed JSON responses or binary data
-- Handle authentication/authorization at route level
+**FormData fields**:
 
-**Example**:
+| Field             | Type   | Required | Description                |
+| ----------------- | ------ | -------- | -------------------------- |
+| `studyFile`       | File   | Yes      | The .jzip file to upload   |
+| `studyId`         | number | Yes      | App study ID               |
+| `jatosWorkerType` | string | Yes      | `"SINGLE"` or `"MULTIPLE"` |
+
+**Flow**:
+
+1. Route receives FormData, validates file (.jzip, 100MB limit).
+2. Resolves session via `getBlitzContext()`.
+3. Calls `importJatosStudyForResearcher` from `provisioning/importJatosStudy.ts`.
+4. Service: computes build hash → uploads to JATOS → updates DB → syncs membership.
+5. Returns full import result (jatosStudyId, jatosStudyUUID, latestUpload, etc.).
+
+**Client usage**:
 
 ```typescript
-// Client component
-const res = await fetch("/api/jatos/get-results-metadata", {
-  method: "POST",
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({ studyUuids: [studyUUID] }),
+import { uploadStudyFile } from "@/src/lib/jatos/client/uploadStudyFile"
+
+const result = await uploadStudyFile(file, {
+  studyId: study.id,
+  jatosWorkerType: "SINGLE",
 })
-
-if (!res.ok) {
-  const error = await res.json()
-  throw new Error(error.error)
-}
-
-const metadata = await res.json()
+// result includes jatosStudyId, jatosStudyUUID, latestUpload, etc.
 ```
 
-**When to use**:
-
-- ✅ Client components making interactive API calls
-- ✅ Real-time data fetching from client
-- ✅ File uploads/downloads from client
+**Rationale**: Large .jzip files (up to 100MB), FormData handling, and Blitz RPC JSON serialization constraints make a dedicated route the practical choice. All business logic lives in the service layer; the route is a thin transport boundary.
 
 ---
 
-## API Route Standards
+## Usage Patterns
 
-### Naming Convention
+### Researcher Flows
 
-All API routes use **kebab-case** with action verbs:
-
-- `get-*` - Retrieve data
-- `create-*` - Create resources
-- `delete-*` - Delete resources
-- `update-*` - Update resources (not yet used)
-
-**Examples**:
-
-- ✅ `/api/jatos/get-results-metadata`
-- ✅ `/api/jatos/create-personal-studycode`
-- ✅ `/api/jatos/delete-study`
-- ❌ `/api/jatos/getResultsMetadata` (camelCase)
-- ❌ `/api/jatos/results-metadata` (missing verb)
-
----
-
-### Error Handling
-
-All API routes follow a consistent error handling pattern:
+Use `jatosAccessService` methods that end in `ForResearcher`:
 
 ```typescript
-import type { JatosApiError } from "@/src/types/jatos-api"
+import {
+  getResultsMetadataForResearcher,
+  getStudyPropertiesForResearcher,
+  downloadAllResultsForResearcher,
+  getBatchIdForResearcher,
+  getParticipantFeedback, // participant flow, uses getTokenForStudyService
+} from "@/src/lib/jatos/jatosAccessService"
 
-// Validation errors (400)
-if (!requiredParam) {
-  const errorResponse: JatosApiError = { error: "Missing required parameter" }
-  return NextResponse.json(errorResponse, { status: 400 })
-}
-
-// Server errors (500)
-catch (error: any) {
-  console.error("Error description:", error)
-  const errorResponse: JatosApiError = {
-    error: error.message || "Descriptive error message",
-  }
-  return NextResponse.json(errorResponse, { status: 500 })
-}
+// Server component or action
+const metadata = await getResultsMetadataForResearcher({ studyId, userId })
+const payload = await downloadAllResultsForResearcher({ studyId, userId })
 ```
 
-**Error Response Structure**:
+### Participant Flows
+
+Use `getParticipantFeedback` (uses service account token via `getTokenForStudyService`):
 
 ```typescript
-interface JatosApiError {
-  error: string // Required: user-friendly error message
-  details?: string | unknown // Optional: technical details for debugging
-}
-```
-
----
-
-### TypeScript Types
-
-All API routes have typed responses using types from `@/src/types/jatos-api`:
-
-```typescript
-import type { CreatePersonalStudyCodeResponse, JatosApiError } from "@/src/types/jatos-api"
-
-export async function POST(
-  req: Request
-): Promise<NextResponse<CreatePersonalStudyCodeResponse | JatosApiError>> {
-  // ...
-}
-```
-
-**Available Types**:
-
-- `JatosApiError` - Standard error response
-- `JatosImportResponse` - Import success response
-- `JatosImportConflictResponse` - Import conflict (409) response
-- `CreatePersonalStudyCodeResponse` - Study code creation response
-- `GetStudyCodeResponse` - Study code retrieval response
-
----
-
-### Documentation
-
-All API routes include JSDoc comments:
-
-```typescript
-/**
- * JATOS API Route: Get Results Metadata
- *
- * Fetches results metadata from JATOS for specified studies.
- * This route wraps the server-side lib function for client-side usage.
- *
- * @route POST /api/jatos/get-results-metadata
- * @body { studyIds?: number[], studyUuids?: string[] }
- * @returns JATOS results metadata
- */
-```
-
----
-
-### Runtime Configuration
-
-All API routes include consistent runtime configuration:
-
-```typescript
-export const runtime = "nodejs"
-export const dynamic = "force-dynamic"
-```
-
-This ensures:
-
-- Routes run in Node.js runtime (required for JATOS API calls)
-- Routes are never statically optimized (always dynamic)
-
----
-
-## Migration Guide
-
-### Replacing Hybrid Wrapper Functions
-
-**Before** (hybrid wrapper):
-
-```typescript
-import uploadJatosFile from "@/src/lib/jatos/api/uploadJatosFile"
-
-const result = await uploadJatosFile(file)
-```
-
-**After** (direct API route):
-
-```typescript
-const fd = new FormData()
-fd.append("studyFile", file, file.name)
-
-const res = await fetch("/api/jatos/import", {
-  method: "POST",
-  body: fd,
+const result = await getParticipantFeedback({
+  studyId,
+  pseudonym,
+  jatosStudyId,
+  userId,
 })
-
-const data = await res.json()
-
-if (!res.ok) {
-  throw new Error(data.error || `Upload failed: ${res.status}`)
-}
-
-const result = res.status === 409 ? { studyExists: true, ...data } : data
 ```
 
----
+### Server Actions
 
-### Converting Business Logic to Pure Functions
-
-**Before** (client-callable wrapper):
+Extract `userId` from session and call the service:
 
 ```typescript
-export async function checkPilotCompletion(jatosStudyUUID: string) {
-  const res = await fetch("/api/jatos/get-results-metadata", ...)
-  const metadata = await res.json()
-  // Business logic here
-  return hasCompleted
+"use server"
+
+import { getBlitzContext } from "@/src/app/blitz-server"
+import { downloadAllResultsForResearcher } from "@/src/lib/jatos/jatosAccessService"
+
+export async function downloadResultsAction(studyId: number) {
+  const { session } = await getBlitzContext()
+  const userId = session.userId
+  if (userId == null) return { success: false, error: "Not authenticated" }
+
+  const payload = await downloadAllResultsForResearcher({ studyId, userId })
+  return { success: true, payload }
 }
 ```
 
-**After** (pure function + direct API call):
+---
 
-```typescript
-// Pure function (lib/jatos/api/checkPilotCompletion.ts)
-export function checkPilotCompletionFromMetadata(metadata: any, jatosStudyUUID: string): boolean {
-  // Business logic only
-  return hasCompleted
-}
+## Available Service Methods
 
-// Client component
-const res = await fetch("/api/jatos/get-results-metadata", ...)
-const metadata = await res.json()
-const completed = checkPilotCompletionFromMetadata(metadata, studyUUID)
-```
+| Method                                  | Use Case                                  |
+| --------------------------------------- | ----------------------------------------- |
+| `getResultsMetadataForResearcher`       | Fetch results metadata                    |
+| `getStudyPropertiesForResearcher`       | Fetch study properties                    |
+| `getBatchIdForResearcher`               | Get first batch ID from properties        |
+| `downloadAllResultsForResearcher`       | Download all results as `DownloadPayload` |
+| `getParticipantFeedback`                | Participant feedback (service token)      |
+| `createPersonalStudyCodeForParticipant` | Join study (participant)                  |
+| `createPersonalStudyCodeForResearcher`  | Pilot link (researcher)                   |
+| `getGeneralLinksForResearcher`          | General links for participants            |
+| `getHtmlFilesForResearcher`             | HTML files from asset structure           |
+| `getEnrichedResultsForResearcher`       | Enriched results for display              |
+| `getStudyDataByCommentForResearcher`    | Study data by comment (e.g. "test")       |
+| `getAllPilotResultsForResearcher`       | All pilot results                         |
+| `getPilotResultByIdForResearcher`       | Single pilot result by ID                 |
+| `checkPilotStatusForResearcher`         | Pilot completion status                   |
 
 ---
 
-## Best Practices
+## Error Handling
 
-### 1. Prefer Server-Side When Possible
-
-Always prefer server-side lib functions for initial data fetching:
-
-```typescript
-// ✅ Good: Server component
-const metadata = await getResultsMetadata({ studyIds: [studyId] })
-
-// ❌ Avoid: Client component fetching initial data
-const [metadata] = useQuery(...) // Use API route only if reactive updates needed
-```
-
----
-
-### 2. Keep Client Components Minimal
-
-Client components should only fetch data when:
-
-- User interaction triggers it (button click, form submission)
-- Real-time updates are needed (reactive queries)
-- Data changes after user actions
-
----
-
-### 3. Error Handling
-
-**Server-side**:
+**jatosAccessService** throws on authorization failure or JATOS errors. Wrap in try/catch:
 
 ```typescript
 try {
-  const data = await getResultsMetadata(params)
+  const data = await getResultsMetadataForResearcher({ studyId, userId })
+  return { success: true, data }
 } catch (error: any) {
-  if (error.name === "NotFoundError") {
-    notFound()
-  }
-  throw error
-}
-```
-
-**Client-side**:
-
-```typescript
-try {
-  const res = await fetch("/api/jatos/...", ...)
-  if (!res.ok) {
-    const error = await res.json()
-    throw new Error(error.error)
-  }
-  const data = await res.json()
-} catch (error) {
-  toast.error(error.message)
+  return { success: false, error: error.message }
 }
 ```
 
 ---
 
-### 4. Type Safety
+## Types
 
-Always use typed responses:
-
-```typescript
-import type { CreatePersonalStudyCodeResponse, JatosApiError } from "@/src/types/jatos-api"
-
-const res = await fetch("/api/jatos/create-personal-studycode", ...)
-const data = await res.json() as CreatePersonalStudyCodeResponse | JatosApiError
-
-if ("error" in data) {
-  // Handle error
-  throw new Error(data.error)
-}
-
-// TypeScript knows data is CreatePersonalStudyCodeResponse here
-const code = data.code
-```
-
----
-
-## API Route Reference
-
-| Route                                  | Method | Purpose              | Wraps Lib Function?        |
-| -------------------------------------- | ------ | -------------------- | -------------------------- |
-| `/api/jatos/import`                    | POST   | Import study file    | No (calls JATOS directly)  |
-| `/api/jatos/get-results-metadata`      | POST   | Get results metadata | Yes (`getResultsMetadata`) |
-| `/api/jatos/get-results-data`          | POST   | Get results ZIP file | Yes (`getResultsData`)     |
-| `/api/jatos/get-study-properties`      | GET    | Get study properties | Yes (`getStudyProperties`) |
-| `/api/jatos/get-study-code`            | GET    | Get study code       | No (calls JATOS directly)  |
-| `/api/jatos/create-personal-studycode` | POST   | Create personal code | No (calls JATOS directly)  |
-| `/api/jatos/delete-study`              | DELETE | Delete study         | Yes (`deleteStudy`)        |
-| `/api/jatos/get-all-results`           | POST   | Get all results ZIP  | No (calls JATOS directly)  |
-| `/api/jatos/get-asset-structure`       | GET    | Get asset structure  | No (calls JATOS directly)  |
-
----
-
-## Examples
-
-### Example 1: Server Component Fetching Data
-
-```typescript
-// app/studies/[studyId]/page.tsx
-import { getResultsMetadata } from "@/src/lib/jatos/api/getResultsMetadata"
-
-export default async function StudyPage({ params }: { params: Promise<{ studyId: string }> }) {
-  const study = await getStudyRsc(studyId)
-
-  let metadata = null
-  if (study.jatosStudyId) {
-    metadata = await getResultsMetadata({ studyIds: [study.jatosStudyId] })
-  }
-
-  return <StudyContent study={study} metadata={metadata} />
-}
-```
-
----
-
-### Example 2: Client Component Fetching Data on Interaction
-
-```typescript
-// components/client/ResultsCard.tsx
-"use client"
-
-const fetchResults = async () => {
-  try {
-    const res = await fetch(`/api/jatos/get-results-data?studyIds=${jatosStudyId}`, {
-      method: "POST",
-    })
-
-    if (!res.ok) {
-      const error = await res.json()
-      throw new Error(error.error)
-    }
-
-    const blob = await res.blob()
-    // Process blob...
-  } catch (error: any) {
-    toast.error(error.message)
-  }
-}
-```
-
----
-
-## Troubleshooting
-
-### Common Issues
-
-**Issue**: "Missing studyId" error  
-**Solution**: Ensure required parameters are provided in query params or body
-
-**Issue**: "JATOS API error: 401"  
-**Solution**: Check `JATOS_TOKEN` environment variable is set correctly
-
-**Issue**: Type errors in API responses  
-**Solution**: Import and use types from `@/src/types/jatos-api`
-
----
-
-## Future Enhancements
-
-- [ ] Consider unified API client for type-safe calls (future enhancement)
-- [ ] Add request/response validation with Zod (future enhancement)
-- [ ] Consider server actions for authenticated operations (evaluate case-by-case)
+- `JatosAuth` — `{ token: string }` for client methods.
+- `DownloadPayload` — `{ filename, mimeType, base64 }` for download results.
+- `JatosImportResponse` — Import route response (from `@/src/types/jatos-api`).
 
 ---
 
 ## Related Documentation
 
-- [JATOS API Audit](./JATOS_API_AUDIT.md) - Detailed audit of current patterns
-- [Server Component Patterns](./SERVER_COMPONENT_PATTERNS.md) - Server/client component guidelines
+- [JATOS Refactor Plan](./JATOS_REFACTOR_PLAN.md) — Architecture and migration details
+- [JATOS User-Scoped Tokens](./JATOS_USER_SCOPED_TOKENS_IMPLEMENTATION_PLAN.md) — Token types and provisioning

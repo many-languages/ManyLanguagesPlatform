@@ -12,7 +12,7 @@ export async function createFeedbackTemplateRsc(input: {
   content: string
   requiredVariableKeys?: string[]
 }): Promise<FeedbackTemplate> {
-  return withStudyAccess(input.studyId, async (_sId, _uId, _token) => {
+  return withStudyAccess(input.studyId, async (_sId, _uId) => {
     const template = await db.$transaction(async (tx) => {
       const created = await tx.feedbackTemplate.create({
         data: {

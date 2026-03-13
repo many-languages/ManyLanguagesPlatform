@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest"
 import { ensureResearcherJatosMember } from "./ensureResearcherJatosMember"
 import * as provisionResearcherJatosModule from "./provisionResearcherJatos"
-import * as addStudyMemberModule from "../api/admin/addStudyMember"
+import * as addStudyMemberModule from "../client/addStudyMember"
 
 describe("ensureResearcherJatosMember", () => {
   beforeEach(() => {
@@ -23,7 +23,10 @@ describe("ensureResearcherJatosMember", () => {
     await ensureResearcherJatosMember(42, 5)
 
     expect(provisionSpy).toHaveBeenCalledWith(42)
-    expect(addMemberSpy).toHaveBeenCalledWith({ studyId: 5, userId: 101 })
+    expect(addMemberSpy).toHaveBeenCalledWith(
+      { studyId: 5, userId: 101 },
+      expect.objectContaining({ token: expect.any(String) })
+    )
   })
 
   it("uses existing jatosUserId when researcher already provisioned", async () => {
@@ -37,6 +40,9 @@ describe("ensureResearcherJatosMember", () => {
     await ensureResearcherJatosMember(10, 3)
 
     expect(provisionSpy).toHaveBeenCalledWith(10)
-    expect(addMemberSpy).toHaveBeenCalledWith({ studyId: 3, userId: 99 })
+    expect(addMemberSpy).toHaveBeenCalledWith(
+      { studyId: 3, userId: 99 },
+      expect.objectContaining({ token: expect.any(String) })
+    )
   })
 })

@@ -1,5 +1,6 @@
 import db from "db"
-import { createJatosUser } from "../api/admin/createJatosUser"
+import { getAdminToken } from "../getAdminToken"
+import { createJatosUser } from "../client/createJatosUser"
 
 export interface ProvisionResearcherJatosResult {
   jatosUserId: number
@@ -22,10 +23,13 @@ export async function provisionResearcherJatos(
     return { jatosUserId: existing.jatosUserId }
   }
 
-  const jatosUser = await createJatosUser({
-    username: `mlp-researcher-${userId}`,
-    name: `MLP Researcher ${userId}`,
-  })
+  const jatosUser = await createJatosUser(
+    {
+      username: `mlp-researcher-${userId}`,
+      name: `MLP Researcher ${userId}`,
+    },
+    { token: getAdminToken() }
+  )
 
   await db.researcherJatos.create({
     data: {

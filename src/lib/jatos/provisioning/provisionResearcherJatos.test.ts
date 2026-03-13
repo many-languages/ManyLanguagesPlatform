@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest"
 import { provisionResearcherJatos } from "./provisionResearcherJatos"
-import * as createJatosUserModule from "../api/admin/createJatosUser"
+import * as createJatosUserModule from "../client/createJatosUser"
 
 const mockFindUnique = vi.fn()
 const mockCreate = vi.fn()
@@ -17,6 +17,7 @@ vi.mock("db", () => ({
 describe("provisionResearcherJatos", () => {
   beforeEach(() => {
     vi.resetAllMocks()
+    process.env.JATOS_TOKEN = "admin-token"
   })
 
   afterEach(() => {
@@ -41,10 +42,13 @@ describe("provisionResearcherJatos", () => {
       where: { userId: 42 },
       select: { jatosUserId: true },
     })
-    expect(createSpy).toHaveBeenCalledWith({
-      username: "mlp-researcher-42",
-      name: "MLP Researcher 42",
-    })
+    expect(createSpy).toHaveBeenCalledWith(
+      {
+        username: "mlp-researcher-42",
+        name: "MLP Researcher 42",
+      },
+      expect.objectContaining({ token: expect.any(String) })
+    )
     expect(mockCreate).toHaveBeenCalledWith({
       data: { userId: 42, jatosUserId: 101 },
     })

@@ -1,4 +1,4 @@
-.PHONY: dev dev-https prod stop logs clean build up down validate-token validate-token-online help prune prune-all certs
+.PHONY: dev dev-https prod stop logs clean build up down validate-token validate-token-online validate-setup help prune prune-all certs
 
 # Use bash for better shell features
 SHELL := /bin/bash
@@ -31,7 +31,8 @@ help:
 	@echo "  make logs            Tail logs"
 	@echo "  make clean           Remove containers and volumes (⚠️  data loss!)"
 	@echo "  make build           Build application containers"
-	@echo "  make validate-token  Validate JATOS token (requires JATOS_TOKEN in .env)"
+	@echo "  make validate-token   Validate JATOS token (requires JATOS_TOKEN in .env)"
+	@echo "  make validate-setup  Validate full setup (JATOS, service account, secrets)"
 	@echo "  make certs           Generate SSL certificates (for local HTTPS)"
 	@echo ""
 	@echo "Environment toggles:"
@@ -320,6 +321,11 @@ validate-token-online:
 	@JATOS_TOKEN=$$(grep "^JATOS_TOKEN=" .env | cut -d '=' -f2- | tr -d '"' | tr -d "'"); \
 	export JATOS_TOKEN; \
 	$(COMPOSE_DEV_HTTPS_ONLINE) --profile validation run --rm -e JATOS_TOKEN="$$JATOS_TOKEN" jatos-token-validator
+
+# Validate full setup (JATOS, service account, production secrets)
+validate-setup:
+	@echo "🔍 Validating setup..."
+	@npx tsx scripts/validate-setup.ts
 
 # Prune unused Docker resources (safe - doesn't remove volumes)
 prune:

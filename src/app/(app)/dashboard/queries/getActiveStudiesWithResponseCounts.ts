@@ -1,10 +1,8 @@
 import { Ctx } from "blitz"
 import db from "db"
 import { Prisma } from "db"
-import { getResultsMetadata } from "@/src/lib/jatos/api/getResultsMetadata"
-import { getTokenForResearcher } from "@/src/lib/jatos/getTokenForResearcher"
-import { countNonPilotResponses } from "@/src/lib/jatos/api/studyHasParticipantResponses"
-import type { JatosMetadata } from "@/src/types/jatos"
+import { getResultsMetadataForResearcherDashboard } from "@/src/lib/jatos/jatosAccessService"
+import { countNonPilotResponses } from "@/src/lib/jatos/utils/studyHasParticipantResponses"
 
 export type ActiveStudyWithResponseCount = {
   id: number
@@ -56,12 +54,12 @@ export async function getActiveStudiesWithResponseCounts(
 
   const studyUuids = studiesWithUuid.map((s) => s.jatosStudyUUID)
 
-  let metadata: JatosMetadata
-  try {
-    const token = await getTokenForResearcher(userId)
-    metadata = await getResultsMetadata({ studyUuids }, { token })
-  } catch (error) {
-    console.error("Failed to fetch JATOS metadata for active studies:", error)
+  const metadata = await getResultsMetadataForResearcherDashboard({
+    studyId: studiesWithUuid[0].id,
+    userId,
+    studyUuids,
+  })
+  if (!metadata) {
     return studies.map((s) => ({
       id: s.id,
       title: s.title,

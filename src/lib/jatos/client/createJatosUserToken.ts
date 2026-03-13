@@ -1,4 +1,6 @@
 import type { JatosAuth } from "./types"
+import { throwIfJatosError } from "./throwIfJatosError"
+import { JatosTransportError } from "../errors"
 
 export interface CreateJatosUserTokenParams {
   jatosUserId: number
@@ -9,6 +11,8 @@ export interface CreateJatosUserTokenResponse {
   id: number
   token: string
 }
+
+const OPERATION = "Create JATOS user token"
 
 /**
  * Creates a new personal access token for a JATOS user via the admin API.
@@ -23,47 +27,40 @@ export async function createJatosUserToken(
     throw new Error("Missing JATOS_BASE or auth.token")
   }
 
-  const body = {
-    name: `mlp-researcher-${userId}`,
+  const body = { name: `mlp-researcher-${userId}` }
+
+  let response: Response
+  try {
+    response = await fetch(`${JATOS_BASE}/jatos/api/v1/users/${jatosUserId}/tokens`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+        Authorization: `Bearer ${auth.token}`,
+      },
+      body: JSON.stringify(body),
+    })
+  } catch (cause) {
+    throw new JatosTransportError(`Network error during ${OPERATION}`, OPERATION, cause)
   }
 
-  const res = await fetch(`${JATOS_BASE}/jatos/api/v1/users/${jatosUserId}/tokens`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Accept: "application/json",
-      Authorization: `Bearer ${auth.token}`,
-    },
-    body: JSON.stringify(body),
-  })
+  await throwIfJatosError(response, OPERATION)
 
-  const text = await res.text()
-
-  if (!res.ok) {
-    let errMsg: string
-    try {
-      const json = JSON.parse(text) as { error?: string }
-      errMsg = json?.error ?? (text || res.statusText)
-    } catch {
-      errMsg = text || res.statusText
-    }
-    throw new Error(`Failed to create JATOS user token (${res.status}): ${errMsg}`)
-  }
-
+  const text = await response.text()
   let json: { data?: { id?: number; token?: string } }
   try {
-    json = JSON.parse(text)
-  } catch {
-    throw new Error("JATOS response is not valid JSON")
+    json = JSON.parse(text) as { data?: { id?: number; token?: string } }
+  } catch (cause) {
+    throw new JatosTransportError(`Invalid JSON in ${OPERATION} response`, OPERATION, cause)
   }
 
   const data = json?.data
   if (!data || typeof data.id !== "number" || !data.token) {
-    throw new Error("JATOS response missing 'data.id' or 'data.token'")
+    throw new JatosTransportError(
+      `Missing data.id or data.token in ${OPERATION} response`,
+      OPERATION
+    )
   }
 
-  return {
-    id: data.id,
-    token: data.token,
-  }
+  return { id: data.id, token: data.token }
 }

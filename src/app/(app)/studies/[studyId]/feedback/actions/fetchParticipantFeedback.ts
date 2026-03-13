@@ -2,6 +2,7 @@
 
 import { getBlitzContext } from "@/src/app/blitz-server"
 import { getParticipantFeedback } from "@/src/lib/jatos/jatosAccessService"
+import { mapJatosErrorToUserMessage } from "@/src/lib/jatos/errors"
 
 export async function fetchParticipantFeedbackAction(
   studyId: number,
@@ -16,12 +17,11 @@ export async function fetchParticipantFeedbackAction(
     }
 
     return await getParticipantFeedback({ studyId, pseudonym, jatosStudyId, userId })
-  } catch (error: any) {
-    console.error("Error fetching participant feedback:", error)
+  } catch (error) {
     return {
       success: false,
       completed: false,
-      error: error.message || "Failed to fetch participant feedback",
+      error: mapJatosErrorToUserMessage(error),
     }
   }
 }

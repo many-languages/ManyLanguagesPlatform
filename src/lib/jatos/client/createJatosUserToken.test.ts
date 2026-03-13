@@ -54,38 +54,42 @@ describe("createJatosUserToken", () => {
     ).rejects.toThrow("Missing JATOS_BASE or auth.token")
   })
 
-  it("throws error on API failure", async () => {
+  it("throws JatosBadRequestError on API failure", async () => {
     mockFetch.mockResolvedValueOnce({
       ok: false,
       status: 400,
       statusText: "Bad Request",
-      text: async () => JSON.stringify({ error: "Invalid user" }),
+      text: async () =>
+        JSON.stringify({ error: { code: "VALIDATION_ERROR", message: "Invalid user" } }),
     })
 
+    const { JatosBadRequestError } = await import("../errors")
     await expect(
       createJatosUserToken({ jatosUserId: 42, userId: "user-abc" }, { token: "admin-token-123" })
-    ).rejects.toThrow("Failed to create JATOS user token (400): Invalid user")
+    ).rejects.toThrow(JatosBadRequestError)
   })
 
-  it("throws error on invalid JSON response", async () => {
+  it("throws JatosTransportError on invalid JSON response", async () => {
     mockFetch.mockResolvedValueOnce({
       ok: true,
       text: async () => "Not JSON",
     })
 
+    const { JatosTransportError } = await import("../errors")
     await expect(
       createJatosUserToken({ jatosUserId: 42, userId: "user-abc" }, { token: "admin-token-123" })
-    ).rejects.toThrow("JATOS response is not valid JSON")
+    ).rejects.toThrow(JatosTransportError)
   })
 
-  it("throws error if response is missing id or token", async () => {
+  it("throws JatosTransportError if response is missing id or token", async () => {
     mockFetch.mockResolvedValueOnce({
       ok: true,
       text: async () => JSON.stringify({ data: { id: 101 } }), // missing token
     })
 
+    const { JatosTransportError } = await import("../errors")
     await expect(
       createJatosUserToken({ jatosUserId: 42, userId: "user-abc" }, { token: "admin-token-123" })
-    ).rejects.toThrow("JATOS response missing 'data.id' or 'data.token'")
+    ).rejects.toThrow(JatosTransportError)
   })
 })

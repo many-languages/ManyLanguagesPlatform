@@ -1,4 +1,8 @@
 import type { JatosAuth } from "./types"
+import { throwIfJatosError } from "./throwIfJatosError"
+import { JatosTransportError } from "../errors"
+
+const OPERATION = "Delete study"
 
 /**
  * Deletes a study from JATOS by its ID.
@@ -13,17 +17,21 @@ export async function deleteJatosStudy(id: string | number, auth: JatosAuth) {
 
   const jatosUrl = `${JATOS_BASE}/jatos/api/v1/studies/${id}`
 
-  const response = await fetch(jatosUrl, {
-    method: "DELETE",
-    headers: {
-      Authorization: `Bearer ${auth.token}`,
-    },
-  })
-
-  if (!response.ok) {
-    const errorText = await response.text()
-    throw new Error(`JATOS API error ${response.status}: ${errorText}`)
+  let response: Response
+  try {
+    response = await fetch(jatosUrl, {
+      method: "DELETE",
+      headers: {
+        Authorization: `Bearer ${auth.token}`,
+      },
+    })
+  } catch (cause) {
+    throw new JatosTransportError(`Network error during ${OPERATION}`, OPERATION, cause)
   }
+
+  await throwIfJatosError(response, OPERATION, {
+    jatosStudyId: typeof id === "number" ? id : undefined,
+  })
 
   return { success: true, message: `Study ${id} deleted successfully.` }
 }

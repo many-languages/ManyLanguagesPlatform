@@ -2,6 +2,7 @@
 
 import { checkPilotStatusForResearcher } from "@/src/lib/jatos/jatosAccessService"
 import { getBlitzContext } from "@/src/app/blitz-server"
+import { mapJatosErrorToUserMessage } from "@/src/lib/jatos/errors"
 
 /**
  * Server Action to check pilot completion status.
@@ -34,11 +35,10 @@ export async function checkPilotStatusAction(input: {
       jatosStudyUploadId,
     })
   } catch (error) {
-    console.error("Failed to check pilot status:", error)
     return {
       success: false,
       completed: null,
-      error: error instanceof Error ? error.message : "Unknown error",
+      error: mapJatosErrorToUserMessage(error),
     }
   }
 }

@@ -7,6 +7,7 @@ import {
   downloadAllResultsForResearcher,
   type DownloadPayload,
 } from "@/src/lib/jatos/jatosAccessService"
+import { mapJatosErrorToUserMessage } from "@/src/lib/jatos/errors"
 import type { EnrichedJatosStudyResult } from "@/src/types/jatos"
 
 export async function downloadResultsAction(
@@ -21,11 +22,10 @@ export async function downloadResultsAction(
 
     const payload = await downloadAllResultsForResearcher({ studyId, userId })
     return { success: true, payload }
-  } catch (error: any) {
-    console.error("Error downloading results:", error)
+  } catch (error) {
     return {
       success: false,
-      error: error.message || "Failed to download results",
+      error: mapJatosErrorToUserMessage(error),
     }
   }
 }
@@ -49,11 +49,10 @@ export async function refetchEnrichedResultsAction(
     revalidatePath(`/studies/${studyId}`)
 
     return { success: true, data: enriched }
-  } catch (error: any) {
-    console.error("Error refetching enriched results:", error)
+  } catch (error) {
     return {
       success: false,
-      error: error.message || "Failed to fetch and process results",
+      error: mapJatosErrorToUserMessage(error),
     }
   }
 }

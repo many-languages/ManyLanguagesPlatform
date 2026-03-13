@@ -28,6 +28,10 @@ function validateResultIdsParams(params: Record<string, unknown>): void {
 }
 
 import type { JatosAuth } from "./types"
+import { throwIfJatosError } from "./throwIfJatosError"
+import { JatosTransportError } from "../errors"
+
+const OPERATION = "Fetch results data"
 
 /**
  * Fetch raw result data from JATOS (data.txt contents as ZIP).
@@ -43,29 +47,31 @@ export async function getResultsData(params: Record<string, unknown>, auth: Jato
 
   const jatosUrl = `${JATOS_BASE}/jatos/api/v1/results/data`
 
-  // The JATOS API supports posting JSON body, but response is binary (ZIP)
-  const response = await fetch(jatosUrl, {
-    method: "POST",
-    headers: {
-      // ✅ Don't force application/json for the response — only for the body
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${auth.token}`,
-    },
-    body: JSON.stringify(params),
-  })
-
-  if (!response.ok) {
-    const errorText = await response.text()
-    throw new Error(`JATOS API error ${response.status}: ${errorText}`)
+  let response: Response
+  try {
+    response = await fetch(jatosUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${auth.token}`,
+      },
+      body: JSON.stringify(params),
+    })
+  } catch (cause) {
+    throw new JatosTransportError(`Network error during ${OPERATION}`, OPERATION, cause)
   }
 
-  // ✅ Read it as binary
-  const arrayBuffer = await response.arrayBuffer()
-  const contentType = response.headers.get("Content-Type") || "application/octet-stream"
+  await throwIfJatosError(response, OPERATION)
 
-  return {
-    success: true,
-    contentType,
-    data: arrayBuffer, // binary ZIP data
+  try {
+    const arrayBuffer = await response.arrayBuffer()
+    const contentType = response.headers.get("Content-Type") || "application/octet-stream"
+    return {
+      success: true as const,
+      contentType,
+      data: arrayBuffer,
+    }
+  } catch (cause) {
+    throw new JatosTransportError(`Failed to read ${OPERATION} response body`, OPERATION, cause)
   }
 }

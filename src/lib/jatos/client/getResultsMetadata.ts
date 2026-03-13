@@ -1,4 +1,8 @@
 import type { JatosAuth } from "./types"
+import { throwIfJatosError } from "./throwIfJatosError"
+import { JatosTransportError } from "../errors"
+
+const OPERATION = "Fetch results metadata"
 
 export async function getResultsMetadata(params: Record<string, unknown>, auth: JatosAuth) {
   const JATOS_BASE = process.env.JATOS_BASE
@@ -7,19 +11,25 @@ export async function getResultsMetadata(params: Record<string, unknown>, auth: 
   }
 
   const jatosUrl = `${JATOS_BASE}/jatos/api/v1/results/metadata?download=false`
-  const response = await fetch(jatosUrl, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${auth.token}`,
-    },
-    body: JSON.stringify(params),
-  })
-
-  if (!response.ok) {
-    const text = await response.text()
-    throw new Error(`JATOS API ${response.status}: ${text}`)
+  let response: Response
+  try {
+    response = await fetch(jatosUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${auth.token}`,
+      },
+      body: JSON.stringify(params),
+    })
+  } catch (cause) {
+    throw new JatosTransportError(`Network error during ${OPERATION}`, OPERATION, cause)
   }
 
-  return response.json()
+  await throwIfJatosError(response, OPERATION)
+
+  try {
+    return await response.json()
+  } catch (cause) {
+    throw new JatosTransportError(`Invalid JSON in ${OPERATION} response`, OPERATION, cause)
+  }
 }

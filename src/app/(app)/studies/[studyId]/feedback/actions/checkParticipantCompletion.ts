@@ -2,6 +2,7 @@
 
 import { getBlitzContext } from "@/src/app/blitz-server"
 import { checkParticipantCompletionForParticipant } from "@/src/lib/jatos/jatosAccessService"
+import { mapJatosErrorToUserMessage } from "@/src/lib/jatos/errors"
 
 /**
  * Lightweight action to check if participant has completed the study.
@@ -31,13 +32,10 @@ export async function checkParticipantCompletionAction(
       userId,
     })
   } catch (error) {
-    console.error("Error checking participant completion:", error)
-    const message =
-      error instanceof Error ? error.message : "Failed to check participant completion"
     return {
       success: false,
       completed: false,
-      error: message,
+      error: mapJatosErrorToUserMessage(error),
     }
   }
 }

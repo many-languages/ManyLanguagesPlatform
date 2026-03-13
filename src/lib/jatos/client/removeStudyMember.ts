@@ -1,9 +1,13 @@
 import type { JatosAuth } from "./types"
+import { throwIfJatosError } from "./throwIfJatosError"
+import { JatosTransportError } from "../errors"
 
 export interface RemoveStudyMemberParams {
   studyId: number | string
   userId: number
 }
+
+const OPERATION = "Remove study member"
 
 /**
  * Removes a user from a JATOS study's members via the admin API.
@@ -19,24 +23,21 @@ export async function removeStudyMember(
     throw new Error("Missing JATOS_BASE or auth.token")
   }
 
-  const res = await fetch(`${JATOS_BASE}/jatos/api/v1/studies/${studyId}/members/${userId}`, {
-    method: "DELETE",
-    headers: {
-      Accept: "application/json",
-      Authorization: `Bearer ${auth.token}`,
-    },
-  })
-
-  const text = await res.text()
-
-  if (!res.ok) {
-    let errMsg: string
-    try {
-      const json = JSON.parse(text) as { error?: string }
-      errMsg = json?.error ?? (text || res.statusText)
-    } catch {
-      errMsg = text || res.statusText
-    }
-    throw new Error(`Failed to remove study member (${res.status}): ${errMsg}`)
+  let response: Response
+  try {
+    response = await fetch(`${JATOS_BASE}/jatos/api/v1/studies/${studyId}/members/${userId}`, {
+      method: "DELETE",
+      headers: {
+        Accept: "application/json",
+        Authorization: `Bearer ${auth.token}`,
+      },
+    })
+  } catch (cause) {
+    throw new JatosTransportError(`Network error during ${OPERATION}`, OPERATION, cause)
   }
+
+  await throwIfJatosError(response, OPERATION, {
+    jatosStudyId: typeof studyId === "number" ? studyId : undefined,
+    userId,
+  })
 }

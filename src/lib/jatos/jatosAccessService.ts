@@ -6,6 +6,8 @@
 
 import db from "db"
 import { getTokenForResearcher, getTokenForStudyService } from "./tokenBroker"
+import { logJatosError } from "./logger"
+import { mapJatosErrorToUserMessage } from "./errors"
 import { getResultsMetadata } from "./client/getResultsMetadata"
 import { getResultsData } from "./client/getResultsData"
 import { getStudyProperties } from "./client/getStudyProperties"
@@ -191,9 +193,11 @@ export async function getResultsMetadataForResearcher({
  * Uses service account token (validated via first study). Caller must pass jatosStudyIds
  * derived from participations filtered by userId.
  * Returns null on error or when jatosStudyIds is empty.
+ *
+ * Best-effort: logs and returns null on failure.
  */
 export async function getResultsMetadataForParticipantDashboard({
-  userId: _userId,
+  userId,
   jatosStudyIds,
 }: {
   userId: number
@@ -203,7 +207,12 @@ export async function getResultsMetadataForParticipantDashboard({
   try {
     const token = await getTokenForStudyService(jatosStudyIds[0])
     return getResultsMetadata({ studyIds: jatosStudyIds }, { token })
-  } catch {
+  } catch (error) {
+    logJatosError("[getResultsMetadataForParticipantDashboard] JATOS metadata fetch failed", {
+      operation: "getResultsMetadataForParticipantDashboard",
+      userId,
+      error,
+    })
     return null
   }
 }
@@ -211,6 +220,8 @@ export async function getResultsMetadataForParticipantDashboard({
 /**
  * Fetches JATOS results metadata for researcher dashboard (active studies with response counts).
  * Uses researcher token. studyId is used for access check; studyUuids are the studies to fetch.
+ *
+ * Best-effort: logs and returns null on failure.
  */
 export async function getResultsMetadataForResearcherDashboard({
   studyId,
@@ -224,7 +235,13 @@ export async function getResultsMetadataForResearcherDashboard({
   if (studyUuids.length === 0) return null
   try {
     return getResultsMetadataForResearcher({ studyId, userId, studyUuids })
-  } catch {
+  } catch (error) {
+    logJatosError("[getResultsMetadataForResearcherDashboard] JATOS metadata fetch failed", {
+      operation: "getResultsMetadataForResearcherDashboard",
+      studyId,
+      userId,
+      error,
+    })
     return null
   }
 }
@@ -254,8 +271,11 @@ export async function checkParticipantCompletionForParticipant({
       }
     )
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Failed to check completion"
-    return { success: false, completed: false, error: message }
+    return {
+      success: false,
+      completed: false,
+      error: mapJatosErrorToUserMessage(error),
+    }
   }
 }
 
@@ -335,11 +355,14 @@ export async function getParticipantFeedback({
         })
         enrichedResult = enriched.find((r) => r.id === resultId) ?? null
       } catch (error) {
-        console.error("Error fetching enriched result:", error)
+        logJatosError("Error fetching enriched result for getParticipantFeedback", {
+          operation: "getParticipantFeedback",
+          error,
+        })
         return {
           success: false,
           completed: true,
-          error: "Failed to fetch participant results",
+          error: mapJatosErrorToUserMessage(error),
         }
       }
 

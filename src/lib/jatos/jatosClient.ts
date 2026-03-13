@@ -7,7 +7,7 @@ export { getAssetStructure } from "./client/getAssetStructure"
 export { getResultsMetadata } from "./client/getResultsMetadata"
 export { getResultsData } from "./client/getResultsData"
 export { getStudyProperties } from "./client/getStudyProperties"
-export { fetchStudyCodes, FetchStudyCodesError } from "./client/fetchStudyCodes"
+export { fetchStudyCodes } from "./client/fetchStudyCodes"
 export { deleteJatosStudy } from "./client/deleteStudy"
 export {
   createJatosUser,

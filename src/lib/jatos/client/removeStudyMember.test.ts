@@ -58,16 +58,18 @@ describe("removeStudyMember", () => {
     )
   })
 
-  it("throws error on API failure", async () => {
+  it("throws JatosNotFoundError on API failure", async () => {
     mockFetch.mockResolvedValueOnce({
       ok: false,
       status: 404,
       statusText: "Not Found",
-      text: async () => JSON.stringify({ error: "Study not found" }),
+      text: async () =>
+        JSON.stringify({ error: { code: "NOT_FOUND", message: "Study not found" } }),
     })
 
+    const { JatosNotFoundError } = await import("../errors")
     await expect(
       removeStudyMember({ studyId: 1, userId: 42 }, { token: "admin-token-123" })
-    ).rejects.toThrow("Failed to remove study member (404): Study not found")
+    ).rejects.toThrow(JatosNotFoundError)
   })
 })

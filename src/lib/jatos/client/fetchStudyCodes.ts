@@ -1,11 +1,6 @@
 import type { JatosAuth } from "./types"
-
-export class FetchStudyCodesError extends Error {
-  constructor(message: string, public readonly status: number) {
-    super(message)
-    this.name = "FetchStudyCodesError"
-  }
-}
+import { throwIfJatosError } from "./throwIfJatosError"
+import { JatosTransportError } from "../errors"
 
 export interface FetchStudyCodesParams {
   studyId: string | number
@@ -15,6 +10,8 @@ export interface FetchStudyCodesParams {
   comment?: string
 }
 
+const OPERATION = "Fetch study codes"
+
 /**
  * Fetches study codes from JATOS.
  * Uses POST /jatos/api/v1/studies/{id}/studyCodes (GET deprecated in JATOS API v1.1).
@@ -22,7 +19,7 @@ export interface FetchStudyCodesParams {
  * @param params - studyId, type, and optional amount, batchId, comment
  * @param auth - JATOS API auth (token required)
  * @returns Array of study code strings (may be empty if none available)
- * @throws Error on JATOS API errors or invalid response
+ * @throws JatosApiError / JatosTransportError on JATOS API errors or invalid response
  */
 export async function fetchStudyCodes(
   params: FetchStudyCodesParams,
@@ -42,43 +39,43 @@ export async function fetchStudyCodes(
   if (batchId != null) body.batchId = batchId
   if (comment != null) body.comment = comment
 
-  const res = await fetch(
-    `${JATOS_BASE}/jatos/api/v1/studies/${encodeURIComponent(String(studyId))}/studyCodes`,
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Accept: "application/json",
-        Authorization: `Bearer ${auth.token}`,
-      },
-      body: JSON.stringify(body),
-      cache: "no-store",
-    }
-  )
-
-  const text = await res.text()
-
-  if (!res.ok) {
-    let errMsg: string
-    try {
-      const json = JSON.parse(text) as { error?: string }
-      errMsg = json?.error ?? (text || res.statusText)
-    } catch {
-      errMsg = text || res.statusText
-    }
-    throw new FetchStudyCodesError(errMsg || res.statusText, res.status)
+  let response: Response
+  try {
+    response = await fetch(
+      `${JATOS_BASE}/jatos/api/v1/studies/${encodeURIComponent(String(studyId))}/studyCodes`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+          Authorization: `Bearer ${auth.token}`,
+        },
+        body: JSON.stringify(body),
+        cache: "no-store",
+      }
+    )
+  } catch (cause) {
+    throw new JatosTransportError(`Network error during ${OPERATION}`, OPERATION, cause)
   }
 
+  await throwIfJatosError(response, OPERATION, {
+    jatosStudyId: typeof studyId === "number" ? studyId : undefined,
+  })
+
+  const text = await response.text()
   let json: { apiVersion?: string; data?: string[] }
   try {
     json = JSON.parse(text) as { apiVersion?: string; data?: string[] }
-  } catch {
-    throw new FetchStudyCodesError("JATOS response is not valid JSON", 502)
+  } catch (cause) {
+    throw new JatosTransportError(`Invalid JSON in ${OPERATION} response`, OPERATION, cause)
   }
 
   const data = json?.data
   if (!Array.isArray(data)) {
-    throw new FetchStudyCodesError("JATOS response missing or invalid 'data' array", 502)
+    throw new JatosTransportError(
+      `Missing or invalid data array in ${OPERATION} response`,
+      OPERATION
+    )
   }
 
   return data

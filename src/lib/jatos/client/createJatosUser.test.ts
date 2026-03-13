@@ -62,38 +62,42 @@ describe("createJatosUser", () => {
     ).rejects.toThrow("Missing JATOS_BASE or auth.token")
   })
 
-  it("throws error on API failure", async () => {
+  it("throws JatosBadRequestError on API failure", async () => {
     mockFetch.mockResolvedValueOnce({
       ok: false,
       status: 400,
       statusText: "Bad Request",
-      text: async () => JSON.stringify({ error: "Username already exists" }),
+      text: async () =>
+        JSON.stringify({ error: { code: "VALIDATION_ERROR", message: "Username already exists" } }),
     })
 
+    const { JatosBadRequestError } = await import("../errors")
     await expect(
       createJatosUser({ username: "test", name: "test" }, { token: "admin-token-123" })
-    ).rejects.toThrow("Failed to create JATOS user (400): Username already exists")
+    ).rejects.toThrow(JatosBadRequestError)
   })
 
-  it("throws error on invalid JSON response", async () => {
+  it("throws JatosTransportError on invalid JSON response", async () => {
     mockFetch.mockResolvedValueOnce({
       ok: true,
       text: async () => "Not JSON",
     })
 
+    const { JatosTransportError } = await import("../errors")
     await expect(
       createJatosUser({ username: "test", name: "test" }, { token: "admin-token-123" })
-    ).rejects.toThrow("JATOS response is not valid JSON")
+    ).rejects.toThrow(JatosTransportError)
   })
 
-  it("throws error if response is missing id or username", async () => {
+  it("throws JatosTransportError if response is missing id or username", async () => {
     mockFetch.mockResolvedValueOnce({
       ok: true,
       text: async () => JSON.stringify({ data: { id: 42 } }), // missing username
     })
 
+    const { JatosTransportError } = await import("../errors")
     await expect(
       createJatosUser({ username: "test", name: "test" }, { token: "admin-token-123" })
-    ).rejects.toThrow("JATOS response missing 'data.id' or 'data.username'")
+    ).rejects.toThrow(JatosTransportError)
   })
 })

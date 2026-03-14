@@ -97,7 +97,7 @@ export default async function ResearcherData({ studyId, study }: ResearcherDataP
         </Alert>
       )
     }
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Unexpected error fetching JATOS data:", error)
     return (
       <Alert variant="error" className="mt-4">

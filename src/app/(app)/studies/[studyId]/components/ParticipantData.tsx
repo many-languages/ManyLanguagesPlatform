@@ -87,7 +87,7 @@ export default async function ParticipantData({ studyId, study }: ParticipantDat
         />
       </>
     )
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Error fetching participant data:", error)
     return (
       <Alert variant="error" className="mt-4">

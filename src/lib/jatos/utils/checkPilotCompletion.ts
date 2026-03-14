@@ -1,3 +1,4 @@
+import type { JatosMetadata, JatosMetadataStudy, JatosStudyResult } from "@/src/types/jatos"
 import { extractPilotMarkerToken } from "./pilotComment"
 
 /**
@@ -10,17 +11,17 @@ import { extractPilotMarkerToken } from "./pilotComment"
  * @returns true if a finished personal worker result exists for provided tokens, false otherwise
  */
 export function checkPilotCompletionFromMetadata(
-  metadata: any,
+  metadata: JatosMetadata | null | undefined,
   jatosStudyUUID: string,
   markerTokens: Set<string>
 ): boolean {
   if (!metadata?.data) return false
   if (markerTokens.size === 0) return false
 
-  return metadata.data.some((study: any) => {
+  return metadata.data.some((study: JatosMetadataStudy) => {
     if (study.studyUuid !== jatosStudyUUID) return false
 
-    return study.studyResults?.some((result: any) => {
+    return study.studyResults?.some((result: JatosStudyResult) => {
       const isFinished = result.studyState === "FINISHED"
       const isPersonalWorker =
         result.workerType === "PersonalMultiple" || result.workerType === "PersonalSingle"

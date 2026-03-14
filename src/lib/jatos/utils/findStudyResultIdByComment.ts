@@ -1,4 +1,4 @@
-import type { JatosMetadata } from "@/src/types/jatos"
+import type { JatosMetadata, JatosStudyResult } from "@/src/types/jatos"
 
 /**
  * Finds the studyResultId for a given comment (e.g., "test")
@@ -8,12 +8,15 @@ import type { JatosMetadata } from "@/src/types/jatos"
  * @param comment The comment string to match (e.g. "test")
  * @returns The matching studyResult.id or null if not found
  */
-export function findStudyResultIdByComment(metadata: any, comment: string): number | null {
+export function findStudyResultIdByComment(
+  metadata: JatosMetadata | null | undefined,
+  comment: string
+): number | null {
   if (!metadata || !Array.isArray(metadata.data)) return null
 
   for (const studyMeta of metadata.data) {
     const results = studyMeta.studyResults ?? []
-    const match = results.find((res: any) => res.comment?.trim() === comment.trim())
+    const match = results.find((res: JatosStudyResult) => res.comment?.trim() === comment.trim())
     if (match) return match.id
   }
 

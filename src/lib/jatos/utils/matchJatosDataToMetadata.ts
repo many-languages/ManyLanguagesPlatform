@@ -29,7 +29,7 @@ export function matchJatosDataToMetadata(
       // sanity check: only try to match if data are present
       const hasData = component.data?.size && component.data.size > 0
       let matchedContent: string | null = null
-      let parsedData: any = undefined
+      let parsedData: unknown = undefined
       let detectedFormat: FormatDetectionResult | undefined = undefined
       let parseError: string | undefined = undefined
 

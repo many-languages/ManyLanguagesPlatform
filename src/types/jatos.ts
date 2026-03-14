@@ -66,7 +66,7 @@ export interface JatosMetadata {
 // Extended version of JatosComponentResult with actual data fields
 export interface EnrichedJatosComponentResult extends JatosComponentResult {
   dataContent: string | null
-  parsedData?: any
+  parsedData?: unknown
   detectedFormat?: FormatDetectionResult
   parseError?: string
 }

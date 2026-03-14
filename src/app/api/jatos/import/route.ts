@@ -76,23 +76,27 @@ export async function POST(
     })
 
     return NextResponse.json(result)
-  } catch (error: any) {
-    if (error?.code === "P2002") {
-      const target = error?.meta?.target
+  } catch (error: unknown) {
+    const err = error as {
+      code?: string
+      meta?: { target?: string[] }
+      message?: string
+      jatosStudyUUID?: string
+    }
+    if (err?.code === "P2002") {
+      const target = err?.meta?.target
       if (target?.includes?.("jatosStudyUUID")) {
         return NextResponse.json(
           {
             error: "UUID already exists in database",
-            jatosStudyUUID: (error as any).jatosStudyUUID,
+            jatosStudyUUID: err.jatosStudyUUID,
           } as JatosApiError & { jatosStudyUUID?: string },
           { status: 409 }
         )
       }
     }
     console.error("Error importing JATOS study:", error)
-    return NextResponse.json(
-      { error: error.message || "Failed to import study" } as JatosApiError,
-      { status: 500 }
-    )
+    const message = error instanceof Error ? error.message : "Failed to import study"
+    return NextResponse.json({ error: message } as JatosApiError, { status: 500 })
   }
 }

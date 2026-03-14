@@ -105,8 +105,8 @@ export default function Step2Content({ study }: Step2ContentProps) {
         studyId: study.id,
         jatosStudyUUID: updateAlert.uuid,
         mode: "update",
-      })) as { ok: boolean; error?: string }
-      if (!preflight.ok) {
+      })) as { success: boolean; error?: string }
+      if (!preflight.success) {
         toast.error(preflight.error || "Unable to verify JATOS study")
         setLoading(false)
         return
@@ -189,9 +189,9 @@ export default function Step2Content({ study }: Step2ContentProps) {
               studyId: study.id,
               jatosStudyUUID: extractedUuid,
               mode: study.jatosStudyUUID ? "update" : "create",
-            })) as { ok: boolean; error?: string }
+            })) as { success: boolean; error?: string }
 
-            if (!preflight.ok) {
+            if (!preflight.success) {
               setLoading(false)
               return { [FORM_ERROR]: preflight.error || "Unable to verify JATOS study" }
             }

@@ -13,6 +13,21 @@
  *
  * App code must not bypass this layer: no direct jatosClient or tokenBroker imports.
  * Never calls getAdminToken(); only getTokenForResearcher and getTokenForStudyService.
+ *
+ * --- Method error-handling patterns ---
+ *
+ * 1. Throws: Primary flows (setup, export, data fetch). Caller must handle failures.
+ *    Examples: getResultsMetadataForResearcher, getStudyPropertiesForResearcher,
+ *    createPersonalStudyCode*, downloadAllResultsForResearcher.
+ *
+ * 2. Result object { success, ... }: UI needs structured outcome. Returns { success, error? }
+ *    on failure instead of throwing.
+ *    Examples: checkParticipantCompletionForParticipant, getParticipantFeedback,
+ *    checkJatosStudyUuidForSetup, checkPilotStatusForResearcher.
+ *
+ * 3. Best-effort null: Dashboards/aggregation. Logs and returns null on failure;
+ *    partial data loss is acceptable.
+ *    Examples: getResultsMetadataForParticipantDashboard, getResultsMetadataForResearcherDashboard.
  */
 
 import db from "db"
@@ -204,11 +219,15 @@ export async function getResultsMetadataForResearcher({
 
 /**
  * Fetches JATOS results metadata for participant dashboard flows.
- * Uses service account token (validated via first study). Caller must pass jatosStudyIds
- * derived from participations filtered by userId.
- * Returns null on error or when jatosStudyIds is empty.
+ * Uses service account token (validated via first study). Returns null on error or when
+ * jatosStudyIds is empty.
  *
  * Best-effort: logs and returns null on failure.
+ *
+ * Access control: Does NOT verify that userId has access to jatosStudyIds. Caller must
+ * pass jatosStudyIds derived from participations filtered by userId (e.g. from
+ * participantStudy.findMany({ where: { userId } })). If caller passes IDs from studies
+ * the user does not participate in, metadata for those studies will be returned.
  */
 export async function getResultsMetadataForParticipantDashboard({
   userId,
@@ -220,7 +239,7 @@ export async function getResultsMetadataForParticipantDashboard({
   if (jatosStudyIds.length === 0) return null
   try {
     const token = await getTokenForStudyService(jatosStudyIds[0])
-    return getResultsMetadata({ studyIds: jatosStudyIds }, { token })
+    return await getResultsMetadata({ studyIds: jatosStudyIds }, { token })
   } catch (error) {
     logJatosError("[getResultsMetadataForParticipantDashboard] JATOS metadata fetch failed", {
       operation: "getResultsMetadataForParticipantDashboard",
@@ -248,7 +267,7 @@ export async function getResultsMetadataForResearcherDashboard({
 }): Promise<JatosMetadata | null> {
   if (studyUuids.length === 0) return null
   try {
-    return getResultsMetadataForResearcher({ studyId, userId, studyUuids })
+    return await getResultsMetadataForResearcher({ studyId, userId, studyUuids })
   } catch (error) {
     logJatosError("[getResultsMetadataForResearcherDashboard] JATOS metadata fetch failed", {
       operation: "getResultsMetadataForResearcherDashboard",
@@ -309,6 +328,10 @@ export async function getStudyPropertiesForResearcher({
   })
 }
 
+/**
+ * Returns the JATOS batch ID for a study, or null if the study has no batch configured.
+ * null is a valid state (not an error) — e.g. single-worker studies often have no batch.
+ */
 export async function getBatchIdForResearcher({
   studyId,
   userId,
@@ -347,14 +370,14 @@ export async function checkJatosStudyUuidForSetup({
   userId: number
   jatosStudyUuid: string
   mode: "create" | "update"
-}): Promise<{ ok: boolean; error?: string; existsOnJatos?: boolean }> {
+}): Promise<{ success: boolean; error?: string; existsOnJatos?: boolean }> {
   const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
 
   await assertResearcherCanAccessStudy({ studyId, userId })
 
   const trimmed = jatosStudyUuid.trim()
   if (!trimmed || !UUID_REGEX.test(trimmed)) {
-    return { ok: false, error: "Invalid or missing JATOS study UUID in the .jzip file." }
+    return { success: false, error: "Invalid or missing JATOS study UUID in the .jzip file." }
   }
 
   const existingStudy = await db.study.findFirst({
@@ -367,7 +390,7 @@ export async function checkJatosStudyUuidForSetup({
 
   if (existingStudy) {
     return {
-      ok: false,
+      success: false,
       error: "This JATOS study UUID is already linked to another study.",
     }
   }
@@ -379,21 +402,21 @@ export async function checkJatosStudyUuidForSetup({
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : "Unknown error"
     return {
-      ok: false,
+      success: false,
       error: `Failed to verify JATOS study on the server: ${message}`,
     }
   }
 
   if (mode === "create" && existsOnJatos) {
     return {
-      ok: false,
+      success: false,
       error: "This JATOS study already exists on the server. Please create a new study.",
     }
   }
 
   if (mode === "update" && !existsOnJatos) {
     return {
-      ok: false,
+      success: false,
       error: "This JATOS study was not found on the server. Please re-import it first.",
     }
   }
@@ -411,7 +434,7 @@ export async function checkJatosStudyUuidForSetup({
       const hasResponses = studies.some((s) => hasParticipantResponses(s.studyResults ?? []))
       if (hasResponses) {
         return {
-          ok: false,
+          success: false,
           error:
             "This study already has participant responses. Please create a new study instead of overwriting.",
         }
@@ -419,13 +442,13 @@ export async function checkJatosStudyUuidForSetup({
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : "Unknown error"
       return {
-        ok: false,
+        success: false,
         error: `Failed to check for existing responses: ${message}`,
       }
     }
   }
 
-  return { ok: true, existsOnJatos }
+  return { success: true, existsOnJatos }
 }
 
 /**
@@ -435,6 +458,11 @@ export async function checkJatosStudyUuidForSetup({
  *
  * Use when a researcher needs JATOS study membership (e.g. after creating a study
  * that already has an upload from re-import).
+ *
+ * Access control: Does NOT verify that userId is authorized for jatosStudyId. Caller
+ * must only invoke from a trusted context where the user is already authorized (e.g.
+ * createStudy, where the user is the PI). Calling with arbitrary userId/jatosStudyId
+ * could add a researcher to a JATOS study they should not access.
  */
 export async function ensureResearcherStudyMembership({
   userId,

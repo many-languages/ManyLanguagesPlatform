@@ -1,10 +1,14 @@
+import type { JatosMetadata } from "@/src/types/jatos"
 import type { JatosAuth } from "./types"
 import { throwIfJatosError } from "./throwIfJatosError"
 import { JatosTransportError } from "../errors"
 
 const OPERATION = "Fetch results metadata"
 
-export async function getResultsMetadata(params: Record<string, unknown>, auth: JatosAuth) {
+export async function getResultsMetadata(
+  params: Record<string, unknown>,
+  auth: JatosAuth
+): Promise<JatosMetadata> {
   const JATOS_BASE = process.env.JATOS_BASE
   if (!JATOS_BASE || !auth.token) {
     throw new Error("Missing JATOS_BASE or auth.token")
@@ -28,7 +32,8 @@ export async function getResultsMetadata(params: Record<string, unknown>, auth: 
   await throwIfJatosError(response, OPERATION)
 
   try {
-    return await response.json()
+    const json = await response.json()
+    return json as JatosMetadata
   } catch (cause) {
     throw new JatosTransportError(`Invalid JSON in ${OPERATION} response`, OPERATION, cause)
   }

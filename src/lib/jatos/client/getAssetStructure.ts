@@ -1,4 +1,4 @@
-import type { JatosAuth } from "./types"
+import type { JatosAuth, AssetStructureResponse } from "./types"
 import { throwIfJatosError } from "./throwIfJatosError"
 import { JatosTransportError } from "../errors"
 
@@ -11,7 +11,7 @@ const OPERATION = "Fetch asset structure"
 export async function getAssetStructure(
   studyId: string | number,
   auth: JatosAuth
-): Promise<unknown> {
+): Promise<AssetStructureResponse> {
   const JATOS_BASE = process.env.JATOS_BASE
   if (!JATOS_BASE || !auth.token) {
     throw new Error("Missing JATOS_BASE or auth.token")
@@ -34,7 +34,7 @@ export async function getAssetStructure(
 
   const text = await response.text()
   try {
-    return JSON.parse(text)
+    return JSON.parse(text) as AssetStructureResponse
   } catch (cause) {
     throw new JatosTransportError(`Invalid JSON in ${OPERATION} response`, OPERATION, cause)
   }

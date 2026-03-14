@@ -27,7 +27,7 @@ function validateResultIdsParams(params: Record<string, unknown>): void {
   }
 }
 
-import type { JatosAuth } from "./types"
+import type { JatosAuth, GetResultsDataResponse } from "./types"
 import { throwIfJatosError } from "./throwIfJatosError"
 import { JatosTransportError } from "../errors"
 
@@ -37,7 +37,10 @@ const OPERATION = "Fetch results data"
  * Fetch raw result data from JATOS (data.txt contents as ZIP).
  * ID params (studyIds, studyResultIds, etc.) must be integers or integer arrays per JATOS spec.
  */
-export async function getResultsData(params: Record<string, unknown>, auth: JatosAuth) {
+export async function getResultsData(
+  params: Record<string, unknown>,
+  auth: JatosAuth
+): Promise<GetResultsDataResponse> {
   const JATOS_BASE = process.env.JATOS_BASE
   if (!JATOS_BASE || !auth.token) {
     throw new Error("Missing JATOS_BASE or auth.token")

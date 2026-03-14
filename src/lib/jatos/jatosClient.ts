@@ -2,7 +2,7 @@
  * Barrel for jatosClient — auth-injected, stateless, transport-only.
  * All methods require auth: JatosAuth. Caller provides the appropriate token.
  */
-export type { JatosAuth } from "./client/types"
+export type { JatosAuth, GetResultsDataResponse, AssetStructureResponse } from "./client/types"
 export { getAssetStructure } from "./client/getAssetStructure"
 export { getResultsMetadata } from "./client/getResultsMetadata"
 export { getResultsData } from "./client/getResultsData"

@@ -36,6 +36,18 @@ tokenBroker — token resolution only
 - **Narrow inputs** — Pass `userId`, `studyId`, `pseudonym`, etc., not session objects.
 - **Token separation** — `getAdminToken()` is never called by jatosAccessService; only provisioning uses it.
 
+### App vs JATOS Separation
+
+- **withStudyAccess** — App-level access helper. Handles session + researcher DB access. Does NOT resolve tokens or call JATOS. Use for DB-only flows and for mixed flows when early app-level authorization is needed.
+- **jatosAccessService** — JATOS integration layer. Resolves tokens, calls JATOS. App code must not bypass it.
+- **Mixed flows** — A mutation may use `withStudyAccess` for app-level auth, do DB work, then call `jatosAccessService` for JATOS. This is acceptable. Duplicated access checks (in both layers) preserve clean responsibility boundaries.
+
+### Architecture Violations (avoid)
+
+- Direct app import of `src/lib/jatos/client/*` (exception: `browser/uploadStudyFile`)
+- Direct app import of token resolution (`getTokenForResearcher`, `getTokenForStudyService`, `getServiceAccountToken`)
+- Direct app import of provisioning helpers where a facade exists (`jatosAccessService`, `tokenBroker`)
+
 ---
 
 ## Sole API Route Exception: Import

@@ -1,3 +1,16 @@
+/**
+ * tokenBroker — JATOS token resolution only.
+ *
+ * Responsibilities:
+ * - Resolve researcher tokens (getTokenForResearcher)
+ * - Resolve service-account tokens (getTokenForStudyService, getServiceAccountToken)
+ * - Eager provisioning helper (ensureResearcherProvisioned)
+ * - Admin token for provisioning (getAdminToken — not used by jatosAccessService)
+ *
+ * Does NOT: perform JATOS API calls or app-level authorization.
+ * Called by jatosAccessService and provisioning; app code must not import token resolution
+ * helpers directly — use jatosAccessService or tokenBroker facades (e.g. ensureResearcherProvisioned).
+ */
 import db from "db"
 import { getAdminToken } from "./getAdminToken"
 import { createJatosUserToken } from "./client/createJatosUserToken"

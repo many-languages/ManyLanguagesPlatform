@@ -1,6 +1,17 @@
 /**
- * jatosAccessService — use-case API for JATOS operations.
- * Verifies permissions, chooses token, combines client calls.
+ * jatosAccessService — JATOS integration / use-case layer.
+ *
+ * Responsibilities:
+ * - JATOS-related operations only (results, properties, study codes, pilot data, etc.)
+ * - Token resolution via tokenBroker (getTokenForResearcher, getTokenForStudyService)
+ * - JATOS calls via jatosClient (auth-injected transport)
+ * - JATOS-related orchestration and DB lookups needed for the use case
+ *
+ * Does NOT: handle app-level session retrieval or general DB authorization.
+ * App code may use withStudyAccess for that; mixed flows (withStudyAccess + jatosAccessService)
+ * are acceptable.
+ *
+ * App code must not bypass this layer: no direct jatosClient or tokenBroker imports.
  * Never calls getAdminToken(); only getTokenForResearcher and getTokenForStudyService.
  */
 

@@ -1,6 +1,11 @@
 /**
- * Barrel for jatosClient — auth-injected, stateless, transport-only.
- * All methods require auth: JatosAuth. Caller provides the appropriate token.
+ * jatosClient — JATOS transport layer.
+ *
+ * Auth-injected, stateless, transport-only. All methods require JatosAuth { token }.
+ * Caller (jatosAccessService or provisioning) resolves the token via tokenBroker.
+ *
+ * App code must NOT import from jatosClient or client/* directly.
+ * Use jatosAccessService for all JATOS operations. Exception: browser/uploadStudyFile for FormData.
  */
 export type { JatosAuth, GetResultsDataResponse, AssetStructureResponse } from "./client/types"
 export { getAssetStructure } from "./client/getAssetStructure"

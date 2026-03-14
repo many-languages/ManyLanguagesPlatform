@@ -31,6 +31,7 @@ tokenBroker — token resolution only
 ### Key Principles
 
 - **No API routes for JATOS** — except the import route (see below).
+- **No direct `client/*` imports** — App code must not import from `src/lib/jatos/client/*`. Use `jatosAccessService` for all JATOS operations. The sole exception is `browser/uploadStudyFile` for FormData uploads.
 - **Use-case API** — Call `jatosAccessService.*ForResearcher` or `*ForParticipant`, not low-level client methods.
 - **Narrow inputs** — Pass `userId`, `studyId`, `pseudonym`, etc., not session objects.
 - **Token separation** — `getAdminToken()` is never called by jatosAccessService; only provisioning uses it.
@@ -61,10 +62,10 @@ tokenBroker — token resolution only
 4. Service: computes build hash → uploads to JATOS → updates DB → syncs membership.
 5. Returns full import result (jatosStudyId, jatosStudyUUID, latestUpload, etc.).
 
-**Client usage**:
+**Browser usage** (sole exception: app may import from `browser/` for FormData; never from `client/*`):
 
 ```typescript
-import { uploadStudyFile } from "@/src/lib/jatos/client/uploadStudyFile"
+import { uploadStudyFile } from "@/src/lib/jatos/browser/uploadStudyFile"
 
 const result = await uploadStudyFile(file, {
   studyId: study.id,

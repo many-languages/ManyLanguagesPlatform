@@ -24,6 +24,9 @@ import {
 import { extractBatchIdFromProperties } from "./utils/extractBatchIdFromProperties"
 import { checkPilotCompletionFromMetadata } from "./utils/checkPilotCompletion"
 import { extractPilotMarkerToken, isPilotComment } from "./utils/pilotComment"
+import { ensureResearcherJatosMember } from "./provisioning/ensureResearcherJatosMember"
+import { checkJatosStudyExistsAdmin } from "./provisioning/checkJatosStudyExistsAdmin"
+import { hasParticipantResponses } from "./utils/studyHasParticipantResponses"
 import type {
   JatosMetadata,
   JatosStudyProperties,
@@ -310,6 +313,126 @@ export async function getBatchIdForResearcher({
     jatosStudyUUID,
   })
   return extractBatchIdFromProperties(properties)
+}
+
+/**
+ * Setup validation: checks JATOS study UUID before import (create or update mode).
+ * Uses an admin-backed JATOS existence check internally — app code must call this facade,
+ * not provisioning/admin helpers directly.
+ *
+ * Verifies researcher access, UUID format, DB uniqueness, JATOS existence, and (for update)
+ * blocks overwrite when the study has participant responses.
+ *
+ * Stays in jatosAccessService for now; could move to a dedicated setup service if setup-specific
+ * JATOS flows grow.
+ */
+export async function checkJatosStudyUuidForSetup({
+  studyId,
+  userId,
+  jatosStudyUuid,
+  mode,
+}: {
+  studyId: number
+  userId: number
+  jatosStudyUuid: string
+  mode: "create" | "update"
+}): Promise<{ ok: boolean; error?: string; existsOnJatos?: boolean }> {
+  const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+
+  await assertResearcherCanAccessStudy({ studyId, userId })
+
+  const trimmed = jatosStudyUuid.trim()
+  if (!trimmed || !UUID_REGEX.test(trimmed)) {
+    return { ok: false, error: "Invalid or missing JATOS study UUID in the .jzip file." }
+  }
+
+  const existingStudy = await db.study.findFirst({
+    where: {
+      jatosStudyUUID: trimmed,
+      id: { not: studyId },
+    },
+    select: { id: true, title: true },
+  })
+
+  if (existingStudy) {
+    return {
+      ok: false,
+      error: "This JATOS study UUID is already linked to another study.",
+    }
+  }
+
+  let existsOnJatos = false
+  try {
+    const result = await checkJatosStudyExistsAdmin(trimmed)
+    existsOnJatos = result.exists
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : "Unknown error"
+    return {
+      ok: false,
+      error: `Failed to verify JATOS study on the server: ${message}`,
+    }
+  }
+
+  if (mode === "create" && existsOnJatos) {
+    return {
+      ok: false,
+      error: "This JATOS study already exists on the server. Please create a new study.",
+    }
+  }
+
+  if (mode === "update" && !existsOnJatos) {
+    return {
+      ok: false,
+      error: "This JATOS study was not found on the server. Please re-import it first.",
+    }
+  }
+
+  // Block update if study has participant responses (non-pilot, FINISHED)
+  if (mode === "update" && existsOnJatos) {
+    try {
+      const metadata = await getResultsMetadataForResearcher({
+        studyId,
+        userId,
+        studyUuids: [trimmed],
+      })
+      const studies =
+        (metadata as { data?: Array<{ studyResults?: JatosStudyResult[] }> })?.data ?? []
+      const hasResponses = studies.some((s) => hasParticipantResponses(s.studyResults ?? []))
+      if (hasResponses) {
+        return {
+          ok: false,
+          error:
+            "This study already has participant responses. Please create a new study instead of overwriting.",
+        }
+      }
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : "Unknown error"
+      return {
+        ok: false,
+        error: `Failed to check for existing responses: ${message}`,
+      }
+    }
+  }
+
+  return { ok: true, existsOnJatos }
+}
+
+/**
+ * Ensures a researcher is a member of a JATOS study.
+ * Provisions the researcher's JATOS user if needed, then adds them as a study member.
+ * Idempotent: safe to call multiple times.
+ *
+ * Use when a researcher needs JATOS study membership (e.g. after creating a study
+ * that already has an upload from re-import).
+ */
+export async function ensureResearcherStudyMembership({
+  userId,
+  jatosStudyId,
+}: {
+  userId: number
+  jatosStudyId: number
+}): Promise<void> {
+  await ensureResearcherJatosMember(userId, jatosStudyId)
 }
 
 export async function getParticipantFeedback({

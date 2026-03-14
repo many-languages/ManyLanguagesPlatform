@@ -1,5 +1,5 @@
 /**
- * Client-side helper for uploading JATOS study files.
+ * Browser-side helper for uploading JATOS study files.
  *
  * Posts FormData to POST /api/jatos/import (sole JATOS API route exception).
  * The route handles JATOS upload + DB updates + membership sync.

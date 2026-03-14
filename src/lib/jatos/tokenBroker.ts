@@ -50,6 +50,17 @@ async function getOrGenerateJatosToken(jatosUserId: number, userId: string): Pro
 }
 
 /**
+ * Eagerly ensures a researcher is provisioned in JATOS (creates JATOS user, stores mapping).
+ * Idempotent: safe to call multiple times.
+ *
+ * Optional UX optimization: call at signup to avoid cold start on first JATOS use.
+ * If this fails, getTokenForResearcher will provision lazily when the researcher first needs a token.
+ */
+export async function ensureResearcherProvisioned(userId: number): Promise<void> {
+  await provisionResearcherJatos(userId)
+}
+
+/**
  * Resolves the researcher's JIT token for JATOS API calls.
  * Used when the researcher is in session and performing operations on their own studies.
  */

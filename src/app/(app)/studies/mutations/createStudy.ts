@@ -1,6 +1,6 @@
 import { resolver } from "@blitzjs/rpc"
 import db from "db"
-import { ensureResearcherJatosMember } from "@/src/lib/jatos/provisioning/ensureResearcherJatosMember"
+import { ensureResearcherStudyMembership } from "@/src/lib/jatos/jatosAccessService"
 import { CreateStudy, CreateStudyInput } from "../validations"
 
 export async function createStudy(data: CreateStudyInput, userId: number) {
@@ -25,7 +25,7 @@ export async function createStudy(data: CreateStudyInput, userId: number) {
     select: { jatosStudyId: true },
   })
   if (latestUpload) {
-    await ensureResearcherJatosMember(userId, latestUpload.jatosStudyId)
+    await ensureResearcherStudyMembership({ userId, jatosStudyId: latestUpload.jatosStudyId })
   }
 
   return study

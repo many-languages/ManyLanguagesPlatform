@@ -5,7 +5,7 @@ import { SecurePassword } from "@blitzjs/auth/secure-password"
 import { Signup } from "../validations"
 import { createHash } from "crypto"
 import validateAdminInviteToken from "@/src/app/(admin)/admin/invitations/queries/validateAdminInviteToken"
-import { provisionResearcherJatos } from "@/src/lib/jatos/provisioning/provisionResearcherJatos"
+import { ensureResearcherProvisioned } from "@/src/lib/jatos/tokenBroker"
 
 const hashToken = (token: string) => createHash("sha256").update(token).digest("hex")
 
@@ -79,7 +79,7 @@ export default resolver.pipe(
       // Best-effort JATOS provisioning for researchers (retry at import/join if this fails)
       if (finalRole === UserRole.RESEARCHER) {
         try {
-          await provisionResearcherJatos(user.id)
+          await ensureResearcherProvisioned(user.id)
         } catch (e) {
           console.warn("JATOS provisioning failed at signup:", e)
         }

@@ -45,8 +45,11 @@ tokenBroker — token resolution only
 ### Architecture Violations (avoid)
 
 - Direct app import of `src/lib/jatos/client/*` (exception: `browser/uploadStudyFile`)
-- Direct app import of token resolution (`getTokenForResearcher`, `getTokenForStudyService`, `getServiceAccountToken`)
+- Direct app import of `getAdminToken` (from `getAdminToken` or `tokenBroker`)
+- Direct app import of token resolution (`getTokenForResearcher`, `getTokenForStudyService`, `getServiceAccountToken`) from `tokenBroker`
 - Direct app import of provisioning helpers where a facade exists (`jatosAccessService`, `tokenBroker`)
+
+**Validation**: Run `npm run validate:jatos-architecture` to check app code for these violations.
 
 ---
 

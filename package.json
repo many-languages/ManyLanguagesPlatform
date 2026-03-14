@@ -8,6 +8,7 @@
     "start": "blitz start",
     "ensure-service-account": "tsx scripts/ensure-service-account.ts",
     "validate-setup": "tsx scripts/validate-setup.ts",
+    "validate:jatos-architecture": "tsx scripts/validate-jatos-architecture.ts",
     "studio": "blitz prisma studio",
     "lint": "eslint . --ext .js,.ts,.tsx",
     "test": "vitest run --passWithNoTests",

@@ -22,6 +22,7 @@ export async function ensureServiceAccount(): Promise<number> {
     {
       username: "mlp-service-account",
       name: "MLP Service Account",
+      role: "VIEWER",
     },
     { token: getAdminToken() }
   )

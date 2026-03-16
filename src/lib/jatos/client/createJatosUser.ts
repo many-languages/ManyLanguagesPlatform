@@ -7,6 +7,8 @@ export interface CreateJatosUserParams {
   username: string
   name: string
   email?: string
+  /** JATOS role. Default is USER. Use VIEWER for read-only service accounts. */
+  role?: "VIEWER" | "USER"
 }
 
 export interface CreateJatosUserResponse {
@@ -22,7 +24,7 @@ const OPERATION = "Create JATOS user"
  * they will only be used as a service account via API tokens.
  */
 export async function createJatosUser(
-  { username, name, email }: CreateJatosUserParams,
+  { username, name, email, role }: CreateJatosUserParams,
   auth: JatosAuth
 ): Promise<CreateJatosUserResponse> {
   const JATOS_BASE = process.env.JATOS_BASE
@@ -31,7 +33,8 @@ export async function createJatosUser(
   }
 
   const password = randomBytes(32).toString("base64url")
-  const body = { username, name, email, authMethod: "DB", password }
+  const body: Record<string, unknown> = { username, name, email, authMethod: "DB", password }
+  if (role) body.role = role
 
   let response: Response
   try {

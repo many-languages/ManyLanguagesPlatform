@@ -171,11 +171,11 @@ See the [Maintenance](#maintenance) section for more details.
 
 ## JATOS Service Account
 
-The app uses a **JATOS service account** for participant-facing operations (e.g. feedback, completion checks, study code creation at join). This account is provisioned **automatically at startup** — no manual steps required.
+The app uses a **JATOS service account** (VIEWER role) for participant-facing read operations (e.g. feedback, completion checks, metadata). This account is provisioned **automatically at startup** with VIEWER role from the start — no manual steps required.
 
 On each app start (dev and prod), after `prisma migrate deploy`, the startup sequence runs `ensure-service-account`. This script:
 
-- Creates a JATOS user for the service account if it does not exist
+- Creates a JATOS user for the service account with VIEWER role if it does not exist
 - Stores the JATOS user ID in the database (`SystemConfig` key `jatosServiceUserID`)
 - Is idempotent: on subsequent starts, it reuses the existing account without calling JATOS
 

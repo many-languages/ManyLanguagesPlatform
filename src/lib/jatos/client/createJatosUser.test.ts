@@ -56,6 +56,57 @@ describe("createJatosUser", () => {
     expect(body.password.length).toBeGreaterThan(10)
   })
 
+  it("includes role in request body when role VIEWER is passed", async () => {
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      text: async () =>
+        JSON.stringify({
+          data: {
+            id: 99,
+            username: "mlp-service-account",
+            name: "MLP Service Account",
+          },
+        }),
+    })
+
+    await createJatosUser(
+      {
+        username: "mlp-service-account",
+        name: "MLP Service Account",
+        role: "VIEWER",
+      },
+      { token: "admin-token-123" }
+    )
+
+    const body = JSON.parse(mockFetch.mock.calls[0][1].body)
+    expect(body.role).toBe("VIEWER")
+  })
+
+  it("creates researcher without role (defaults to USER in JATOS)", async () => {
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      text: async () =>
+        JSON.stringify({
+          data: {
+            id: 43,
+            username: "mlp-researcher-2",
+            name: "MLP Researcher 2",
+          },
+        }),
+    })
+
+    await createJatosUser(
+      {
+        username: "mlp-researcher-2",
+        name: "MLP Researcher 2",
+      },
+      { token: "admin-token-123" }
+    )
+
+    const body = JSON.parse(mockFetch.mock.calls[0][1].body)
+    expect(body).not.toHaveProperty("role")
+  })
+
   it("throws error if auth.token is missing", async () => {
     await expect(
       createJatosUser({ username: "test", name: "test" }, { token: "" })

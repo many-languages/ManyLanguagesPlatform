@@ -53,6 +53,21 @@ tokenBroker — token resolution only
 
 ---
 
+## Participant Token Policy
+
+Participant authentication is validated at the app layer. Participant flows split into two token paths:
+
+| Path  | Helper                                    | Token Source             | Use Cases                            |
+| ----- | ----------------------------------------- | ------------------------ | ------------------------------------ |
+| Read  | `withParticipantViewerToken`              | Service account (VIEWER) | Feedback, completion check, metadata |
+| Write | `withParticipantAccessAndResearcherToken` | Researcher (USER)        | Study code creation only             |
+
+VIEWER is used only for participant-facing read flows in our app. Study code creation uses a researcher token because JATOS requires USER for `POST /studyCodes`. This is intentional delegated researcher authority — do not merge these paths.
+
+**Researcher selection** (for study code creation): PI first, then COLLABORATOR, then VIEWER (ResearcherRole), then earliest `createdAt`, then smallest `userId`.
+
+---
+
 ## Sole API Route Exception: Import
 
 ### POST /api/jatos/import
@@ -105,7 +120,7 @@ import {
   getStudyPropertiesForResearcher,
   downloadAllResultsForResearcher,
   getBatchIdForResearcher,
-  getParticipantFeedback, // participant flow, uses getTokenForStudyService
+  getParticipantFeedback, // participant read flow, uses getTokenForStudyService
 } from "@/src/lib/jatos/jatosAccessService"
 
 // Server component or action
@@ -115,7 +130,7 @@ const payload = await downloadAllResultsForResearcher({ studyId, userId })
 
 ### Participant Flows
 
-Use `getParticipantFeedback` (uses service account token via `getTokenForStudyService`):
+Use `getParticipantFeedback` (uses viewer service token via `getTokenForStudyService`):
 
 ```typescript
 const result = await getParticipantFeedback({
@@ -150,22 +165,22 @@ export async function downloadResultsAction(studyId: number) {
 
 ## Available Service Methods
 
-| Method                                  | Use Case                                  |
-| --------------------------------------- | ----------------------------------------- |
-| `getResultsMetadataForResearcher`       | Fetch results metadata                    |
-| `getStudyPropertiesForResearcher`       | Fetch study properties                    |
-| `getBatchIdForResearcher`               | Get first batch ID from properties        |
-| `downloadAllResultsForResearcher`       | Download all results as `DownloadPayload` |
-| `getParticipantFeedback`                | Participant feedback (service token)      |
-| `createPersonalStudyCodeForParticipant` | Join study (participant)                  |
-| `createPersonalStudyCodeForResearcher`  | Pilot link (researcher)                   |
-| `getGeneralLinksForResearcher`          | General links for participants            |
-| `getHtmlFilesForResearcher`             | HTML files from asset structure           |
-| `getEnrichedResultsForResearcher`       | Enriched results for display              |
-| `getStudyDataByCommentForResearcher`    | Study data by comment (e.g. "test")       |
-| `getAllPilotResultsForResearcher`       | All pilot results                         |
-| `getPilotResultByIdForResearcher`       | Single pilot result by ID                 |
-| `checkPilotStatusForResearcher`         | Pilot completion status                   |
+| Method                                  | Use Case                                        |
+| --------------------------------------- | ----------------------------------------------- |
+| `getResultsMetadataForResearcher`       | Fetch results metadata                          |
+| `getStudyPropertiesForResearcher`       | Fetch study properties                          |
+| `getBatchIdForResearcher`               | Get first batch ID from properties              |
+| `downloadAllResultsForResearcher`       | Download all results as `DownloadPayload`       |
+| `getParticipantFeedback`                | Participant feedback (viewer token)             |
+| `createPersonalStudyCodeForParticipant` | Join study (participant; uses researcher token) |
+| `createPersonalStudyCodeForResearcher`  | Pilot link (researcher)                         |
+| `getGeneralLinksForResearcher`          | General links for participants                  |
+| `getHtmlFilesForResearcher`             | HTML files from asset structure                 |
+| `getEnrichedResultsForResearcher`       | Enriched results for display                    |
+| `getStudyDataByCommentForResearcher`    | Study data by comment (e.g. "test")             |
+| `getAllPilotResultsForResearcher`       | All pilot results                               |
+| `getPilotResultByIdForResearcher`       | Single pilot result by ID                       |
+| `checkPilotStatusForResearcher`         | Pilot completion status                         |
 
 ---
 

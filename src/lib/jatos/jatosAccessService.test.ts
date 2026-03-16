@@ -27,13 +27,17 @@ import * as loggerModule from "./logger"
 
 // --- DB mocks ---
 const mockStudyResearcherFindFirst = vi.fn()
+const mockStudyResearcherFindMany = vi.fn()
 const mockParticipantStudyFindUnique = vi.fn()
 const mockJatosStudyUploadFindFirst = vi.fn()
 const mockStudyFindUnique = vi.fn()
 
 vi.mock("db", () => ({
   default: {
-    studyResearcher: { findFirst: (...args: unknown[]) => mockStudyResearcherFindFirst(...args) },
+    studyResearcher: {
+      findFirst: (...args: unknown[]) => mockStudyResearcherFindFirst(...args),
+      findMany: (...args: unknown[]) => mockStudyResearcherFindMany(...args),
+    },
     participantStudy: {
       findUnique: (...args: unknown[]) => mockParticipantStudyFindUnique(...args),
     },
@@ -71,6 +75,9 @@ describe("jatosAccessService", () => {
   beforeEach(() => {
     vi.resetAllMocks()
     mockStudyResearcherFindFirst.mockResolvedValue({ id: 1 })
+    mockStudyResearcherFindMany.mockResolvedValue([
+      { userId: 42, role: "PI", createdAt: new Date("2024-01-01") },
+    ])
     mockParticipantStudyFindUnique.mockResolvedValue({ pseudonym: "participant-1" })
     mockJatosStudyUploadFindFirst.mockResolvedValue({ jatosStudyId: 1 })
     mockStudyFindUnique.mockResolvedValue({ jatosStudyUUID: "uuid-1" })
@@ -254,10 +261,10 @@ describe("jatosAccessService", () => {
       vi.spyOn(generateJatosRunUrlModule, "generateJatosRunUrl").mockReturnValue(EXPECTED_RUN_URL)
     })
 
-    it("enforces participant access check and uses study-service token path", async () => {
+    it("enforces participant access check and uses researcher token path", async () => {
       const getTokenSpy = vi
-        .spyOn(tokenBrokerModule, "getTokenForStudyService")
-        .mockResolvedValue("service-token")
+        .spyOn(tokenBrokerModule, "getTokenForResearcher")
+        .mockResolvedValue("researcher-token")
       const fetchCodesSpy = vi
         .spyOn(fetchStudyCodesModule, "fetchStudyCodes")
         .mockResolvedValue(["ps-abc123"])
@@ -275,16 +282,22 @@ describe("jatosAccessService", () => {
         where: { userId_studyId: { userId: 100, studyId: 10 } },
         select: { pseudonym: true },
       })
-      expect(getTokenSpy).toHaveBeenCalledWith(5)
+      expect(mockStudyResearcherFindMany).toHaveBeenCalledWith({
+        where: { studyId: 10 },
+        orderBy: [{ createdAt: "asc" }, { userId: "asc" }],
+        take: 20,
+        select: { userId: true, role: true, createdAt: true },
+      })
+      expect(getTokenSpy).toHaveBeenCalledWith(42)
       expect(fetchCodesSpy).toHaveBeenCalledWith(
         { studyId: 5, type: "ps", amount: 1, comment: "participant-1" },
-        { token: "service-token" }
+        { token: "researcher-token" }
       )
     })
 
     it("calls fetchStudyCodes with expected params including batchId when provided", async () => {
       mockParticipantStudyFindUnique.mockResolvedValueOnce({ pseudonym: "participant-2" })
-      vi.spyOn(tokenBrokerModule, "getTokenForStudyService").mockResolvedValue("service-token")
+      vi.spyOn(tokenBrokerModule, "getTokenForResearcher").mockResolvedValue("researcher-token")
       const fetchCodesSpy = vi
         .spyOn(fetchStudyCodesModule, "fetchStudyCodes")
         .mockResolvedValue(["ps-xyz"])
@@ -301,12 +314,29 @@ describe("jatosAccessService", () => {
 
       expect(fetchCodesSpy).toHaveBeenCalledWith(
         { studyId: 5, type: "pm", amount: 1, batchId: 99, comment: "participant-2" },
-        { token: "service-token" }
+        { token: "researcher-token" }
       )
     })
 
+    it("throws when study has no researchers", async () => {
+      mockStudyResearcherFindMany.mockResolvedValueOnce([])
+
+      await expect(
+        createPersonalStudyCodeForParticipant({
+          studyId: 10,
+          userId: 100,
+          jatosStudyId: 5,
+          type: "ps",
+          comment: "participant-1",
+          onSave,
+        })
+      ).rejects.toThrow("Study has no researchers; cannot create participant study code.")
+
+      expect(onSave).not.toHaveBeenCalled()
+    })
+
     it("throws when fetchStudyCodes returns empty list", async () => {
-      vi.spyOn(tokenBrokerModule, "getTokenForStudyService").mockResolvedValue("service-token")
+      vi.spyOn(tokenBrokerModule, "getTokenForResearcher").mockResolvedValue("researcher-token")
       vi.spyOn(fetchStudyCodesModule, "fetchStudyCodes").mockResolvedValue([])
 
       await expect(
@@ -324,7 +354,7 @@ describe("jatosAccessService", () => {
     })
 
     it("calls onSave with generated run URL and returns it", async () => {
-      vi.spyOn(tokenBrokerModule, "getTokenForStudyService").mockResolvedValue("service-token")
+      vi.spyOn(tokenBrokerModule, "getTokenForResearcher").mockResolvedValue("researcher-token")
       vi.spyOn(fetchStudyCodesModule, "fetchStudyCodes").mockResolvedValue(["ps-abc123"])
 
       const result = await createPersonalStudyCodeForParticipant({
@@ -339,6 +369,75 @@ describe("jatosAccessService", () => {
       expect(onSave).toHaveBeenCalledTimes(1)
       expect(onSave).toHaveBeenCalledWith(EXPECTED_RUN_URL)
       expect(result).toBe(EXPECTED_RUN_URL)
+    })
+  })
+
+  describe("6b. policy boundary: read path uses viewer token, write path uses researcher token", () => {
+    it("getParticipantFeedback calls getTokenForStudyService and never getTokenForResearcher", async () => {
+      const getStudyServiceSpy = vi
+        .spyOn(tokenBrokerModule, "getTokenForStudyService")
+        .mockResolvedValue("service-token")
+      const getResearcherSpy = vi
+        .spyOn(tokenBrokerModule, "getTokenForResearcher")
+        .mockResolvedValue("researcher-token")
+      vi.spyOn(getResultsMetadataModule, "getResultsMetadata")
+        .mockResolvedValueOnce(SAMPLE_METADATA as never)
+        .mockResolvedValueOnce(SAMPLE_METADATA as never)
+      vi.spyOn(getResultsDataModule, "getResultsData")
+        .mockResolvedValueOnce({
+          success: true,
+          data: Buffer.from("zip"),
+          contentType: "application/zip",
+        })
+        .mockResolvedValueOnce({
+          success: true,
+          data: Buffer.from("zip"),
+          contentType: "application/zip",
+        })
+      vi.spyOn(parseJatosZipModule, "parseJatosZip").mockResolvedValue([
+        { filename: "foo", content: "" },
+      ])
+      vi.spyOn(matchJatosDataToMetadataModule, "matchJatosDataToMetadata").mockReturnValue(
+        SAMPLE_ENRICHED as never
+      )
+
+      await getParticipantFeedback({
+        studyId: 10,
+        pseudonym: "participant-1",
+        jatosStudyId: 1,
+        userId: 100,
+      })
+
+      expect(getStudyServiceSpy).toHaveBeenCalledWith(1)
+      expect(getResearcherSpy).not.toHaveBeenCalled()
+    })
+
+    it("createPersonalStudyCodeForParticipant calls getEligibleResearcherForStudy + getTokenForResearcher and never getTokenForStudyService", async () => {
+      const getStudyServiceSpy = vi
+        .spyOn(tokenBrokerModule, "getTokenForStudyService")
+        .mockResolvedValue("service-token")
+      const getResearcherSpy = vi
+        .spyOn(tokenBrokerModule, "getTokenForResearcher")
+        .mockResolvedValue("researcher-token")
+      vi.spyOn(generateJatosRunUrlModule, "generateJatosRunUrl").mockReturnValue(
+        "https://jatos.example/publix/ps-abc123"
+      )
+      vi.spyOn(fetchStudyCodesModule, "fetchStudyCodes").mockResolvedValue(["ps-abc123"])
+
+      await createPersonalStudyCodeForParticipant({
+        studyId: 10,
+        userId: 100,
+        jatosStudyId: 5,
+        type: "ps",
+        comment: "participant-1",
+        onSave: vi.fn().mockResolvedValue(undefined),
+      })
+
+      expect(mockStudyResearcherFindMany).toHaveBeenCalledWith(
+        expect.objectContaining({ where: { studyId: 10 } })
+      )
+      expect(getResearcherSpy).toHaveBeenCalledWith(42)
+      expect(getStudyServiceSpy).not.toHaveBeenCalled()
     })
   })
 

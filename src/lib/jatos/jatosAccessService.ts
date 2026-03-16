@@ -124,7 +124,11 @@ async function withResearcherToken<T>(
   return callback({ ...input, token })
 }
 
-async function withParticipantToken<T>(
+/**
+ * Uses service account (VIEWER) for participant read flows.
+ * Do not use for study code creation — use withParticipantAccessAndResearcherToken.
+ */
+async function withParticipantViewerToken<T>(
   input: {
     studyId: number
     pseudonym: string
@@ -148,9 +152,84 @@ async function withParticipantToken<T>(
   return callback({ ...input, token })
 }
 
+/** Explicit role priority for researcher selection (do not trust enum order). */
+const RESEARCHER_ROLE_PRIORITY: Record<string, number> = {
+  PI: 0,
+  COLLABORATOR: 1,
+  VIEWER: 2,
+}
+
+/**
+ * Returns the userId of an eligible researcher for study-level JATOS operations
+ * that require USER capability (e.g. study code creation).
+ *
+ * Selection rule (deterministic):
+ * 1. PI first, then COLLABORATOR, then VIEWER (ResearcherRole)
+ * 2. Within each role: earliest createdAt
+ * 3. Tie-breaker: smallest userId
+ *
+ * @throws if study has no researchers
+ */
+async function getEligibleResearcherForStudy(studyId: number): Promise<number> {
+  const researchers = await db.studyResearcher.findMany({
+    where: { studyId },
+    orderBy: [{ createdAt: "asc" }, { userId: "asc" }],
+    take: 20,
+    select: { userId: true, role: true, createdAt: true },
+  })
+  if (researchers.length === 0) {
+    throw new Error("Study has no researchers; cannot create participant study code.")
+  }
+  const sorted = [...researchers].sort((a, b) => {
+    const pa = RESEARCHER_ROLE_PRIORITY[a.role] ?? 999
+    const pb = RESEARCHER_ROLE_PRIORITY[b.role] ?? 999
+    if (pa !== pb) return pa - pb
+    const ca = a.createdAt.getTime()
+    const cb = b.createdAt.getTime()
+    if (ca !== cb) return ca - cb
+    return a.userId - b.userId
+  })
+  return sorted[0]!.userId
+}
+
+/**
+ * For participant-authenticated operations that require JATOS USER capability
+ * (e.g. study code creation). Participant access is validated; the operation
+ * is executed using a researcher's token because the service account is VIEWER.
+ *
+ * POLICY: This is intentional delegated researcher authority for participant
+ * code creation — JATOS requires USER for POST /studyCodes. Do not use for
+ * read flows; use withParticipantViewerToken instead.
+ */
+async function withParticipantAccessAndResearcherToken<T>(
+  input: {
+    studyId: number
+    pseudonym: string
+    userId: number
+    jatosStudyId: number
+  },
+  callback: (ctx: {
+    studyId: number
+    pseudonym: string
+    userId: number
+    jatosStudyId: number
+    token: string
+  }) => Promise<T>
+): Promise<T> {
+  await assertParticipantCanAccessStudy({
+    studyId: input.studyId,
+    pseudonym: input.pseudonym,
+    userId: input.userId,
+  })
+  const researcherUserId = await getEligibleResearcherForStudy(input.studyId)
+  const token = await getTokenForResearcher(researcherUserId)
+  return callback({ ...input, token })
+}
+
 /**
  * Shared JATOS flow for creating a personal study code and saving the run URL.
- * Access checks and token selection are done by the caller (via withParticipantToken / withResearcherToken).
+ * Access checks and token selection are done by the caller (via withParticipantAccessAndResearcherToken
+ * or withResearcherToken — never withParticipantViewerToken, which cannot create codes).
  */
 async function createPersonalStudyCodeInternal(input: {
   token: string
@@ -295,7 +374,7 @@ export async function checkParticipantCompletionForParticipant({
   userId: number
 }): Promise<{ success: boolean; completed: boolean; error?: string }> {
   try {
-    return await withParticipantToken(
+    return await withParticipantViewerToken(
       { studyId, pseudonym, userId, jatosStudyId },
       async ({ jatosStudyId, pseudonym, token }) => {
         const metadata = await getResultsMetadata({ studyIds: [jatosStudyId] }, { token })
@@ -493,7 +572,7 @@ export async function getParticipantFeedback({
   }
   error?: string
 }> {
-  return withParticipantToken(
+  return withParticipantViewerToken(
     { studyId, pseudonym, userId, jatosStudyId },
     async ({ jatosStudyId, pseudonym, token }) => {
       const metadata = await getResultsMetadata({ studyIds: [jatosStudyId] }, { token })
@@ -560,7 +639,7 @@ export async function createPersonalStudyCodeForParticipant({
   comment: string
   onSave: (runUrl: string) => Promise<void>
 }): Promise<string> {
-  return withParticipantToken(
+  return withParticipantAccessAndResearcherToken(
     { studyId, pseudonym: comment, userId, jatosStudyId },
     async ({ jatosStudyId, token }) =>
       createPersonalStudyCodeInternal({

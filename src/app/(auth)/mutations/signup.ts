@@ -76,8 +76,8 @@ export default resolver.pipe(
         })
       }
 
-      // Best-effort JATOS provisioning for researchers (retry at import/join if this fails)
-      if (finalRole === UserRole.RESEARCHER) {
+      // Best-effort JATOS provisioning for researchers and admins (retry at import/join if this fails)
+      if (finalRole === UserRole.RESEARCHER || finalRole === UserRole.ADMIN) {
         try {
           await ensureResearcherProvisioned(user.id)
         } catch (e) {

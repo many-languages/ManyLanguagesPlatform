@@ -207,6 +207,27 @@ try {
 
 ---
 
+## Admin Study Deletion
+
+App admins can delete studies from both the database and JATOS. This is a **privileged workflow** (not a normal researcher flow) and lives in `src/lib/jatos/admin/`.
+
+**Flow**:
+
+1. `deleteStudyAsAdmin({ studyId, adminUserId, reason })` — entry point
+2. Verifies the user has app ADMIN role
+3. `grantAdminStudyAccessForDeletion` — ensures the admin is a JATOS study member:
+   - If admin is already a researcher on the study → no-op
+   - Else: uses a researcher's token (deterministic: PI → COLLABORATOR → VIEWER, then `createdAt`, `userId`) to add the admin as a study member
+   - Fails loudly if the study has no researchers
+4. Deletes the study from JATOS using the admin's own token
+5. Caller deletes from the database
+
+**Token usage**: No `getAdminToken()`. Researcher token is used only to grant temporary membership; the admin's token performs the actual delete (clear audit trail in JATOS logs).
+
+**Exception**: App code may import `deleteStudyAsAdmin` from `admin/deleteStudyWorkflow` for the admin delete mutation. This is the sole exception to the "use jatosAccessService" rule for JATOS operations.
+
+---
+
 ## Related Documentation
 
 - [JATOS Refactor Plan](./JATOS_REFACTOR_PLAN.md) — Architecture and migration details

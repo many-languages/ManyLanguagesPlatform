@@ -8,6 +8,7 @@ const inter = Inter({ subsets: ["latin"] })
 export const metadata = {
   title: { default: "ManyLanguagesPlatform", template: "%s – Blitz" },
   description: "Online research platform for linguistics studies.",
+  // icons: { icon: "/favicon.ico" }, // Placeholder for future custom favicon
 }
 
 export const viewport = {

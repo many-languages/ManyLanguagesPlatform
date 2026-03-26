@@ -52,6 +52,7 @@ export default function JatosForm({
         <SelectField
           name="jatosWorkerType"
           label="Data collection method"
+          labelHint="Use single if you want to prevent a participant from completing the same study twice. Use multiple if you would like to allow the participant to complete the study multiple times."
           options={jatosWorkerTypeOptions}
           placeholder="Select data collection method"
           className="w-full"

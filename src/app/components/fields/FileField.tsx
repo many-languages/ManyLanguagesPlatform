@@ -1,10 +1,13 @@
 "use client"
 
 import { useFormContext, Controller } from "react-hook-form"
+import { FieldLabel, fieldAriaDescribedBy } from "./FieldLabel"
 
 interface FileFieldProps {
   name: string
   label: string
+  /** Extra context shown next to the label (info icon + tooltip, screen reader text). */
+  labelHint?: string
   accept?: string
   error?: string
   className?: string
@@ -13,6 +16,7 @@ interface FileFieldProps {
 export const FileField = ({
   name,
   label,
+  labelHint,
   accept = ".jzip,.zip",
   className,
   error,
@@ -27,9 +31,7 @@ export const FileField = ({
 
   return (
     <fieldset className="fieldset">
-      <label htmlFor={name} className="label text-base font-medium">
-        {label}
-      </label>
+      <FieldLabel htmlFor={name} label={label} hint={labelHint} />
       <Controller
         name={name}
         control={control}
@@ -44,7 +46,10 @@ export const FileField = ({
             }`}
             onChange={(e) => field.onChange(e.target.files?.[0] || null)}
             aria-invalid={fieldError ? true : false}
-            aria-describedby={fieldError ? `${name}-error` : undefined}
+            aria-describedby={fieldAriaDescribedBy(name, {
+              hint: Boolean(labelHint),
+              error: Boolean(fieldError),
+            })}
           />
         )}
       />

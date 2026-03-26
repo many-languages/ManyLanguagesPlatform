@@ -1,22 +1,23 @@
 "use client"
 
 import React from "react"
+import { FieldLabel, fieldAriaDescribedBy } from "./FieldLabel"
 
 interface TextareaProps extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {
   label?: string
+  /** Extra context shown next to the label (info icon + tooltip, screen reader text). */
+  labelHint?: string
   error?: string
 }
 
-export const Textarea = ({ label, error, className, id, ...props }: TextareaProps) => {
+export const Textarea = ({ label, labelHint, error, className, id, ...props }: TextareaProps) => {
   const fieldError = error
   const textareaId = id ?? props.name
 
   return (
     <fieldset className="fieldset">
-      {label && (
-        <label htmlFor={textareaId} className="label text-base font-medium">
-          {label}
-        </label>
+      {label && textareaId && (
+        <FieldLabel htmlFor={String(textareaId)} label={label} hint={labelHint} />
       )}
       <textarea
         id={textareaId}
@@ -25,14 +26,21 @@ export const Textarea = ({ label, error, className, id, ...props }: TextareaProp
           className || ""
         }`}
         aria-invalid={fieldError ? true : false}
-        aria-describedby={fieldError && props.name ? `${props.name}-error` : undefined}
+        aria-describedby={
+          textareaId
+            ? fieldAriaDescribedBy(String(textareaId), {
+                hint: Boolean(labelHint),
+                error: Boolean(fieldError),
+              })
+            : undefined
+        }
       />
-      {fieldError && props.name && (
-        <span id={`${props.name}-error`} className="text-error text-sm" role="alert">
+      {fieldError && textareaId && (
+        <span id={`${textareaId}-error`} className="text-error text-sm" role="alert">
           {fieldError}
         </span>
       )}
-      {fieldError && !props.name && (
+      {fieldError && !textareaId && (
         <span className="text-error text-sm" role="alert">
           {fieldError}
         </span>

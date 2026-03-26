@@ -1,14 +1,24 @@
 "use client"
 
 import { useFormContext } from "react-hook-form"
+import { FieldLabel, fieldAriaDescribedBy } from "./FieldLabel"
 
 interface TextFieldProps extends React.InputHTMLAttributes<HTMLInputElement> {
   name: string
   label: string
+  /** Extra context shown next to the label (info icon + tooltip, screen reader text). */
+  labelHint?: string
   error?: string
 }
 
-export const TextField = ({ name, label, error, className, ...props }: TextFieldProps) => {
+export const TextField = ({
+  name,
+  label,
+  labelHint,
+  error,
+  className,
+  ...props
+}: TextFieldProps) => {
   const {
     register,
     formState: { isSubmitting, errors },
@@ -19,9 +29,7 @@ export const TextField = ({ name, label, error, className, ...props }: TextField
 
   return (
     <fieldset className="fieldset">
-      <label htmlFor={name} className="label text-base font-medium">
-        {label}
-      </label>
+      <FieldLabel htmlFor={name} label={label} hint={labelHint} />
       <input
         id={name}
         {...register(name)}
@@ -29,7 +37,10 @@ export const TextField = ({ name, label, error, className, ...props }: TextField
         disabled={isSubmitting}
         className={`input input-bordered ${fieldError ? "input-error" : ""} ${className || ""}`}
         aria-invalid={fieldError ? true : false}
-        aria-describedby={fieldError ? `${name}-error` : undefined}
+        aria-describedby={fieldAriaDescribedBy(name, {
+          hint: Boolean(labelHint),
+          error: Boolean(fieldError),
+        })}
       />
       {fieldError && (
         <span id={`${name}-error`} className="text-error text-sm" role="alert">

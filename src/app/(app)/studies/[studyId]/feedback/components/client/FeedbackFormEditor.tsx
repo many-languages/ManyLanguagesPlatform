@@ -1,40 +1,74 @@
 "use client"
 
-import { useState, useEffect, useImperativeHandle, forwardRef, useRef, useMemo } from "react"
-import MDEditor from "@uiw/react-md-editor"
+import {
+  useState,
+  useEffect,
+  useLayoutEffect,
+  useImperativeHandle,
+  forwardRef,
+  useMemo,
+  useRef,
+  type MutableRefObject,
+} from "react"
+import MDEditor, { type RefMDEditor } from "@uiw/react-md-editor"
 import VariableSelector from "./VariableSelector"
 import StatsSelector from "./StatsSelector"
 import ConditionalBuilder from "./ConditionalBuilder"
 import DSLHelper from "./DSLHelper"
 import { useFeedbackTemplate } from "../../hooks/useFeedbackTemplate"
-import { useTemplatePreview } from "../../hooks/useTemplatePreview"
 import { validateDSL, DSLError } from "../../utils/dslValidator"
 import { toast } from "react-hot-toast"
-import type { FeedbackFormEditorProps, FeedbackFormEditorRef } from "../../types"
-import { buildPreviewContextFromBundle } from "../../utils/previewContext"
-import { buildRequiredKeysHash, extractRequiredVariableNames } from "../../utils/requiredKeys"
+import type {
+  FeedbackFormEditorProps,
+  FeedbackFormEditorRef,
+  SaveTemplateResult,
+} from "../../types"
+import { templateUsesStatAcross } from "@/src/lib/feedback/statAcrossKeys"
+import { renderFeedbackPreviewAction } from "../../actions/renderFeedbackPreviewAction"
 import { mdEditorStyles, mdEditorClassName } from "../../styles/feedbackStyles"
+
+const DEFAULT_MARKDOWN = "## Feedback Form\nWrite your feedback message here..."
+
+function syncSelectionRef(
+  ref: MutableRefObject<{ start: number; end: number }>,
+  textarea: HTMLTextAreaElement
+) {
+  ref.current = {
+    start: textarea.selectionStart,
+    end: textarea.selectionEnd,
+  }
+}
 
 const FeedbackFormEditor = forwardRef<FeedbackFormEditorRef, FeedbackFormEditorProps>(
   (
     {
       initialTemplate,
       studyId,
+      feedbackPreviewContextKey,
       onTemplateSaved,
       onValidationChange,
-      allPilotResults,
+      withinStudyResultId,
+      pilotResultCount,
       variables,
-      extractionBundle,
       hiddenVariables,
     },
     ref
   ) => {
-    const [markdown, setMarkdown] = useState(
-      "## Feedback Form\nWrite your feedback message here..."
-    )
+    const [markdown, setMarkdown] = useState(DEFAULT_MARKDOWN)
+    const [previewMarkdown, setPreviewMarkdown] = useState(markdown)
+    /** Server preview failed; do not show raw template as if it were rendered output. */
+    const [previewError, setPreviewError] = useState<string | null>(null)
     const [showConditionalBuilder, setShowConditionalBuilder] = useState(false)
     const [dslErrors, setDslErrors] = useState<DSLError[]>([])
     const [showErrors, setShowErrors] = useState(false)
+
+    const mdEditorRef = useRef<RefMDEditor>(null)
+    /** Last known textarea selection; used when inserting from toolbars (caret may be lost on blur). */
+    const lastSelectionRef = useRef({
+      start: DEFAULT_MARKDOWN.length,
+      end: DEFAULT_MARKDOWN.length,
+    })
+    const pendingCursorRef = useRef<number | null>(null)
 
     const { saveTemplate, saving, templateSaved, setTemplateSaved } = useFeedbackTemplate({
       studyId,
@@ -45,8 +79,12 @@ const FeedbackFormEditor = forwardRef<FeedbackFormEditorRef, FeedbackFormEditorP
     // Load initial template if it exists
     useEffect(() => {
       if (initialTemplate) {
-        setMarkdown(initialTemplate.content)
+        const content = initialTemplate.content
+        setMarkdown(content)
+        setPreviewMarkdown(content)
         setTemplateSaved(true) // Template already exists, so it's "saved"
+        const len = content.length
+        lastSelectionRef.current = { start: len, end: len }
       }
     }, [initialTemplate])
 
@@ -73,85 +111,101 @@ const FeedbackFormEditor = forwardRef<FeedbackFormEditorRef, FeedbackFormEditorP
       }
     }, [debouncedMarkdown, variables, hiddenVariables, onValidationChange])
 
-    const handleInsertVariable = (variableSyntax: string) => {
-      setMarkdown((prev) => prev + ` ${variableSyntax}`)
-      setTemplateSaved(false) // Mark as unsaved when content changes
-    }
-
-    const handleInsertStat = (statExpression: string) => {
-      setMarkdown((prev) => prev + ` ${statExpression}`)
-      setTemplateSaved(false) // Mark as unsaved when content changes
-    }
-
-    const handleInsertConditional = (conditionalBlock: string) => {
-      setMarkdown((prev) => prev + `\n\n${conditionalBlock}\n`)
+    const insertAtSelection = (insertText: string) => {
+      setMarkdown((prev) => {
+        let { start, end } = lastSelectionRef.current
+        start = Math.max(0, Math.min(start, prev.length))
+        end = Math.max(start, Math.min(end, prev.length))
+        const next = prev.slice(0, start) + insertText + prev.slice(end)
+        const newPos = start + insertText.length
+        lastSelectionRef.current = { start: newPos, end: newPos }
+        pendingCursorRef.current = newPos
+        return next
+      })
       setTemplateSaved(false)
     }
 
-    const handleSave = async (): Promise<boolean> => {
+    const handleInsertVariable = (variableSyntax: string) => {
+      insertAtSelection(` ${variableSyntax}`)
+    }
+
+    const handleInsertStat = (statExpression: string) => {
+      insertAtSelection(` ${statExpression}`)
+    }
+
+    const handleInsertConditional = (conditionalBlock: string) => {
+      insertAtSelection(`\n\n${conditionalBlock}\n`)
+    }
+
+    useLayoutEffect(() => {
+      if (pendingCursorRef.current === null) return
+      const pos = pendingCursorRef.current
+      pendingCursorRef.current = null
+      const ta = mdEditorRef.current?.textarea
+      if (!ta) return
+      const safe = Math.max(0, Math.min(pos, markdown.length))
+      requestAnimationFrame(() => {
+        ta.focus()
+        ta.setSelectionRange(safe, safe)
+        lastSelectionRef.current = { start: safe, end: safe }
+      })
+    }, [markdown])
+
+    const handleSave = async (options?: {
+      silentSuccessToast?: boolean
+    }): Promise<SaveTemplateResult> => {
       // Prevent saving if there are DSL errors
       if (dslErrors.length > 0) {
         toast.error("Cannot save template with validation errors. Please fix them first.")
         setShowErrors(true)
-        return false
+        return { ok: false }
       }
 
-      await saveTemplate(markdown)
-      return true
+      return await saveTemplate(markdown, options)
     }
 
     // Expose methods to parent component
     useImperativeHandle(
       ref,
       () => ({
-        saveTemplate: async () => {
-          return await handleSave()
+        saveTemplate: async (options) => {
+          return await handleSave(options)
         },
         isTemplateSaved: () => templateSaved,
       }),
       [templateSaved, handleSave]
     )
 
-    // Check if template uses "across" scope
-    const usesAcrossScope = useMemo(() => {
-      return /stat:[^}]+:across/.test(markdown)
-    }, [markdown])
+    const usesAcrossScope = useMemo(() => templateUsesStatAcross(markdown), [markdown])
 
-    const requiredVariableNames = useMemo(
-      () => extractRequiredVariableNames(debouncedMarkdown),
-      [debouncedMarkdown]
-    )
+    const previewRequestSeq = useRef(0)
 
-    // Filter variables to only include those that are allowed (passed in props)
-    // This prevents personal data from being shown in the preview even if the template references it
-    const effectiveVariableNames = useMemo(() => {
-      const allowedNames = new Set(variables.map((v) => v.variableName))
-      return requiredVariableNames.filter((name) => allowedNames.has(name))
-    }, [requiredVariableNames, variables])
-
-    const requiredKeysHash = useMemo(
-      () => buildRequiredKeysHash(effectiveVariableNames),
-      [effectiveVariableNames]
-    )
-
-    const contextCacheRef = useRef(
-      new Map<string, ReturnType<typeof buildPreviewContextFromBundle>>()
-    )
-
-    const previewContext = useMemo(() => {
-      if (!extractionBundle) return null
-      const cached = contextCacheRef.current.get(requiredKeysHash)
-      if (cached) return cached
-      const built = buildPreviewContextFromBundle(extractionBundle, effectiveVariableNames)
-      contextCacheRef.current.set(requiredKeysHash, built)
-      return built
-    }, [extractionBundle, requiredKeysHash, effectiveVariableNames])
-
-    // Client-side rendering for live preview
-    const renderedPreview = useTemplatePreview({
-      template: debouncedMarkdown,
-      context: previewContext,
-    })
+    useEffect(() => {
+      const seq = ++previewRequestSeq.current
+      void renderFeedbackPreviewAction({
+        studyId,
+        contextKey: feedbackPreviewContextKey,
+        templateContent: debouncedMarkdown,
+        withinStudyResultId,
+      })
+        .then((result) => {
+          if (seq !== previewRequestSeq.current) return
+          if (result.ok) {
+            setPreviewMarkdown(result.markdown)
+            setPreviewError(null)
+          } else {
+            setPreviewError(result.error)
+            toast.error(result.error)
+          }
+        })
+        .catch((err: unknown) => {
+          if (seq !== previewRequestSeq.current) return
+          const message =
+            err instanceof Error ? err.message : typeof err === "string" ? err : "Preview failed."
+          setPreviewError(message)
+          toast.error(message)
+        })
+    }, [debouncedMarkdown, studyId, feedbackPreviewContextKey, withinStudyResultId])
 
     return (
       <>
@@ -211,9 +265,9 @@ const FeedbackFormEditor = forwardRef<FeedbackFormEditorRef, FeedbackFormEditorP
               <h3 className="font-bold">Using "Across All Results" Statistics</h3>
               <div className="text-sm">
                 This template uses statistics calculated across all participants. In the preview
-                above, we're using all pilot results ({allPilotResults?.length || 0} result
-                {allPilotResults?.length !== 1 ? "s" : ""}). In actual participant feedback, it will
-                use all participant results from the study.
+                above, we're using all pilot results ({pilotResultCount ?? 0} result
+                {pilotResultCount !== 1 ? "s" : ""}). In actual participant feedback, it will use
+                all participant results from the study.
               </div>
             </div>
           </div>
@@ -252,16 +306,24 @@ const FeedbackFormEditor = forwardRef<FeedbackFormEditorRef, FeedbackFormEditorP
           className={`rounded-lg overflow-hidden border border-base-300 !bg-base-300 ${mdEditorClassName.container}`}
         >
           <MDEditor
+            ref={mdEditorRef}
             value={markdown}
-            onChange={(value) => {
+            onChange={(value, evt) => {
               setMarkdown(value || "")
               setTemplateSaved(false)
+              if (evt?.currentTarget) {
+                syncSelectionRef(lastSelectionRef, evt.currentTarget)
+              }
             }}
             height={300}
             preview="edit"
             style={{ ...mdEditorStyles.container, backgroundColor: "hsl(var(--b3))" }}
             textareaProps={{
               style: { ...mdEditorStyles.textarea, backgroundColor: "hsl(var(--b3))" },
+              onSelect: (e) => syncSelectionRef(lastSelectionRef, e.currentTarget),
+              onKeyUp: (e) => syncSelectionRef(lastSelectionRef, e.currentTarget),
+              onMouseUp: (e) => syncSelectionRef(lastSelectionRef, e.currentTarget),
+              onBlur: (e) => syncSelectionRef(lastSelectionRef, e.currentTarget),
             }}
           />
         </div>
@@ -274,10 +336,19 @@ const FeedbackFormEditor = forwardRef<FeedbackFormEditorRef, FeedbackFormEditorP
         <div
           className={`prose max-w-none !bg-base-300 p-4 rounded-lg border border-base-300 ${mdEditorClassName.preview}`}
         >
-          <MDEditor.Markdown
-            source={renderedPreview}
-            style={{ ...mdEditorStyles.preview, backgroundColor: "hsl(var(--b3))" }}
-          />
+          {previewError ? (
+            <div className="alert alert-error not-prose" role="alert">
+              <div>
+                <div className="font-semibold">Preview could not be rendered</div>
+                <p className="text-sm mt-1">{previewError}</p>
+              </div>
+            </div>
+          ) : (
+            <MDEditor.Markdown
+              source={previewMarkdown}
+              style={{ ...mdEditorStyles.preview, backgroundColor: "hsl(var(--b3))" }}
+            />
+          )}
         </div>
 
         {/* Modals */}

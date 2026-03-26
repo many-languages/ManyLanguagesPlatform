@@ -28,6 +28,21 @@ tokenBroker — token resolution only
     → getAdminToken() — provisioning only
 ```
 
+### Feedback helpers (`src/lib/feedback`)
+
+Feedback template rendering and cohort aggregation for `stat:…:across` live in **`src/lib/feedback/`** so **`jatosAccessService` does not import from `src/app/**`**. That keeps the JATOS use-case layer depending only on other `src/lib` modules (plus shared types).
+
+| Module                           | Role                                                                                                                                                              |
+| -------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `types`, `feedbackRenderContext` | `FeedbackRenderContext`, `buildFeedbackRenderContext`                                                                                                             |
+| `requiredVariableNames`          | `extractRequiredVariableNames`, `buildRequiredKeysHash`                                                                                                           |
+| `statAcrossKeys`                 | `statAcrossLookupKey`; `templateUsesStatAcross` (uses `createFeedbackStatPlaceholderRegex` from `feedbackStatPlaceholder.ts` so “uses across” matches render/DSL) |
+| `variableRowAggregation`         | `collectVariableValuesAcrossAllRows`, `buildPredicate` (where-clauses)                                                                                            |
+| `computeAggregatedAcrossStats`   | `computeAggregatedAcrossStatsForTemplate` — used inside `getParticipantFeedback` when the template uses `stat:…:across`, and for researcher static feedback       |
+| `extractVariableBundleForRender` | Re-exports `extractVariableBundleForRenderFromResults` from the study **variables** module — single supported import path for lib code                            |
+
+Routes under `src/app/.../feedback/utils/` may **re-export** the same symbols for relative imports; prefer `@/src/lib/feedback/...` in new code.
+
 ### Key Principles
 
 - **No API routes for JATOS** — except the import route (see below).
@@ -130,7 +145,7 @@ const payload = await downloadAllResultsForResearcher({ studyId, userId })
 
 ### Participant Flows
 
-Use `getParticipantFeedback` (uses viewer service token via `getTokenForStudyService`):
+Use `getParticipantFeedback` (participant read path via `withParticipantViewerToken` / study service token — see Participant Token Policy). You must pass **`templateContent`** so the service can decide whether to fetch only the participant’s result or the full study (for template-driven `stat:…:across` aggregates). Optionally pass **`requiredVariableKeyList`** to narrow extraction.
 
 ```typescript
 const result = await getParticipantFeedback({
@@ -138,7 +153,10 @@ const result = await getParticipantFeedback({
   pseudonym,
   jatosStudyId,
   userId,
+  templateContent,
+  requiredVariableKeyList,
 })
+// result.data: { enrichedResult, aggregatedAcrossStats? } — never raw cohort arrays
 ```
 
 ### Server Actions
@@ -165,22 +183,22 @@ export async function downloadResultsAction(studyId: number) {
 
 ## Available Service Methods
 
-| Method                                  | Use Case                                        |
-| --------------------------------------- | ----------------------------------------------- |
-| `getResultsMetadataForResearcher`       | Fetch results metadata                          |
-| `getStudyPropertiesForResearcher`       | Fetch study properties                          |
-| `getBatchIdForResearcher`               | Get first batch ID from properties              |
-| `downloadAllResultsForResearcher`       | Download all results as `DownloadPayload`       |
-| `getParticipantFeedback`                | Participant feedback (viewer token)             |
-| `createPersonalStudyCodeForParticipant` | Join study (participant; uses researcher token) |
-| `createPersonalStudyCodeForResearcher`  | Pilot link (researcher)                         |
-| `getGeneralLinksForResearcher`          | General links for participants                  |
-| `getHtmlFilesForResearcher`             | HTML files from asset structure                 |
-| `getEnrichedResultsForResearcher`       | Enriched results for display                    |
-| `getStudyDataByCommentForResearcher`    | Study data by comment (e.g. "test")             |
-| `getAllPilotResultsForResearcher`       | All pilot results                               |
-| `getPilotResultByIdForResearcher`       | Single pilot result by ID                       |
-| `checkPilotStatusForResearcher`         | Pilot completion status                         |
+| Method                                  | Use Case                                                                               |
+| --------------------------------------- | -------------------------------------------------------------------------------------- |
+| `getResultsMetadataForResearcher`       | Fetch results metadata                                                                 |
+| `getStudyPropertiesForResearcher`       | Fetch study properties                                                                 |
+| `getBatchIdForResearcher`               | Get first batch ID from properties                                                     |
+| `downloadAllResultsForResearcher`       | Download all results as `DownloadPayload`                                              |
+| `getParticipantFeedback`                | Participant feedback (viewer token); template-driven cohort aggregates in-service only |
+| `createPersonalStudyCodeForParticipant` | Join study (participant; uses researcher token)                                        |
+| `createPersonalStudyCodeForResearcher`  | Pilot link (researcher)                                                                |
+| `getGeneralLinksForResearcher`          | General links for participants                                                         |
+| `getHtmlFilesForResearcher`             | HTML files from asset structure                                                        |
+| `getEnrichedResultsForResearcher`       | Enriched results for display                                                           |
+| `getStudyDataByCommentForResearcher`    | Study data by comment (e.g. "test")                                                    |
+| `getAllPilotResultsForResearcher`       | All pilot results                                                                      |
+| `getPilotResultByIdForResearcher`       | Single pilot result by ID                                                              |
+| `checkPilotStatusForResearcher`         | Pilot completion status                                                                |
 
 ---
 
@@ -232,3 +250,4 @@ App admins can delete studies from both the database and JATOS. This is a **priv
 
 - [JATOS Refactor Plan](./JATOS_REFACTOR_PLAN.md) — Architecture and migration details
 - [JATOS User-Scoped Tokens](./JATOS_USER_SCOPED_TOKENS_IMPLEMENTATION_PLAN.md) — Token types and provisioning
+- [Feedback rendering (server-side)](./FEEDBACK_RENDERING_SERVER_SIDE_PLAN.md) — Markdown pipeline, `aggregatedAcrossStats`, `src/lib/feedback`

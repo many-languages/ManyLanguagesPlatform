@@ -215,20 +215,14 @@ describe("jatosAccessService", () => {
   describe("5. result-enrichment flow", () => {
     it("calls token broker, getResultsMetadata, getResultsData, parseJatosZip, matchJatosDataToMetadata", async () => {
       vi.spyOn(tokenBrokerModule, "getTokenForStudyService").mockResolvedValue("service-token")
-      vi.spyOn(getResultsMetadataModule, "getResultsMetadata")
-        .mockResolvedValueOnce(SAMPLE_METADATA as never)
-        .mockResolvedValueOnce(SAMPLE_METADATA as never)
-      vi.spyOn(getResultsDataModule, "getResultsData")
-        .mockResolvedValueOnce({
-          success: true,
-          data: Buffer.from("zip"),
-          contentType: "application/zip",
-        })
-        .mockResolvedValueOnce({
-          success: true,
-          data: Buffer.from("zip"),
-          contentType: "application/zip",
-        })
+      vi.spyOn(getResultsMetadataModule, "getResultsMetadata").mockResolvedValueOnce(
+        SAMPLE_METADATA as never
+      )
+      vi.spyOn(getResultsDataModule, "getResultsData").mockResolvedValueOnce({
+        success: true,
+        data: Buffer.from("zip"),
+        contentType: "application/zip",
+      })
       vi.spyOn(parseJatosZipModule, "parseJatosZip").mockResolvedValue([
         { filename: "foo", content: "" },
       ])
@@ -241,12 +235,13 @@ describe("jatosAccessService", () => {
         pseudonym: "participant-1",
         jatosStudyId: 1,
         userId: 100,
+        templateContent: "Hello {{ var:foo }}",
       })
 
-      expect(result.success).toBe(true)
-      expect(result.completed).toBe(true)
-      expect(result.data?.enrichedResult).toBeDefined()
-      expect(result.data?.allEnrichedResults).toHaveLength(1)
+      expect(result.kind).toBe("loaded")
+      if (result.kind !== "loaded") throw new Error("expected loaded")
+      expect(result.enrichedResult).toBeDefined()
+      expect(result.aggregatedAcrossStats).toBeUndefined()
       expect(getResultsDataModule.getResultsData).toHaveBeenCalledWith(expect.any(Object), {
         token: "service-token",
       })
@@ -380,20 +375,14 @@ describe("jatosAccessService", () => {
       const getResearcherSpy = vi
         .spyOn(tokenBrokerModule, "getTokenForResearcher")
         .mockResolvedValue("researcher-token")
-      vi.spyOn(getResultsMetadataModule, "getResultsMetadata")
-        .mockResolvedValueOnce(SAMPLE_METADATA as never)
-        .mockResolvedValueOnce(SAMPLE_METADATA as never)
-      vi.spyOn(getResultsDataModule, "getResultsData")
-        .mockResolvedValueOnce({
-          success: true,
-          data: Buffer.from("zip"),
-          contentType: "application/zip",
-        })
-        .mockResolvedValueOnce({
-          success: true,
-          data: Buffer.from("zip"),
-          contentType: "application/zip",
-        })
+      vi.spyOn(getResultsMetadataModule, "getResultsMetadata").mockResolvedValueOnce(
+        SAMPLE_METADATA as never
+      )
+      vi.spyOn(getResultsDataModule, "getResultsData").mockResolvedValueOnce({
+        success: true,
+        data: Buffer.from("zip"),
+        contentType: "application/zip",
+      })
       vi.spyOn(parseJatosZipModule, "parseJatosZip").mockResolvedValue([
         { filename: "foo", content: "" },
       ])
@@ -406,6 +395,7 @@ describe("jatosAccessService", () => {
         pseudonym: "participant-1",
         jatosStudyId: 1,
         userId: 100,
+        templateContent: "Hello",
       })
 
       expect(getStudyServiceSpy).toHaveBeenCalledWith(1)

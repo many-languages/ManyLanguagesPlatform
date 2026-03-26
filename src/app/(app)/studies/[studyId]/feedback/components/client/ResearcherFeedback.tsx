@@ -3,22 +3,17 @@
 import { useRouter } from "next/navigation"
 import { useTransition } from "react"
 import FeedbackCard from "./FeedbackCard"
-import type { EnrichedJatosStudyResult } from "@/src/types/jatos"
 
 interface ResearcherFeedbackProps {
   studyId: number
-  initialEnrichedResult: EnrichedJatosStudyResult | null | undefined
-  template: { content: string } | null | undefined
-  initialAllEnrichedResults: EnrichedJatosStudyResult[]
-  requiredVariableKeyList?: string[]
+  renderedMarkdown: string | null
+  researcherHasPilotData: boolean
 }
 
 export default function ResearcherFeedback({
   studyId,
-  initialEnrichedResult,
-  template,
-  initialAllEnrichedResults,
-  requiredVariableKeyList,
+  renderedMarkdown,
+  researcherHasPilotData,
 }: ResearcherFeedbackProps) {
   const router = useRouter()
   const [, startTransition] = useTransition()
@@ -29,16 +24,12 @@ export default function ResearcherFeedback({
     })
   }
 
-  if (!template) return null
-
   return (
     <FeedbackCard
       studyId={studyId}
-      enrichedResult={initialEnrichedResult}
-      template={template}
+      renderedMarkdown={renderedMarkdown}
       title="Feedback Preview"
-      allEnrichedResults={initialAllEnrichedResults}
-      requiredVariableKeyList={requiredVariableKeyList}
+      researcherHasPilotData={researcherHasPilotData}
       onRefresh={handleRefresh}
       showEditButton={true}
     />

@@ -1,7 +1,44 @@
-import type { EnrichedJatosStudyResult } from "@/src/types/jatos"
+import type { FeedbackTemplateRscRow } from "./feedbackTemplateRscSelect"
 
 // Re-export variable types from shared variables module
-export type { ExtractedVariable } from "../../variables/types"
+export type { ExtractedVariable } from "../variables/types"
+
+/** JATOS + enrichment outcome for participant feedback (see `getParticipantFeedback`). */
+export type { GetParticipantFeedbackResult } from "@/src/lib/jatos/participantFeedbackTypes"
+
+/**
+ * Server-rendered markdown load for participant feedback (RSC + server action).
+ * Aligns with `GetParticipantFeedbackResult` but replaces `loaded` payload with rendered markdown.
+ */
+export type ParticipantFeedbackMarkdownLoadResult =
+  | { kind: "not_completed" }
+  | { kind: "loaded"; renderedMarkdown: string }
+  | { kind: "failed"; error: string }
+
+/** Full participant feedback load: template access + JATOS + render (see `loadParticipantFeedbackViewModel`). */
+export type LoadParticipantFeedbackPipelineResult =
+  | { kind: "not_authenticated" }
+  | { kind: "not_enrolled" }
+  | { kind: "no_template" }
+  | { kind: "done"; loaded: ParticipantFeedbackMarkdownLoadResult }
+
+/** Return type of `fetchParticipantFeedbackAction` (same discriminated shape as the RSC pipeline). */
+export type FetchParticipantFeedbackActionResult = LoadParticipantFeedbackPipelineResult
+
+/**
+ * Server-rendered researcher preview (pilots + template). No `not_completed` — empty pilots are
+ * still `loaded` with `renderedMarkdown: null`.
+ */
+export type ResearcherFeedbackMarkdownLoadResult =
+  | { kind: "loaded"; renderedMarkdown: string | null; researcherHasPilotData: boolean }
+  | { kind: "failed"; error: string }
+
+/** Full researcher feedback load: template + pilots + render (see `loadResearcherFeedbackViewModel`). */
+export type LoadResearcherFeedbackPipelineResult =
+  | { kind: "not_authenticated" }
+  | { kind: "not_authorized" }
+  | { kind: "no_template" }
+  | { kind: "done"; loaded: ResearcherFeedbackMarkdownLoadResult }
 
 // Template Types
 export interface FeedbackTemplate {
@@ -11,10 +48,10 @@ export interface FeedbackTemplate {
   validatedExtractionId?: number | null
   validationStatus?: "NEEDS_REVIEW" | "VALID" | "INVALID"
   validatedAt?: Date | string | null
-  missingKeys?: string[] | null
-  extraKeys?: string[] | null
+  missingVariableNames?: string[] | null
+  extraVariableNames?: string[] | null
   extractorVersion?: string | null
-  requiredVariableKeys?: string[] | null
+  requiredVariableNames?: string[] | null
   createdAt: Date | string
   updatedAt: Date | string
 }
@@ -24,25 +61,31 @@ export interface FeedbackTemplateInput {
   content: string
 }
 
-// Rendering Types
-export interface FeedbackRenderContext {
-  enrichedResult: EnrichedJatosStudyResult
-  allEnrichedResults?: EnrichedJatosStudyResult[]
-}
+/**
+ * Template row passed into the client editor and Step 6 (same shape as `FeedbackTemplateRscRow` /
+ * `getFeedbackTemplateRsc` payloads; no `studyId` on this select).
+ */
+export type FeedbackTemplateEditorInitial = FeedbackTemplateRscRow
 
-// Component Props Types
+// Component Props Types (static feedback uses server-rendered markdown via FeedbackCard)
 export interface FeedbackCardProps {
   studyId: number
-  enrichedResult: EnrichedJatosStudyResult | null | undefined
-  template: { content: string } | null | undefined
+  /** Server-rendered markdown; null when no feedback to show yet or missing template. */
+  renderedMarkdown: string | null
   title?: string
   className?: string
-  allEnrichedResults?: EnrichedJatosStudyResult[]
-  requiredVariableKeyList?: string[]
+  /** Participant: false until the study run exists in JATOS. */
+  participantCompleted?: boolean
+  /** Researcher preview: false when no pilot results exist. */
+  researcherHasPilotData?: boolean
+  onRefresh?: () => Promise<void> | void
+  showEditButton?: boolean
 }
 
+export type SaveTemplateResult = { ok: false } | { ok: true; setupComplete: boolean }
+
 export interface FeedbackFormEditorRef {
-  saveTemplate: () => Promise<boolean>
+  saveTemplate: (options?: { silentSuccessToast?: boolean }) => Promise<SaveTemplateResult>
   isTemplateSaved: () => boolean
 }
 
@@ -53,24 +96,16 @@ export interface FeedbackVariable {
 }
 
 export interface FeedbackFormEditorProps {
-  initialTemplate?: {
-    id: number
-    content: string
-    createdAt: Date | string
-    updatedAt: Date | string
-    validatedExtractionId?: number | null
-    validationStatus?: "NEEDS_REVIEW" | "VALID" | "INVALID"
-    validatedAt?: Date | string | null
-    missingKeys?: string[] | null
-    extraKeys?: string[] | null
-  } | null
+  /** Server-stored preview snapshot key (in-memory; Redis later). Required when preview runs. */
+  feedbackPreviewContextKey: string
+  /** Primary study result id for `var:` / `stat:…:within` when multiple pilots exist. */
+  withinStudyResultId?: number
+  /** Pilot count for copy in the "across" warning (no extraction bundle is sent to the client). */
+  pilotResultCount?: number
+  initialTemplate?: FeedbackTemplateEditorInitial | null
   studyId: number
   onTemplateSaved?: () => void
   onValidationChange?: (isValid: boolean) => void
-  allPilotResults?: EnrichedJatosStudyResult[]
   variables: FeedbackVariable[]
-  extractionBundle:
-    | import("../setup/utils/serializeExtractionBundle").SerializedExtractionBundle
-    | null
   hiddenVariables?: string[]
 }

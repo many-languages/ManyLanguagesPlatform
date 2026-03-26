@@ -10,8 +10,8 @@ export async function validateFeedbackTemplateAgainstExtraction(
   }
 ): Promise<{
   status: "VALID" | "INVALID"
-  missingKeys: string[]
-  extraKeys: string[]
+  missingVariableNames: string[]
+  extraVariableNames: string[]
 } | null> {
   const template = await tx.feedbackTemplate.findUnique({
     where: { studyId: args.studyId },
@@ -22,19 +22,20 @@ export async function validateFeedbackTemplateAgainstExtraction(
     return null
   }
 
-  const requiredKeys = extractRequiredVariableNames(template.content.trim())
+  const requiredVariableNames = extractRequiredVariableNames(template.content.trim())
   const variables = await tx.studyVariable.findMany({
     where: { extractionSnapshotId: args.extractionSnapshotId },
     select: { variableKey: true, variableName: true },
   })
   const availableNames = new Set(variables.map((v) => v.variableName))
-  const requiredSet = new Set(requiredKeys)
+  const requiredSet = new Set(requiredVariableNames)
 
-  const missingKeys = requiredKeys.filter((key) => !availableNames.has(key))
-  const extraKeys = variables.map((v) => v.variableName).filter((key) => !requiredSet.has(key))
+  const missingVariableNames = requiredVariableNames.filter((name) => !availableNames.has(name))
+  const extraVariableNames = variables
+    .map((v) => v.variableName)
+    .filter((name) => !requiredSet.has(name))
 
-  // Only missingKeys make the template INVALID; extraKeys are informational
-  const status = missingKeys.length === 0 ? "VALID" : "INVALID"
+  const status = missingVariableNames.length === 0 ? "VALID" : "INVALID"
 
   await tx.feedbackTemplate.update({
     where: { id: template.id },
@@ -42,12 +43,12 @@ export async function validateFeedbackTemplateAgainstExtraction(
       validationStatus: status,
       validatedExtractionId: args.extractionSnapshotId,
       validatedAt: new Date(),
-      missingKeys,
-      extraKeys,
+      missingVariableNames,
+      extraVariableNames,
       extractorVersion: args.extractorVersion,
-      requiredVariableKeys: requiredKeys,
+      requiredVariableNames,
     },
   })
 
-  return { status, missingKeys, extraKeys }
+  return { status, missingVariableNames, extraVariableNames }
 }

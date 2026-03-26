@@ -1,23 +1,22 @@
 "use server"
 
+import { getSetupCompletionRsc } from "../../setup/queries/getSetupCompletion"
+import { STEP_KEYS } from "../../setup/utils/constants"
 import { createFeedbackTemplateRsc } from "../mutations/createFeedbackTemplate"
 import { updateFeedbackTemplateRsc } from "../mutations/updateFeedbackTemplate"
-import type { FeedbackTemplate } from "../types"
+import type { FeedbackTemplate, FeedbackTemplateEditorInitial } from "../types"
 import { extractRequiredVariableNames } from "../utils/requiredKeys"
+import { mapFeedbackTemplateSaveErrorToUserMessage } from "../utils/mapFeedbackTemplateSaveErrorToUserMessage"
 
 export interface SaveTemplateInput {
   studyId: number
   content: string
-  initialTemplate?: {
-    id: number
-    content: string
-  } | null
+  initialTemplate?: Pick<FeedbackTemplateEditorInitial, "id" | "content"> | null
 }
 
-export interface SaveTemplateResult {
-  template: FeedbackTemplate
-  success: boolean
-}
+export type SaveFeedbackTemplateActionResult =
+  | { ok: true; template: FeedbackTemplate; setupComplete: boolean }
+  | { ok: false; userMessage: string }
 
 /**
  * Save or update feedback template and sync variables
@@ -25,31 +24,37 @@ export interface SaveTemplateResult {
  */
 export async function saveFeedbackTemplateAction(
   input: SaveTemplateInput
-): Promise<SaveTemplateResult> {
+): Promise<SaveFeedbackTemplateActionResult> {
   const { studyId, content, initialTemplate } = input
 
-  // Validate content
   if (!content.trim()) {
-    throw new Error("Template content cannot be empty")
+    return {
+      ok: false,
+      userMessage: "Please enter some content for your feedback template.",
+    }
   }
 
-  const requiredVariableKeys = extractRequiredVariableNames(content.trim())
+  try {
+    const requiredVariableNames = extractRequiredVariableNames(content.trim())
 
-  // Save or update template
-  const template = initialTemplate
-    ? await updateFeedbackTemplateRsc({
-        id: initialTemplate.id,
-        content: content.trim(),
-        requiredVariableKeys,
-      })
-    : await createFeedbackTemplateRsc({
-        studyId,
-        content: content.trim(),
-        requiredVariableKeys,
-      })
+    const template = initialTemplate
+      ? await updateFeedbackTemplateRsc({
+          id: initialTemplate.id,
+          content: content.trim(),
+          requiredVariableNames,
+        })
+      : await createFeedbackTemplateRsc({
+          studyId,
+          content: content.trim(),
+          requiredVariableNames,
+        })
 
-  return {
-    template,
-    success: true,
+    const flags = await getSetupCompletionRsc(studyId)
+    const setupComplete = STEP_KEYS.every((key) => flags[key] === true)
+
+    return { ok: true, template, setupComplete }
+  } catch (error) {
+    console.error("saveFeedbackTemplateAction:", error)
+    return { ok: false, userMessage: mapFeedbackTemplateSaveErrorToUserMessage(error) }
   }
 }

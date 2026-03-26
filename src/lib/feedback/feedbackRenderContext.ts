@@ -1,13 +1,4 @@
-import type { ExtractionBundle } from "../../variables/types"
-import type { SerializedExtractionBundle } from "../../setup/utils/serializeExtractionBundle"
-
-export type Primitive = string | number | boolean | null
-
-export type PreviewRenderContext = {
-  vars: Record<string, Primitive[]>
-  numericSeries: Record<string, number[]>
-  rows: Record<string, Record<string, Primitive>>
-}
+import type { FeedbackRenderBundleInput, FeedbackRenderContext, Primitive } from "./types"
 
 function parseValueJson(valueJson: string): Primitive {
   try {
@@ -26,10 +17,10 @@ function parseValueJson(valueJson: string): Primitive {
   }
 }
 
-export function buildPreviewContextFromBundle(
-  bundle: ExtractionBundle | SerializedExtractionBundle,
+export function buildFeedbackRenderContext(
+  bundle: FeedbackRenderBundleInput,
   requiredVariableNames: string[]
-): PreviewRenderContext {
+): FeedbackRenderContext {
   const requiredSet = new Set(requiredVariableNames)
   const variableKeyToName = new Map(bundle.variables.map((v) => [v.variableKey, v.variableName]))
 
@@ -63,3 +54,5 @@ export function buildPreviewContextFromBundle(
 
   return { vars, numericSeries, rows }
 }
+
+export type { FeedbackRenderBundleInput, FeedbackRenderContext, Primitive } from "./types"

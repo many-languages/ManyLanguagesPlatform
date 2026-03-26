@@ -20,9 +20,9 @@
  *    Examples: getResultsMetadataForResearcher, getStudyPropertiesForResearcher,
  *    createPersonalStudyCode*, downloadAllResultsForResearcher.
  *
- * 2. Result object { success, ... }: UI needs structured outcome. Returns { success, error? }
- *    on failure instead of throwing.
- *    Examples: checkParticipantCompletionForParticipant, getParticipantFeedback,
+ * 2. Result object or discriminated union: UI needs structured outcome without throwing.
+ *    Examples: checkParticipantCompletionForParticipant ({ success, error? }),
+ *    getParticipantFeedback (GetParticipantFeedbackResult),
  *    checkJatosStudyUuidForSetup, checkPilotStatusForResearcher.
  *
  * 3. Best-effort null: Dashboards/aggregation. Logs and returns null on failure;
@@ -33,7 +33,13 @@
 import db from "db"
 import { getTokenForResearcher, getTokenForStudyService } from "./tokenBroker"
 import { logJatosError } from "./logger"
-import { mapJatosErrorToUserMessage } from "./errors"
+import {
+  mapJatosErrorToUserMessage,
+  USER_MESSAGE_PARTICIPANT_FEEDBACK_ENRICHMENT_MISSING,
+} from "./errors"
+import type { GetParticipantFeedbackResult } from "./participantFeedbackTypes"
+
+export type { GetParticipantFeedbackResult } from "./participantFeedbackTypes"
 import { getResultsMetadata } from "./client/getResultsMetadata"
 import { getResultsData } from "./client/getResultsData"
 import { getStudyProperties } from "./client/getStudyProperties"
@@ -59,6 +65,8 @@ import type {
   EnrichedJatosStudyResult,
   JatosStudyResult,
 } from "@/src/types/jatos"
+import { computeAggregatedAcrossStatsForTemplate } from "@/src/lib/feedback/computeAggregatedAcrossStats"
+import { templateUsesStatAcross } from "@/src/lib/feedback/statAcrossKeys"
 
 // --- Internal helpers (not exported) ---
 
@@ -558,65 +566,71 @@ export async function getParticipantFeedback({
   pseudonym,
   jatosStudyId,
   userId,
+  templateContent,
+  variableKeysAllowlist,
 }: {
   studyId: number
   pseudonym: string
   jatosStudyId: number
   userId: number
-}): Promise<{
-  success: boolean
-  completed: boolean
-  data?: {
-    enrichedResult: EnrichedJatosStudyResult | null
-    allEnrichedResults: EnrichedJatosStudyResult[]
-  }
-  error?: string
-}> {
+  /** Used to decide whether cohort aggregation runs (stat:…:across) and to compute aggregates server-side only. */
+  templateContent: string
+  /** `StudyVariable.variableKey` values for extraction narrowing; from key-resolution helpers in feedback utils. */
+  variableKeysAllowlist?: string[]
+}): Promise<GetParticipantFeedbackResult> {
   return withParticipantViewerToken(
     { studyId, pseudonym, userId, jatosStudyId },
     async ({ jatosStudyId, pseudonym, token }) => {
-      const metadata = await getResultsMetadata({ studyIds: [jatosStudyId] }, { token })
-      const resultId = findStudyResultIdByComment(metadata, pseudonym)
-      const completed = resultId !== null
-
-      if (!completed) {
-        return {
-          success: true,
-          completed: false,
-          data: { enrichedResult: null, allEnrichedResults: [] },
-        }
-      }
-
-      let enrichedResult: EnrichedJatosStudyResult | null = null
       try {
-        const enriched = await fetchZipParseAndEnrich({
+        const metadata = await getResultsMetadata({ studyIds: [jatosStudyId] }, { token })
+        const resultId = findStudyResultIdByComment(metadata, pseudonym)
+
+        if (resultId === null) {
+          return { kind: "not_completed" }
+        }
+
+        const needsCohortForAcross = templateUsesStatAcross(templateContent)
+
+        if (!needsCohortForAcross) {
+          const enriched = await fetchZipParseAndEnrich({
+            metadata,
+            token,
+            getResultsParams: { studyResultIds: resultId },
+          })
+          const enrichedResult = enriched.find((r) => r.id === resultId) ?? null
+          if (!enrichedResult) {
+            return {
+              kind: "failed",
+              error: USER_MESSAGE_PARTICIPANT_FEEDBACK_ENRICHMENT_MISSING,
+            }
+          }
+          return { kind: "loaded", enrichedResult }
+        }
+
+        const allEnrichedResults = await fetchZipParseAndEnrich({
           metadata,
           token,
-          getResultsParams: { studyResultIds: resultId },
+          getResultsParams: { studyIds: jatosStudyId },
         })
-        enrichedResult = enriched.find((r) => r.id === resultId) ?? null
+        const enrichedResult = allEnrichedResults.find((r) => r.id === resultId) ?? null
+        if (!enrichedResult) {
+          return {
+            kind: "failed",
+            error: USER_MESSAGE_PARTICIPANT_FEEDBACK_ENRICHMENT_MISSING,
+          }
+        }
+        const aggregatedAcrossStats = computeAggregatedAcrossStatsForTemplate(
+          allEnrichedResults,
+          templateContent,
+          variableKeysAllowlist
+        )
+        return { kind: "loaded", enrichedResult, aggregatedAcrossStats }
       } catch (error) {
         logJatosError("Error fetching enriched result for getParticipantFeedback", {
           operation: "getParticipantFeedback",
           error,
         })
-        return {
-          success: false,
-          completed: true,
-          error: mapJatosErrorToUserMessage(error),
-        }
-      }
-
-      const allEnrichedResults = await fetchZipParseAndEnrich({
-        metadata,
-        token,
-        getResultsParams: { studyIds: jatosStudyId },
-      })
-
-      return {
-        success: true,
-        completed: true,
-        data: { enrichedResult, allEnrichedResults },
+        return { kind: "failed", error: mapJatosErrorToUserMessage(error) }
       }
     }
   )

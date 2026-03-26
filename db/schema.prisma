@@ -250,12 +250,12 @@ model FeedbackTemplate {
   validatedExtraction   ExtractionSnapshot? @relation("ValidatedExtraction", fields: [validatedExtractionId], references: [id], onDelete: SetNull)
   validationStatus      ValidationStatus    @default(NEEDS_REVIEW)
   validatedAt           DateTime?
-  missingKeys           Json? // string[]
-  extraKeys             Json? // string[]
+  missingVariableNames  Json? // string[] variableName strings missing from approved extraction
+  extraVariableNames    Json? // string[] variableName in extraction but not required by template
 
-  content              String
-  requiredVariableKeys Json? // string[]
-  extractorVersion     String? // safety check
+  content               String
+  requiredVariableNames Json? // string[] variableName list from DSL; not StudyVariable.variableKey
+  extractorVersion      String? // safety check
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

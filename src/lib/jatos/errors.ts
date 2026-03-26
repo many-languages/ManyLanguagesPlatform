@@ -103,3 +103,10 @@ export function mapJatosErrorToUserMessage(error: unknown): string {
   if (error instanceof JatosApiError) return "Something went wrong. Please try again."
   return "Something went wrong. Please try again."
 }
+
+/** Session missing when a server action requires an authenticated user. */
+export const USER_MESSAGE_NOT_AUTHENTICATED = "Not authenticated"
+
+/** When metadata lists a study result but enrichment returns no matching row (unexpected). */
+export const USER_MESSAGE_PARTICIPANT_FEEDBACK_ENRICHMENT_MISSING =
+  "We couldn't load your feedback. Please try again later."

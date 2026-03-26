@@ -1,27 +1,24 @@
 "use server"
 
-import { getBlitzContext } from "@/src/app/blitz-server"
-import { getParticipantFeedback } from "@/src/lib/jatos/jatosAccessService"
 import { mapJatosErrorToUserMessage } from "@/src/lib/jatos/errors"
+import type { FetchParticipantFeedbackActionResult } from "../types"
+import { loadParticipantFeedbackViewModel } from "../utils/loadParticipantFeedback"
 
+/**
+ * Loads the latest feedback template from the DB and renders markdown (same pipeline as RSC).
+ * Does not accept client-supplied template content — smaller payload and always current template.
+ */
 export async function fetchParticipantFeedbackAction(
   studyId: number,
   pseudonym: string,
   jatosStudyId: number
-) {
+): Promise<FetchParticipantFeedbackActionResult> {
   try {
-    const { session } = await getBlitzContext()
-    const userId = session.userId
-    if (userId == null) {
-      return { success: false, completed: false, error: "Not authenticated" }
-    }
-
-    return await getParticipantFeedback({ studyId, pseudonym, jatosStudyId, userId })
+    return await loadParticipantFeedbackViewModel(studyId, pseudonym, jatosStudyId)
   } catch (error) {
     return {
-      success: false,
-      completed: false,
-      error: mapJatosErrorToUserMessage(error),
+      kind: "done",
+      loaded: { kind: "failed", error: mapJatosErrorToUserMessage(error) },
     }
   }
 }

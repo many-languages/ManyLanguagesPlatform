@@ -10,6 +10,7 @@ import StepNavigation from "../../../setup/components/client/StepNavigation"
 import { Alert } from "@/src/app/components/Alert"
 import { AsyncButton } from "@/src/app/components/AsyncButton"
 import Card from "@/src/app/components/Card"
+import { Textarea } from "@/src/app/components/fields"
 
 interface VariableCodebookEntry {
   id: number
@@ -252,18 +253,14 @@ export default function CodebookContent({
                   </label>
                 </div>
 
-                <div>
-                  <label className="label">
-                    <span className="label-text font-medium">Description *</span>
-                  </label>
-                  <textarea
-                    className="textarea textarea-bordered w-full"
-                    rows={3}
-                    placeholder="Describe what this variable measures or represents..."
-                    value={variable.description ?? ""}
-                    onChange={(e) => updateVariable(variable.id, "description", e.target.value)}
-                  />
-                </div>
+                <Textarea
+                  label="Description *"
+                  className="w-full"
+                  rows={3}
+                  placeholder="Describe what this variable measures or represents..."
+                  value={variable.description ?? ""}
+                  onChange={(e) => updateVariable(variable.id, "description", e.target.value)}
+                />
               </div>
             </div>
           ))}

@@ -5,6 +5,7 @@ import VariableSelector from "./VariableSelector"
 import StatsSelector from "./StatsSelector"
 import { SelectField, FilterButtonWithDisplay, SyntaxPreview } from "./shared"
 import type { FeedbackVariable } from "../../types"
+import { Textarea } from "@/src/app/components/fields"
 
 interface ConditionalBuilderProps {
   variables: FeedbackVariable[]
@@ -392,16 +393,14 @@ export default function ConditionalBuilder({
 
           {/* Then Content */}
           <div>
-            <label className="label">
-              <span className="label-text">Then (show this if condition is true)</span>
-            </label>
             {/* Toolbar for Then Content */}
             <div className="flex gap-2 mb-2">
               <VariableSelector variables={variables} onInsert={handleInsertVariable} />
               <StatsSelector variables={variables} onInsert={handleInsertStat} />
             </div>
-            <textarea
-              className="textarea textarea-bordered w-full h-24"
+            <Textarea
+              label="Then (show this if condition is true)"
+              className="w-full h-24"
               placeholder="Enter content to show when condition is true..."
               value={thenContent}
               onChange={(e) => setThenContent(e.target.value)}
@@ -427,8 +426,8 @@ export default function ConditionalBuilder({
                   <VariableSelector variables={variables} onInsert={handleInsertVariable} />
                   <StatsSelector variables={variables} onInsert={handleInsertStat} />
                 </div>
-                <textarea
-                  className="textarea textarea-bordered w-full h-24"
+                <Textarea
+                  className="w-full h-24"
                   placeholder="Enter content to show when condition is false..."
                   value={elseContent}
                   onChange={(e) => setElseContent(e.target.value)}

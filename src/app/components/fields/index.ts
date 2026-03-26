@@ -1,4 +1,6 @@
 export { default as TextField } from "./TextField"
+export { default as Textarea } from "./Textarea"
+export { default as FormTextAreaField } from "./FormTextAreaField"
 export { default as SelectField } from "./SelectField"
 export { default as DateField } from "./DateField"
 export { default as FileField } from "./FileField"

@@ -5,6 +5,7 @@ import type {
   LoadParticipantFeedbackPipelineResult,
   ParticipantFeedbackMarkdownLoadResult,
 } from "../types"
+import { getPersonalDataViolationsForPersistedTemplate } from "./feedbackTemplatePersonalDataViolations"
 import { resolvePersistedFeedbackTemplateVariables } from "./resolvePersistedFeedbackTemplateVariables"
 import { renderStaticFeedbackMarkdownForPersistedTemplate } from "./renderFeedbackServer"
 
@@ -29,6 +30,18 @@ export async function loadParticipantFeedbackViewModel(
   const { template, userId } = access
   if (!template) {
     return { kind: "no_template" }
+  }
+
+  let privacyViolations: string[]
+  try {
+    privacyViolations = await getPersonalDataViolationsForPersistedTemplate(studyId, template)
+  } catch (error) {
+    console.error("Error checking feedback privacy policy:", error)
+    // Same UX as policy violations: do not expose internals to participants.
+    return { kind: "done", loaded: { kind: "maintained" } }
+  }
+  if (privacyViolations.length > 0) {
+    return { kind: "done", loaded: { kind: "maintained" } }
   }
 
   try {

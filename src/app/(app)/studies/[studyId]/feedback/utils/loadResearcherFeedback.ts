@@ -5,6 +5,7 @@ import type {
   ResearcherFeedbackMarkdownLoadResult,
 } from "../types"
 import { getFeedbackTemplateForResearcherRsc } from "../queries/getFeedbackTemplate"
+import { getPersonalDataViolationsForPersistedTemplate } from "./feedbackTemplatePersonalDataViolations"
 import { resolvePersistedFeedbackTemplateVariables } from "./resolvePersistedFeedbackTemplateVariables"
 import { renderStaticFeedbackMarkdownForPersistedTemplate } from "./renderFeedbackServer"
 
@@ -27,6 +28,24 @@ export async function loadResearcherFeedbackViewModel(
   const { template, userId } = access
   if (!template) {
     return { kind: "no_template" }
+  }
+
+  let privacyViolations: string[]
+  try {
+    privacyViolations = await getPersonalDataViolationsForPersistedTemplate(studyId, template)
+  } catch (error) {
+    console.error("Error checking feedback privacy policy:", error)
+    return {
+      kind: "done",
+      loaded: { kind: "failed", error: "Something went wrong. Please try again." },
+    }
+  }
+  if (privacyViolations.length > 0) {
+    const loaded: ResearcherFeedbackMarkdownLoadResult = {
+      kind: "personal_data_blocked",
+      variableNames: privacyViolations,
+    }
+    return { kind: "done", loaded }
   }
 
   try {

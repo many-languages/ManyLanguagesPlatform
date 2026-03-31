@@ -7,6 +7,7 @@ import { checkParticipantCompletionAction } from "../../actions/checkParticipant
 import { fetchParticipantFeedbackAction } from "../../actions/fetchParticipantFeedback"
 import type { LoadParticipantFeedbackPipelineResult } from "../../types"
 import {
+  PARTICIPANT_FEEDBACK_RSC_MAINTAINED,
   PARTICIPANT_FEEDBACK_RSC_NO_TEMPLATE,
   PARTICIPANT_FEEDBACK_RSC_NOT_ENROLLED,
   PARTICIPANT_FEEDBACK_RSC_SIGN_IN,
@@ -21,6 +22,8 @@ interface ParticipantFeedbackProps {
   initialRenderedMarkdown: string | null
   initialMatchingResponseCount: number
   initialSelectedResponseEndDate: number | null
+  /** Feedback hidden until researcher fixes template vs codebook privacy (see `maintained` load kind). */
+  initialFeedbackMaintained: boolean
 }
 
 export default function ParticipantFeedback({
@@ -31,9 +34,11 @@ export default function ParticipantFeedback({
   initialRenderedMarkdown,
   initialMatchingResponseCount,
   initialSelectedResponseEndDate,
+  initialFeedbackMaintained,
 }: ParticipantFeedbackProps) {
   const [, startTransition] = useTransition()
   const [completed, setCompleted] = useState(initialCompleted)
+  const [feedbackMaintained, setFeedbackMaintained] = useState(initialFeedbackMaintained)
   const [renderedMarkdown, setRenderedMarkdown] = useState(initialRenderedMarkdown)
   const [matchingResponseCount, setMatchingResponseCount] = useState(initialMatchingResponseCount)
   const [selectedResponseEndDate, setSelectedResponseEndDate] = useState<number | null>(
@@ -43,11 +48,13 @@ export default function ParticipantFeedback({
 
   useEffect(() => {
     setCompleted(initialCompleted)
+    setFeedbackMaintained(initialFeedbackMaintained)
     setRenderedMarkdown(initialRenderedMarkdown)
     setMatchingResponseCount(initialMatchingResponseCount)
     setSelectedResponseEndDate(initialSelectedResponseEndDate)
   }, [
     initialCompleted,
+    initialFeedbackMaintained,
     initialRenderedMarkdown,
     initialMatchingResponseCount,
     initialSelectedResponseEndDate,
@@ -71,10 +78,25 @@ export default function ParticipantFeedback({
       const loaded = result.loaded
       if (loaded.kind === "failed") {
         toast.error(loaded.error)
+        startTransition(() => {
+          setFeedbackMaintained(false)
+        })
+        return
+      }
+
+      if (loaded.kind === "maintained") {
+        startTransition(() => {
+          setFeedbackMaintained(true)
+          setCompleted(false)
+          setRenderedMarkdown(null)
+          setMatchingResponseCount(0)
+          setSelectedResponseEndDate(null)
+        })
         return
       }
 
       startTransition(() => {
+        setFeedbackMaintained(false)
         if (loaded.kind === "loaded") {
           setCompleted(true)
           setRenderedMarkdown(loaded.renderedMarkdown)
@@ -146,7 +168,7 @@ export default function ParticipantFeedback({
   }, [checkCompletionStatus])
 
   useWindowResumeCheck({
-    enabled: !completed,
+    enabled: !completed || feedbackMaintained,
     onResume: handleResumeCheck,
   })
 
@@ -154,6 +176,8 @@ export default function ParticipantFeedback({
     <FeedbackCard
       studyId={studyId}
       renderedMarkdown={renderedMarkdown}
+      feedbackMessage={feedbackMaintained ? PARTICIPANT_FEEDBACK_RSC_MAINTAINED : undefined}
+      feedbackTone={feedbackMaintained ? "info" : undefined}
       participantCompleted={completed}
       participantMatchingResponseCount={matchingResponseCount}
       participantSelectedResponseEndDate={selectedResponseEndDate}

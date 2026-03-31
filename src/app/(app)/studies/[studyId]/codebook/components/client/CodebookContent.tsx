@@ -5,7 +5,10 @@ import { useRouter } from "next/navigation"
 import { useMutation } from "@blitzjs/rpc"
 import { toast } from "react-hot-toast"
 
-import updateVariableCodebook from "../../mutations/updateVariableCodebook"
+import updateVariableCodebook, {
+  type UpdateVariableCodebookResult,
+} from "../../mutations/updateVariableCodebook"
+import { CODEBOOK_SAVE_FEEDBACK_PERSONAL_DATA_HINT } from "../../utils/codebookSaveMessages"
 import StepNavigation from "../../../setup/components/client/StepNavigation"
 import { Alert } from "@/src/app/components/Alert"
 import { AsyncButton } from "@/src/app/components/AsyncButton"
@@ -119,7 +122,7 @@ export default function CodebookContent({
 
     setIsSaving(true)
     try {
-      await updateVariableCodebookMutation({
+      const result = (await updateVariableCodebookMutation({
         studyId,
         variables: variables.map((v) => ({
           variableKey: v.variableKey,
@@ -127,8 +130,11 @@ export default function CodebookContent({
           description: v.description,
           personalData: v.personalData,
         })),
-      })
+      })) as UpdateVariableCodebookResult
       toast.success("Codebook saved successfully!")
+      if (result.feedbackPersonalDataConflict) {
+        toast(CODEBOOK_SAVE_FEEDBACK_PERSONAL_DATA_HINT, { duration: 7000 })
+      }
       setCodebookSaved(true)
       router.refresh()
       return true

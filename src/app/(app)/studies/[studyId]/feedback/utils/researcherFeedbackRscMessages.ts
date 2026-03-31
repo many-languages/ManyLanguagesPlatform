@@ -7,3 +7,9 @@ export const RESEARCHER_FEEDBACK_RSC_NOT_AUTHORIZED =
 
 export const RESEARCHER_FEEDBACK_RSC_NO_TEMPLATE =
   "No feedback template has been set up for this study yet. Complete Step 6 in study setup to add one."
+
+/** Template references variables marked as personal data in the codebook — edit Step 6. */
+export function researcherFeedbackPersonalDataBlockedMessage(variableNames: string[]): string {
+  const list = variableNames.join(", ")
+  return `Your feedback template references variables that are marked as personal data in the codebook (${list}). Edit the feedback form in Step 6 of study setup to remove or replace them.`
+}

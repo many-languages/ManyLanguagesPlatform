@@ -20,7 +20,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         <Suspense fallback={<NavbarSkeleton />}>
           <MainNavbar currentUser={currentUser} />
         </Suspense>
-        <main className="flex-1 mt-4 px-6 sm:px-8 lg:px-12">
+        <main className="flex-1 mt-4 px-6 pb-12 sm:px-8 sm:pb-16 lg:px-12">
           {children}
           <Toaster position="top-right" />
         </main>

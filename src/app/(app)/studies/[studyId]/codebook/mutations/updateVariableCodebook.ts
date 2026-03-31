@@ -4,6 +4,7 @@ import { z } from "zod"
 import { withStudyAccess } from "../../utils/withStudyAccess"
 import { validateCodebookAgainstExtraction } from "../utils/validateCodebookAgainstExtraction"
 import { EXTRACTOR_VERSION } from "../../setup/utils/extractionCache"
+import { getPersonalDataViolationsForPersistedTemplate } from "../../feedback/utils/feedbackTemplatePersonalDataViolations"
 
 const UpdateVariableCodebook = z.object({
   studyId: z.number(),
@@ -17,6 +18,11 @@ const UpdateVariableCodebook = z.object({
   ),
 })
 
+export type UpdateVariableCodebookResult = {
+  success: true
+  feedbackPersonalDataConflict: boolean
+}
+
 // Server-side helper for RSCs
 export async function updateVariableCodebookRsc(input: {
   studyId: number
@@ -26,7 +32,7 @@ export async function updateVariableCodebookRsc(input: {
     description: string | null
     personalData: boolean
   }>
-}) {
+}): Promise<UpdateVariableCodebookResult> {
   return withStudyAccess(input.studyId, async (_sId, _uId) => {
     const study = await db.study.findUnique({
       where: { id: input.studyId },
@@ -122,7 +128,25 @@ export async function updateVariableCodebookRsc(input: {
       data: { step5Completed },
     })
 
-    return { success: true }
+    let feedbackPersonalDataConflict = false
+    const template = await db.feedbackTemplate.findFirst({
+      where: { studyId: input.studyId },
+      orderBy: { updatedAt: "desc" },
+      select: { content: true, requiredVariableNames: true },
+    })
+    if (template) {
+      try {
+        const violations = await getPersonalDataViolationsForPersistedTemplate(
+          input.studyId,
+          template
+        )
+        feedbackPersonalDataConflict = violations.length > 0
+      } catch (error) {
+        console.error("Codebook save: feedback personal-data check failed", error)
+      }
+    }
+
+    return { success: true as const, feedbackPersonalDataConflict }
   })
 }
 

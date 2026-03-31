@@ -54,6 +54,7 @@ export default async function ParticipantFeedbackData({
     )
   }
 
+  const initialFeedbackMaintained = loaded.kind === "maintained"
   const initialCompleted = loaded.kind === "loaded"
   const initialRenderedMarkdown = loaded.kind === "loaded" ? loaded.renderedMarkdown : null
   const initialMatchingResponseCount = loaded.kind === "loaded" ? loaded.matchingResponseCount : 0
@@ -69,6 +70,7 @@ export default async function ParticipantFeedbackData({
       initialRenderedMarkdown={initialRenderedMarkdown}
       initialMatchingResponseCount={initialMatchingResponseCount}
       initialSelectedResponseEndDate={initialSelectedResponseEndDate}
+      initialFeedbackMaintained={initialFeedbackMaintained}
     />
   )
 }

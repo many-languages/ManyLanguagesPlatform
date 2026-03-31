@@ -9,6 +9,7 @@ import toast from "react-hot-toast"
 import { useMutation } from "@blitzjs/rpc"
 import checkJatosStudyUuid from "../../../mutations/checkJatosStudyUuid"
 import updateStudyBatch from "../../../../../mutations/updateStudyBatch"
+import updateJatosUploadWorkerType from "../../../../../mutations/updateJatosUploadWorkerType"
 import updateSetupCompletion from "../../../mutations/updateSetupCompletion"
 import { getBatchIdAction } from "../../../actions/getBatchId"
 import { uploadStudyFile } from "@/src/lib/jatos/browser/uploadStudyFile"
@@ -29,6 +30,7 @@ export default function Step2Content({ study }: Step2ContentProps) {
   const { userId } = useSession()
   const [checkJatosStudyUuidMutation] = useMutation(checkJatosStudyUuid)
   const [updateStudyBatchMutation] = useMutation(updateStudyBatch)
+  const [updateJatosUploadWorkerTypeMutation] = useMutation(updateJatosUploadWorkerType)
   const [updateSetupCompletionMutation] = useMutation(updateSetupCompletion)
   const latestUpload = study.latestJatosStudyUpload
 
@@ -41,11 +43,14 @@ export default function Step2Content({ study }: Step2ContentProps) {
 
   // Helper function to complete the import after upload
   // Route already did JATOS upload + DB + membership sync; we just need batch ID, setup completion, pilot link
-  async function completeImport(uploadResult: {
-    jatosStudyId: number
-    jatosStudyUUID: string
-    latestUpload?: { id: number }
-  }) {
+  async function completeImport(
+    uploadResult: {
+      jatosStudyId: number
+      jatosStudyUUID: string
+      latestUpload?: { id: number }
+    },
+    options?: { successToast?: string }
+  ) {
     const latestUploadId = uploadResult.latestUpload?.id ?? null
 
     // 1️⃣ Get batch ID
@@ -89,7 +94,7 @@ export default function Step2Content({ study }: Step2ContentProps) {
     }
 
     // 4️⃣ Success
-    toast.success("JATOS instance created")
+    toast.success(options?.successToast ?? "JATOS instance created")
     router.push(`/studies/${study.id}/setup/step3`)
     // Refresh after navigation to ensure fresh data is loaded
     router.refresh()
@@ -167,6 +172,37 @@ export default function Step2Content({ study }: Step2ContentProps) {
         jatosStudyUuid={study.jatosStudyUUID}
         onSubmit={async (values) => {
           const file = values.studyFile as File | undefined
+
+          const existingJatosStudyUuid = study.jatosStudyUUID
+          const canContinueWithoutNewFile =
+            !file &&
+            !!existingJatosStudyUuid &&
+            latestUpload != null &&
+            latestUpload.jatosStudyId != null
+
+          if (canContinueWithoutNewFile) {
+            try {
+              setLoading(true)
+              await updateJatosUploadWorkerTypeMutation({
+                studyId: study.id,
+                jatosWorkerType: values.jatosWorkerType,
+              })
+              await completeImport(
+                {
+                  jatosStudyId: latestUpload.jatosStudyId,
+                  jatosStudyUUID: existingJatosStudyUuid,
+                  latestUpload: { id: latestUpload.id },
+                },
+                { successToast: "Setup saved" }
+              )
+            } catch (err: any) {
+              console.error("Continue without new upload:", err)
+              toast.error(err?.message ?? "Failed to continue")
+              setLoading(false)
+            }
+            return
+          }
+
           if (!file) {
             return {
               [FORM_ERROR]: latestUpload?.jatosFileName

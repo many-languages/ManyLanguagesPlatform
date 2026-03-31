@@ -67,7 +67,7 @@ export default function FeedbackCard({
     <Card title={title} className={clsx("mt-4", className)} collapsible actions={actions}>
       {participantMatchingResponseCount > 1 ? (
         <div className="mb-3 rounded-md border border-info/30 bg-info/10 px-3 py-2 text-xs text-base-content/80">
-          Multiple responses were found for this participant. Showing the latest response
+          Multiple responses were found. Showing the latest response
           {latestResponseLabel ? ` (submitted ${latestResponseLabel}).` : "."}
         </div>
       ) : null}

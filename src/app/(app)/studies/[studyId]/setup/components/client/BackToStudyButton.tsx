@@ -11,7 +11,8 @@ export default function BackToStudyButton({ studyId }: { studyId: number }) {
     <NavigationButton
       href={`/studies/${studyId}` as Route}
       pendingText="Navigating"
-      className="btn btn-ghost"
+      className="btn btn-ghost tooltip tooltip-top"
+      data-tip="Your current edits will not be saved when you leave setup."
     >
       ← Back to study
     </NavigationButton>

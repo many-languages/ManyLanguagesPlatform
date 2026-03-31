@@ -161,7 +161,7 @@ export default function Step4Content({ validationData, study }: Step4ContentProp
           <p className="mb-4 text-base-content/60">Run the extraction to analyze pilot results.</p>
           <AsyncButton
             onClick={handleRunExtraction}
-            loadingText="Running..."
+            loadingText="Running"
             className="btn btn-primary"
           >
             Run Extraction Now

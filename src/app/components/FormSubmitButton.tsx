@@ -30,7 +30,7 @@ export function FormSubmitButton({
     >
       {pending ? (
         <>
-          <span>{loadingText || "Submitting..."}</span>
+          <span>{loadingText || "Submitting"}</span>
           <span className="loading loading-dots loading-xs ml-1"></span>
         </>
       ) : (

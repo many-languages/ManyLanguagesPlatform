@@ -30,7 +30,7 @@ export default function RunPilotButton({ runUrl, isActive = true }: RunPilotButt
     <div className="tooltip tooltip-bottom" data-tip={tooltipText}>
       <AsyncButton
         onClick={handleRunStudy}
-        loadingText="Starting..."
+        loadingText="Starting"
         disabled={!isActive}
         className="btn btn-primary btn-lg text-lg px-8 py-4"
       >

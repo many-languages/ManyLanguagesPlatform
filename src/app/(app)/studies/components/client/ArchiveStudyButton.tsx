@@ -45,7 +45,7 @@ const ArchiveStudyButton = ({ studyId, isArchived, redirectTo }: ArchiveStudyBut
     <ConfirmButton
       onConfirm={handleConfirm}
       confirmMessage={confirmMessage}
-      loadingText="Please wait..."
+      loadingText="Please wait"
       className={`btn ${isArchived ? "btn-success" : "btn-warning"}`}
     >
       {isArchived ? "Unarchive" : "Archive"}

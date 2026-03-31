@@ -82,7 +82,7 @@ export default function StudyInformationForm({
         )}
         <FormSubmitButton
           submitText={submitText}
-          loadingText="Saving..."
+          loadingText="Saving"
           className="btn btn-primary"
         />
       </div>

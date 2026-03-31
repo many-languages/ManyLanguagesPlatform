@@ -44,7 +44,7 @@ export default function DownloadResultsButton({ studyId }: DownloadResultsButton
   return (
     <AsyncButton
       onClick={handleDownload}
-      loadingText="Downloading..."
+      loadingText="Downloading"
       className="btn btn-accent inline-flex items-center gap-2"
     >
       <ArrowDownTrayIcon className="h-5 w-5" />

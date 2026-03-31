@@ -91,7 +91,7 @@ export default function Step3Actions({
         <div className="flex-shrink-0">
           <AsyncButton
             onClick={onCheckStatus}
-            loadingText="Checking..."
+            loadingText="Checking"
             disabled={!jatosStudyUUID}
             className="btn btn-secondary btn-lg whitespace-nowrap"
           >

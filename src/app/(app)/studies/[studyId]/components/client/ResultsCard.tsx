@@ -181,7 +181,7 @@ export default function ResultsCard({
           {/* Refetch results again from JATOS */}
           <AsyncButton
             onClick={handleRefetch}
-            loadingText="Fetching..."
+            loadingText="Fetching"
             className="btn btn-secondary w-fit"
             disabled={loading}
           >

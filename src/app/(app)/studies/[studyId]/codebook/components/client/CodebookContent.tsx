@@ -192,7 +192,7 @@ export default function CodebookContent({
         )}
         <AsyncButton
           onClick={handleSave}
-          loadingText="Saving..."
+          loadingText="Saving"
           disabled={isSaving}
           className="btn btn-sm btn-primary"
         >

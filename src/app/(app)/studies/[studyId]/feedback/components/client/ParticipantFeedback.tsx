@@ -19,6 +19,8 @@ interface ParticipantFeedbackProps {
   jatosStudyId: number
   initialCompleted: boolean
   initialRenderedMarkdown: string | null
+  initialMatchingResponseCount: number
+  initialSelectedResponseEndDate: number | null
 }
 
 export default function ParticipantFeedback({
@@ -27,16 +29,29 @@ export default function ParticipantFeedback({
   jatosStudyId,
   initialCompleted,
   initialRenderedMarkdown,
+  initialMatchingResponseCount,
+  initialSelectedResponseEndDate,
 }: ParticipantFeedbackProps) {
   const [, startTransition] = useTransition()
   const [completed, setCompleted] = useState(initialCompleted)
   const [renderedMarkdown, setRenderedMarkdown] = useState(initialRenderedMarkdown)
+  const [matchingResponseCount, setMatchingResponseCount] = useState(initialMatchingResponseCount)
+  const [selectedResponseEndDate, setSelectedResponseEndDate] = useState<number | null>(
+    initialSelectedResponseEndDate
+  )
   const isCheckingRef = useRef(false)
 
   useEffect(() => {
     setCompleted(initialCompleted)
     setRenderedMarkdown(initialRenderedMarkdown)
-  }, [initialCompleted, initialRenderedMarkdown])
+    setMatchingResponseCount(initialMatchingResponseCount)
+    setSelectedResponseEndDate(initialSelectedResponseEndDate)
+  }, [
+    initialCompleted,
+    initialRenderedMarkdown,
+    initialMatchingResponseCount,
+    initialSelectedResponseEndDate,
+  ])
 
   const applyParticipantFeedbackPipelineResult = useCallback(
     (result: LoadParticipantFeedbackPipelineResult) => {
@@ -63,9 +78,13 @@ export default function ParticipantFeedback({
         if (loaded.kind === "loaded") {
           setCompleted(true)
           setRenderedMarkdown(loaded.renderedMarkdown)
+          setMatchingResponseCount(loaded.matchingResponseCount)
+          setSelectedResponseEndDate(loaded.selectedResponseEndDate)
         } else {
           setCompleted(false)
           setRenderedMarkdown(null)
+          setMatchingResponseCount(0)
+          setSelectedResponseEndDate(null)
         }
       })
     },
@@ -136,6 +155,8 @@ export default function ParticipantFeedback({
       studyId={studyId}
       renderedMarkdown={renderedMarkdown}
       participantCompleted={completed}
+      participantMatchingResponseCount={matchingResponseCount}
+      participantSelectedResponseEndDate={selectedResponseEndDate}
       onRefresh={fetchFullData}
     />
   )

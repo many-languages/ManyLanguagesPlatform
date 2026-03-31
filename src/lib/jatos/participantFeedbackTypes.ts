@@ -11,5 +11,9 @@ export type GetParticipantFeedbackResult =
       enrichedResult: EnrichedJatosStudyResult
       /** Precomputed stat:…:across values; never includes raw cohort rows. */
       aggregatedAcrossStats?: Record<string, string>
+      /** Number of JATOS responses that matched this participant pseudonym/comment. */
+      matchingResponseCount: number
+      /** End date (Unix ms) of the selected latest response. */
+      selectedResponseEndDate: number | null
     }
   | { kind: "failed"; error: string }

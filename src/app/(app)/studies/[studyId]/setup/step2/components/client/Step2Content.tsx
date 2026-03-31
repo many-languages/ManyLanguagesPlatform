@@ -163,10 +163,16 @@ export default function Step2Content({ study }: Step2ContentProps) {
         cancelText="Back"
         onCancel={() => router.push(`/studies/${study.id}/setup/step1`)}
         defaultValues={defaultValues}
+        currentStudyFileUploadedAt={latestUpload?.createdAt}
+        jatosStudyUuid={study.jatosStudyUUID}
         onSubmit={async (values) => {
           const file = values.studyFile as File | undefined
           if (!file) {
-            return { [FORM_ERROR]: "A JATOS .jzip file is required" }
+            return {
+              [FORM_ERROR]: latestUpload?.jatosFileName
+                ? "Please choose a .jzip file to continue. You can select the same export again from your computer — the name shown above is what we already imported."
+                : "A JATOS .jzip file is required",
+            }
           }
 
           try {

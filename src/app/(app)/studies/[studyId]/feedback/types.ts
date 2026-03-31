@@ -12,7 +12,12 @@ export type { GetParticipantFeedbackResult } from "@/src/lib/jatos/participantFe
  */
 export type ParticipantFeedbackMarkdownLoadResult =
   | { kind: "not_completed" }
-  | { kind: "loaded"; renderedMarkdown: string }
+  | {
+      kind: "loaded"
+      renderedMarkdown: string
+      matchingResponseCount: number
+      selectedResponseEndDate: number | null
+    }
   | { kind: "failed"; error: string }
 
 /** Full participant feedback load: template access + JATOS + render (see `loadParticipantFeedbackViewModel`). */
@@ -80,6 +85,9 @@ export interface FeedbackCardProps {
   researcherHasPilotData?: boolean
   onRefresh?: () => Promise<void> | void
   showEditButton?: boolean
+  /** Participant feedback only: shows a notice if latest of multiple responses was used. */
+  participantMatchingResponseCount?: number
+  participantSelectedResponseEndDate?: number | null
 }
 
 export type SaveTemplateResult = { ok: false } | { ok: true; setupComplete: boolean }

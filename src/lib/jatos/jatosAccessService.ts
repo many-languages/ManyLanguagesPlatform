@@ -47,7 +47,10 @@ import { getAssetStructure } from "./client/getAssetStructure"
 import { fetchStudyCodes } from "./client/fetchStudyCodes"
 import { parseJatosZip } from "./parsers/parseJatosZip"
 import { matchJatosDataToMetadata } from "./utils/matchJatosDataToMetadata"
-import { findStudyResultIdByComment } from "./utils/findStudyResultIdByComment"
+import {
+  findLatestStudyResultSelectionByComment,
+  findStudyResultIdByComment,
+} from "./utils/findStudyResultIdByComment"
 import { generateJatosRunUrl } from "./utils/generateJatosRunUrl"
 import {
   extractHtmlFilesFromStructure,
@@ -583,7 +586,10 @@ export async function getParticipantFeedback({
     async ({ jatosStudyId, pseudonym, token }) => {
       try {
         const metadata = await getResultsMetadata({ studyIds: [jatosStudyId] }, { token })
-        const resultId = findStudyResultIdByComment(metadata, pseudonym)
+        const { resultId, matchCount, selectedEndDate } = findLatestStudyResultSelectionByComment(
+          metadata,
+          pseudonym
+        )
 
         if (resultId === null) {
           return { kind: "not_completed" }
@@ -604,7 +610,12 @@ export async function getParticipantFeedback({
               error: USER_MESSAGE_PARTICIPANT_FEEDBACK_ENRICHMENT_MISSING,
             }
           }
-          return { kind: "loaded", enrichedResult }
+          return {
+            kind: "loaded",
+            enrichedResult,
+            matchingResponseCount: matchCount,
+            selectedResponseEndDate: selectedEndDate,
+          }
         }
 
         const allEnrichedResults = await fetchZipParseAndEnrich({
@@ -624,7 +635,13 @@ export async function getParticipantFeedback({
           templateContent,
           variableKeysAllowlist
         )
-        return { kind: "loaded", enrichedResult, aggregatedAcrossStats }
+        return {
+          kind: "loaded",
+          enrichedResult,
+          aggregatedAcrossStats,
+          matchingResponseCount: matchCount,
+          selectedResponseEndDate: selectedEndDate,
+        }
       } catch (error) {
         logJatosError("Error fetching enriched result for getParticipantFeedback", {
           operation: "getParticipantFeedback",

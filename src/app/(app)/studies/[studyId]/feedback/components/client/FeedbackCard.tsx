@@ -19,7 +19,14 @@ export default function FeedbackCard({
   researcherHasPilotData = true,
   onRefresh,
   showEditButton = false,
+  participantMatchingResponseCount = 0,
+  participantSelectedResponseEndDate = null,
 }: FeedbackCardProps) {
+  const latestResponseLabel =
+    typeof participantSelectedResponseEndDate === "number" &&
+    Number.isFinite(participantSelectedResponseEndDate)
+      ? new Date(participantSelectedResponseEndDate).toLocaleString()
+      : null
   const hasActions = onRefresh || showEditButton
   const actions = hasActions ? (
     <div className="flex gap-2">
@@ -58,6 +65,12 @@ export default function FeedbackCard({
 
   return (
     <Card title={title} className={clsx("mt-4", className)} collapsible actions={actions}>
+      {participantMatchingResponseCount > 1 ? (
+        <div className="mb-3 rounded-md border border-info/30 bg-info/10 px-3 py-2 text-xs text-base-content/80">
+          Multiple responses were found for this participant. Showing the latest response
+          {latestResponseLabel ? ` (submitted ${latestResponseLabel}).` : "."}
+        </div>
+      ) : null}
       {body}
     </Card>
   )

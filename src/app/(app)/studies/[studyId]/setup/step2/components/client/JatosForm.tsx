@@ -1,6 +1,7 @@
 "use client"
 
 import { useMemo } from "react"
+import { useFormContext } from "react-hook-form"
 import { Form } from "@/src/app/components/Form"
 import { JatosFormSchema } from "../../../../../validations"
 import { z } from "zod"
@@ -21,12 +22,29 @@ type JatosFormProps = {
   /** Handles submission, must return void or errors */
   onSubmit: (values: JatosFormValues) => Promise<void | { FORM_ERROR?: string }>
   defaultValues?: Partial<JatosFormValues>
+  /** When set, shown under the file name in the current-study card (typically `latestJatosStudyUpload.createdAt`). */
+  currentStudyFileUploadedAt?: Date | string
+  /** JATOS study UUID from the platform study record — distinguishes this import from other JATOS studies. */
+  jatosStudyUuid?: string | null
+}
+
+function formatStudyFileUploadTime(value: Date | string | undefined): string | null {
+  if (value == null) return null
+  const d = typeof value === "string" ? new Date(value) : value
+  if (Number.isNaN(d.getTime())) return null
+  return d.toLocaleString()
 }
 
 export const jatosWorkerTypeOptions = [
   { value: "SINGLE", label: "Single Personal Links (no reuse)" },
   { value: "MULTIPLE", label: "Multiple Personal Links (reuse allowed)" },
 ]
+
+/** Keeps `jatosFileName` in RHF state so validation and submit handlers receive the stored name. */
+function HiddenJatosFileNameField() {
+  const { register } = useFormContext()
+  return <input type="hidden" {...register("jatosFileName")} />
+}
 
 export default function JatosForm({
   onCancel,
@@ -35,6 +53,8 @@ export default function JatosForm({
 
   defaultValues,
   onSubmit,
+  currentStudyFileUploadedAt,
+  jatosStudyUuid,
 }: JatosFormProps) {
   const memoizedDefaultValues = useMemo(
     () =>
@@ -46,8 +66,13 @@ export default function JatosForm({
     [defaultValues]
   )
 
+  const existingJatosFileName = memoizedDefaultValues.jatosFileName?.trim()
+  const uploadTimeLabel = formatStudyFileUploadTime(currentStudyFileUploadedAt)
+  const uuidTrimmed = jatosStudyUuid?.trim() || null
+
   return (
     <Form schema={JatosFormSchema} defaultValues={memoizedDefaultValues} onSubmit={onSubmit}>
+      <HiddenJatosFileNameField />
       <div className="mx-auto flex w-full max-w-lg flex-col space-y-6">
         <SelectField
           name="jatosWorkerType"
@@ -57,13 +82,34 @@ export default function JatosForm({
           placeholder="Select data collection method"
           className="w-full"
         />
+        {existingJatosFileName ? (
+          <div className="flex flex-col gap-1.5">
+            <div className="label text-base font-medium">Current study file</div>
+            <div className="rounded-lg border border-base-content/20 bg-base-100 px-3 py-2.5">
+              <div className="font-mono text-sm font-medium break-all text-base-content">
+                {existingJatosFileName}
+              </div>
+              {uuidTrimmed ? (
+                <div className="mt-2">
+                  <div className="text-xs text-base-content/60">JATOS UUID</div>
+                  <div className="font-mono text-xs break-all text-base-content mt-0.5">
+                    {uuidTrimmed}
+                  </div>
+                </div>
+              ) : null}
+              {uploadTimeLabel ? (
+                <p className="text-xs text-base-content/60 mt-2">Uploaded {uploadTimeLabel}</p>
+              ) : null}
+            </div>
+          </div>
+        ) : null}
         <FileField
           name="studyFile"
-          label="Upload Study (.jzip)"
+          label={existingJatosFileName ? "Replace study file (.jzip)" : "Upload study (.jzip)"}
+          labelHint="Only .jzip exports from JATOS are accepted."
           accept=".jzip,.zip"
           className="w-full"
         />
-        <p className="text-xs opacity-70">Only .jzip exports from JATOS are accepted.</p>
 
         {/* Global Form Error */}
         <FormErrorDisplay />

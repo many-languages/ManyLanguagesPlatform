@@ -88,5 +88,10 @@ export async function loadParticipantFeedbackRenderedMarkdown(input: {
     aggregatedAcrossStats: result.aggregatedAcrossStats,
   })
 
-  return { kind: "loaded", renderedMarkdown }
+  return {
+    kind: "loaded",
+    renderedMarkdown,
+    matchingResponseCount: result.matchingResponseCount,
+    selectedResponseEndDate: result.selectedResponseEndDate,
+  }
 }

@@ -155,16 +155,27 @@ export default function CodebookContent({
 
   if (variables.length === 0) {
     return (
-      <Alert variant="warning">
-        No variables found. Please complete step 4 (Debug + approve extraction) first to extract
-        variables from your pilot data.
-      </Alert>
+      <>
+        <Alert variant="warning">
+          No variables found. Please complete step 4 (Debug + approve extraction) first to extract
+          variables from your pilot data.
+        </Alert>
+        <StepNavigation
+          studyId={studyId}
+          prev="step4"
+          next="step6"
+          disableNext
+          nextTooltip="No variables were extracted. Go back to Step 4 and rerun extraction."
+        />
+      </>
     )
   }
 
   const hasMissingDescriptions = variables.some(
     (v) => !v.description || v.description.trim() === ""
   )
+  const hasAnyDescription = variables.some((v) => (v.description ?? "").trim() !== "")
+  const showSavedBadge = codebookSaved && hasAnyDescription
 
   return (
     <>
@@ -185,7 +196,7 @@ export default function CodebookContent({
       </Card>
 
       <div className="flex items-center justify-between mb-4">
-        {codebookSaved ? (
+        {showSavedBadge ? (
           <span className="badge badge-success">✓ Codebook saved</span>
         ) : (
           <span className="badge badge-warning">⚠ Codebook not saved</span>

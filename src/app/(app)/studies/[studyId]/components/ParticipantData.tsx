@@ -6,7 +6,7 @@ import ParticipantFeedbackData from "../feedback/components/ParticipantFeedbackD
 import { checkParticipantCompletionAction } from "../feedback/actions/checkParticipantCompletion"
 import { CheckCircleIcon } from "@heroicons/react/24/solid"
 import StudyInformationCard from "./client/StudyInformationCard"
-import RunPilotButton from "../setup/step3/components/client/RunPilotButton"
+import RunStudyButton from "../setup/step3/components/client/RunStudyButton"
 
 interface ParticipantDataProps {
   studyId: number
@@ -57,7 +57,7 @@ export default async function ParticipantData({ studyId, study }: ParticipantDat
     // Build actions for participant
     const participantActions = shouldShowButton ? (
       <div className="flex justify-center">
-        <RunPilotButton runUrl={participant.jatosRunUrl} isActive={canRunStudy} />
+        <RunStudyButton runUrl={participant.jatosRunUrl} isActive={canRunStudy} label="Run study" />
       </div>
     ) : undefined
 

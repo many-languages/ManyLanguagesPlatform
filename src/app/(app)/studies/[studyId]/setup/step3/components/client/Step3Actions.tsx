@@ -3,7 +3,7 @@
 import { ArrowPathIcon } from "@heroicons/react/24/outline"
 import { Alert } from "@/src/app/components/Alert"
 import { AsyncButton } from "@/src/app/components/AsyncButton"
-import RunPilotButton from "./RunPilotButton"
+import RunStudyButton from "./RunStudyButton"
 import GeneratePilotLinkButton from "./GeneratePilotLinkButton"
 
 interface Step3ActionsProps {
@@ -85,7 +85,7 @@ export default function Step3Actions({
           </>
         )}
         <div className="flex-shrink-0">
-          <RunPilotButton runUrl={jatosRunUrl} />
+          <RunStudyButton runUrl={jatosRunUrl} />
         </div>
         <div className="divider divider-horizontal hidden lg:flex" />
         <div className="flex-shrink-0">

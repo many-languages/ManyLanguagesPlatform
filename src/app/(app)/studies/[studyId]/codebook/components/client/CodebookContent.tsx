@@ -38,9 +38,7 @@ interface CodebookContentProps {
     personalData: boolean
   }>
   codebook: {
-    validationStatus?: "NEEDS_REVIEW" | "VALID" | "INVALID" | null
-    validatedExtractionId?: number | null
-    validatedAt?: Date | string | null
+    status?: "VALID" | "INVALID" | "NO_CODEBOOK" | "NO_EXTRACTION" | null
     missingKeys?: string[] | null
     extraKeys?: string[] | null
     updatedAt?: Date | string
@@ -71,8 +69,7 @@ export default function CodebookContent({
     ? (codebook?.missingKeys as string[])
     : []
   const extraKeys = Array.isArray(codebook?.extraKeys) ? (codebook?.extraKeys as string[]) : []
-  const validationStatus = codebook?.validationStatus ?? null
-  const validatedExtractionId = codebook?.validatedExtractionId ?? null
+  const validationStatus = codebook?.status ?? null
   const codebookUpdatedAt = codebook?.updatedAt ? new Date(codebook.updatedAt) : null
   const approvedExtractionAt = approvedExtractionApprovedAt
     ? new Date(approvedExtractionApprovedAt)
@@ -82,7 +79,6 @@ export default function CodebookContent({
   const showSoftWarning =
     validationStatus === "VALID" &&
     approvedExtractionId !== null &&
-    validatedExtractionId === approvedExtractionId &&
     approvedExtractionAt !== null &&
     codebookUpdatedAt !== null &&
     codebookUpdatedAt < approvedExtractionAt

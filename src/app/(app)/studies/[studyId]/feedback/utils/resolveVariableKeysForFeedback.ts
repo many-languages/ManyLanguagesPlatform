@@ -23,16 +23,16 @@ export async function resolveVariableKeysForExtractionSnapshot(
 }
 
 /**
- * Maps template `variableName` references to `StudyVariable.variableKey` for the validated extraction.
+ * Maps template `variableName` references to `StudyVariable.variableKey` for an extraction snapshot.
  * Uses explicit `requiredVariableNames` when present, otherwise parses names from template content.
  * Delegates to {@link resolveVariableKeysForExtractionSnapshot}.
  */
 export async function resolveVariableKeysForFeedback(template: {
   content: string
-  validatedExtractionId?: number | null
+  extractionSnapshotId?: number | null
   requiredVariableNames?: string[] | null
 }): Promise<string[]> {
-  if (!template.validatedExtractionId) return []
+  if (!template.extractionSnapshotId) return []
 
   const requiredVariableNames =
     Array.isArray(template.requiredVariableNames) && template.requiredVariableNames.length > 0
@@ -40,7 +40,7 @@ export async function resolveVariableKeysForFeedback(template: {
       : extractRequiredVariableNames(template.content)
 
   return resolveVariableKeysForExtractionSnapshot(
-    template.validatedExtractionId,
+    template.extractionSnapshotId,
     requiredVariableNames
   )
 }

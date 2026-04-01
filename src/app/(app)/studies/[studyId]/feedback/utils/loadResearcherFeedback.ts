@@ -50,7 +50,7 @@ export async function loadResearcherFeedbackViewModel(
 
   try {
     const { requiredVariableNames, variableKeysAllowlist } =
-      await resolvePersistedFeedbackTemplateVariables(template)
+      await resolvePersistedFeedbackTemplateVariables(template, studyId)
 
     const allPilotResults = await getAllPilotResultsForResearcher({ studyId, userId })
     const researcherHasPilotData = allPilotResults.length > 0

@@ -3,6 +3,7 @@ import { resolver } from "@blitzjs/rpc"
 import { z } from "zod"
 import { cache } from "react"
 import { withStudyAccess } from "../../utils/withStudyAccess"
+import { computeCodebookValidation } from "../utils/computeCodebookValidation"
 
 const GetCodebookData = z.object({
   studyId: z.number(),
@@ -55,11 +56,6 @@ export const fetchCodebookMergedVariablesForStudy = cache(async (studyId: number
     where: { studyId },
     select: {
       id: true,
-      validationStatus: true,
-      validatedExtractionId: true,
-      validatedAt: true,
-      missingKeys: true,
-      extraKeys: true,
       updatedAt: true,
     },
   })
@@ -76,6 +72,7 @@ export const fetchCodebookMergedVariablesForStudy = cache(async (studyId: number
     : []
 
   const entryByKey = new Map(entries.map((entry) => [entry.variableKey, entry]))
+  const codebookValidation = await computeCodebookValidation(studyId)
 
   return {
     variables: variables.map((v) => ({
@@ -87,7 +84,12 @@ export const fetchCodebookMergedVariablesForStudy = cache(async (studyId: number
       description: entryByKey.get(v.variableKey)?.description ?? null,
       personalData: entryByKey.get(v.variableKey)?.personalData ?? false,
     })),
-    codebook: codebook ?? null,
+    codebook: codebook
+      ? {
+          ...codebook,
+          ...codebookValidation,
+        }
+      : null,
     approvedExtractionId,
     approvedExtractionApprovedAt,
   }

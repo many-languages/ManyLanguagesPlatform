@@ -236,26 +236,12 @@ model ParticipantStudy {
   @@unique([userId, studyId])
 }
 
-enum ValidationStatus {
-  NEEDS_REVIEW
-  VALID
-  INVALID
-}
-
 model FeedbackTemplate {
   id      Int @id @default(autoincrement())
   studyId Int @unique
 
-  validatedExtractionId Int?
-  validatedExtraction   ExtractionSnapshot? @relation("ValidatedExtraction", fields: [validatedExtractionId], references: [id], onDelete: SetNull)
-  validationStatus      ValidationStatus    @default(NEEDS_REVIEW)
-  validatedAt           DateTime?
-  missingVariableNames  Json? // string[] variableName strings missing from approved extraction
-  extraVariableNames    Json? // string[] variableName in extraction but not required by template
-
   content               String
   requiredVariableNames Json? // string[] variableName list from DSL; not StudyVariable.variableKey
-  extractorVersion      String? // safety check
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -266,14 +252,6 @@ model FeedbackTemplate {
 model Codebook {
   id      Int @id @default(autoincrement())
   studyId Int @unique
-
-  validatedExtractionId Int?
-  validatedExtraction   ExtractionSnapshot? @relation("ValidatedCodebookExtraction", fields: [validatedExtractionId], references: [id], onDelete: SetNull)
-  validationStatus      ValidationStatus    @default(NEEDS_REVIEW)
-  validatedAt           DateTime?
-  missingKeys           Json? // string[]
-  extraKeys             Json? // string[]
-  extractorVersion      String?
 
   entries CodebookEntry[]
 
@@ -374,9 +352,7 @@ model ExtractionSnapshot {
   jatosStudyUpload JatosStudyUpload @relation("UploadExtractions", fields: [jatosStudyUploadId], references: [id], onDelete: Cascade)
   variables        StudyVariable[]
 
-  approvedForUpload          JatosStudyUpload?  @relation("ApprovedExtractionForUpload")
-  validatedFeedbackTemplates FeedbackTemplate[] @relation("ValidatedExtraction")
-  validatedCodebooks         Codebook[]         @relation("ValidatedCodebookExtraction")
+  approvedForUpload JatosStudyUpload? @relation("ApprovedExtractionForUpload")
 
   @@index([jatosStudyUploadId, status, createdAt])
 }

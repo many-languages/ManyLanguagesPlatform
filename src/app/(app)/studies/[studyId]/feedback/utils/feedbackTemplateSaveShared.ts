@@ -1,17 +1,6 @@
 import { Prisma } from "db"
 import type { FeedbackTemplate } from "../types"
-import { EXTRACTOR_VERSION } from "../../setup/utils/extractionCache"
-import { validateFeedbackTemplateAgainstExtraction } from "./validateTemplateAgainstExtraction"
-
-/** Fields reset whenever template content (or required variables) change and must be re-validated. */
-export const feedbackTemplateValidationResetFields = {
-  validationStatus: "NEEDS_REVIEW" as const,
-  validatedExtractionId: null,
-  validatedAt: null,
-  missingVariableNames: Prisma.DbNull,
-  extraVariableNames: Prisma.DbNull,
-  extractorVersion: null,
-}
+import { computeFeedbackTemplateValidation } from "./computeFeedbackTemplateValidation"
 
 /**
  * After creating or updating feedback template content: re-run extraction validation for the
@@ -30,11 +19,7 @@ export async function finalizeFeedbackTemplateAfterContentChange(
 
   let step6Completed = true
   if (latestUpload?.approvedExtractionId) {
-    const feedbackValidation = await validateFeedbackTemplateAgainstExtraction(tx, {
-      studyId,
-      extractionSnapshotId: latestUpload.approvedExtractionId,
-      extractorVersion: EXTRACTOR_VERSION,
-    })
+    const feedbackValidation = await computeFeedbackTemplateValidation(studyId, tx)
     step6Completed = feedbackValidation?.status !== "INVALID"
   }
 
@@ -68,7 +53,6 @@ export async function createFeedbackTemplateInTransaction(
     data: {
       studyId: input.studyId,
       content: input.content,
-      ...feedbackTemplateValidationResetFields,
       requiredVariableNames: input.requiredVariableNames,
     },
   })
@@ -84,7 +68,6 @@ export async function updateFeedbackTemplateInTransaction(
     where: { id: input.id },
     data: {
       content: input.content,
-      ...feedbackTemplateValidationResetFields,
       requiredVariableNames: input.requiredVariableNames,
     },
   })

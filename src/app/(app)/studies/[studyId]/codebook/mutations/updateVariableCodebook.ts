@@ -2,8 +2,7 @@ import { resolver } from "@blitzjs/rpc"
 import db from "db"
 import { z } from "zod"
 import { withStudyAccess } from "../../utils/withStudyAccess"
-import { validateCodebookAgainstExtraction } from "../utils/validateCodebookAgainstExtraction"
-import { EXTRACTOR_VERSION } from "../../setup/utils/extractionCache"
+import { computeCodebookValidation } from "../utils/computeCodebookValidation"
 import { getPersonalDataViolationsForPersistedTemplate } from "../../feedback/utils/feedbackTemplatePersonalDataViolations"
 
 const UpdateVariableCodebook = z.object({
@@ -109,11 +108,7 @@ export async function updateVariableCodebookRsc(input: {
         )
       )
 
-      return validateCodebookAgainstExtraction(tx, {
-        studyId: input.studyId,
-        extractionSnapshotId: approvedExtractionId,
-        extractorVersion: EXTRACTOR_VERSION,
-      })
+      return computeCodebookValidation(input.studyId, tx)
     })
 
     const allHaveDescriptions = input.variables.every(

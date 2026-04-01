@@ -54,12 +54,6 @@ export interface FeedbackTemplate {
   id: number
   studyId: number
   content: string
-  validatedExtractionId?: number | null
-  validationStatus?: "NEEDS_REVIEW" | "VALID" | "INVALID"
-  validatedAt?: Date | string | null
-  missingVariableNames?: string[] | null
-  extraVariableNames?: string[] | null
-  extractorVersion?: string | null
   requiredVariableNames?: string[] | null
   createdAt: Date | string
   updatedAt: Date | string

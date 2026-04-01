@@ -46,7 +46,7 @@ export async function loadParticipantFeedbackViewModel(
 
   try {
     const { requiredVariableNames, variableKeysAllowlist } =
-      await resolvePersistedFeedbackTemplateVariables(template)
+      await resolvePersistedFeedbackTemplateVariables(template, studyId)
 
     const loaded = await loadParticipantFeedbackRenderedMarkdown({
       studyId,

@@ -10,7 +10,6 @@ import {
   FeedbackFormEditorRef,
   type FeedbackTemplateEditorInitial,
 } from "../../../../feedback/types"
-import { jsonColumnToStringArray } from "../../../../feedback/feedbackTemplateRscSelect"
 import FeedbackFormEditor from "../../../../feedback/components/client/FeedbackFormEditor"
 import { useNotificationMenuContext } from "@/src/app/(app)/notifications/context/NotificationMenuContext"
 import type { FeedbackPreviewContextClientDto } from "../../../../feedback/utils/loadFeedbackPreviewContext"
@@ -20,6 +19,11 @@ import { getSetupCompletionAction } from "../../../actions/getSetupCompletionAct
 
 interface Step6ContentProps {
   initialFeedbackTemplate?: FeedbackTemplateEditorInitial | null
+  validation: {
+    status: "VALID" | "INVALID" | "NO_TEMPLATE" | "NO_EXTRACTION"
+    missingVariableNames: string[]
+    extraVariableNames: string[]
+  }
   approvedExtractionId: number | null
   approvedExtractionApprovedAt: Date | string | null
   /** UI-safe metadata for pilot selection; no enriched JATOS payloads. */
@@ -31,6 +35,7 @@ interface Step6ContentProps {
 
 export default function Step6Content({
   initialFeedbackTemplate = null,
+  validation,
   approvedExtractionId,
   approvedExtractionApprovedAt,
   previewClient,
@@ -43,12 +48,8 @@ export default function Step6Content({
   const { refetch: refetchNotifications } = useNotificationMenuContext()
   const [isTemplateValid, setIsTemplateValid] = useState(true)
 
-  const missingVariableNames = jsonColumnToStringArray(
-    initialFeedbackTemplate?.missingVariableNames
-  )
-  const extraVariableNames = jsonColumnToStringArray(initialFeedbackTemplate?.extraVariableNames)
-  const validationStatus = initialFeedbackTemplate?.validationStatus ?? null
-  const validatedExtractionId = initialFeedbackTemplate?.validatedExtractionId ?? null
+  const { missingVariableNames, extraVariableNames } = validation
+  const validationStatus = validation.status
   const templateUpdatedAt = initialFeedbackTemplate?.updatedAt
     ? new Date(initialFeedbackTemplate.updatedAt)
     : null
@@ -61,7 +62,6 @@ export default function Step6Content({
   const showSoftWarning =
     validationStatus === "VALID" &&
     approvedExtractionId !== null &&
-    validatedExtractionId === approvedExtractionId &&
     approvedExtractionAt !== null &&
     templateUpdatedAt !== null &&
     templateUpdatedAt < approvedExtractionAt

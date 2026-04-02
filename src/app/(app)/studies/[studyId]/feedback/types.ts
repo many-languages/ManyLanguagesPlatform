@@ -1,3 +1,4 @@
+import type { ReactNode } from "react"
 import type { FeedbackTemplateRscRow } from "./feedbackTemplateRscSelect"
 
 // Re-export variable types from shared variables module
@@ -12,8 +13,15 @@ export type { GetParticipantFeedbackResult } from "@/src/lib/jatos/participantFe
  */
 export type ParticipantFeedbackMarkdownLoadResult =
   | { kind: "not_completed" }
-  | { kind: "loaded"; renderedMarkdown: string }
+  | {
+      kind: "loaded"
+      renderedMarkdown: string
+      matchingResponseCount: number
+      selectedResponseEndDate: number | null
+    }
   | { kind: "failed"; error: string }
+  /** Template references codebook variables marked personal; researcher must fix Step 6. */
+  | { kind: "maintained" }
 
 /** Full participant feedback load: template access + JATOS + render (see `loadParticipantFeedbackViewModel`). */
 export type LoadParticipantFeedbackPipelineResult =
@@ -32,6 +40,7 @@ export type FetchParticipantFeedbackActionResult = LoadParticipantFeedbackPipeli
 export type ResearcherFeedbackMarkdownLoadResult =
   | { kind: "loaded"; renderedMarkdown: string | null; researcherHasPilotData: boolean }
   | { kind: "failed"; error: string }
+  | { kind: "personal_data_blocked"; variableNames: string[] }
 
 /** Full researcher feedback load: template + pilots + render (see `loadResearcherFeedbackViewModel`). */
 export type LoadResearcherFeedbackPipelineResult =
@@ -45,12 +54,6 @@ export interface FeedbackTemplate {
   id: number
   studyId: number
   content: string
-  validatedExtractionId?: number | null
-  validationStatus?: "NEEDS_REVIEW" | "VALID" | "INVALID"
-  validatedAt?: Date | string | null
-  missingVariableNames?: string[] | null
-  extraVariableNames?: string[] | null
-  extractorVersion?: string | null
   requiredVariableNames?: string[] | null
   createdAt: Date | string
   updatedAt: Date | string
@@ -67,11 +70,20 @@ export interface FeedbackTemplateInput {
  */
 export type FeedbackTemplateEditorInitial = FeedbackTemplateRscRow
 
+/** Card surface when showing `feedbackMessage` instead of markdown (whole-card tint). */
+export type FeedbackCardTone = "default" | "info" | "warning" | "error"
+
 // Component Props Types (static feedback uses server-rendered markdown via FeedbackCard)
 export interface FeedbackCardProps {
   studyId: number
   /** Server-rendered markdown; null when no feedback to show yet or missing template. */
   renderedMarkdown: string | null
+  /**
+   * When set, shown in place of markdown / empty states (plain body; no nested alert).
+   * Use `feedbackTone` for card surface color; defaults to `info` when omitted.
+   */
+  feedbackMessage?: ReactNode
+  feedbackTone?: FeedbackCardTone
   title?: string
   className?: string
   /** Participant: false until the study run exists in JATOS. */
@@ -80,6 +92,9 @@ export interface FeedbackCardProps {
   researcherHasPilotData?: boolean
   onRefresh?: () => Promise<void> | void
   showEditButton?: boolean
+  /** Participant feedback only: shows a notice if latest of multiple responses was used. */
+  participantMatchingResponseCount?: number
+  participantSelectedResponseEndDate?: number | null
 }
 
 export type SaveTemplateResult = { ok: false } | { ok: true; setupComplete: boolean }

@@ -8,3 +8,7 @@ export const PARTICIPANT_FEEDBACK_RSC_NOT_ENROLLED =
 /** No feedback template row exists for this study (e.g. removed after page load). */
 export const PARTICIPANT_FEEDBACK_RSC_NO_TEMPLATE =
   "Feedback is not available for this study right now."
+
+/** Feedback hidden: template vs codebook privacy, or privacy check could not complete (participant-safe copy). */
+export const PARTICIPANT_FEEDBACK_RSC_MAINTAINED =
+  "The feedback page is under maintenance. Please check back later."

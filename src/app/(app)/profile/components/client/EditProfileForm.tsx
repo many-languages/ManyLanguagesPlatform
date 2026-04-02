@@ -50,7 +50,7 @@ export const EditProfileForm = () => {
             </button>
             <FormSubmitButton
               submitText="Update"
-              loadingText="Updating..."
+              loadingText="Updating"
               className="btn btn-primary"
             />
           </div>

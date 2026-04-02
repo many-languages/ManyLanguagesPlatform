@@ -82,6 +82,11 @@ export const UpdateStudyBatch = z.object({
   jatosBatchId: z.number(),
 })
 
+export const UpdateJatosUploadWorkerType = z.object({
+  studyId: Id,
+  jatosWorkerType: z.nativeEnum(JatosWorkerType),
+})
+
 export const UpdateStudyStatus = z.object({
   studyId: Id,
   status: z.enum(["OPEN", "CLOSED"]),

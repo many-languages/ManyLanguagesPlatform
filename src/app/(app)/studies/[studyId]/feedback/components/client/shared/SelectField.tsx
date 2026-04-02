@@ -1,7 +1,10 @@
 "use client"
 
+import { InformationCircleIcon } from "@heroicons/react/24/outline"
+
 interface SelectFieldProps {
   label?: string
+  hint?: string
   value: string
   onChange: (value: string) => void
   options: Array<{ value: string; label: string }>
@@ -13,6 +16,7 @@ interface SelectFieldProps {
 
 export function SelectField({
   label,
+  hint,
   value,
   onChange,
   options,
@@ -25,7 +29,18 @@ export function SelectField({
     <div className={className}>
       {label && (
         <label className="label">
-          <span className="label-text">{label}</span>
+          <span className="label-text flex items-center gap-1">
+            <span>{label}</span>
+            {hint ? (
+              <span
+                className="tooltip tooltip-top inline-flex cursor-help"
+                data-tip={hint}
+                aria-hidden
+              >
+                <InformationCircleIcon className="h-4 w-4 text-base-content/60" aria-hidden />
+              </span>
+            ) : null}
+          </span>
         </label>
       )}
       <select

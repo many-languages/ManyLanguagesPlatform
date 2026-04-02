@@ -3,6 +3,7 @@ import Step6Content from "./components/client/Step6Content"
 import SetupStepHeader from "../components/client/SetupStepHeader"
 import { getFeedbackTemplateRsc } from "../../feedback/queries/getFeedbackTemplate"
 import { loadFeedbackPreviewContext } from "../../feedback/utils/loadFeedbackPreviewContext"
+import { computeFeedbackTemplateValidation } from "../../feedback/utils/computeFeedbackTemplateValidation"
 
 import { getStudyRsc } from "../../../queries/getStudy"
 import { Alert } from "@/src/app/components/Alert"
@@ -22,6 +23,7 @@ async function Step6ContentWrapper({ studyId }: { studyId: number }) {
   }
 
   const feedbackTemplate = await getFeedbackTemplateRsc(studyId)
+  const templateValidation = await computeFeedbackTemplateValidation(studyId)
 
   const study = await getStudyRsc(studyId)
 
@@ -34,6 +36,7 @@ async function Step6ContentWrapper({ studyId }: { studyId: number }) {
       <Step6Content
         study={study}
         initialFeedbackTemplate={feedbackTemplate}
+        validation={templateValidation}
         approvedExtractionId={approvedExtraction?.id ?? null}
         approvedExtractionApprovedAt={approvedExtraction?.approvedAt ?? null}
         previewClient={previewLoad.client}

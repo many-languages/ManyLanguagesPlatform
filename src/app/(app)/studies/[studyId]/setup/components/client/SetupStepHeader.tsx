@@ -1,22 +1,22 @@
 "use client"
 
-import SaveExitButton from "./SaveExitButton"
+import BackToStudyButton from "./BackToStudyButton"
 
 interface SetupStepHeaderProps {
   studyId: number
   title: string
-  showSaveExit?: boolean
+  showBackToStudy?: boolean
 }
 
 export default function SetupStepHeader({
   studyId,
   title,
-  showSaveExit = true,
+  showBackToStudy = true,
 }: SetupStepHeaderProps) {
   return (
     <div className="flex items-center justify-between mb-4">
       <div className="w-32 flex justify-start">
-        {showSaveExit && <SaveExitButton studyId={studyId} />}
+        {showBackToStudy && <BackToStudyButton studyId={studyId} />}
       </div>
       <h2 className="text-xl font-semibold text-center flex-1">{title}</h2>
       <div className="w-32" /> {/* Spacer to balance the layout */}

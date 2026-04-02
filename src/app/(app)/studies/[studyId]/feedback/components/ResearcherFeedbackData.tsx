@@ -5,6 +5,7 @@ import {
   RESEARCHER_FEEDBACK_RSC_NO_TEMPLATE,
   RESEARCHER_FEEDBACK_RSC_NOT_AUTHORIZED,
   RESEARCHER_FEEDBACK_RSC_SIGN_IN,
+  researcherFeedbackPersonalDataBlockedMessage,
 } from "../utils/researcherFeedbackRscMessages"
 
 interface ResearcherFeedbackDataProps {
@@ -32,9 +33,13 @@ export default async function ResearcherFeedbackData({ studyId }: ResearcherFeed
 
   if (step.kind === "no_template") {
     return (
-      <Alert variant="info" className="mt-4" title="No feedback template">
-        <p>{RESEARCHER_FEEDBACK_RSC_NO_TEMPLATE}</p>
-      </Alert>
+      <ResearcherFeedback
+        studyId={studyId}
+        renderedMarkdown={null}
+        researcherHasPilotData={true}
+        feedbackMessage={RESEARCHER_FEEDBACK_RSC_NO_TEMPLATE}
+        feedbackTone="info"
+      />
     )
   }
 
@@ -42,9 +47,25 @@ export default async function ResearcherFeedbackData({ studyId }: ResearcherFeed
 
   if (loaded.kind === "failed") {
     return (
-      <Alert variant="error" className="mt-4" title="Feedback unavailable">
-        <p>{loaded.error}</p>
-      </Alert>
+      <ResearcherFeedback
+        studyId={studyId}
+        renderedMarkdown={null}
+        researcherHasPilotData={true}
+        feedbackMessage={loaded.error}
+        feedbackTone="error"
+      />
+    )
+  }
+
+  if (loaded.kind === "personal_data_blocked") {
+    return (
+      <ResearcherFeedback
+        studyId={studyId}
+        renderedMarkdown={null}
+        researcherHasPilotData={true}
+        feedbackMessage={researcherFeedbackPersonalDataBlockedMessage(loaded.variableNames)}
+        feedbackTone="warning"
+      />
     )
   }
 

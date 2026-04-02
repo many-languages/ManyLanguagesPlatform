@@ -91,6 +91,7 @@ export default function VariableSelector({ variables, onInsert, markdown }: Vari
           {selectedVariable && (
             <SelectField
               label="Value"
+              hint="If a variable has only one value, All Values, First Value, and Last Value will return the same result."
               value={selectedModifier}
               onChange={setSelectedModifier}
               options={modifierOptions}

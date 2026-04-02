@@ -10,6 +10,8 @@ interface CardProps {
   className?: string
   collapsible?: boolean
   bgColor?: string
+  /** Border color utility (e.g. border-base-300, border-info/20). */
+  borderColorClass?: string
   bodyClassName?: string
   actionsWrapperClassName?: string
   defaultOpen?: boolean
@@ -22,6 +24,7 @@ const Card = ({
   className,
   collapsible = false,
   bgColor = "bg-base-200",
+  borderColorClass = "border-base-300",
   bodyClassName,
   actionsWrapperClassName,
   defaultOpen = true,
@@ -39,7 +42,8 @@ const Card = ({
     return (
       <div
         className={clsx(
-          "card base-content border mt-2 shadow-sm rounded-box border-base-300 card-no-outline",
+          "card base-content border mt-2 shadow-sm rounded-box card-no-outline",
+          borderColorClass,
           bgColor,
           className
         )}
@@ -69,7 +73,14 @@ const Card = ({
 
   // Regular card structure
   return (
-    <div className={clsx("card base-content border-base-300 mt-2 shadow-sm", bgColor, className)}>
+    <div
+      className={clsx(
+        "card base-content border mt-2 shadow-sm rounded-box",
+        borderColorClass,
+        bgColor,
+        className
+      )}
+    >
       <div className={clsx("card-body gap-3", bodyClassName)}>
         <div className="text-xl font-medium">{title}</div>
         {children}

@@ -62,6 +62,7 @@ export default function Step4Content({ validationData, study }: Step4ContentProp
   )
 
   const activeBundle = extractionBundle ?? cachedBundleResult?.bundle ?? null
+  const hasExtractedVariables = (activeBundle?.variables.length ?? 0) > 0
 
   const handleRunExtraction = async () => {
     try {
@@ -161,7 +162,7 @@ export default function Step4Content({ validationData, study }: Step4ContentProp
           <p className="mb-4 text-base-content/60">Run the extraction to analyze pilot results.</p>
           <AsyncButton
             onClick={handleRunExtraction}
-            loadingText="Running..."
+            loadingText="Running"
             className="btn btn-primary"
           >
             Run Extraction Now
@@ -277,9 +278,18 @@ export default function Step4Content({ validationData, study }: Step4ContentProp
         studyId={studyId}
         prev="step3"
         next="step5"
-        disableNext={!hasPilotResults || !activeBundle}
+        disableNext={!hasPilotResults || !activeBundle || !hasExtractedVariables}
         onNext={handleComplete}
         nextLabel="Approve Extraction"
+        nextTooltip={
+          !hasPilotResults
+            ? "No pilot results found. Please collect pilot responses first."
+            : !activeBundle
+            ? "Run extraction first."
+            : !hasExtractedVariables
+            ? "No variables were extracted. Review diagnostics or pilot data and run extraction again."
+            : undefined
+        }
       />
     </div>
   )

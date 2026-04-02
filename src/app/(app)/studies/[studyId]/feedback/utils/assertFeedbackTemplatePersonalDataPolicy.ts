@@ -1,5 +1,4 @@
-import { collectPersonalDataViolationsForFeedbackTemplate } from "@/src/lib/feedback/feedbackTemplatePersonalDataPolicy"
-import { getCodebookDataRsc } from "../../codebook/queries/getCodebookData"
+import { getPersonalDataViolationsForFeedbackTemplate } from "./feedbackTemplatePersonalDataViolations"
 
 /**
  * Throws if the template references variables marked as personal data in the study codebook.
@@ -10,13 +9,9 @@ export async function assertFeedbackTemplatePersonalDataPolicy(
   content: string,
   requiredVariableNames?: string[]
 ): Promise<void> {
-  const { variables } = await getCodebookDataRsc(studyId)
-  const personalDataNames = new Set(
-    variables.filter((v) => v.personalData).map((v) => v.variableName)
-  )
-  const violations = collectPersonalDataViolationsForFeedbackTemplate(
+  const violations = await getPersonalDataViolationsForFeedbackTemplate(
+    studyId,
     content,
-    personalDataNames,
     requiredVariableNames
   )
   if (violations.length === 0) {

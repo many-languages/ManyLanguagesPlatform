@@ -4,6 +4,7 @@ import { useMemo } from "react"
 import { Form } from "@/src/app/components/Form"
 import {
   TextField,
+  FormTextAreaField,
   DateField,
   FormSubmitButton,
   FormErrorDisplay,
@@ -39,10 +40,11 @@ export default function StudyInformationForm({
     >
       <div className="mx-auto w-full max-w-lg flex flex-col space-y-6">
         <TextField name="title" label="Title" placeholder="Study title" className="w-full" />
-        <TextField
+        <FormTextAreaField
           name="description"
           label="Description"
           placeholder="Short description"
+          rows={4}
           className="w-full"
         />
         <DateField name="startDate" label="Start Date" className="w-full" />
@@ -80,7 +82,7 @@ export default function StudyInformationForm({
         )}
         <FormSubmitButton
           submitText={submitText}
-          loadingText="Saving..."
+          loadingText="Saving"
           className="btn btn-primary"
         />
       </div>

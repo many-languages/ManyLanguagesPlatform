@@ -54,8 +54,12 @@ export default async function ParticipantFeedbackData({
     )
   }
 
+  const initialFeedbackMaintained = loaded.kind === "maintained"
   const initialCompleted = loaded.kind === "loaded"
   const initialRenderedMarkdown = loaded.kind === "loaded" ? loaded.renderedMarkdown : null
+  const initialMatchingResponseCount = loaded.kind === "loaded" ? loaded.matchingResponseCount : 0
+  const initialSelectedResponseEndDate =
+    loaded.kind === "loaded" ? loaded.selectedResponseEndDate : null
 
   return (
     <ParticipantFeedback
@@ -64,6 +68,9 @@ export default async function ParticipantFeedbackData({
       jatosStudyId={jatosStudyId}
       initialCompleted={initialCompleted}
       initialRenderedMarkdown={initialRenderedMarkdown}
+      initialMatchingResponseCount={initialMatchingResponseCount}
+      initialSelectedResponseEndDate={initialSelectedResponseEndDate}
+      initialFeedbackMaintained={initialFeedbackMaintained}
     />
   )
 }

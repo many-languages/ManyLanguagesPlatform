@@ -12,8 +12,8 @@ import {
   buildPilotDatasetHash,
   hashJson,
 } from "../utils/extractionCache"
-import { validateFeedbackTemplateAgainstExtraction } from "../../feedback/utils/validateTemplateAgainstExtraction"
-import { validateCodebookAgainstExtraction } from "../../codebook/utils/validateCodebookAgainstExtraction"
+import { computeFeedbackTemplateValidation } from "../../feedback/utils/computeFeedbackTemplateValidation"
+import { computeCodebookValidation } from "../../codebook/utils/computeCodebookValidation"
 
 const ApproveExtraction = z.object({
   studyId: z.number(),
@@ -172,17 +172,8 @@ export async function approveExtractionRsc(input: {
         },
       })
 
-      const feedbackValidation = await validateFeedbackTemplateAgainstExtraction(tx, {
-        studyId: input.studyId,
-        extractionSnapshotId: extractionSnapshot.id,
-        extractorVersion: EXTRACTOR_VERSION,
-      })
-
-      const codebookValidation = await validateCodebookAgainstExtraction(tx, {
-        studyId: input.studyId,
-        extractionSnapshotId: extractionSnapshot.id,
-        extractorVersion: EXTRACTOR_VERSION,
-      })
+      const feedbackValidation = await computeFeedbackTemplateValidation(input.studyId, tx)
+      const codebookValidation = await computeCodebookValidation(input.studyId, tx)
 
       if (feedbackValidation?.status === "INVALID") {
         await tx.jatosStudyUpload.update({

@@ -8,7 +8,7 @@ import { redirect } from "next/navigation"
 import { Prisma } from "@/db"
 import StudiesViewTabs from "./components/client/StudiesViewTabs"
 import ParticipantStudiesViewTabs from "./components/client/ParticipantStudiesViewTabs"
-import { NavigationButton } from "@/src/app/components/NavigationButton"
+import CreateStudyButton from "./components/client/CreateStudyButton"
 import { isSetupComplete } from "./[studyId]/setup/utils/setupStatus"
 import { parseStudyView, type StudyView } from "./utils/studyView"
 import { parseParticipantStudyView, type ParticipantStudyView } from "./utils/participantStudyView"
@@ -133,13 +133,7 @@ export default async function StudiesPage({
       <h1 className="text-3xl flex justify-center mb-2">My studies</h1>
       {canManageStudies && (
         <div className="flex flex-wrap justify-between items-center mb-6 gap-4">
-          <NavigationButton
-            className="btn btn-secondary"
-            href={"/studies/new"}
-            pendingText="Creating"
-          >
-            Create Study
-          </NavigationButton>
+          <CreateStudyButton className="btn btn-secondary" />
           <StudiesViewTabs currentView={researcherView} />
         </div>
       )}

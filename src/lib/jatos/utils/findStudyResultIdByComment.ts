@@ -24,6 +24,45 @@ export function findStudyResultIdByComment(
 }
 
 /**
+ * Finds all matching study results for a given comment and returns the latest.
+ * "Latest" is determined by `endDate` (descending), then `id` (descending).
+ */
+export function findLatestStudyResultSelectionByComment(
+  metadata: JatosMetadata | null | undefined,
+  comment: string
+): { resultId: number | null; matchCount: number; selectedEndDate: number | null } {
+  if (!metadata || !Array.isArray(metadata.data)) {
+    return { resultId: null, matchCount: 0, selectedEndDate: null }
+  }
+
+  const normalizedComment = comment.trim()
+  const matches: JatosStudyResult[] = []
+
+  for (const studyMeta of metadata.data) {
+    const results = studyMeta.studyResults ?? []
+    for (const res of results) {
+      if (res.comment?.trim() === normalizedComment) {
+        matches.push(res)
+      }
+    }
+  }
+
+  if (matches.length === 0) return { resultId: null, matchCount: 0, selectedEndDate: null }
+
+  const latest = [...matches].sort((a, b) => {
+    const endDateDiff = b.endDate - a.endDate
+    if (endDateDiff !== 0) return endDateDiff
+    return b.id - a.id
+  })[0]
+
+  return {
+    resultId: latest?.id ?? null,
+    matchCount: matches.length,
+    selectedEndDate: latest?.endDate ?? null,
+  }
+}
+
+/**
  * Checks if a participant (by pseudonym) has completed a specific JATOS study.
  * Use when metadata contains multiple studies and you need per-study completion.
  */

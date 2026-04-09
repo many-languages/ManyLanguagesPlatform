@@ -9,6 +9,7 @@ import toast from "react-hot-toast"
 import updateStudy from "@/src/app/(app)/studies/mutations/updateStudy"
 import StudyInformationForm from "@/src/app/(app)/studies/[studyId]/setup/step1/components/client/StudyInformationForm"
 import { getPostStepNavigationUrl } from "../../../utils/setupStatus"
+import { studyPath } from "../../../utils/setupRoutes"
 
 import { StudyWithRelations } from "@/src/app/(app)/studies/queries/getStudy"
 
@@ -59,7 +60,7 @@ export default function Step1Content({
       onCancel={
         isEditMode
           ? () => {
-              router.push(`/studies/${studyId}` as Route)
+              router.push(studyPath(studyId) as Route)
             }
           : undefined
       }

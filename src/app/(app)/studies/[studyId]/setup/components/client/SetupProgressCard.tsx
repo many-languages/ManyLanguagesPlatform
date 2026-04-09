@@ -11,6 +11,7 @@ import {
   getSetupProgress,
   StudyWithMinimalRelations,
 } from "../../utils/setupStatus"
+import { studySetupStepPath } from "../../utils/setupRoutes"
 
 interface SetupProgressCardProps {
   study: StudyWithMinimalRelations
@@ -18,6 +19,10 @@ interface SetupProgressCardProps {
 
 export default function SetupProgressCard({ study }: SetupProgressCardProps) {
   const router = useRouter()
+  const studyId = study.id
+  if (studyId == null) {
+    return null
+  }
   const progress = getSetupProgress(study)
   const { completedStepsList, incompleteStep, isComplete } = progress
   const latestUpload = study.latestJatosStudyUpload
@@ -33,7 +38,7 @@ export default function SetupProgressCard({ study }: SetupProgressCardProps) {
 
   const handleStepClick = (stepId: number) => {
     // Only completed steps are clickable, so we always navigate with edit mode
-    router.push(`/studies/${study.id}/setup/step${stepId}?edit=true&returnTo=study` as Route)
+    router.push(studySetupStepPath(studyId, stepId, { edit: true, returnTo: "study" }) as Route)
   }
 
   return (
@@ -57,7 +62,7 @@ export default function SetupProgressCard({ study }: SetupProgressCardProps) {
           {incompleteStep && (
             <NavigationButton
               className="btn btn-sm btn-primary"
-              href={getNextSetupStepUrl(study.id, study) as Route}
+              href={getNextSetupStepUrl(studyId, study) as Route}
               pendingText="Loading"
             >
               Continue Setup

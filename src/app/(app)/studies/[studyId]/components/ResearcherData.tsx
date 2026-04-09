@@ -10,6 +10,7 @@ import ParticipantManagementCard from "./client/ParticipantManagementCard"
 import ResultsCardWrapper from "./ResultsCardWrapper"
 import { Alert } from "@/src/app/components/Alert"
 import { isSetupComplete } from "../setup/utils/setupStatus"
+import { studySetupStepPath } from "../setup/utils/setupRoutes"
 import { StudyWithRelations } from "../../queries/getStudy"
 import ResearcherFeedbackData from "../feedback/components/ResearcherFeedbackData"
 import StudyInformationCard from "./client/StudyInformationCard"
@@ -123,7 +124,7 @@ export default async function ResearcherData({ studyId, study }: ResearcherDataP
   const researcherActions = (
     <div className="flex flex-wrap justify-end gap-2 items-start">
       <NavigationButton
-        href={`/studies/${study.id}/setup/step1?edit=true&returnTo=study`}
+        href={studySetupStepPath(study.id, 1, { edit: true, returnTo: "study" })}
         className="btn-primary"
         pendingText="Opening"
       >

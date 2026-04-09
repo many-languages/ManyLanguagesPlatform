@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
+import type { Route } from "next"
 import { useMutation } from "@blitzjs/rpc"
 import { toast } from "react-hot-toast"
 
@@ -26,6 +27,7 @@ interface VariableCodebookEntry {
 }
 
 import { StudyWithRelations } from "@/src/app/(app)/studies/queries/getStudy"
+import { studySetupStepPath } from "../../../setup/utils/setupRoutes"
 
 interface CodebookContentProps {
   initialVariables: Array<{
@@ -146,7 +148,7 @@ export default function CodebookContent({
     // Always save to update step5Completed (fixes stale step flags)
     const success = await handleSave()
     if (!success) return
-    router.push(`/studies/${studyId}/setup/step6`)
+    router.push(studySetupStepPath(studyId, 6) as Route)
   }
 
   if (variables.length === 0) {

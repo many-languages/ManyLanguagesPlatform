@@ -2,6 +2,7 @@ import { Study, FeedbackTemplate } from "@prisma/client"
 import { StudyWithRelations } from "../../../queries/getStudy"
 import { deriveStep1Completed } from "./deriveStep1Completed"
 import { STEP_KEYS, STEP_NAMES, TOTAL_STEPS } from "./constants"
+import { studyPath, studySetupStepPath } from "./setupRoutes"
 
 // More flexible interface for studies with minimal researcher data
 // Using Partial<Study> allows us to pass lightweight objects from optimized queries
@@ -146,9 +147,9 @@ export function getNextSetupStepUrl(
 ): string {
   const incompleteStep = getIncompleteStep(study)
   if (!incompleteStep) {
-    return `/studies/${studyId}` // All complete, go to study page
+    return studyPath(studyId) // All complete, go to study page
   }
-  return `/studies/${studyId}/setup/step${incompleteStep}`
+  return studySetupStepPath(studyId, incompleteStep)
 }
 
 /**
@@ -165,15 +166,15 @@ export function getPostStepNavigationUrl(
   study?: StudyWithRelations | StudyWithMinimalRelations
 ): string {
   if (returnTo === "study") {
-    return `/studies/${studyId}`
+    return studyPath(studyId)
   }
 
   if (typeof returnTo === "number") {
     if (returnTo < 1 || returnTo > TOTAL_STEPS) {
       // Invalid step number, default to study page
-      return `/studies/${studyId}`
+      return studyPath(studyId)
     }
-    return `/studies/${studyId}/setup/step${returnTo}`
+    return studySetupStepPath(studyId, returnTo)
   }
 
   // returnTo === "next"
@@ -185,7 +186,7 @@ export function getPostStepNavigationUrl(
   // Default to next step if study not provided
   const nextStep = currentStep + 1
   if (nextStep > TOTAL_STEPS) {
-    return `/studies/${studyId}` // All steps complete, go to study page
+    return studyPath(studyId) // All steps complete, go to study page
   }
-  return `/studies/${studyId}/setup/step${nextStep}`
+  return studySetupStepPath(studyId, nextStep)
 }

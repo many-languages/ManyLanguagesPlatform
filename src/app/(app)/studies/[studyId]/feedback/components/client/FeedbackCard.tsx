@@ -9,6 +9,7 @@ import { EmptyState } from "@/src/app/components/EmptyState"
 import RefreshFeedbackButton from "./RefreshFeedbackButton"
 import type { FeedbackCardProps, FeedbackCardTone } from "../../types"
 import { mdEditorStyles, mdEditorClassName } from "../../styles/feedbackStyles"
+import { studySetupStepPath } from "../../../setup/utils/setupRoutes"
 
 const TONE_BG: Record<FeedbackCardTone, string> = {
   default: "bg-base-200",
@@ -53,7 +54,7 @@ export default function FeedbackCard({
       {onRefresh && <RefreshFeedbackButton onRefresh={onRefresh} />}
       {showEditButton && (
         <NavigationButton
-          href={`/studies/${studyId}/setup/step6`}
+          href={studySetupStepPath(studyId, 6)}
           className="btn-primary"
           pendingText="Opening"
         >

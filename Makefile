@@ -9,6 +9,8 @@
 	dev-host-app dev-host-app-https \
 	dev-fullstack dev-fullstack-https \
 	prod-up prod-up-letsencrypt \
+	jatos-conf-dev-jatos-only jatos-conf-dev-host-app \
+	jatos-conf-dev-fullstack jatos-conf-prod \
 	down logs ps restart clean build \
 	certs validate-token validate-setup prune prune-all
 
@@ -16,6 +18,7 @@ SHELL := /bin/bash
 
 SCRIPTS := deploy/scripts
 MODE_FILE := deploy/.active-mode
+JATOS_CONF_SCRIPT := scripts/render-jatos-conf.sh
 
 # ---------------------------------------------------------------------------
 # Help
@@ -73,44 +76,60 @@ SCRIPT_FLAGS += --cron
 endif
 
 # ---------------------------------------------------------------------------
+# Internal: render JATOS config from mode env
+# ---------------------------------------------------------------------------
+
+jatos-conf-dev-jatos-only:
+	@$(JATOS_CONF_SCRIPT) deploy/env/dev-jatos-only.env
+
+jatos-conf-dev-host-app:
+	@$(JATOS_CONF_SCRIPT) deploy/env/dev-host-app.env
+
+jatos-conf-dev-fullstack:
+	@$(JATOS_CONF_SCRIPT) deploy/env/dev-fullstack.env
+
+jatos-conf-prod:
+	@$(JATOS_CONF_SCRIPT) deploy/env/prod.env
+
+# ---------------------------------------------------------------------------
 # Mode targets
 # ---------------------------------------------------------------------------
 
-dev-jatos-only:
+dev-jatos-only: jatos-conf-dev-jatos-only
 	@echo "dev-jatos-only $(SCRIPT_FLAGS)" > $(MODE_FILE)
 	@$(SCRIPTS)/dev-jatos-only.sh $(SCRIPT_FLAGS)
 
-dev-jatos-only-https: certs
+dev-jatos-only-https: certs jatos-conf-dev-jatos-only
 	@echo "dev-jatos-only --https $(SCRIPT_FLAGS)" > $(MODE_FILE)
 	@$(SCRIPTS)/dev-jatos-only.sh --https $(SCRIPT_FLAGS)
 
-dev-host-app:
+dev-host-app: jatos-conf-dev-host-app
 	@echo "dev-host-app $(SCRIPT_FLAGS)" > $(MODE_FILE)
 	@$(SCRIPTS)/dev-host-app.sh $(SCRIPT_FLAGS)
 	@echo ""
 	@echo "Infrastructure is running. Start the app on the host:"
 	@echo "  npm run dev"
 
-dev-host-app-https: certs
+dev-host-app-https: certs jatos-conf-dev-host-app
 	@echo "dev-host-app --https $(SCRIPT_FLAGS)" > $(MODE_FILE)
 	@$(SCRIPTS)/dev-host-app.sh --https $(SCRIPT_FLAGS)
 	@echo ""
 	@echo "Infrastructure is running (HTTPS). Start the app on the host:"
 	@echo "  npm run dev"
 
-dev-fullstack:
+dev-fullstack: jatos-conf-dev-fullstack
 	@echo "dev-fullstack $(SCRIPT_FLAGS)" > $(MODE_FILE)
 	@$(SCRIPTS)/dev-fullstack.sh $(SCRIPT_FLAGS)
 
-dev-fullstack-https: certs
+dev-fullstack-https: certs jatos-conf-dev-fullstack
 	@echo "dev-fullstack --https $(SCRIPT_FLAGS)" > $(MODE_FILE)
 	@$(SCRIPTS)/dev-fullstack.sh --https $(SCRIPT_FLAGS)
 
-prod-up:
+prod-up: jatos-conf-prod
 	@echo "prod-up" > $(MODE_FILE)
 	@$(SCRIPTS)/prod-up.sh
 
-prod-up-letsencrypt:
+prod-up-letsencrypt: jatos-conf-prod
 	@echo "prod-up --letsencrypt" > $(MODE_FILE)
 	@$(SCRIPTS)/prod-up.sh --letsencrypt
 

@@ -1,6 +1,7 @@
 "use client"
 
 import { useFormContext } from "react-hook-form"
+import { FieldLabel, fieldAriaDescribedBy } from "./FieldLabel"
 
 interface SelectOption {
   value: string | number
@@ -10,6 +11,8 @@ interface SelectOption {
 interface SelectFieldProps extends React.SelectHTMLAttributes<HTMLSelectElement> {
   name: string
   label: string
+  /** Extra context shown next to the label (info icon + tooltip, screen reader text). */
+  labelHint?: string
   options: SelectOption[]
   placeholder?: string
   error?: string
@@ -18,6 +21,7 @@ interface SelectFieldProps extends React.SelectHTMLAttributes<HTMLSelectElement>
 export const SelectField = ({
   name,
   label,
+  labelHint,
   options,
   placeholder = "Please select an option",
   error,
@@ -35,9 +39,7 @@ export const SelectField = ({
 
   return (
     <fieldset className="fieldset">
-      <label htmlFor={name} className="label text-base font-medium">
-        {label}
-      </label>
+      <FieldLabel htmlFor={name} label={label} hint={labelHint} />
       <select
         id={name}
         {...register(name)}
@@ -45,7 +47,10 @@ export const SelectField = ({
         disabled={isSubmitting || disabled}
         className={`select select-bordered ${fieldError ? "select-error" : ""} ${className || ""}`}
         aria-invalid={fieldError ? true : false}
-        aria-describedby={fieldError ? `${name}-error` : undefined}
+        aria-describedby={fieldAriaDescribedBy(name, {
+          hint: Boolean(labelHint),
+          error: Boolean(fieldError),
+        })}
       >
         <option value="" disabled>
           {placeholder}

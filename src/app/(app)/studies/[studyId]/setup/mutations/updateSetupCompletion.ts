@@ -20,7 +20,7 @@ export default resolver.pipe(
     const { studyId, ...completionFlags } = input
 
     // Authorization check - ensure user is a researcher on this study
-    await verifyResearcherStudyAccess(studyId)
+    await verifyResearcherStudyAccess(studyId, ctx.session.userId!)
 
     // Build update data object with only provided flags
     const updateData: {

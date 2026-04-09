@@ -13,6 +13,7 @@ export interface JatosApiError {
 
 /**
  * Response from /api/jatos/import
+ * Uses POST /jatos/api/v1/studies; studyExists is derived from HTTP status (200=overwrite, 201=create)
  */
 export interface JatosImportResponse {
   jatosStudyId: number
@@ -45,14 +46,6 @@ export interface CreatePersonalStudyCodeResponse {
 }
 
 /**
- * Response from /api/jatos/create-component
- */
-export interface CreateComponentResponse {
-  jatosComponentId: number
-  jatosComponentUUID: string
-}
-
-/**
  * Response from /api/jatos/get-study-code
  */
 export interface GetStudyCodeResponse {
@@ -61,22 +54,6 @@ export interface GetStudyCodeResponse {
   code: string
   codeType?: string
   batchId?: number
-}
-
-/**
- * Response from /api/jatos/create-personal-links
- */
-export interface CreatePersonalLinksResponse {
-  studyId: number
-  type: string
-  amount: number
-  codes: Array<{
-    id: number
-    code: string
-    codeType: string
-    batchId: number
-    active: boolean
-  }>
 }
 
 /**

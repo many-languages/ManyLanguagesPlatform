@@ -33,7 +33,7 @@ interface ConfirmButtonProps
   confirmMessage: string
   /**
    * Text to show when button is in loading state.
-   * If not provided, defaults to "Loading..."
+   * If not provided, defaults to "Loading"
    */
   loadingText?: string
   /**

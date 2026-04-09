@@ -7,13 +7,13 @@ import { useSession } from "@blitzjs/auth"
 import JatosForm from "./JatosForm"
 import toast from "react-hot-toast"
 import { useMutation } from "@blitzjs/rpc"
-import importJatos from "../../../mutations/importJatos"
 import checkJatosStudyUuid from "../../../mutations/checkJatosStudyUuid"
 import updateStudyBatch from "../../../../../mutations/updateStudyBatch"
+import updateJatosUploadWorkerType from "../../../../../mutations/updateJatosUploadWorkerType"
 import updateSetupCompletion from "../../../mutations/updateSetupCompletion"
-import fetchJatosBatchId from "@/src/lib/jatos/api/fetchJatosBatchId"
-import { uploadStudyFile } from "@/src/lib/jatos/api/uploadStudyFile"
-import { extractJatosStudyUuidFromJzip } from "@/src/lib/jatos/api/extractJatosStudyUuid"
+import { getBatchIdAction } from "../../../actions/getBatchId"
+import { uploadStudyFile } from "@/src/lib/jatos/browser/uploadStudyFile"
+import { extractJatosStudyUuidFromJzip } from "@/src/lib/jatos/parsers/extractJatosStudyUuid"
 import { Alert } from "@/src/app/components/Alert"
 import { FORM_ERROR } from "@/src/app/components/Form"
 import { generateAndSaveResearcherPilotRunUrl } from "../../../../utils/generateResearcherPilotRunUrl"
@@ -28,9 +28,9 @@ export default function Step2Content({ study }: Step2ContentProps) {
   const router = useRouter()
   // const { study } = useStudySetup()
   const { userId } = useSession()
-  const [importJatosMutation] = useMutation(importJatos)
   const [checkJatosStudyUuidMutation] = useMutation(checkJatosStudyUuid)
   const [updateStudyBatchMutation] = useMutation(updateStudyBatch)
+  const [updateJatosUploadWorkerTypeMutation] = useMutation(updateJatosUploadWorkerType)
   const [updateSetupCompletionMutation] = useMutation(updateSetupCompletion)
   const latestUpload = study.latestJatosStudyUpload
 
@@ -42,32 +42,19 @@ export default function Step2Content({ study }: Step2ContentProps) {
   const [loading, setLoading] = useState(false)
 
   // Helper function to complete the import after upload
-  async function completeImport(uploadResult: any, jatosWorkerType: string) {
-    // 1️⃣ Save to DB
-    const dbResult = (await importJatosMutation({
-      studyId: study.id,
-      jatosWorkerType: jatosWorkerType as "SINGLE" | "MULTIPLE",
-      jatosStudyId: uploadResult.jatosStudyId,
-      jatosStudyUUID: uploadResult.jatosStudyUUID,
-      jatosFileName: uploadResult.jatosFileName,
-      buildHash: uploadResult.buildHash,
-      hashAlgorithm: uploadResult.hashAlgorithm,
-    } as any)) as {
-      study?: any
+  // Route already did JATOS upload + DB + membership sync; we just need batch ID, setup completion, pilot link
+  async function completeImport(
+    uploadResult: {
+      jatosStudyId: number
+      jatosStudyUUID: string
       latestUpload?: { id: number }
-      error?: string
-      jatosStudyUUID?: string
-    }
+    },
+    options?: { successToast?: string }
+  ) {
+    const latestUploadId = uploadResult.latestUpload?.id ?? null
 
-    if (dbResult?.error) {
-      toast.error(dbResult.error)
-      setLoading(false)
-      return false
-    }
-    const latestUploadId = dbResult?.latestUpload?.id ?? null
-
-    // 2️⃣ Get batch ID
-    const jatosBatchId = await fetchJatosBatchId(uploadResult.jatosStudyUUID)
+    // 1️⃣ Get batch ID
+    const jatosBatchId = await getBatchIdAction(study.id, uploadResult.jatosStudyUUID)
     if (jatosBatchId) {
       await updateStudyBatchMutation({ studyId: study.id, jatosBatchId } as any)
     } else {
@@ -76,7 +63,7 @@ export default function Step2Content({ study }: Step2ContentProps) {
       return false
     }
 
-    // 3️⃣ Mark step 2 as complete
+    // 2️⃣ Mark step 2 as complete
     try {
       await updateSetupCompletionMutation({
         studyId: study.id,
@@ -88,7 +75,7 @@ export default function Step2Content({ study }: Step2ContentProps) {
       // Don't fail the whole import if this fails, but log it
     }
 
-    // 4️⃣ Auto-generate pilot link for the current researcher
+    // 3️⃣ Auto-generate pilot link for the current researcher
     try {
       const researcher = study.researchers?.find((r) => r.userId === userId)
       if (researcher?.id && jatosBatchId && latestUploadId) {
@@ -106,8 +93,8 @@ export default function Step2Content({ study }: Step2ContentProps) {
       // Don't fail the import if pilot link generation fails - user can generate it manually in Step 3
     }
 
-    // 5️⃣ Success
-    toast.success("JATOS instance created")
+    // 4️⃣ Success
+    toast.success(options?.successToast ?? "JATOS instance created")
     router.push(`/studies/${study.id}/setup/step3`)
     // Refresh after navigation to ensure fresh data is loaded
     router.refresh()
@@ -123,14 +110,17 @@ export default function Step2Content({ study }: Step2ContentProps) {
         studyId: study.id,
         jatosStudyUUID: updateAlert.uuid,
         mode: "update",
-      })) as { ok: boolean; error?: string }
-      if (!preflight.ok) {
+      })) as { success: boolean; error?: string }
+      if (!preflight.success) {
         toast.error(preflight.error || "Unable to verify JATOS study")
         setLoading(false)
         return
       }
-      const uploadResult = await uploadStudyFile(updateAlert.file)
-      const success = await completeImport(uploadResult, updateAlert.jatosWorkerType)
+      const uploadResult = await uploadStudyFile(updateAlert.file, {
+        studyId: study.id,
+        jatosWorkerType: updateAlert.jatosWorkerType,
+      })
+      const success = await completeImport(uploadResult)
       if (success) {
         setUpdateAlert(null)
       }
@@ -178,10 +168,47 @@ export default function Step2Content({ study }: Step2ContentProps) {
         cancelText="Back"
         onCancel={() => router.push(`/studies/${study.id}/setup/step1`)}
         defaultValues={defaultValues}
+        currentStudyFileUploadedAt={latestUpload?.createdAt}
+        jatosStudyUuid={study.jatosStudyUUID}
         onSubmit={async (values) => {
           const file = values.studyFile as File | undefined
+
+          const existingJatosStudyUuid = study.jatosStudyUUID
+          const canContinueWithoutNewFile =
+            !file &&
+            !!existingJatosStudyUuid &&
+            latestUpload != null &&
+            latestUpload.jatosStudyId != null
+
+          if (canContinueWithoutNewFile) {
+            try {
+              setLoading(true)
+              await updateJatosUploadWorkerTypeMutation({
+                studyId: study.id,
+                jatosWorkerType: values.jatosWorkerType,
+              })
+              await completeImport(
+                {
+                  jatosStudyId: latestUpload.jatosStudyId,
+                  jatosStudyUUID: existingJatosStudyUuid,
+                  latestUpload: { id: latestUpload.id },
+                },
+                { successToast: "Setup saved" }
+              )
+            } catch (err: any) {
+              console.error("Continue without new upload:", err)
+              toast.error(err?.message ?? "Failed to continue")
+              setLoading(false)
+            }
+            return
+          }
+
           if (!file) {
-            return { [FORM_ERROR]: "A JATOS .jzip file is required" }
+            return {
+              [FORM_ERROR]: latestUpload?.jatosFileName
+                ? "Please choose a .jzip file to continue. You can select the same export again from your computer — the name shown above is what we already imported."
+                : "A JATOS .jzip file is required",
+            }
           }
 
           try {
@@ -204,9 +231,9 @@ export default function Step2Content({ study }: Step2ContentProps) {
               studyId: study.id,
               jatosStudyUUID: extractedUuid,
               mode: study.jatosStudyUUID ? "update" : "create",
-            })) as { ok: boolean; error?: string }
+            })) as { success: boolean; error?: string }
 
-            if (!preflight.ok) {
+            if (!preflight.success) {
               setLoading(false)
               return { [FORM_ERROR]: preflight.error || "Unable to verify JATOS study" }
             }
@@ -221,11 +248,14 @@ export default function Step2Content({ study }: Step2ContentProps) {
               return
             }
 
-            // 1️⃣ Upload to JATOS
-            const uploadResult = await uploadStudyFile(file)
+            // 1️⃣ Upload to JATOS + DB + membership (route does it all)
+            const uploadResult = await uploadStudyFile(file, {
+              studyId: study.id,
+              jatosWorkerType: values.jatosWorkerType,
+            })
 
-            // 3️⃣ Complete import (DB + batch ID + navigate)
-            await completeImport(uploadResult, values.jatosWorkerType)
+            // 2️⃣ Complete import (batch ID + setup completion + pilot link + navigate)
+            await completeImport(uploadResult)
           } catch (err: any) {
             console.error("Upload error:", err)
             toast.error("Failed to upload file")

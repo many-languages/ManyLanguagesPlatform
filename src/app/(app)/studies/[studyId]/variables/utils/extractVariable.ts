@@ -133,12 +133,12 @@ function buildVariableDiagnostics(
  */
 export function extractVariableBundleForRender(
   enrichedResult: EnrichedJatosStudyResult,
-  requiredVariableKeys?: Set<string>,
+  variableKeysAllowlist?: Set<string>,
   config: ExtractionConfig = DEFAULT_EXTRACTION_CONFIG
 ): Pick<ExtractionBundle, "variables" | "observations"> {
   const extractionResult = extractObservations([enrichedResult], config, {
     diagnostics: false,
-    allowVariableKeys: requiredVariableKeys,
+    allowVariableKeys: variableKeysAllowlist,
   })
 
   const variables = aggregateVariables(
@@ -160,7 +160,7 @@ export function extractVariableBundleForRender(
  */
 export function extractVariableBundleForRenderFromResults(
   enrichedResults: EnrichedJatosStudyResult[],
-  requiredVariableKeys?: Set<string>,
+  variableKeysAllowlist?: Set<string>,
   config: ExtractionConfig = DEFAULT_EXTRACTION_CONFIG
 ): Pick<ExtractionBundle, "variables" | "observations"> {
   if (enrichedResults.length === 0) {
@@ -169,7 +169,7 @@ export function extractVariableBundleForRenderFromResults(
 
   const extractionResult = extractObservations(enrichedResults, config, {
     diagnostics: false,
-    allowVariableKeys: requiredVariableKeys,
+    allowVariableKeys: variableKeysAllowlist,
   })
 
   const variables = aggregateVariables(

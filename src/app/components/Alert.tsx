@@ -1,12 +1,13 @@
 "use client"
 
 import type React from "react"
+import clsx from "clsx"
 
 /**
  * Alert Component
  *
- * A standardized alert component wrapper for DaisyUI alerts.
- * Provides type-safe variants and consistent styling.
+ * Card-like panels aligned with study page callouts (e.g. bg-{semantic}/10 + border-{semantic}/20),
+ * not DaisyUI `alert-*` solids (which read as mismatched fill vs border).
  *
  * @example
  * ```tsx
@@ -21,6 +22,20 @@ import type React from "react"
  */
 
 export type AlertVariant = "error" | "warning" | "info" | "success"
+
+const variantSurface: Record<AlertVariant, string> = {
+  error: "rounded-lg border border-error/20 bg-error/10 text-base-content shadow-sm",
+  warning: "rounded-lg border border-warning/20 bg-warning/10 text-base-content shadow-sm",
+  info: "rounded-lg border border-info/20 bg-info/10 text-base-content shadow-sm",
+  success: "rounded-lg border border-success/20 bg-success/10 text-base-content shadow-sm",
+}
+
+const variantTitle: Record<AlertVariant, string> = {
+  error: "text-error",
+  warning: "text-warning",
+  info: "text-info",
+  success: "text-success",
+}
 
 interface AlertProps {
   /**
@@ -54,11 +69,28 @@ export function Alert({ variant, title, children, className, onClose, role }: Al
   const alertRole = role || defaultRole
 
   return (
-    <div className={`alert alert-${variant} select-text ${className || ""}`} role={alertRole}>
-      {title && <span className="font-semibold">{title}</span>}
-      <div>{children}</div>
+    <div
+      className={clsx(
+        "select-text p-4 sm:p-6",
+        variantSurface[variant],
+        onClose && "flex flex-row items-start gap-3",
+        className
+      )}
+      role={alertRole}
+    >
+      <div className={clsx("min-w-0 flex-1 flex flex-col", title && "gap-2")}>
+        {title && (
+          <span className={clsx("font-semibold text-base", variantTitle[variant])}>{title}</span>
+        )}
+        <div className="text-sm text-base-content/80 [&_p]:leading-relaxed">{children}</div>
+      </div>
       {onClose && (
-        <button className="btn btn-sm btn-ghost" onClick={onClose} aria-label="Close alert">
+        <button
+          type="button"
+          className="btn btn-sm btn-ghost shrink-0"
+          onClick={onClose}
+          aria-label="Close alert"
+        >
           ×
         </button>
       )}

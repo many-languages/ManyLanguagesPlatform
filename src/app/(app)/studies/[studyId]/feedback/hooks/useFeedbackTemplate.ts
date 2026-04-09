@@ -4,10 +4,12 @@ import { useState, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import { toast } from "react-hot-toast"
 import { saveFeedbackTemplateAction } from "../actions/saveFeedbackTemplate"
+import type { FeedbackTemplateEditorInitial } from "../types"
+import { mapFeedbackTemplateSaveErrorToUserMessage } from "../utils/mapFeedbackTemplateSaveErrorToUserMessage"
 
 export interface UseFeedbackTemplateOptions {
   studyId: number
-  initialTemplate?: { id: number; content: string } | null
+  initialTemplate?: FeedbackTemplateEditorInitial | null
   onSuccess?: () => void
 }
 
@@ -18,33 +20,44 @@ export function useFeedbackTemplate(options: UseFeedbackTemplateOptions) {
   const [templateSaved, setTemplateSaved] = useState(!!initialTemplate)
 
   const saveTemplate = useCallback(
-    async (content: string) => {
+    async (
+      content: string,
+      saveOptions?: { silentSuccessToast?: boolean }
+    ): Promise<{ ok: false } | { ok: true; setupComplete: boolean }> => {
       if (!content.trim()) {
         toast.error("Please enter some content for your feedback template")
-        return
+        return { ok: false }
       }
 
       setSaving(true)
       try {
-        await saveFeedbackTemplateAction({
+        const result = await saveFeedbackTemplateAction({
           studyId,
           content,
           initialTemplate,
         })
 
-        toast.success(
-          initialTemplate
-            ? "Feedback template updated successfully!"
-            : "Feedback template created successfully!"
-        )
+        if (!result.ok) {
+          toast.error(result.userMessage)
+          return { ok: false }
+        }
+
+        if (!saveOptions?.silentSuccessToast) {
+          toast.success(
+            initialTemplate
+              ? "Feedback template updated successfully!"
+              : "Feedback template created successfully!"
+          )
+        }
 
         setTemplateSaved(true)
         router.refresh()
         onSuccess?.()
-      } catch (error: any) {
+        return { ok: true, setupComplete: result.setupComplete }
+      } catch (error: unknown) {
         console.error("Error saving template:", error)
-        toast.error(error?.message || "Failed to save feedback template")
-        throw error
+        toast.error(mapFeedbackTemplateSaveErrorToUserMessage(error))
+        return { ok: false }
       } finally {
         setSaving(false)
       }

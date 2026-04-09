@@ -5,6 +5,7 @@ import VariableSelector from "./VariableSelector"
 import StatsSelector from "./StatsSelector"
 import { SelectField, FilterButtonWithDisplay, SyntaxPreview } from "./shared"
 import type { FeedbackVariable } from "../../types"
+import { Textarea } from "@/src/app/components/fields"
 
 interface ConditionalBuilderProps {
   variables: FeedbackVariable[]
@@ -31,7 +32,7 @@ export default function ConditionalBuilder({
 }: ConditionalBuilderProps) {
   const [conditionType, setConditionType] = useState<"variable" | "statistic">("variable")
   const [selectedVariable, setSelectedVariable] = useState("")
-  const [selectedModifier, setSelectedModifier] = useState("first")
+  const [selectedModifier, setSelectedModifier] = useState("all")
   const [selectedMetric, setSelectedMetric] = useState("avg")
   const [operator, setOperator] = useState("==")
   const [value, setValue] = useState("")
@@ -60,9 +61,9 @@ export default function ConditionalBuilder({
 
   const modifierOptions = useMemo(
     () => [
-      { value: "first", label: "First Value" },
-      { value: "last", label: "Last Value" },
-      { value: "all", label: "All Values" },
+      { value: "all", label: "All Values - Show all occurrences" },
+      { value: "first", label: "First Value - Show only first occurrence" },
+      { value: "last", label: "Last Value - Show only last occurrence" },
     ],
     []
   )
@@ -258,7 +259,7 @@ export default function ConditionalBuilder({
                       value={selectedVariable}
                       onChange={(value) => {
                         setSelectedVariable(value)
-                        setSelectedModifier("first")
+                        setSelectedModifier("all")
                       }}
                       options={variableOptions}
                       placeholder="Select variable..."
@@ -267,7 +268,8 @@ export default function ConditionalBuilder({
 
                   <div className="flex-1">
                     <SelectField
-                      label="Modifier"
+                      label="Value"
+                      hint="If a variable has only one value, All Values, First Value, and Last Value will return the same result."
                       value={selectedModifier}
                       onChange={setSelectedModifier}
                       options={modifierOptions}
@@ -392,16 +394,14 @@ export default function ConditionalBuilder({
 
           {/* Then Content */}
           <div>
-            <label className="label">
-              <span className="label-text">Then (show this if condition is true)</span>
-            </label>
             {/* Toolbar for Then Content */}
             <div className="flex gap-2 mb-2">
               <VariableSelector variables={variables} onInsert={handleInsertVariable} />
               <StatsSelector variables={variables} onInsert={handleInsertStat} />
             </div>
-            <textarea
-              className="textarea textarea-bordered w-full h-24"
+            <Textarea
+              label="Then (show this if condition is true)"
+              className="w-full h-24"
               placeholder="Enter content to show when condition is true..."
               value={thenContent}
               onChange={(e) => setThenContent(e.target.value)}
@@ -427,8 +427,8 @@ export default function ConditionalBuilder({
                   <VariableSelector variables={variables} onInsert={handleInsertVariable} />
                   <StatsSelector variables={variables} onInsert={handleInsertStat} />
                 </div>
-                <textarea
-                  className="textarea textarea-bordered w-full h-24"
+                <Textarea
+                  className="w-full h-24"
                   placeholder="Enter content to show when condition is false..."
                   value={elseContent}
                   onChange={(e) => setElseContent(e.target.value)}

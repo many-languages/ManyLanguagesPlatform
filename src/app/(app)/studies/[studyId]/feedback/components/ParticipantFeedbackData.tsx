@@ -1,7 +1,11 @@
-import { getFeedbackTemplateRsc } from "../queries/getFeedbackTemplate"
+import { Alert } from "@/src/app/components/Alert"
 import ParticipantFeedback from "./client/ParticipantFeedback"
-import { fetchParticipantFeedbackAction } from "../actions/fetchParticipantFeedback"
-import { resolveRequiredVariableKeys } from "../utils/resolveRequiredVariableKeys"
+import { loadParticipantFeedbackViewModel } from "../utils/loadParticipantFeedback"
+import {
+  PARTICIPANT_FEEDBACK_RSC_NOT_ENROLLED,
+  PARTICIPANT_FEEDBACK_RSC_NO_TEMPLATE,
+  PARTICIPANT_FEEDBACK_RSC_SIGN_IN,
+} from "../utils/participantFeedbackRscMessages"
 
 interface ParticipantFeedbackDataProps {
   studyId: number
@@ -14,37 +18,59 @@ export default async function ParticipantFeedbackData({
   pseudonym,
   jatosStudyId,
 }: ParticipantFeedbackDataProps) {
-  try {
-    // Get feedback template (doesn't change, so fetch separately)
-    const template = await getFeedbackTemplateRsc(studyId)
+  const step = await loadParticipantFeedbackViewModel(studyId, pseudonym, jatosStudyId)
 
-    if (!template) {
-      return null
-    }
-
-    const requiredVariableKeyList = await resolveRequiredVariableKeys(template)
-
-    // Use the same server action for initial fetch - single source of truth
-    const result = await fetchParticipantFeedbackAction(studyId, pseudonym, jatosStudyId)
-
-    if (!result.success) {
-      console.error("Error loading participant feedback:", result.error)
-      return null
-    }
-
+  if (step.kind === "not_authenticated") {
     return (
-      <ParticipantFeedback
-        studyId={studyId}
-        pseudonym={pseudonym}
-        jatosStudyId={jatosStudyId}
-        initialEnrichedResult={result.data?.enrichedResult ?? null}
-        template={template}
-        initialAllEnrichedResults={result.data?.allEnrichedResults ?? []}
-        requiredVariableKeyList={requiredVariableKeyList}
-      />
+      <Alert variant="warning" className="mt-4" title="Sign in required">
+        <p>{PARTICIPANT_FEEDBACK_RSC_SIGN_IN}</p>
+      </Alert>
     )
-  } catch (error) {
-    console.error("Error loading participant feedback:", error)
-    return null
   }
+
+  if (step.kind === "not_enrolled") {
+    return (
+      <Alert variant="error" className="mt-4" title="Feedback unavailable">
+        <p>{PARTICIPANT_FEEDBACK_RSC_NOT_ENROLLED}</p>
+      </Alert>
+    )
+  }
+
+  if (step.kind === "no_template") {
+    return (
+      <Alert variant="info" className="mt-4" title="Feedback unavailable">
+        <p>{PARTICIPANT_FEEDBACK_RSC_NO_TEMPLATE}</p>
+      </Alert>
+    )
+  }
+
+  const loaded = step.loaded
+
+  if (loaded.kind === "failed") {
+    return (
+      <Alert variant="error" className="mt-4" title="Feedback unavailable">
+        <p>{loaded.error}</p>
+      </Alert>
+    )
+  }
+
+  const initialFeedbackMaintained = loaded.kind === "maintained"
+  const initialCompleted = loaded.kind === "loaded"
+  const initialRenderedMarkdown = loaded.kind === "loaded" ? loaded.renderedMarkdown : null
+  const initialMatchingResponseCount = loaded.kind === "loaded" ? loaded.matchingResponseCount : 0
+  const initialSelectedResponseEndDate =
+    loaded.kind === "loaded" ? loaded.selectedResponseEndDate : null
+
+  return (
+    <ParticipantFeedback
+      studyId={studyId}
+      pseudonym={pseudonym}
+      jatosStudyId={jatosStudyId}
+      initialCompleted={initialCompleted}
+      initialRenderedMarkdown={initialRenderedMarkdown}
+      initialMatchingResponseCount={initialMatchingResponseCount}
+      initialSelectedResponseEndDate={initialSelectedResponseEndDate}
+      initialFeedbackMaintained={initialFeedbackMaintained}
+    />
+  )
 }

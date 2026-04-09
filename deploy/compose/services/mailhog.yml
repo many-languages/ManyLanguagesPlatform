@@ -1,0 +1,11 @@
+# deploy/compose/services/mailhog.yml
+#
+# Development email catcher. Optional — include in dev modes when EMAIL_ENABLED=true.
+
+services:
+  mailhog:
+    image: mailhog/mailhog:v1.0.1
+    restart: unless-stopped
+    ports:
+      - "1025:1025"
+      - "8025:8025"

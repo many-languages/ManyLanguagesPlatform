@@ -1,7 +1,7 @@
 import { Ctx } from "blitz"
 import db from "db"
-import { getResultsMetadata } from "@/src/lib/jatos/api/getResultsMetadata"
-import { hasCompletedStudy } from "@/src/lib/jatos/api/findStudyResultIdByComment"
+import { getResultsMetadataForParticipantDashboard } from "@/src/lib/jatos/jatosAccessService"
+import { hasCompletedStudy } from "@/src/lib/jatos/utils/findStudyResultIdByComment"
 
 export type ParticipantIncompleteStudy = {
   id: number
@@ -79,11 +79,9 @@ export async function getParticipantIncompleteStudies(
     jatosStudyIds.push(latestUpload.jatosStudyId)
   }
 
-  let metadata: Awaited<ReturnType<typeof getResultsMetadata>> | null = null
+  let metadata: Awaited<ReturnType<typeof getResultsMetadataForParticipantDashboard>> = null
   try {
-    if (jatosStudyIds.length > 0) {
-      metadata = await getResultsMetadata({ studyIds: jatosStudyIds })
-    }
+    metadata = await getResultsMetadataForParticipantDashboard({ userId, jatosStudyIds })
   } catch (error) {
     console.error("JATOS metadata fetch failed for participant incomplete studies:", error)
   }

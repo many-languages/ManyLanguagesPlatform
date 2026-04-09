@@ -1,5 +1,9 @@
-import { getResultsMetadata } from "@/src/lib/jatos/api/getResultsMetadata"
-import { getStudyProperties } from "@/src/lib/jatos/api/getStudyProperties"
+import { getBlitzContext } from "@/src/app/blitz-server"
+import {
+  getResultsMetadataForResearcher,
+  getStudyPropertiesForResearcher,
+  getEnrichedResultsForResearcher,
+} from "@/src/lib/jatos/jatosAccessService"
 import { getStudyParticipantsRsc } from "../../queries/getStudyParticipants"
 import StudySummary from "./client/StudySummary"
 import ParticipantManagementCard from "./client/ParticipantManagementCard"
@@ -36,39 +40,56 @@ export default async function ResearcherData({ studyId, study }: ResearcherDataP
     return null
   }
 
+  const { session } = await getBlitzContext()
+  const userId = session.userId
+  if (userId == null) {
+    return (
+      <Alert variant="error" className="mt-4">
+        <p>You must be logged in to view this study.</p>
+      </Alert>
+    )
+  }
+
   // Fetch all JATOS-related data in parallel with explicit error handling
   let participants: Awaited<ReturnType<typeof getStudyParticipantsRsc>> = []
-  let metadata: Awaited<ReturnType<typeof getResultsMetadata>> | null = null
-  let properties: Awaited<ReturnType<typeof getStudyProperties>> | null = null
+  let metadata: Awaited<ReturnType<typeof getResultsMetadataForResearcher>> | null = null
+  let properties: Awaited<ReturnType<typeof getStudyPropertiesForResearcher>> | null = null
+  let enrichedResults: Awaited<ReturnType<typeof getEnrichedResultsForResearcher>> = []
 
   try {
-    const results = await Promise.allSettled([
+    const [pRes, mRes, propRes, enrichedRes] = await Promise.allSettled([
       getStudyParticipantsRsc(studyId),
-      getResultsMetadata({ studyIds: [jatosStudyId] }),
-      getStudyProperties(study.jatosStudyUUID),
+      getResultsMetadataForResearcher({
+        studyId,
+        userId,
+        studyIds: [jatosStudyId],
+      }),
+      getStudyPropertiesForResearcher({
+        studyId,
+        userId,
+        jatosStudyUUID: study.jatosStudyUUID ?? undefined,
+      }),
+      getEnrichedResultsForResearcher({ studyId, userId, jatosStudyId }),
     ])
+    participants = pRes.status === "fulfilled" ? pRes.value : []
+    metadata = mRes.status === "fulfilled" ? mRes.value : null
+    properties = propRes.status === "fulfilled" ? propRes.value : null
+    enrichedResults = enrichedRes.status === "fulfilled" ? enrichedRes.value : []
 
-    // Handle participants result
-    if (results[0].status === "fulfilled") {
-      participants = results[0].value
-    } else {
-      console.error("Failed to fetch participants:", results[0].reason)
-      // Continue with empty array - participants are optional for display
+    // Handle participants - already extracted above
+    if (participants.length === 0 && metadata === null) {
+      console.error("Failed to fetch participants")
     }
 
-    // Handle metadata result
-    if (results[1].status === "fulfilled") {
-      metadata = results[1].value
-    } else {
-      console.error("Failed to fetch results metadata:", results[1].reason)
+    // Handle metadata - already extracted above
+    if (metadata === null) {
+      console.error("Failed to fetch results metadata")
       // Continue without metadata - will show empty summary
     }
 
     // Handle properties result - this is critical, so we need it
-    if (results[2].status === "fulfilled") {
-      properties = results[2].value
-    } else {
-      console.error("Failed to fetch study properties:", results[2].reason)
+    if (properties === null) {
+      console.error("Failed to fetch study properties")
       // Return error alert if properties fail
       return (
         <Alert variant="error" className="mt-4">
@@ -76,7 +97,7 @@ export default async function ResearcherData({ studyId, study }: ResearcherDataP
         </Alert>
       )
     }
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Unexpected error fetching JATOS data:", error)
     return (
       <Alert variant="error" className="mt-4">
@@ -116,6 +137,7 @@ export default async function ResearcherData({ studyId, study }: ResearcherDataP
         metadata={metadata}
         properties={properties}
         studyId={studyId}
+        initialEnrichedResults={enrichedResults}
       />
 
       {/* Feedback preview with pilot results */}

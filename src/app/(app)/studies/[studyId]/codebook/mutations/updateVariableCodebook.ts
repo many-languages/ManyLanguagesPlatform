@@ -1,7 +1,9 @@
 import { resolver } from "@blitzjs/rpc"
 import db from "db"
 import { z } from "zod"
-import { verifyResearcherStudyAccess } from "../../utils/verifyResearchersStudyAccess"
+import { withStudyAccess } from "../../utils/withStudyAccess"
+import { computeCodebookValidation } from "../utils/computeCodebookValidation"
+import { getPersonalDataViolationsForPersistedTemplate } from "../../feedback/utils/feedbackTemplatePersonalDataViolations"
 
 const UpdateVariableCodebook = z.object({
   studyId: z.number(),
@@ -15,6 +17,11 @@ const UpdateVariableCodebook = z.object({
   ),
 })
 
+export type UpdateVariableCodebookResult = {
+  success: true
+  feedbackPersonalDataConflict: boolean
+}
+
 // Server-side helper for RSCs
 export async function updateVariableCodebookRsc(input: {
   studyId: number
@@ -24,108 +31,118 @@ export async function updateVariableCodebookRsc(input: {
     description: string | null
     personalData: boolean
   }>
-}) {
-  await verifyResearcherStudyAccess(input.studyId)
-
-  const study = await db.study.findUnique({
-    where: { id: input.studyId },
-    select: {
-      jatosStudyUploads: {
-        orderBy: { createdAt: "desc" },
-        take: 1,
-        select: { id: true, approvedExtractionId: true },
-      },
-    },
-  })
-
-  const latestUpload = study?.jatosStudyUploads[0] ?? null
-  if (!latestUpload?.approvedExtractionId) {
-    throw new Error("No approved extraction found for this study.")
-  }
-
-  const extractionVariables = await db.studyVariable.findMany({
-    where: {
-      extractionSnapshotId: latestUpload.approvedExtractionId,
-    },
-    select: { variableKey: true },
-  })
-
-  const extractionVariableKeys = new Set(extractionVariables.map((v) => v.variableKey))
-  const inputVariableKeys = new Set(input.variables.map((v) => v.variableKey))
-
-  const allKeysValid = input.variables.every((v) => extractionVariableKeys.has(v.variableKey))
-  if (!allKeysValid) {
-    throw new Error("One or more variables do not belong to this study.")
-  }
-
-  const codebook =
-    (await db.codebook.findUnique({
-      where: { studyId: input.studyId },
-      select: { id: true },
-    })) ??
-    (await db.codebook.create({
-      data: { studyId: input.studyId },
-      select: { id: true },
-    }))
-
-  await db.$transaction(async (tx) => {
-    await tx.codebook.update({
-      where: { id: codebook.id },
-      data: {
-        validationStatus: "NEEDS_REVIEW",
-        validatedExtractionId: null,
-        validatedAt: null,
-        missingKeys: null,
-        extraKeys: null,
-        extractorVersion: null,
+}): Promise<UpdateVariableCodebookResult> {
+  return withStudyAccess(input.studyId, async (_sId, _uId) => {
+    const study = await db.study.findUnique({
+      where: { id: input.studyId },
+      select: {
+        jatosStudyUploads: {
+          orderBy: { createdAt: "desc" },
+          take: 1,
+          select: { id: true, approvedExtractionId: true },
+        },
       },
     })
 
-    await tx.codebookEntry.deleteMany({
+    const latestUpload = study?.jatosStudyUploads[0] ?? null
+    const approvedExtractionId = latestUpload?.approvedExtractionId
+    if (!latestUpload || !approvedExtractionId) {
+      throw new Error("No approved extraction found for this study.")
+    }
+
+    const extractionVariables = await db.studyVariable.findMany({
       where: {
-        codebookId: codebook.id,
-        variableKey: { notIn: Array.from(inputVariableKeys) },
+        extractionSnapshotId: approvedExtractionId,
       },
+      select: { variableKey: true },
     })
 
-    await Promise.all(
-      input.variables.map((v) =>
-        tx.codebookEntry.upsert({
-          where: {
-            codebookId_variableKey: {
+    const extractionVariableKeys = new Set(extractionVariables.map((v) => v.variableKey))
+    const inputVariableKeys = new Set(input.variables.map((v) => v.variableKey))
+
+    const allKeysValid = input.variables.every((v) => extractionVariableKeys.has(v.variableKey))
+    if (!allKeysValid) {
+      throw new Error("One or more variables do not belong to this study.")
+    }
+
+    const codebook =
+      (await db.codebook.findUnique({
+        where: { studyId: input.studyId },
+        select: { id: true },
+      })) ??
+      (await db.codebook.create({
+        data: { studyId: input.studyId },
+        select: { id: true },
+      }))
+
+    const codebookValidation = await db.$transaction(async (tx) => {
+      await tx.codebookEntry.deleteMany({
+        where: {
+          codebookId: codebook.id,
+          variableKey: { notIn: Array.from(inputVariableKeys) },
+        },
+      })
+
+      await Promise.all(
+        input.variables.map((v) =>
+          tx.codebookEntry.upsert({
+            where: {
+              codebookId_variableKey: {
+                codebookId: codebook.id,
+                variableKey: v.variableKey,
+              },
+            },
+            update: {
+              variableName: v.variableName,
+              description: v.description,
+              personalData: v.personalData,
+            },
+            create: {
               codebookId: codebook.id,
               variableKey: v.variableKey,
+              variableName: v.variableName,
+              description: v.description,
+              personalData: v.personalData,
             },
-          },
-          update: {
-            variableName: v.variableName,
-            description: v.description,
-            personalData: v.personalData,
-          },
-          create: {
-            codebookId: codebook.id,
-            variableKey: v.variableKey,
-            variableName: v.variableName,
-            description: v.description,
-            personalData: v.personalData,
-          },
-        })
+          })
+        )
       )
+
+      return computeCodebookValidation(input.studyId, tx)
+    })
+
+    const allHaveDescriptions = input.variables.every(
+      (v) => v.description && v.description.trim() !== ""
     )
-  })
 
-  const allHaveDescriptions = input.variables.every(
-    (v) => v.description && v.description.trim() !== ""
-  )
+    const step5Completed =
+      codebookValidation?.status !== "INVALID" && allHaveDescriptions && input.variables.length > 0
 
-  if (allHaveDescriptions && input.variables.length > 0) {
     await db.jatosStudyUpload.update({
       where: { id: latestUpload.id },
-      data: { step5Completed: true },
+      data: { step5Completed },
     })
-  }
 
-  return { success: true }
+    let feedbackPersonalDataConflict = false
+    const template = await db.feedbackTemplate.findFirst({
+      where: { studyId: input.studyId },
+      orderBy: { updatedAt: "desc" },
+      select: { content: true, requiredVariableNames: true },
+    })
+    if (template) {
+      try {
+        const violations = await getPersonalDataViolationsForPersistedTemplate(
+          input.studyId,
+          template
+        )
+        feedbackPersonalDataConflict = violations.length > 0
+      } catch (error) {
+        console.error("Codebook save: feedback personal-data check failed", error)
+      }
+    }
+
+    return { success: true as const, feedbackPersonalDataConflict }
+  })
 }
 
 // Blitz RPC for client usage

@@ -8,7 +8,7 @@
  * 3. Provides clear instructions if token is missing or invalid
  */
 
-const JATOS_BASE = process.env.JATOS_BASE || "http://jatos:9000"
+const JATOS_BASE = process.env.JATOS_BASE || "http://jatos.localhost"
 const JATOS_TOKEN = process.env.JATOS_TOKEN
 
 async function waitForJatos(maxAttempts = 30) {
@@ -21,7 +21,8 @@ async function waitForJatos(maxAttempts = 30) {
         signal: AbortSignal.timeout(5000),
       })
 
-      if (response.ok) {
+      // 2xx = OK. 401 = JATOS is up but unauthenticated (expected for this probe).
+      if (response.ok || response.status === 401) {
         console.log("✅ JATOS is ready!")
         return true
       }
@@ -92,12 +93,13 @@ async function validateToken() {
 function printTokenInstructions() {
   console.log("📝 To create a JATOS API token:")
   console.log("")
-  console.log("   1. Start the Docker services:")
-  console.log("      make dev")
+  console.log("   1. Start JATOS (use the mode you run), e.g.:")
+  console.log("      make dev-jatos-only")
+  console.log("      # or: make dev-host-app | make dev-fullstack")
   console.log("")
   console.log("   2. Open JATOS UI in your browser:")
   console.log("      http://jatos.localhost")
-  console.log("      (or http://localhost if JATOS_DOMAIN is set differently)")
+  console.log("      (or https://jatos.localhost if using local HTTPS)")
   console.log("")
   console.log("   3. Login with default credentials:")
   console.log("      Username: admin")
@@ -114,15 +116,13 @@ function printTokenInstructions() {
   console.log("")
   console.log('   8. Click "Generate" and copy the token')
   console.log("")
-  console.log("   9. Add the token to your .env file:")
+  console.log("   9. Add the token to repository root .env (host app) or")
+  console.log("      deploy/env/<mode>.env (app in Docker), e.g.:")
   console.log("      JATOS_TOKEN=your-token-here")
   console.log("")
-  console.log("   10. Restart the services:")
-  console.log("       make stop")
-  console.log("       make dev")
+  console.log("   10. Restart if needed: make down, then start your mode again.")
   console.log("")
-  console.log("   Alternatively, you can set it when starting:")
-  console.log("       JATOS_TOKEN=your-token-here make dev")
+  console.log("   See deploy/README.md and deploy/docs/development.md")
   console.log("")
 }
 

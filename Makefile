@@ -1,348 +1,241 @@
-.PHONY: dev dev-https prod stop logs clean build up down validate-token validate-token-online help prune prune-all certs env-file jatos-conf
+# ManyLanguages Platform — deployment convenience targets
+#
+# These targets wrap deploy/scripts/*.sh — they are convenience only.
+# The canonical deployment system lives in deploy/compose/.
+# See deploy/README.md for full documentation.
 
-# Use bash for better shell features
+.PHONY: help \
+	dev-jatos-only dev-jatos-only-https \
+	dev-host-app dev-host-app-https \
+	dev-fullstack dev-fullstack-https \
+	prod-up prod-up-letsencrypt \
+	jatos-conf-dev-jatos-only jatos-conf-dev-host-app \
+	jatos-conf-dev-fullstack jatos-conf-prod \
+	down logs ps restart clean build \
+	certs validate-token validate-setup prune prune-all
+
 SHELL := /bin/bash
 
--include .env
+SCRIPTS := deploy/scripts
+MODE_FILE := deploy/.active-mode
+JATOS_CONF_SCRIPT := scripts/render-jatos-conf.sh
 
-# Base compose files and commands
-COMPOSE_BASE=docker compose -f docker-compose.yml
-COMPOSE_DEV=$(COMPOSE_BASE)
-COMPOSE_DEV_HTTPS=$(COMPOSE_BASE) -f docker-compose.local-https.yml
-COMPOSE_DEV_HTTPS_ONLINE=$(COMPOSE_BASE) -f docker-compose.online-https.yml
-COMPOSE_PROD=$(COMPOSE_BASE) -f docker-compose.prod.yml
-JATOS_CONF_SCRIPT=scripts/render-jatos-conf.sh
+# ---------------------------------------------------------------------------
+# Help
+# ---------------------------------------------------------------------------
 
-# Optional mail services
-EMAIL_ENABLED ?= false
-ifeq ($(EMAIL_ENABLED),true)
-MAIL_PROFILE_FLAG=--profile mail
-else
-MAIL_PROFILE_FLAG=
+help:
+	@echo ""
+	@echo "  Deployment modes"
+	@echo "  ────────────────────────────────────────────────────────────────"
+	@echo "  make dev-jatos-only          JATOS + MySQL + Traefik (HTTP)"
+	@echo "  make dev-jatos-only-https    same with local mkcert HTTPS"
+	@echo "  make dev-host-app            Postgres + JATOS + Traefik; app on host"
+	@echo "  make dev-host-app-https      same with local mkcert HTTPS"
+	@echo "  make dev-fullstack           Everything in Docker (HTTP)"
+	@echo "  make dev-fullstack-https     Everything in Docker (HTTPS)"
+	@echo "  make prod-up                 Production (TLS handled externally)"
+	@echo "  make prod-up-letsencrypt     Production + automatic Let's Encrypt"
+	@echo ""
+	@echo "  Operations (uses the last-started mode)"
+	@echo "  ────────────────────────────────────────────────────────────────"
+	@echo "  make down                    Stop the active mode"
+	@echo "  make logs                    Tail logs"
+	@echo "  make ps                      List running containers"
+	@echo "  make restart                 down + up the active mode"
+	@echo "  make build                   Build app image for active mode"
+	@echo "  make clean                   Stop + remove volumes (data loss!)"
+	@echo ""
+	@echo "  Utilities"
+	@echo "  ────────────────────────────────────────────────────────────────"
+	@echo "  make certs                   Generate mkcert certificates"
+	@echo "  make validate-token          Validate JATOS token (host-based)"
+	@echo "  make validate-setup          Validate full setup"
+	@echo "  make prune                   Prune unused Docker resources"
+	@echo ""
+	@echo "  Flags (pass via environment):"
+	@echo "    MAIL=1 make dev-jatos-only       include Mailhog"
+	@echo "    MAIL=1 make dev-host-app         include Mailhog"
+	@echo "    MAIL=1 make dev-fullstack        include Mailhog"
+	@echo "    CRON=1 make dev-fullstack        include study-status cron"
+	@echo "    MAIL=1 CRON=1 make dev-fullstack both"
+	@echo ""
+	@echo "  Full docs: deploy/README.md"
+	@echo ""
+
+# ---------------------------------------------------------------------------
+# Internal: build script flags from env vars
+# ---------------------------------------------------------------------------
+
+SCRIPT_FLAGS :=
+ifdef MAIL
+SCRIPT_FLAGS += --mail
+endif
+ifdef CRON
+SCRIPT_FLAGS += --cron
 endif
 
-# Ensure .env exists before rendering configs
-env-file:
-	@if [ ! -f .env ]; then \
-		echo "⚠️  .env file not found. Creating from template..."; \
-		cp .env.example .env 2>/dev/null || echo "Please create .env file manually. See .env.example for reference."; \
-	fi
+# ---------------------------------------------------------------------------
+# Internal: render JATOS config from mode env
+# ---------------------------------------------------------------------------
 
-jatos-conf: env-file
-	@echo "🧩 Syncing JATOS config with .env..."
-	@bash $(JATOS_CONF_SCRIPT)
+jatos-conf-dev-jatos-only:
+	@$(JATOS_CONF_SCRIPT) deploy/env/dev-jatos-only.env
 
-# Default target
-help:
-	@echo "Usage:"
-	@echo "  make dev             Run entire stack (JATOS + Blitz app) in development mode (HTTP)"
-	@echo "  make dev-https       Run entire stack in development mode with HTTPS (mkcert)"
-	@echo "  make dev-https-online Run stack with HTTPS exposed to the internet (Lightsail/real-domain)"
-	@echo "  make prod            Run entire stack in production mode"
-	@echo "  make stop            Stop containers"
-	@echo "  make logs            Tail logs"
-	@echo "  make clean           Remove containers and volumes (⚠️  data loss!)"
-	@echo "  make build           Build application containers"
-	@echo "  make validate-token  Validate JATOS token (requires JATOS_TOKEN in .env)"
-	@echo "  make certs           Generate SSL certificates (for local HTTPS)"
-	@echo ""
-	@echo "Environment toggles:"
-	@echo "  EMAIL_ENABLED=true make dev    Enable Mailhog + SMTP during dev"
-	@echo ""
-	@echo "For more information, see DEPLOYMENT.md"
+jatos-conf-dev-host-app:
+	@$(JATOS_CONF_SCRIPT) deploy/env/dev-host-app.env
 
-# Development mode
-dev: jatos-conf
-	@echo "🚀 Starting development environment..."
-	@echo "📦 Starting Docker services..."
-	$(COMPOSE_DEV) $(MAIL_PROFILE_FLAG) up -d
-	@echo ""
-	@echo "⏳ Waiting for services to be ready..."
-	@sleep 10
-	@echo ""
-	@echo "✅ Services are starting!"
-	@echo ""
-	@echo "📋 Service URLs:"
-	@echo "   - Blitz app: http://localhost:3000"
-	@echo "   - JATOS: http://jatos.localhost (or http://localhost)"
-	@echo ""
-	@echo "🔑 JATOS Token Setup (Required):"
-	@echo ""
-	@echo "   1. Wait for JATOS to be ready (30-60 seconds)"
-	@echo "      Check logs: make logs"
-	@echo ""
-	@echo "   2. Open JATOS UI in your browser:"
-	@echo "      http://jatos.localhost"
-	@echo "      (or http://localhost if JATOS_DOMAIN is set differently)"
-	@echo ""
-	@echo "   3. Login with default credentials:"
-	@echo "      Username: admin"
-	@echo "      Password: admin"
-	@echo ""
-	@echo "   4. Navigate to your user profile:"
-	@echo "      Click your username in the top-right corner"
-	@echo ""
-	@echo "   5. Go to 'My API tokens' or 'API Tokens'"
-	@echo ""
-	@echo "   6. Click 'New Token' or 'Create Token'"
-	@echo ""
-	@echo "   7. Provide a name (e.g., 'docker-token') and set expiration"
-	@echo ""
-	@echo "   8. Click 'Generate' and copy the token"
-	@echo "      ⚠️  The token will only be shown once!"
-	@echo ""
-	@echo "   9. Add the token to your .env file:"
-	@echo "      JATOS_TOKEN=your-token-here"
-	@echo ""
-	@echo "  10. Restart the services:"
-	@echo "      make stop"
-	@echo "      make dev"
-	@echo ""
-	@echo "  11. Validate the token:"
-	@echo "      make validate-token"
-	@echo ""
-	@echo "📊 To view logs:"
-	@echo "   make logs"
-	@echo ""
-	@echo "🛑 To stop:"
-	@echo "   make stop"
-	@echo ""
-	@echo "📖 For more information, see DEPLOYMENT.md"
-	@echo ""
+jatos-conf-dev-fullstack:
+	@$(JATOS_CONF_SCRIPT) deploy/env/dev-fullstack.env
 
-# Development mode with HTTPS
-dev-https: certs jatos-conf
-	@echo "🚀 Starting development environment with HTTPS..."
-	@echo "📦 Starting Docker services with HTTPS..."
-	$(COMPOSE_DEV_HTTPS) $(MAIL_PROFILE_FLAG) up -d
-	@echo ""
-	@echo "⏳ Waiting for services to be ready..."
-	@sleep 10
-	@echo ""
-	@echo "✅ Services are starting!"
-	@echo ""
-	@echo "📋 Service URLs (HTTPS):"
-	@echo "   - Blitz app: https://app.localhost"
-	@echo "   - JATOS: https://jatos.localhost"
-	@echo ""
-	@echo "⚠️  Note: You may need to accept the self-signed certificate in your browser"
-	@echo "   (mkcert certificates are trusted locally)"
-	@echo ""
-	@echo "🔑 JATOS Token Setup (Required):"
-	@echo ""
-	@echo "   1. Wait for JATOS to be ready (30-60 seconds)"
-	@echo "      Check logs: make logs"
-	@echo ""
-	@echo "   2. Open JATOS UI in your browser:"
-	@echo "      https://jatos.localhost"
-	@echo "      (Accept the certificate warning if prompted)"
-	@echo ""
-	@echo "   3. Login with default credentials:"
-	@echo "      Username: admin"
-	@echo "      Password: admin"
-	@echo ""
-	@echo "   4. Navigate to your user profile:"
-	@echo "      Click your username in the top-right corner"
-	@echo ""
-	@echo "   5. Go to 'My API tokens' or 'API Tokens'"
-	@echo ""
-	@echo "   6. Click 'New Token' or 'Create Token'"
-	@echo ""
-	@echo "   7. Provide a name (e.g., 'docker-token') and set expiration"
-	@echo ""
-	@echo "   8. Click 'Generate' and copy the token"
-	@echo "      ⚠️  The token will only be shown once!"
-	@echo ""
-	@echo "   9. Add the token to your .env file:"
-	@echo "      JATOS_TOKEN=your-token-here"
-	@echo ""
-	@echo "  10. Update NEXT_PUBLIC_JATOS_BASE in .env:"
-	@echo "      NEXT_PUBLIC_JATOS_BASE=https://jatos.localhost"
-	@echo ""
-	@echo "  11. Restart the services:"
-	@echo "      make stop"
-	@echo "      make dev-https"
-	@echo ""
-	@echo "  12. Validate the token:"
-	@echo "      make validate-token"
-	@echo ""
-	@echo "📊 To view logs:"
-	@echo "   make logs"
-	@echo ""
-	@echo "🛑 To stop:"
-	@echo "   make stop"
-	@echo ""
-	@echo "📖 For more information, see DEPLOYMENT.md"
-	@echo ""
+jatos-conf-prod:
+	@$(JATOS_CONF_SCRIPT) deploy/env/prod.env
 
-# Online HTTPS development (Lightsail-ready)
-dev-https-online: jatos-conf
-	@echo "🚀 Starting online HTTPS development environment..."
-	@if [ -z "${TLS_EMAIL}" ]; then \
-		echo "❌ TLS_EMAIL must be set when using dev-https-online (Traefik needs a contact email)"; \
+# ---------------------------------------------------------------------------
+# Mode targets
+# ---------------------------------------------------------------------------
+
+dev-jatos-only: jatos-conf-dev-jatos-only
+	@echo "dev-jatos-only $(SCRIPT_FLAGS)" > $(MODE_FILE)
+	@$(SCRIPTS)/dev-jatos-only.sh $(SCRIPT_FLAGS)
+
+dev-jatos-only-https: certs jatos-conf-dev-jatos-only
+	@echo "dev-jatos-only --https $(SCRIPT_FLAGS)" > $(MODE_FILE)
+	@$(SCRIPTS)/dev-jatos-only.sh --https $(SCRIPT_FLAGS)
+
+dev-host-app: jatos-conf-dev-host-app
+	@echo "dev-host-app $(SCRIPT_FLAGS)" > $(MODE_FILE)
+	@$(SCRIPTS)/dev-host-app.sh $(SCRIPT_FLAGS)
+	@echo ""
+	@echo "Infrastructure is running. Start the app on the host:"
+	@echo "  npm run dev"
+
+dev-host-app-https: certs jatos-conf-dev-host-app
+	@echo "dev-host-app --https $(SCRIPT_FLAGS)" > $(MODE_FILE)
+	@$(SCRIPTS)/dev-host-app.sh --https $(SCRIPT_FLAGS)
+	@echo ""
+	@echo "Infrastructure is running (HTTPS). Start the app on the host:"
+	@echo "  npm run dev"
+
+dev-fullstack: jatos-conf-dev-fullstack
+	@echo "dev-fullstack $(SCRIPT_FLAGS)" > $(MODE_FILE)
+	@$(SCRIPTS)/dev-fullstack.sh $(SCRIPT_FLAGS)
+
+dev-fullstack-https: certs jatos-conf-dev-fullstack
+	@echo "dev-fullstack --https $(SCRIPT_FLAGS)" > $(MODE_FILE)
+	@$(SCRIPTS)/dev-fullstack.sh --https $(SCRIPT_FLAGS)
+
+prod-up: jatos-conf-prod
+	@echo "prod-up" > $(MODE_FILE)
+	@$(SCRIPTS)/prod-up.sh
+
+prod-up-letsencrypt: jatos-conf-prod
+	@echo "prod-up --letsencrypt" > $(MODE_FILE)
+	@$(SCRIPTS)/prod-up.sh --letsencrypt
+
+# ---------------------------------------------------------------------------
+# Operations (resolve active mode from MODE_FILE)
+# ---------------------------------------------------------------------------
+
+define resolve-mode
+	@if [ ! -f $(MODE_FILE) ]; then \
+		echo "Error: no active mode. Start one first (e.g. make dev-fullstack)."; \
 		exit 1; \
 	fi
-	@mkdir -p traefik
-	@touch traefik/acme.json
-	@chmod 600 traefik/acme.json
-	@echo "📦 Starting Docker services with TLS via Traefik (Lightsail/online)"
-	$(COMPOSE_DEV_HTTPS_ONLINE) $(MAIL_PROFILE_FLAG) up -d
-	@echo ""
-	@echo "⏳ Waiting for services to be ready..."
-	@sleep 10
-	@echo ""
-	@echo "✅ Services are starting!"
-	@echo ""
-	@echo "📋 Service URLs (HTTPS):"
-	@echo "   - Blitz app: https://${APP_DOMAIN:-app.localhost}"
-	@echo "   - JATOS: https://${JATOS_DOMAIN:-jatos.localhost}"
-	@echo ""
-	@echo "⚠️  Ensure DNS for ${APP_DOMAIN:-app.localhost} and ${JATOS_DOMAIN:-jatos.localhost} points to this host."
-	@echo ""
-	@echo "🔑 JATOS Token Setup (Required):"
-	@echo ""
-	@echo "   1. Wait for JATOS to be ready (30-60 seconds)"
-	@echo "      Check logs: make logs"
-	@echo ""
-	@echo "   2. Open JATOS UI in your browser:"
-	@echo "      https://${JATOS_DOMAIN:-jatos.localhost}"
-	@echo ""
-	@echo "   3. Login with default credentials:"
-	@echo "      Username: admin"
-	@echo "      Password: admin"
-	@echo ""
-	@echo "   4. Create or copy an API token"
-	@echo "   5. Add the token to your .env file:"
-	@echo "      JATOS_TOKEN=your-token-here"
-	@echo ""
-	@echo "   6. Restart the services:"
-	@echo "      make stop"
-	@echo "      make dev-https-online"
-	@echo ""
-	@echo "  Optional: run make validate-token once you have the token set."
-	@echo ""
+endef
 
-# Generate SSL certificates
-certs: certs/localhost.pem certs/localhost-key.pem
+define run-active
+	$(call resolve-mode)
+	@MODE_LINE=$$(cat $(MODE_FILE)); \
+	SCRIPT=$$(echo "$$MODE_LINE" | awk '{print $$1}'); \
+	FLAGS=$$(echo "$$MODE_LINE" | sed 's/^[^ ]* *//' | sed 's/^'"$$SCRIPT"'$$//'); \
+	$(SCRIPTS)/$$SCRIPT.sh $$FLAGS $(1)
+endef
 
-certs/localhost.pem certs/localhost-key.pem:
-	@echo "🔑 Generating SSL certificates..."
-	@./scripts/gen-certs.sh
+down:
+	$(call run-active,down)
+	@rm -f $(MODE_FILE)
 
-# Production mode
-prod:
-	@echo "🚀 Starting production environment..."
-	@if [ ! -f .env ]; then \
-		echo "❌ .env file not found. Please create it from .env.example"; \
-		exit 1; \
-	fi
-	@if [ -z "$$JATOS_TOKEN" ]; then \
-		echo "⚠️  Warning: JATOS_TOKEN not set in .env file"; \
-		echo "   The app will not be able to communicate with JATOS until token is set."; \
-		echo "   See DEPLOYMENT.md for instructions."; \
-	fi
-	@echo "📦 Building and starting Docker services..."
-	$(COMPOSE_PROD) up -d --build
-	@echo ""
-	@echo "⏳ Waiting for services to be ready..."
-	@sleep 15
-	@echo ""
-	@echo "✅ Services are running in production mode!"
-	@echo ""
-	@echo "📋 Service URLs:"
-	@echo "   - Blitz app: http://localhost:3000"
-	@echo "   - JATOS: https://$$(grep JATOS_DOMAIN .env | cut -d '=' -f2 || echo 'jatos.localhost')"
-	@echo ""
-
-# Stop containers
-stop:
-	@echo "🛑 Stopping containers..."
-	$(COMPOSE_BASE) down
-	@echo "✅ Containers stopped"
-
-# View logs
 logs:
-	@echo "📊 Showing logs (Ctrl+C to exit)..."
-	$(COMPOSE_BASE) logs -f
+	$(call run-active,logs -f)
 
-# Clean (remove containers and volumes)
+ps:
+	$(call run-active,ps)
+
+restart:
+	$(call resolve-mode)
+	@MODE_LINE=$$(cat $(MODE_FILE)); \
+	SCRIPT=$$(echo "$$MODE_LINE" | awk '{print $$1}'); \
+	FLAGS=$$(echo "$$MODE_LINE" | sed 's/^[^ ]* *//' | sed 's/^'"$$SCRIPT"'$$//'); \
+	$(SCRIPTS)/$$SCRIPT.sh $$FLAGS down && \
+	$(SCRIPTS)/$$SCRIPT.sh $$FLAGS up -d
+
+build:
+	$(call run-active,build)
+
 clean:
-	@echo "⚠️  WARNING: This will remove all containers and volumes!"
-	@echo "   All data will be lost!"
+	@echo "WARNING: This will remove all containers AND volumes!"
+	@echo "All database data will be lost."
 	@read -p "Are you sure? [y/N] " -n 1 -r; \
 	echo; \
 	if [[ $$REPLY =~ ^[Yy]$$ ]]; then \
-		$(COMPOSE_BASE) down -v; \
-		echo "✅ All containers and volumes removed!"; \
+		if [ -f $(MODE_FILE) ]; then \
+			MODE_LINE=$$(cat $(MODE_FILE)); \
+			SCRIPT=$$(echo "$$MODE_LINE" | awk '{print $$1}'); \
+			FLAGS=$$(echo "$$MODE_LINE" | sed 's/^[^ ]* *//' | sed 's/^'"$$SCRIPT"'$$//'); \
+			$(SCRIPTS)/$$SCRIPT.sh $$FLAGS down -v; \
+			rm -f $(MODE_FILE); \
+		else \
+			echo "No active mode recorded. Removing mlp-network containers..."; \
+			docker network inspect mlp-network -f '{{range .Containers}}{{.Name}} {{end}}' 2>/dev/null | \
+				xargs -r docker rm -f 2>/dev/null || true; \
+		fi; \
+		echo "Done."; \
 	else \
-		echo "❌ Clean cancelled"; \
+		echo "Cancelled."; \
 	fi
 
-# Build containers
-build:
-	@echo "🔨 Building containers..."
-	$(COMPOSE_BASE) build
-	@echo "✅ Build complete"
+# ---------------------------------------------------------------------------
+# Utilities
+# ---------------------------------------------------------------------------
 
-# Start services (without initial setup)
-up:
-	$(COMPOSE_BASE) up -d
+certs:
+	@$(SCRIPTS)/gen-certs.sh
 
-# Stop and remove containers (keep volumes)
-down:
-	$(COMPOSE_BASE) down
-
-# Validate JATOS token
 validate-token:
-	@echo "🔍 Validating JATOS token..."
-	@if [ ! -f .env ]; then \
-		echo "❌ .env file not found"; \
-		exit 1; \
-	fi
-	@if ! grep -q "^JATOS_TOKEN=" .env || grep -q "^JATOS_TOKEN=$$" .env || grep -q "^JATOS_TOKEN=\"\"" .env; then \
-		echo "❌ JATOS_TOKEN not set in .env file"; \
-		echo ""; \
-		echo "Please add JATOS_TOKEN to your .env file."; \
-		echo "See DEPLOYMENT.md for instructions on creating a token."; \
-		exit 1; \
-	fi
-	@echo "✅ JATOS_TOKEN found in .env file, validating..."
-	@JATOS_TOKEN=$$(grep "^JATOS_TOKEN=" .env | cut -d '=' -f2- | tr -d '"' | tr -d "'"); \
-	export JATOS_TOKEN; \
-	$(COMPOSE_BASE) --profile validation run --rm -e JATOS_TOKEN="$$JATOS_TOKEN" jatos-token-validator
+	@echo "Validating JATOS token (host-based)..."
+	@if [ -f deploy/env/dev-jatos-only.env ]; then \
+		set -a; . deploy/env/dev-jatos-only.env; set +a; \
+	elif [ -f deploy/env/dev-host-app.env ]; then \
+		set -a; . deploy/env/dev-host-app.env; set +a; \
+	fi; \
+	if [ -f .env ]; then \
+		set -a; . .env; set +a; \
+	fi; \
+	JATOS_BASE=$${JATOS_BASE:-http://jatos.localhost} \
+	node scripts/validate-jatos-token.js
 
-validate-token-online:
-	@echo "🔍 Validating JATOS token (online HTTPS stack)..."
-	@if [ ! -f .env ]; then \
-		echo "❌ .env file not found"; \
-		exit 1; \
-	fi
-	@JATOS_TOKEN=$$(grep "^JATOS_TOKEN=" .env | cut -d '=' -f2- | tr -d '"' | tr -d "'"); \
-	export JATOS_TOKEN; \
-	$(COMPOSE_DEV_HTTPS_ONLINE) --profile validation run --rm -e JATOS_TOKEN="$$JATOS_TOKEN" jatos-token-validator
+validate-setup:
+	@npx tsx scripts/validate-setup.ts
 
-# Prune unused Docker resources (safe - doesn't remove volumes)
 prune:
-	@echo "🧹 Pruning unused Docker resources..."
-	@echo "   (This will remove stopped containers, unused images, and build cache)"
+	@echo "Pruning unused Docker resources (stopped containers, dangling images, build cache)..."
 	@read -p "Continue? [y/N] " -n 1 -r; \
 	echo; \
 	if [[ $$REPLY =~ ^[Yy]$$ ]]; then \
 		docker system prune -f; \
-		echo "✅ Prune complete"; \
+		echo "Done."; \
 	else \
-		echo "❌ Prune cancelled"; \
+		echo "Cancelled."; \
 	fi
 
-# Prune everything including unused volumes (more aggressive)
 prune-all:
-	@echo "⚠️  WARNING: This will remove ALL unused Docker resources including volumes!"
-	@echo "   (This does NOT affect your project's data volumes)"
+	@echo "WARNING: This removes ALL unused Docker resources including volumes!"
 	@read -p "Continue? [y/N] " -n 1 -r; \
 	echo; \
 	if [[ $$REPLY =~ ^[Yy]$$ ]]; then \
 		docker system prune -a --volumes -f; \
-		echo "✅ Full prune complete"; \
+		echo "Done."; \
 	else \
-		echo "❌ Prune cancelled"; \
+		echo "Cancelled."; \
 	fi

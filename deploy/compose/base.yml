@@ -1,0 +1,14 @@
+# deploy/compose/base.yml
+#
+# Shared Compose configuration: networks, naming conventions.
+# Service definitions live in services/*.yml; mode overlays in modes/*.yml.
+#
+# Usage (always combined with service and mode files):
+#   docker compose -f deploy/compose/base.yml \
+#                  -f deploy/compose/services/jatos-db.yml \
+#                  -f deploy/compose/services/jatos.yml \
+#                  -f deploy/compose/modes/dev-jatos-only.yml up -d
+
+networks:
+  default:
+    name: mlp-network

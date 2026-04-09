@@ -6,7 +6,7 @@ import ParticipantFeedbackData from "../feedback/components/ParticipantFeedbackD
 import { checkParticipantCompletionAction } from "../feedback/actions/checkParticipantCompletion"
 import { CheckCircleIcon } from "@heroicons/react/24/solid"
 import StudyInformationCard from "./client/StudyInformationCard"
-import RunPilotButton from "../setup/step3/components/client/RunPilotButton"
+import RunStudyButton from "../setup/step3/components/client/RunStudyButton"
 
 interface ParticipantDataProps {
   studyId: number
@@ -57,7 +57,7 @@ export default async function ParticipantData({ studyId, study }: ParticipantDat
     // Build actions for participant
     const participantActions = shouldShowButton ? (
       <div className="flex justify-center">
-        <RunPilotButton runUrl={participant.jatosRunUrl} isActive={canRunStudy} />
+        <RunStudyButton runUrl={participant.jatosRunUrl} isActive={canRunStudy} label="Run study" />
       </div>
     ) : undefined
 
@@ -71,12 +71,16 @@ export default async function ParticipantData({ studyId, study }: ParticipantDat
           actions={participantActions}
         />
 
-        {/* Completion message for SINGLE run studies */}
-        {isCompleted && isSingleRunStudy && (
+        {/* Completion message once at least one run exists (copy differs for reusable personal links) */}
+        {isCompleted && (isSingleRunStudy || jatosWorkerType === "MULTIPLE") && (
           <div className="flex flex-col items-center justify-center mt-4 p-6 rounded-lg bg-success/10 border border-success/20">
             <CheckCircleIcon className="h-12 w-12 text-success mb-3" />
             <h3 className="text-lg font-semibold text-success mb-1">Study Completed</h3>
-            <p className="text-sm text-base-content/70">Thank you for your participation!</p>
+            <p className="text-sm text-base-content/70 text-center max-w-md">
+              {jatosWorkerType === "MULTIPLE"
+                ? "You can complete this study again; your latest run is recorded."
+                : "Thank you for your participation!"}
+            </p>
           </div>
         )}
 
@@ -87,7 +91,7 @@ export default async function ParticipantData({ studyId, study }: ParticipantDat
         />
       </>
     )
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Error fetching participant data:", error)
     return (
       <Alert variant="error" className="mt-4">

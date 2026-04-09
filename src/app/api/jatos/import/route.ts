@@ -1,133 +1,102 @@
 /**
  * JATOS API Route: Import Study
  *
- * Imports a JATOS study file (.jzip) to the JATOS server.
+ * Sole exception to the "no API routes" rule. FormData upload requires this route.
+ * Delegates to provisioning/importJatosStudy for JATOS upload + DB + membership sync.
  *
  * @route POST /api/jatos/import
- * @body FormData with "studyFile" field (File)
- * @returns JATOS study ID, UUID, and filename
- * @returns JATOS metadata; includes studyExists flag when applicable
+ * @body FormData: studyFile (File), studyId (number), jatosWorkerType ("SINGLE"|"MULTIPLE")
+ * @returns Import result with jatosStudyId, jatosStudyUUID, latestUpload, etc.
  */
 import { NextResponse } from "next/server"
-import { createHash } from "crypto"
-import JSZip from "jszip"
-import type { JatosImportResponse, JatosApiError } from "@/src/types/jatos-api"
+import { getBlitzContext } from "@/src/app/blitz-server"
+import { importJatosStudyForResearcher } from "@/src/lib/jatos/provisioning/importJatosStudy"
+import type { JatosApiError } from "@/src/types/jatos-api"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
+export const maxDuration = 60
 
-// Increase max file size (default is 4.5MB, increase to 100MB for JATOS files)
-export const maxDuration = 60 // 60 seconds timeout
-
-const JATOS_BASE = process.env.JATOS_BASE!
-const JATOS_TOKEN = process.env.JATOS_TOKEN!
-
-async function computeBuildHash(file: File): Promise<string> {
-  const arrayBuffer = await file.arrayBuffer()
-  const zip = await JSZip.loadAsync(arrayBuffer)
-  const entries = Object.entries(zip.files)
-    .filter(([, entry]) => !entry.dir)
-    .sort(([a], [b]) => a.localeCompare(b))
-
-  const hash = createHash("sha256")
-
-  for (const [filename, entry] of entries) {
-    hash.update(filename)
-    hash.update("\0")
-    const content = await entry.async("uint8array")
-    hash.update(content)
-    hash.update("\0")
-  }
-
-  return hash.digest("hex")
-}
+const MAX_FILE_SIZE = 100 * 1024 * 1024 // 100MB
 
 export async function POST(
   req: Request
-): Promise<NextResponse<JatosImportResponse | JatosApiError>> {
+): Promise<
+  NextResponse<Awaited<ReturnType<typeof importJatosStudyForResearcher>> | JatosApiError>
+> {
   try {
     const form = await req.formData()
     const file = form.get("studyFile") as File | null
+    const studyIdRaw = form.get("studyId") as string | null
+    const jatosWorkerType = form.get("jatosWorkerType") as string | null
 
     if (!file) {
-      const errorResponse: JatosApiError = { error: "Missing studyFile" }
-      return NextResponse.json(errorResponse, { status: 400 })
+      return NextResponse.json({ error: "Missing studyFile" } as JatosApiError, { status: 400 })
+    }
+    if (!studyIdRaw) {
+      return NextResponse.json({ error: "Missing studyId" } as JatosApiError, { status: 400 })
+    }
+    if (!jatosWorkerType || !["SINGLE", "MULTIPLE"].includes(jatosWorkerType)) {
+      return NextResponse.json(
+        { error: "Missing or invalid jatosWorkerType (SINGLE or MULTIPLE)" } as JatosApiError,
+        { status: 400 }
+      )
     }
 
     if (!file.name.endsWith(".jzip")) {
-      const errorResponse: JatosApiError = { error: "Expected a .jzip file" }
-      return NextResponse.json(errorResponse, { status: 400 })
+      return NextResponse.json({ error: "Expected a .jzip file" } as JatosApiError, { status: 400 })
     }
-
-    // Check file size (100MB limit)
-    const MAX_FILE_SIZE = 100 * 1024 * 1024 // 100MB
     if (file.size > MAX_FILE_SIZE) {
-      const errorResponse: JatosApiError = {
-        error: `File too large. Maximum size is 100MB, got ${(file.size / 1024 / 1024).toFixed(
-          2
-        )}MB`,
-      }
-      return NextResponse.json(errorResponse, { status: 400 })
+      return NextResponse.json(
+        {
+          error: `File too large. Maximum size is 100MB, got ${(file.size / 1024 / 1024).toFixed(
+            2
+          )}MB`,
+        } as JatosApiError,
+        { status: 400 }
+      )
     }
 
-    let buildHash: string
-    try {
-      buildHash = await computeBuildHash(file)
-    } catch (error) {
-      console.error("Failed to hash JATOS study file:", error)
-      const errorResponse: JatosApiError = { error: "Failed to read JATOS .jzip archive" }
-      return NextResponse.json(errorResponse, { status: 400 })
+    const studyId = parseInt(studyIdRaw, 10)
+    if (!Number.isFinite(studyId)) {
+      return NextResponse.json({ error: "Invalid studyId" } as JatosApiError, { status: 400 })
     }
 
-    // Forward to JATOS
-    const out = new FormData()
-    out.append("study", file, file.name)
+    const { session } = await getBlitzContext()
+    const userId = session.userId
+    if (userId == null) {
+      return NextResponse.json({ error: "Not authenticated" } as JatosApiError, { status: 401 })
+    }
 
-    const jatosUrl = `${JATOS_BASE}/jatos/api/v1/study`
-    const res = await fetch(jatosUrl, {
-      method: "POST",
-      headers: { accept: "application/json", Authorization: `Bearer ${JATOS_TOKEN}` },
-      body: out,
+    const result = await importJatosStudyForResearcher({
+      file,
+      studyId,
+      userId,
+      jatosWorkerType: jatosWorkerType as "SINGLE" | "MULTIPLE",
     })
 
-    const text = await res.text()
-
-    if (!res.ok) {
-      const errorResponse: JatosApiError = { error: text }
-      return NextResponse.json(errorResponse, { status: res.status })
+    return NextResponse.json(result)
+  } catch (error: unknown) {
+    const err = error as {
+      code?: string
+      meta?: { target?: string[] }
+      message?: string
+      jatosStudyUUID?: string
     }
-
-    const json = JSON.parse(text) as {
-      id: number
-      uuid?: string
-      studyExists?: boolean
-      currentStudyTitle?: string
-      uploadedStudyTitle?: string
-      uploadedDirExists?: boolean
+    if (err?.code === "P2002") {
+      const target = err?.meta?.target
+      if (target?.includes?.("jatosStudyUUID")) {
+        return NextResponse.json(
+          {
+            error: "UUID already exists in database",
+            jatosStudyUUID: err.jatosStudyUUID,
+          } as JatosApiError & { jatosStudyUUID?: string },
+          { status: 409 }
+        )
+      }
     }
-
-    if (!json.uuid) {
-      const errorResponse: JatosApiError = { error: "Missing uuid in JATOS response" }
-      return NextResponse.json(errorResponse, { status: 502 })
-    }
-
-    // Normal success response
-    const successResponse: JatosImportResponse = {
-      jatosStudyId: json.id,
-      jatosStudyUUID: json.uuid,
-      jatosFileName: file.name,
-      buildHash,
-      hashAlgorithm: "sha256",
-      studyExists: json.studyExists ?? false,
-      currentStudyTitle: json.currentStudyTitle,
-      uploadedStudyTitle: json.uploadedStudyTitle,
-    }
-    return NextResponse.json(successResponse)
-  } catch (error: any) {
     console.error("Error importing JATOS study:", error)
-    const errorResponse: JatosApiError = {
-      error: error.message || "Failed to import study",
-    }
-    return NextResponse.json(errorResponse, { status: 500 })
+    const message = error instanceof Error ? error.message : "Failed to import study"
+    return NextResponse.json({ error: message } as JatosApiError, { status: 500 })
   }
 }

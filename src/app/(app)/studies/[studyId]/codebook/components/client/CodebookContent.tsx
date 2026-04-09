@@ -5,11 +5,15 @@ import { useRouter } from "next/navigation"
 import { useMutation } from "@blitzjs/rpc"
 import { toast } from "react-hot-toast"
 
-import updateVariableCodebook from "../../mutations/updateVariableCodebook"
+import updateVariableCodebook, {
+  type UpdateVariableCodebookResult,
+} from "../../mutations/updateVariableCodebook"
+import { CODEBOOK_SAVE_FEEDBACK_PERSONAL_DATA_HINT } from "../../utils/codebookSaveMessages"
 import StepNavigation from "../../../setup/components/client/StepNavigation"
 import { Alert } from "@/src/app/components/Alert"
 import { AsyncButton } from "@/src/app/components/AsyncButton"
 import Card from "@/src/app/components/Card"
+import { Textarea } from "@/src/app/components/fields"
 
 interface VariableCodebookEntry {
   id: number
@@ -34,9 +38,7 @@ interface CodebookContentProps {
     personalData: boolean
   }>
   codebook: {
-    validationStatus?: "NEEDS_REVIEW" | "VALID" | "INVALID" | null
-    validatedExtractionId?: number | null
-    validatedAt?: Date | string | null
+    status?: "VALID" | "INVALID" | "NO_CODEBOOK" | "NO_EXTRACTION" | null
     missingKeys?: string[] | null
     extraKeys?: string[] | null
     updatedAt?: Date | string
@@ -67,8 +69,7 @@ export default function CodebookContent({
     ? (codebook?.missingKeys as string[])
     : []
   const extraKeys = Array.isArray(codebook?.extraKeys) ? (codebook?.extraKeys as string[]) : []
-  const validationStatus = codebook?.validationStatus ?? null
-  const validatedExtractionId = codebook?.validatedExtractionId ?? null
+  const validationStatus = codebook?.status ?? null
   const codebookUpdatedAt = codebook?.updatedAt ? new Date(codebook.updatedAt) : null
   const approvedExtractionAt = approvedExtractionApprovedAt
     ? new Date(approvedExtractionApprovedAt)
@@ -78,7 +79,6 @@ export default function CodebookContent({
   const showSoftWarning =
     validationStatus === "VALID" &&
     approvedExtractionId !== null &&
-    validatedExtractionId === approvedExtractionId &&
     approvedExtractionAt !== null &&
     codebookUpdatedAt !== null &&
     codebookUpdatedAt < approvedExtractionAt
@@ -118,7 +118,7 @@ export default function CodebookContent({
 
     setIsSaving(true)
     try {
-      await updateVariableCodebookMutation({
+      const result = (await updateVariableCodebookMutation({
         studyId,
         variables: variables.map((v) => ({
           variableKey: v.variableKey,
@@ -126,8 +126,11 @@ export default function CodebookContent({
           description: v.description,
           personalData: v.personalData,
         })),
-      })
+      })) as UpdateVariableCodebookResult
       toast.success("Codebook saved successfully!")
+      if (result.feedbackPersonalDataConflict) {
+        toast(CODEBOOK_SAVE_FEEDBACK_PERSONAL_DATA_HINT, { duration: 7000 })
+      }
       setCodebookSaved(true)
       router.refresh()
       return true
@@ -140,26 +143,35 @@ export default function CodebookContent({
   }
 
   const handleNext = async () => {
-    // If not saved, try to save first
-    if (!codebookSaved) {
-      const success = await handleSave()
-      if (!success) return
-    }
+    // Always save to update step5Completed (fixes stale step flags)
+    const success = await handleSave()
+    if (!success) return
     router.push(`/studies/${studyId}/setup/step6`)
   }
 
   if (variables.length === 0) {
     return (
-      <Alert variant="warning">
-        No variables found. Please complete step 4 (Debug + approve extraction) first to extract
-        variables from your pilot data.
-      </Alert>
+      <>
+        <Alert variant="warning">
+          No variables found. Please complete step 4 (Debug + approve extraction) first to extract
+          variables from your pilot data.
+        </Alert>
+        <StepNavigation
+          studyId={studyId}
+          prev="step4"
+          next="step6"
+          disableNext
+          nextTooltip="No variables were extracted. Go back to Step 4 and rerun extraction."
+        />
+      </>
     )
   }
 
   const hasMissingDescriptions = variables.some(
     (v) => !v.description || v.description.trim() === ""
   )
+  const hasAnyDescription = variables.some((v) => (v.description ?? "").trim() !== "")
+  const showSavedBadge = codebookSaved && hasAnyDescription
 
   return (
     <>
@@ -180,14 +192,14 @@ export default function CodebookContent({
       </Card>
 
       <div className="flex items-center justify-between mb-4">
-        {codebookSaved ? (
+        {showSavedBadge ? (
           <span className="badge badge-success">✓ Codebook saved</span>
         ) : (
           <span className="badge badge-warning">⚠ Codebook not saved</span>
         )}
         <AsyncButton
           onClick={handleSave}
-          loadingText="Saving..."
+          loadingText="Saving"
           disabled={isSaving}
           className="btn btn-sm btn-primary"
         >
@@ -254,18 +266,14 @@ export default function CodebookContent({
                   </label>
                 </div>
 
-                <div>
-                  <label className="label">
-                    <span className="label-text font-medium">Description *</span>
-                  </label>
-                  <textarea
-                    className="textarea textarea-bordered w-full"
-                    rows={3}
-                    placeholder="Describe what this variable measures or represents..."
-                    value={variable.description ?? ""}
-                    onChange={(e) => updateVariable(variable.id, "description", e.target.value)}
-                  />
-                </div>
+                <Textarea
+                  label="Description *"
+                  className="w-full"
+                  rows={3}
+                  placeholder="Describe what this variable measures or represents..."
+                  value={variable.description ?? ""}
+                  onChange={(e) => updateVariable(variable.id, "description", e.target.value)}
+                />
               </div>
             </div>
           ))}

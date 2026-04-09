@@ -174,7 +174,7 @@ export default function StudyActions({ studies }: { studies: StudyWithFeedbackTe
           )
           return null
         }
-        return deleteMutation({ studyIds: ids })
+        return deleteMutation({ studyIds: ids, reason: "Admin deletion from dashboard" })
       },
       successMessage: (count) => `Deleted ${count} study/studies`,
       errorMessage: "Failed to delete studies.",
@@ -232,7 +232,7 @@ export default function StudyActions({ studies }: { studies: StudyWithFeedbackTe
       {canDelete && (
         <ConfirmButton
           onConfirm={handleDelete}
-          confirmMessage="This will permanently delete the selected study/studies and all related data from the database. This cannot be undone. Continue?"
+          confirmMessage="This will permanently delete the selected study/studies from the database and JATOS. All related data will be removed. This cannot be undone. Continue?"
           loadingText="Deleting"
           className="btn btn-error"
           disabled={isSubmitting}

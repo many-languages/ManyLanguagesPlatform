@@ -3,22 +3,23 @@
 import { useRouter } from "next/navigation"
 import { useTransition } from "react"
 import FeedbackCard from "./FeedbackCard"
-import type { EnrichedJatosStudyResult } from "@/src/types/jatos"
+import type { FeedbackCardTone } from "../../types"
 
 interface ResearcherFeedbackProps {
   studyId: number
-  initialEnrichedResult: EnrichedJatosStudyResult | null | undefined
-  template: { content: string } | null | undefined
-  initialAllEnrichedResults: EnrichedJatosStudyResult[]
-  requiredVariableKeyList?: string[]
+  renderedMarkdown: string | null
+  researcherHasPilotData: boolean
+  /** Plain message in place of markdown; whole card uses `feedbackTone`. */
+  feedbackMessage?: string
+  feedbackTone?: FeedbackCardTone
 }
 
 export default function ResearcherFeedback({
   studyId,
-  initialEnrichedResult,
-  template,
-  initialAllEnrichedResults,
-  requiredVariableKeyList,
+  renderedMarkdown,
+  researcherHasPilotData,
+  feedbackMessage,
+  feedbackTone,
 }: ResearcherFeedbackProps) {
   const router = useRouter()
   const [, startTransition] = useTransition()
@@ -29,16 +30,14 @@ export default function ResearcherFeedback({
     })
   }
 
-  if (!template) return null
-
   return (
     <FeedbackCard
       studyId={studyId}
-      enrichedResult={initialEnrichedResult}
-      template={template}
+      renderedMarkdown={renderedMarkdown}
+      feedbackMessage={feedbackMessage}
+      feedbackTone={feedbackTone}
       title="Feedback Preview"
-      allEnrichedResults={initialAllEnrichedResults}
-      requiredVariableKeyList={requiredVariableKeyList}
+      researcherHasPilotData={researcherHasPilotData}
       onRefresh={handleRefresh}
       showEditButton={true}
     />

@@ -53,3 +53,14 @@ secrets/
 
 # Traefik certificate store
 traefik/acme.json
+
+# Deployment mode tracking (written by Makefile)
+deploy/.active-mode
+
+# Deployment env files (only .example files are committed)
+deploy/env/*.env
+!deploy/env/*.env.example
+
+# Traefik runtime state
+deploy/traefik/certs/*.pem
+deploy/traefik/acme/

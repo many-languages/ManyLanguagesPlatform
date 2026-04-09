@@ -11,9 +11,6 @@ Validates the JATOS API token by calling the JATOS API endpoint `/jatos/api/v1/a
 ```bash
 # From the project root
 make validate-token
-
-# Or directly with Docker Compose
-docker compose --profile validation run --rm jatos-token-validator
 ```
 
 ### What it does
@@ -25,7 +22,7 @@ docker compose --profile validation run --rm jatos-token-validator
 
 ### Environment Variables
 
-- `JATOS_BASE` - JATOS base URL (default: `http://jatos:9000`)
+- `JATOS_BASE` - JATOS base URL (default: `http://jatos.localhost` if unset)
 - `JATOS_TOKEN` - JATOS API token (required)
 
 ### Example Output
@@ -42,12 +39,12 @@ docker compose --profile validation run --rm jatos-token-validator
 ❌ JATOS_TOKEN environment variable is not set
 
 📝 To create a JATOS API token:
-   1. Start the Docker services: make dev
+   1. Start JATOS: make dev-jatos-only (or your mode)
    2. Open JATOS UI: http://jatos.localhost
    3. Login with admin/admin
    4. Navigate to "My API tokens"
    5. Create a new token
    6. Add token to .env file: JATOS_TOKEN=your-token-here
-   7. Restart services: make stop && make dev
+   7. Restart if needed: make down && make dev-jatos-only
 ```
 

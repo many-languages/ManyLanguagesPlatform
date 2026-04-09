@@ -10,6 +10,11 @@ generator client {
   provider = "prisma-client-js"
 }
 
+model SystemConfig {
+  key   String @id
+  value String
+}
+
 // --------------------------------------
 
 enum UserRole {
@@ -43,6 +48,7 @@ model User {
   adminReviewedStudies   Study[]                 @relation("StudyAdminReviewer")
   notificationRecipients NotificationRecipient[]
   AdminInvite            AdminInvite[]
+  ResearcherJatos        ResearcherJatos?
 }
 
 model Session {
@@ -93,6 +99,14 @@ enum StudyStatus {
 enum JatosWorkerType {
   SINGLE
   MULTIPLE
+}
+
+model ResearcherJatos {
+  id          Int @id @default(autoincrement())
+  userId      Int @unique // 1:1 with User (researchers only)
+  jatosUserId Int // JATOS user ID (from POST /users)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Study {
@@ -222,26 +236,12 @@ model ParticipantStudy {
   @@unique([userId, studyId])
 }
 
-enum ValidationStatus {
-  NEEDS_REVIEW
-  VALID
-  INVALID
-}
-
 model FeedbackTemplate {
   id      Int @id @default(autoincrement())
   studyId Int @unique
 
-  validatedExtractionId Int?
-  validatedExtraction   ExtractionSnapshot? @relation("ValidatedExtraction", fields: [validatedExtractionId], references: [id], onDelete: SetNull)
-  validationStatus      ValidationStatus    @default(NEEDS_REVIEW)
-  validatedAt           DateTime?
-  missingKeys           Json? // string[]
-  extraKeys             Json? // string[]
-
-  content              String
-  requiredVariableKeys Json? // string[]
-  extractorVersion     String? // safety check
+  content               String
+  requiredVariableNames Json? // string[] variableName list from DSL; not StudyVariable.variableKey
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -252,14 +252,6 @@ model FeedbackTemplate {
 model Codebook {
   id      Int @id @default(autoincrement())
   studyId Int @unique
-
-  validatedExtractionId Int?
-  validatedExtraction   ExtractionSnapshot? @relation("ValidatedCodebookExtraction", fields: [validatedExtractionId], references: [id], onDelete: SetNull)
-  validationStatus      ValidationStatus    @default(NEEDS_REVIEW)
-  validatedAt           DateTime?
-  missingKeys           Json? // string[]
-  extraKeys             Json? // string[]
-  extractorVersion      String?
 
   entries CodebookEntry[]
 
@@ -360,9 +352,7 @@ model ExtractionSnapshot {
   jatosStudyUpload JatosStudyUpload @relation("UploadExtractions", fields: [jatosStudyUploadId], references: [id], onDelete: Cascade)
   variables        StudyVariable[]
 
-  approvedForUpload          JatosStudyUpload?  @relation("ApprovedExtractionForUpload")
-  validatedFeedbackTemplates FeedbackTemplate[] @relation("ValidatedExtraction")
-  validatedCodebooks         Codebook[]         @relation("ValidatedCodebookExtraction")
+  approvedForUpload JatosStudyUpload? @relation("ApprovedExtractionForUpload")
 
   @@index([jatosStudyUploadId, status, createdAt])
 }

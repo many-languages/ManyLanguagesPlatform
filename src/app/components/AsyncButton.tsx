@@ -13,7 +13,7 @@ import type React from "react"
  * ```tsx
  * <AsyncButton
  *   onClick={async () => await someAction()}
- *   loadingText="Processing..."
+ *   loadingText="Processing"
  *   className="btn btn-primary"
  * >
  *   Submit
@@ -28,7 +28,7 @@ interface AsyncButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement>
   onClick: (() => Promise<void>) | (() => void)
   /**
    * Text to show when button is in loading state.
-   * If not provided, defaults to "Loading..."
+   * If not provided, defaults to "Loading"
    */
   loadingText?: string
   /**
@@ -67,7 +67,7 @@ export function AsyncButton({
     >
       {loading ? (
         <>
-          <span>{loadingText || "Loading..."}</span>
+          <span>{loadingText || "Loading"}</span>
           <span className="loading loading-dots loading-xs ml-1"></span>
         </>
       ) : (

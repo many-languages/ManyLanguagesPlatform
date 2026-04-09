@@ -2,15 +2,16 @@ import { resolver } from "@blitzjs/rpc"
 import db from "db"
 import { UpdateFeedbackTemplateSchema } from "../validations"
 import type { FeedbackTemplate } from "../types"
-import { verifyResearcherStudyAccess } from "../../utils/verifyResearchersStudyAccess"
+import { withStudyAccess } from "../../utils/withStudyAccess"
+import { assertFeedbackTemplatePersonalDataPolicy } from "../utils/assertFeedbackTemplatePersonalDataPolicy"
+import { updateFeedbackTemplateInTransaction } from "../utils/feedbackTemplateSaveShared"
 
 // Server-side helper for RSCs
 export async function updateFeedbackTemplateRsc(input: {
   id: number
   content: string
-  requiredVariableKeys?: string[]
+  requiredVariableNames?: string[]
 }): Promise<FeedbackTemplate> {
-  // Get the template to check studyId
   const existingTemplate = await db.feedbackTemplate.findUnique({
     where: { id: input.id },
     select: { studyId: true },
@@ -20,44 +21,22 @@ export async function updateFeedbackTemplateRsc(input: {
     throw new Error("Feedback template not found")
   }
 
-  // Verify the user is a researcher on this study
-  await verifyResearcherStudyAccess(existingTemplate.studyId)
+  return withStudyAccess(existingTemplate.studyId, async (_sId, _uId) => {
+    await assertFeedbackTemplatePersonalDataPolicy(
+      existingTemplate.studyId,
+      input.content,
+      input.requiredVariableNames
+    )
 
-  const template = await db.feedbackTemplate.update({
-    where: { id: input.id },
-    data: {
-      content: input.content,
-      validationStatus: "NEEDS_REVIEW",
-      validatedExtractionId: null,
-      validatedAt: null,
-      missingKeys: null,
-      extraKeys: null,
-      extractorVersion: null,
-      requiredVariableKeys: input.requiredVariableKeys,
-    },
-    select: {
-      id: true,
-      studyId: true,
-      content: true,
-      createdAt: true,
-      updatedAt: true,
-    },
+    return db.$transaction((tx) =>
+      updateFeedbackTemplateInTransaction(tx, {
+        id: input.id,
+        studyId: existingTemplate.studyId,
+        content: input.content,
+        requiredVariableNames: input.requiredVariableNames,
+      })
+    )
   })
-
-  // Mark step 6 as complete after successful update
-  const latestUpload = await db.jatosStudyUpload.findFirst({
-    where: { studyId: template.studyId },
-    orderBy: { createdAt: "desc" },
-    select: { id: true },
-  })
-  if (latestUpload) {
-    await db.jatosStudyUpload.update({
-      where: { id: latestUpload.id },
-      data: { step6Completed: true },
-    })
-  }
-
-  return template
 }
 
 // Blitz RPC for client usage

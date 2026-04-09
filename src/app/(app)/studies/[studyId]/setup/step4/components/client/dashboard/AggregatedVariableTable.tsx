@@ -90,6 +90,7 @@ export default function AggregatedVariableTable({
       },
       {
         id: "presence",
+        enableColumnFilter: false,
         header: () => (
           <div
             className="tooltip tooltip-bottom whitespace-nowrap"
@@ -117,6 +118,7 @@ export default function AggregatedVariableTable({
       },
       {
         accessorKey: "occurrences",
+        enableColumnFilter: false,
         header: () => (
           <div
             className="tooltip tooltip-bottom whitespace-nowrap"
@@ -131,6 +133,8 @@ export default function AggregatedVariableTable({
       },
       {
         id: "diagnostics",
+        accessorFn: (row) => (row.flags.length > 0 ? row.flags.join(" ") : "OK"),
+        sortingFn: (rowA, rowB) => rowA.original.flags.length - rowB.original.flags.length,
         header: () => (
           <div
             className="tooltip tooltip-bottom whitespace-nowrap"
@@ -154,6 +158,7 @@ export default function AggregatedVariableTable({
       },
       {
         accessorKey: "depth",
+        enableColumnFilter: false,
         header: () => (
           <div
             className="tooltip tooltip-bottom whitespace-nowrap"
@@ -204,7 +209,7 @@ export default function AggregatedVariableTable({
         data={variables}
         columns={columns}
         enableSorting={true}
-        enableFilters={false}
+        enableFilters={true}
         renderSubComponent={renderSubComponent}
         onRowClick={(row) => row.toggleExpanded()}
         classNames={{

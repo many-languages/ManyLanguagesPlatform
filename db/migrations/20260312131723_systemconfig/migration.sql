@@ -1,0 +1,7 @@
+-- CreateTable
+CREATE TABLE "public"."SystemConfig" (
+    "key" TEXT NOT NULL,
+    "value" TEXT NOT NULL,
+
+    CONSTRAINT "SystemConfig_pkey" PRIMARY KEY ("key")
+);

@@ -24,8 +24,8 @@ async function Step5ContentWrapper({ studyId }: { studyId: number }) {
           codebook
             ? {
                 ...codebook,
-                missingKeys: (codebook.missingKeys as string[]) ?? [],
-                extraKeys: (codebook.extraKeys as string[]) ?? [],
+                missingKeys: codebook.missingKeys ?? [],
+                extraKeys: codebook.extraKeys ?? [],
               }
             : null
         }

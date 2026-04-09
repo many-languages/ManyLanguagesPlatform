@@ -6,7 +6,7 @@ import Link from "next/link"
 import Card from "@/src/app/components/Card"
 import Table from "@/src/app/components/Table"
 import { Alert } from "@/src/app/components/Alert"
-import { getComponentMap } from "@/src/lib/jatos/api/getComponentMap"
+import { getComponentMap } from "@/src/lib/jatos/utils/getComponentMap"
 import { AsyncButton } from "@/src/app/components/AsyncButton"
 import { EmptyState } from "@/src/app/components/EmptyState"
 import { LoadingMessage } from "@/src/app/components/LoadingStates"
@@ -181,14 +181,14 @@ export default function ResultsCard({
           {/* Refetch results again from JATOS */}
           <AsyncButton
             onClick={handleRefetch}
-            loadingText="Fetching..."
+            loadingText="Fetching"
             className="btn btn-secondary w-fit"
             disabled={loading}
           >
             Fetch Raw Results
           </AsyncButton>
           {/* Download all data */}
-          <DownloadResultsButton jatosStudyId={jatosStudyId} />
+          <DownloadResultsButton studyId={studyId} />
           {/* Open Inspector */}
           <Link href={`/studies/${studyId}/inspector`} className="btn btn-ghost">
             Inspector

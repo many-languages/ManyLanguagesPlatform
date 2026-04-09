@@ -27,7 +27,7 @@ export default async function Step1Page({
       <SetupStepHeader
         studyId={studyId}
         title="Step 1 – General information"
-        showSaveExit={false}
+        showBackToStudy={false}
       />
       <Step1Content study={study} studyId={studyId} isEditMode={isEditMode} returnTo={returnTo} />
     </>

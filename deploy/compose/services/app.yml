@@ -1,0 +1,60 @@
+# deploy/compose/services/app.yml
+#
+# Canonical Next.js/Blitz app container definition.
+# Only included by dev-fullstack and prod modes.
+# dev-jatos-only and dev-host-app run the app on the host.
+#
+# Mode overlays set:
+#   - build.dockerfile (Dockerfile.dev vs Dockerfile)
+#   - volumes (source mount for dev vs db-only for prod)
+#   - command (startup sequence)
+#   - NODE_ENV
+
+services:
+  app:
+    build:
+      context: ../..
+      dockerfile: Dockerfile.dev
+    restart: unless-stopped
+    mem_limit: 4g
+    healthcheck:
+      test: ["CMD-SHELL", "wget --quiet --tries=1 --spider http://localhost:3000 || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    deploy:
+      resources:
+        limits:
+          memory: 4G
+        reservations:
+          memory: 1G
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-blitz}:${POSTGRES_PASSWORD:-devpass}@postgres:5432/${POSTGRES_DB:-manylanguagesplatform}
+      JATOS_BASE: http://jatos:9000
+      JATOS_TOKEN: ${JATOS_TOKEN:-}
+      NEXT_PUBLIC_JATOS_BASE: ${NEXT_PUBLIC_JATOS_BASE:-http://jatos.localhost}
+      NODE_ENV: ${NODE_ENV:-development}
+      PORT: 3000
+      NODE_OPTIONS: --max-old-space-size=3072
+      SESSION_SECRET_KEY: ${SESSION_SECRET_KEY:-dev-secret-key-change-in-production}
+      EMAIL_ENABLED: ${EMAIL_ENABLED:-false}
+      EMAIL_PROVIDER: ${EMAIL_PROVIDER:-mailhog}
+      EMAIL_FROM_ADDRESS: ${EMAIL_FROM_ADDRESS:-}
+      SMTP_HOST: ${SMTP_HOST:-mailhog}
+      SMTP_PORT: ${SMTP_PORT:-1025}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      SMTP_SECURE: ${SMTP_SECURE:-false}
+      POSTMARK_SERVER_TOKEN: ${POSTMARK_SERVER_TOKEN:-}
+      POSTMARK_MESSAGE_STREAM: ${POSTMARK_MESSAGE_STREAM:-outbound}
+      CRON_SECRET: ${CRON_SECRET:-}
+    ports:
+      - "3000:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      jatos:
+        condition: service_started
+    labels:
+      - "traefik.enable=true"

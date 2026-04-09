@@ -50,7 +50,7 @@ export default function GeneratePilotLinkButton({
   }
 
   return (
-    <AsyncButton onClick={handleGenerate} loadingText="Generating..." className={className}>
+    <AsyncButton onClick={handleGenerate} loadingText="Generating" className={className}>
       {label && children ? (
         <span className="flex items-center gap-2">
           <span>{label}</span>

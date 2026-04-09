@@ -1,0 +1,31 @@
+# deploy/compose/modes/dev-fullstack-https.yml
+#
+# App TLS overlay for dev-fullstack + dev-local-https.
+# Switches the app router to HTTPS and updates the public JATOS URL.
+#
+# This file exists separately from dev-local-https.yml because it references
+# the app service, which is only in the -f chain for dev-fullstack.
+# dev-jatos-only and dev-host-app do not include app.yml, so adding app:
+# overrides in dev-local-https.yml would create an invalid service definition.
+#
+# Usage (from repo root):
+#   docker compose \
+#     -f deploy/compose/base.yml \
+#     -f deploy/compose/services/postgres.yml \
+#     -f deploy/compose/services/jatos-db.yml \
+#     -f deploy/compose/services/jatos.yml \
+#     -f deploy/compose/services/traefik.yml \
+#     -f deploy/compose/services/app.yml \
+#     -f deploy/compose/modes/dev-fullstack.yml \
+#     -f deploy/compose/modes/dev-local-https.yml \
+#     -f deploy/compose/modes/dev-fullstack-https.yml \
+#     --env-file deploy/env/dev-fullstack.env \
+#     up -d
+
+services:
+  app:
+    labels:
+      - "traefik.http.routers.app.entrypoints=websecure"
+      - "traefik.http.routers.app.tls=true"
+    environment:
+      NEXT_PUBLIC_JATOS_BASE: ${NEXT_PUBLIC_JATOS_BASE:-https://jatos.localhost}

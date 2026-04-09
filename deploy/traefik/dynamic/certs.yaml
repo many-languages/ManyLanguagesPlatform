@@ -1,0 +1,17 @@
+# Traefik dynamic TLS configuration for local mkcert certificates.
+# Used by dev-local-https overlay.
+#
+# Cert files are mounted from deploy/traefik/certs/ into /certs/ inside the container.
+# Generate certs with: ./deploy/scripts/gen-certs.sh
+
+tls:
+  stores:
+    default:
+      defaultCertificate:
+        certFile: /certs/jatos.localhost.pem
+        keyFile: /certs/jatos.localhost-key.pem
+  certificates:
+    - certFile: /certs/jatos.localhost.pem
+      keyFile: /certs/jatos.localhost-key.pem
+    - certFile: /certs/app.localhost.pem
+      keyFile: /certs/app.localhost-key.pem

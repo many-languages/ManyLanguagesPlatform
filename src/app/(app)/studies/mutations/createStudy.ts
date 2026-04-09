@@ -1,9 +1,10 @@
 import { resolver } from "@blitzjs/rpc"
 import db from "db"
+import { ensureResearcherStudyMembership } from "@/src/lib/jatos/jatosAccessService"
 import { CreateStudy, CreateStudyInput } from "../validations"
 
 export async function createStudy(data: CreateStudyInput, userId: number) {
-  return db.study.create({
+  const study = await db.study.create({
     data: {
       ...data,
       status: "CLOSED", // Study starts closed until setup is complete
@@ -16,6 +17,18 @@ export async function createStudy(data: CreateStudyInput, userId: number) {
     },
     include: { researchers: true },
   })
+
+  // Sync JATOS membership if study already has an upload (e.g. re-import flow)
+  const latestUpload = await db.jatosStudyUpload.findFirst({
+    where: { studyId: study.id },
+    orderBy: { versionNumber: "desc" },
+    select: { jatosStudyId: true },
+  })
+  if (latestUpload) {
+    await ensureResearcherStudyMembership({ userId, jatosStudyId: latestUpload.jatosStudyId })
+  }
+
+  return study
 }
 
 export default resolver.pipe(

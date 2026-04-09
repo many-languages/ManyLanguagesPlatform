@@ -1,3 +1,14 @@
+import {
+  createBareVarReferenceRegex,
+  createConditionalBlockRegex,
+  createFeedbackStatPlaceholderRegex,
+  createMalformedStatSpanRegex,
+  createMalformedVarSpanRegex,
+  createStatPlaceholderWellFormedPattern,
+  createVarPlaceholderRegex,
+  createVarPlaceholderWellFormedPattern,
+  findWhereClauseFieldReferences,
+} from "@/src/lib/feedback/feedbackDslPatterns"
 import type { FeedbackVariable } from "../types"
 
 export interface DSLError {
@@ -29,16 +40,13 @@ export function validateDSL(
     type: v.type,
   }))
 
-  // Validate variables: {{ var:name:modifier | where: condition }}
-  const varRegex =
-    /\{\{\s*var:([a-zA-Z0-9_\.]+)(?::([a-zA-Z0-9_]+))?(?:\s*\|\s*where:\s*([\s\S]*?))?\s*\}\}/g
+  const varRegex = createVarPlaceholderRegex()
   let varMatch
   while ((varMatch = varRegex.exec(template)) !== null) {
     const [fullMatch, varName, modifier, whereClause] = varMatch
     const start = varMatch.index
     const end = start + fullMatch.length
 
-    // Check if variable exists
     if (!variableNames.has(varName)) {
       if (hiddenVariables?.has(varName)) {
         errors.push({
@@ -59,7 +67,6 @@ export function validateDSL(
       }
     }
 
-    // Check modifier validity
     if (modifier && !["first", "last", "all"].includes(modifier)) {
       errors.push({
         type: "variable",
@@ -70,7 +77,6 @@ export function validateDSL(
       })
     }
 
-    // Validate where clause if present
     if (whereClause) {
       const filterErrors = validateFilterClause(
         whereClause,
@@ -81,16 +87,13 @@ export function validateDSL(
     }
   }
 
-  // Validate stats: {{ stat:var.metric:scope | where: condition }}
-  const statRegex =
-    /\{\{\s*stat:([a-zA-Z0-9_\.]+)\.(avg|median|sd|count)(?::(within|across))?(?:\s*\|\s*where:\s*([\s\S]*?))?\s*\}\}/g
+  const statRegex = createFeedbackStatPlaceholderRegex()
   let statMatch
   while ((statMatch = statRegex.exec(template)) !== null) {
     const [fullMatch, varName, metric, scope, whereClause] = statMatch
     const start = statMatch.index
     const end = start + fullMatch.length
 
-    // Check if variable exists
     if (!variableNames.has(varName)) {
       errors.push({
         type: "stat",
@@ -101,7 +104,6 @@ export function validateDSL(
       })
     }
 
-    // Check metric validity
     const validMetrics = ["avg", "median", "sd", "count"]
     if (!validMetrics.includes(metric)) {
       errors.push({
@@ -113,7 +115,6 @@ export function validateDSL(
       })
     }
 
-    // Check scope validity if present
     if (scope && !["within", "across"].includes(scope)) {
       errors.push({
         type: "stat",
@@ -124,7 +125,6 @@ export function validateDSL(
       })
     }
 
-    // Validate where clause if present
     if (whereClause) {
       const filterErrors = validateFilterClause(
         whereClause,
@@ -135,16 +135,12 @@ export function validateDSL(
     }
   }
 
-  // Validate conditionals: {{#if condition}}...{{else}}...{{/if}}
-  const conditionalRegex =
-    /\{\{#if\s+([^}]+)\}\}([\s\S]*?)(?:\{\{else\}\}([\s\S]*?))?\{\{\/?if\}\}/g
+  const conditionalRegex = createConditionalBlockRegex()
   let conditionalMatch
   while ((conditionalMatch = conditionalRegex.exec(template)) !== null) {
-    const [fullMatch, condition, thenPart, elsePart] = conditionalMatch
+    const [fullMatch, condition] = conditionalMatch
     const start = conditionalMatch.index
-    const end = start + fullMatch.length
 
-    // Validate condition expression
     const conditionErrors = validateConditionExpression(
       condition,
       availableFields,
@@ -153,11 +149,9 @@ export function validateDSL(
     errors.push(...conditionErrors)
   }
 
-  // Check for unclosed tags
   const unclosedErrors = validateUnclosedTags(template)
   errors.push(...unclosedErrors)
 
-  // Check for malformed syntax
   const malformedErrors = validateMalformedSyntax(template)
   errors.push(...malformedErrors)
 
@@ -167,38 +161,20 @@ export function validateDSL(
   }
 }
 
-/**
- * Validates filter clauses in where conditions
- */
 function validateFilterClause(
   whereClause: string,
-  availableFields: any[],
+  availableFields: { name: string; type: string }[],
   offset: number
 ): DSLError[] {
   const errors: DSLError[] = []
 
-  // Simple validation for now - check for basic field references
-  const fieldRegex = /\b([a-zA-Z0-9_\.]+)\b/g
-  let fieldMatch
-  while ((fieldMatch = fieldRegex.exec(whereClause)) !== null) {
-    const fieldName = fieldMatch[1]
-    const start = offset + fieldMatch.index
-    const end = start + fieldName.length
-
-    // Skip operators and literals
-    if (
-      ["and", "or", "not", "true", "false", "==", "!=", ">", "<", ">=", "<="].includes(fieldName)
-    ) {
-      continue
-    }
-
-    // Check if field exists
-    if (!availableFields.some((field) => field.name === fieldName)) {
+  for (const ref of findWhereClauseFieldReferences(whereClause)) {
+    if (!availableFields.some((field) => field.name === ref.name)) {
       errors.push({
         type: "filter",
-        message: `Field '${fieldName}' does not exist in the data`,
-        start,
-        end,
+        message: `Field '${ref.name}' does not exist in the data`,
+        start: offset + ref.start,
+        end: offset + ref.end,
         severity: "error",
       })
     }
@@ -207,25 +183,20 @@ function validateFilterClause(
   return errors
 }
 
-/**
- * Validates condition expressions in if statements
- */
 function validateConditionExpression(
   condition: string,
-  availableFields: any[],
+  availableFields: { name: string; type: string }[],
   offset: number
 ): DSLError[] {
   const errors: DSLError[] = []
 
-  // Extract variable references in condition
-  const varRegex = /var:([a-zA-Z0-9_\.]+)(?::([a-zA-Z0-9_]+))?/g
+  const varRegex = createBareVarReferenceRegex()
   let varMatch
   while ((varMatch = varRegex.exec(condition)) !== null) {
     const [fullMatch, varName, modifier] = varMatch
     const start = offset + varMatch.index
     const end = start + fullMatch.length
 
-    // Check if variable exists
     if (!availableFields.some((field) => field.name === varName)) {
       errors.push({
         type: "conditional",
@@ -236,7 +207,6 @@ function validateConditionExpression(
       })
     }
 
-    // Check modifier validity
     if (modifier && !["first", "last", "all"].includes(modifier)) {
       errors.push({
         type: "conditional",
@@ -251,13 +221,9 @@ function validateConditionExpression(
   return errors
 }
 
-/**
- * Validates for unclosed tags
- */
 function validateUnclosedTags(template: string): DSLError[] {
   const errors: DSLError[] = []
 
-  // Check for unclosed {{ tags
   const openTags = template.match(/\{\{/g) || []
   const closeTags = template.match(/\}\}/g) || []
 
@@ -271,7 +237,6 @@ function validateUnclosedTags(template: string): DSLError[] {
     })
   }
 
-  // Check for unclosed conditional blocks
   const ifBlocks = template.match(/\{\{#if/g) || []
   const endIfBlocks = template.match(/\{\{\/?if\}\}/g) || []
 
@@ -288,22 +253,15 @@ function validateUnclosedTags(template: string): DSLError[] {
   return errors
 }
 
-/**
- * Validates for malformed syntax
- */
 function validateMalformedSyntax(template: string): DSLError[] {
   const errors: DSLError[] = []
 
-  // Check for malformed variable syntax
-  const malformedVarRegex = /\{\{\s*var:[^}]*\}\}/g
+  const wellVar = createVarPlaceholderWellFormedPattern()
+  const malformedVarRegex = createMalformedVarSpanRegex()
   let match
   while ((match = malformedVarRegex.exec(template)) !== null) {
     const content = match[0]
-    if (
-      !content.match(
-        /\{\{\s*var:[a-zA-Z0-9_\.]+(?::[a-zA-Z0-9_]+)?(?:\s*\|\s*where:\s*[^}]*)?\s*\}\}/
-      )
-    ) {
+    if (!wellVar.test(content)) {
       errors.push({
         type: "syntax",
         message: "Malformed variable syntax",
@@ -314,15 +272,11 @@ function validateMalformedSyntax(template: string): DSLError[] {
     }
   }
 
-  // Check for malformed stat syntax
-  const malformedStatRegex = /\{\{\s*stat:[^}]*\}\}/g
+  const wellStat = createStatPlaceholderWellFormedPattern()
+  const malformedStatRegex = createMalformedStatSpanRegex()
   while ((match = malformedStatRegex.exec(template)) !== null) {
     const content = match[0]
-    if (
-      !content.match(
-        /\{\{\s*stat:[a-zA-Z0-9_\.]+\.[a-zA-Z0-9_]+(?::(within|across))?(?:\s*\|\s*where:\s*[^}]*)?\s*\}\}/
-      )
-    ) {
+    if (!wellStat.test(content)) {
       errors.push({
         type: "syntax",
         message: "Malformed stat syntax",

@@ -1,7 +1,7 @@
 import { Ctx } from "blitz"
 import db from "db"
-import { getResultsMetadata } from "@/src/lib/jatos/api/getResultsMetadata"
-import { hasCompletedStudy } from "@/src/lib/jatos/api/findStudyResultIdByComment"
+import { getResultsMetadataForParticipantDashboard } from "@/src/lib/jatos/jatosAccessService"
+import { hasCompletedStudy } from "@/src/lib/jatos/utils/findStudyResultIdByComment"
 import type { StudyWithLatestUpload } from "./getStudies"
 import type { ParticipantStudyView } from "../utils/participantStudyView"
 
@@ -60,11 +60,9 @@ export async function getParticipantStudiesWithStatus(
     .map((p) => p.study.jatosStudyUploads[0]?.jatosStudyId)
     .filter((id): id is number => id != null)
 
-  let metadata: Awaited<ReturnType<typeof getResultsMetadata>> | null = null
+  let metadata: Awaited<ReturnType<typeof getResultsMetadataForParticipantDashboard>> = null
   try {
-    if (jatosStudyIds.length > 0) {
-      metadata = await getResultsMetadata({ studyIds: jatosStudyIds })
-    }
+    metadata = await getResultsMetadataForParticipantDashboard({ userId, jatosStudyIds })
   } catch (error) {
     console.error("JATOS metadata fetch failed for participant studies:", error)
   }

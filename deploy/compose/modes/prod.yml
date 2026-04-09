@@ -1,0 +1,55 @@
+# deploy/compose/modes/prod.yml
+#
+# Mode: Production deployment with TLS, hardened defaults.
+# Secrets and domains provided externally via env files.
+#
+# Usage (from repo root):
+#   docker compose \
+#     -f deploy/compose/base.yml \
+#     -f deploy/compose/services/postgres.yml \
+#     -f deploy/compose/services/jatos-db.yml \
+#     -f deploy/compose/services/jatos.yml \
+#     -f deploy/compose/services/traefik.yml \
+#     -f deploy/compose/services/app.yml \
+#     -f deploy/compose/services/cron-study-status.yml \
+#     -f deploy/compose/modes/prod.yml \
+#     --env-file deploy/env/prod.env \
+#     up -d
+#
+# Note: In production, consider removing services/postgres.yml from the -f chain
+# and using a managed database instead. If using Compose Postgres, the base
+# service exposes port 5433 — restrict this via firewall.
+
+services:
+  jatos:
+    labels:
+      - "traefik.http.routers.jatos.rule=Host(`${JATOS_DOMAIN}`)"
+      - "traefik.http.routers.jatos.entrypoints=websecure"
+      - "traefik.http.routers.jatos.tls=true"
+      - "traefik.http.services.jatos.loadbalancer.server.port=9000"
+
+  app:
+    build:
+      dockerfile: Dockerfile
+    environment:
+      NODE_ENV: production
+    volumes:
+      - ../../db:/app/db:ro
+    command:
+      - sh
+      - -c
+      - |
+        set -e
+        echo 'Generating Prisma client...' &&
+        npx prisma generate &&
+        echo 'Running database migrations...' &&
+        npx prisma migrate deploy &&
+        echo 'Ensuring JATOS service account...' &&
+        npx tsx scripts/ensure-service-account.ts &&
+        echo 'Starting production server...' &&
+        npm start
+    labels:
+      - "traefik.http.routers.app.rule=Host(`${APP_DOMAIN}`)"
+      - "traefik.http.routers.app.entrypoints=websecure"
+      - "traefik.http.routers.app.tls=true"
+      - "traefik.http.services.app.loadbalancer.server.port=3000"

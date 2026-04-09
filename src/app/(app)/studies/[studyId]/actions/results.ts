@@ -1,41 +1,58 @@
 "use server"
 
 import { revalidatePath } from "next/cache"
-import { getResultsData } from "@/src/lib/jatos/api/getResultsData"
-import { parseJatosZip } from "@/src/lib/jatos/api/parseJatosZip"
-import { matchJatosDataToMetadata } from "@/src/lib/jatos/api/matchJatosDataToMetadata"
-import type { JatosMetadata, EnrichedJatosStudyResult } from "@/src/types/jatos"
+import { getBlitzContext } from "@/src/app/blitz-server"
+import {
+  getEnrichedResultsForResearcher,
+  downloadAllResultsForResearcher,
+  type DownloadPayload,
+} from "@/src/lib/jatos/jatosAccessService"
+import { mapJatosErrorToUserMessage } from "@/src/lib/jatos/errors"
+import type { EnrichedJatosStudyResult } from "@/src/types/jatos"
+
+export async function downloadResultsAction(
+  studyId: number
+): Promise<{ success: true; payload: DownloadPayload } | { success: false; error: string }> {
+  try {
+    const { session } = await getBlitzContext()
+    const userId = session.userId
+    if (userId == null) {
+      return { success: false, error: "Not authenticated" }
+    }
+
+    const payload = await downloadAllResultsForResearcher({ studyId, userId })
+    return { success: true, payload }
+  } catch (error) {
+    return {
+      success: false,
+      error: mapJatosErrorToUserMessage(error),
+    }
+  }
+}
 
 export async function refetchEnrichedResultsAction(
   jatosStudyId: number,
-  metadata: JatosMetadata,
+  _metadata: unknown,
   studyId: number
 ): Promise<
   { success: true; data: EnrichedJatosStudyResult[] } | { success: false; error: string }
 > {
   try {
-    // Fetch ZIP from JATOS (server-side)
-    const result = await getResultsData({ studyIds: String(jatosStudyId) })
-
-    if (!result.success) {
-      return { success: false, error: "Failed to fetch results from JATOS" }
+    const { session } = await getBlitzContext()
+    const userId = session.userId
+    if (userId == null) {
+      return { success: false, error: "Not authenticated" }
     }
 
-    // Parse ZIP (server-side)
-    const files = await parseJatosZip(result.data)
+    const enriched = await getEnrichedResultsForResearcher({ studyId, userId, jatosStudyId })
 
-    // Match and enrich data (server-side)
-    const enriched = matchJatosDataToMetadata(metadata, files)
-
-    // Invalidate cache to ensure fresh data on next render
     revalidatePath(`/studies/${studyId}`)
 
     return { success: true, data: enriched }
-  } catch (error: any) {
-    console.error("Error refetching enriched results:", error)
+  } catch (error) {
     return {
       success: false,
-      error: error.message || "Failed to fetch and process results",
+      error: mapJatosErrorToUserMessage(error),
     }
   }
 }

@@ -1,8 +1,10 @@
 import { cache } from "react"
-import { getResultsMetadata } from "@/src/lib/jatos/api/getResultsMetadata"
-import { getStudyProperties } from "@/src/lib/jatos/api/getStudyProperties"
+import { getBlitzContext } from "@/src/app/blitz-server"
+import {
+  getResultsMetadataForResearcher,
+  getStudyPropertiesForResearcher,
+} from "@/src/lib/jatos/jatosAccessService"
 import { getAllPilotResultsRsc } from "../../utils/getAllPilotResults"
-import { verifyResearcherStudyAccess } from "../../utils/verifyResearchersStudyAccess"
 import type {
   JatosMetadata,
   EnrichedJatosStudyResult,
@@ -31,7 +33,11 @@ export interface ValidationData {
  * Fetch all data needed for the debug/validation page
  */
 export const getValidationDataRsc = cache(async (studyId: number): Promise<ValidationData> => {
-  await verifyResearcherStudyAccess(studyId)
+  const { session } = await getBlitzContext()
+  const userId = session.userId
+  if (userId == null) {
+    throw new Error("Not authenticated")
+  }
 
   const study = await db.study.findUnique({
     where: { id: studyId },
@@ -75,14 +81,11 @@ export const getValidationDataRsc = cache(async (studyId: number): Promise<Valid
     throw new Error("Study does not have a JATOS study UUID")
   }
 
-  // Fetch metadata
-  const metadata = await getResultsMetadata({ studyIds: [jatosStudyId] })
-
-  // Fetch pilot results (enriched with data)
-  const pilotResults = await getAllPilotResultsRsc(studyId)
-
-  // Fetch study properties
-  const properties = await getStudyProperties(study.jatosStudyUUID)
+  const [metadata, pilotResults, properties] = await Promise.all([
+    getResultsMetadataForResearcher({ studyId, userId, studyIds: [jatosStudyId] }),
+    getAllPilotResultsRsc(studyId),
+    getStudyPropertiesForResearcher({ studyId, userId, jatosStudyUUID: study.jatosStudyUUID }),
+  ])
 
   return {
     metadata,

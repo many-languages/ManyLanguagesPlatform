@@ -58,7 +58,7 @@ Create the following files in this directory for production deployment:
 
 ## Using Secrets in Production
 
-When deploying with `docker-compose.prod.yml`, Docker Compose will automatically mount these secrets into containers at `/run/secrets/<secret_name>`. The application reads these files and uses them as environment variables.
+When deploying with the production Compose stack (`make prod-up` / `deploy/compose/` + `deploy/env/prod.env`), mount these secrets into containers at `/run/secrets/<secret_name>`. The application reads these files and uses them as environment variables.
 
 ## Alternative: Using a Secrets Manager
 
@@ -69,5 +69,5 @@ For production environments, consider using a secrets manager instead of files:
 - **Docker Swarm secrets** - For Docker Swarm clusters
 - **Kubernetes secrets** - For Kubernetes deployments
 
-If using a secrets manager, you'll need to modify `docker-compose.prod.yml` to fetch secrets from your chosen service instead of reading from files.
+If using a secrets manager, you'll need to adjust `deploy/compose/services/app.yml` (or your compose override) to fetch secrets from your chosen service instead of reading from files.
 

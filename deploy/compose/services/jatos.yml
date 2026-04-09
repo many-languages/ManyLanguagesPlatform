@@ -1,0 +1,25 @@
+# deploy/compose/services/jatos.yml
+#
+# Canonical JATOS definition — the SINGLE source of truth for the JATOS image,
+# mounts, and stable configuration. Included by dev-jatos-only, dev-host-app,
+# dev-fullstack, and prod modes.
+#
+# Pin the image tag here so all modes stay in sync.
+
+services:
+  jatos:
+    image: jatos/jatos:3.10.1
+    depends_on:
+      jatos-db:
+        condition: service_healthy
+    restart: unless-stopped
+    volumes:
+      - ../../deploy/jatos/jatos.conf:/opt/jatos/conf/jatos.conf:ro
+      - jatos-study-data:/opt/jatos/study_assets_root
+    labels:
+      - "traefik.enable=true"
+    # No healthcheck — JATOS Java container may not have common networking tools.
+    # The app waits for JATOS to be ready before making API calls.
+
+volumes:
+  jatos-study-data:

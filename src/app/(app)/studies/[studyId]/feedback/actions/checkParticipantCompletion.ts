@@ -1,8 +1,8 @@
 "use server"
 
-import { getParticipantPseudonymRsc } from "../../../queries/getParticipantPseudonym"
-import { findStudyResultIdByComment } from "@/src/lib/jatos/api/findStudyResultIdByComment"
-import { getResultsMetadata } from "@/src/lib/jatos/api/getResultsMetadata"
+import { getBlitzContext } from "@/src/app/blitz-server"
+import { checkParticipantCompletionForParticipant } from "@/src/lib/jatos/jatosAccessService"
+import { mapJatosErrorToUserMessage } from "@/src/lib/jatos/errors"
 
 /**
  * Lightweight action to check if participant has completed the study.
@@ -19,36 +19,23 @@ export async function checkParticipantCompletionAction(
   error?: string
 }> {
   try {
-    // Security check: Verify that the pseudonym belongs to the authenticated user
-    const participant = await getParticipantPseudonymRsc(studyId)
-    if (!participant) {
-      return { success: false, completed: false, error: "Participant not found" }
-    }
-    if (participant.pseudonym !== pseudonym) {
-      return {
-        success: false,
-        completed: false,
-        error: "Pseudonym does not match authenticated user",
-      }
+    const { session } = await getBlitzContext()
+    const userId = session.userId
+    if (userId == null) {
+      return { success: false, completed: false, error: "Not authenticated" }
     }
 
-    // Get metadata to check if results exist (lightweight - no ZIP download)
-    const metadata = await getResultsMetadata({ studyIds: [jatosStudyId] })
-
-    // Check if results exist for this participant's pseudonym
-    const resultId = findStudyResultIdByComment(metadata, pseudonym)
-    const completed = resultId !== null
-
-    return {
-      success: true,
-      completed,
-    }
-  } catch (error: any) {
-    console.error("Error checking participant completion:", error)
+    return await checkParticipantCompletionForParticipant({
+      studyId,
+      pseudonym,
+      jatosStudyId,
+      userId,
+    })
+  } catch (error) {
     return {
       success: false,
       completed: false,
-      error: error.message || "Failed to check participant completion",
+      error: mapJatosErrorToUserMessage(error),
     }
   }
 }

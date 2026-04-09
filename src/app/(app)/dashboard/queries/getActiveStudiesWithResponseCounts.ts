@@ -1,19 +1,8 @@
 import { Ctx } from "blitz"
 import db from "db"
 import { Prisma } from "db"
-import { getResultsMetadata } from "@/src/lib/jatos/api/getResultsMetadata"
-import type { JatosMetadata, JatosStudyResult } from "@/src/types/jatos"
-
-const PILOT_COMMENT_PREFIX = "pilot:"
-
-function isNonPilotResponse(result: JatosStudyResult): boolean {
-  const comment = result.comment ?? ""
-  return !comment.includes(PILOT_COMMENT_PREFIX)
-}
-
-function countNonPilotResponses(studyResults: JatosStudyResult[]): number {
-  return studyResults.filter((r) => isNonPilotResponse(r) && r.studyState === "FINISHED").length
-}
+import { getResultsMetadataForResearcherDashboard } from "@/src/lib/jatos/jatosAccessService"
+import { countNonPilotResponses } from "@/src/lib/jatos/utils/studyHasParticipantResponses"
 
 export type ActiveStudyWithResponseCount = {
   id: number
@@ -65,11 +54,12 @@ export async function getActiveStudiesWithResponseCounts(
 
   const studyUuids = studiesWithUuid.map((s) => s.jatosStudyUUID)
 
-  let metadata: JatosMetadata
-  try {
-    metadata = await getResultsMetadata({ studyUuids })
-  } catch (error) {
-    console.error("Failed to fetch JATOS metadata for active studies:", error)
+  const metadata = await getResultsMetadataForResearcherDashboard({
+    studyId: studiesWithUuid[0].id,
+    userId,
+    studyUuids,
+  })
+  if (!metadata) {
     return studies.map((s) => ({
       id: s.id,
       title: s.title,

@@ -22,7 +22,7 @@ EXPOSE 3000
 
 ENV NODE_ENV development
 ENV PORT 3000
-# Set Node.js memory limit (can be overridden by docker-compose.yml)
+# Set Node.js memory limit (can be overridden by deploy/compose env)
 ENV NODE_OPTIONS --max-old-space-size=3072
 
 CMD ["npm", "run", "dev"]

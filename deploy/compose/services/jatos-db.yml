@@ -1,0 +1,26 @@
+# deploy/compose/services/jatos-db.yml
+#
+# Canonical MySQL definition for JATOS.
+# Included by every mode that needs JATOS.
+
+services:
+  jatos-db:
+    image: mysql:8.0
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-rootpass}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-jatos}
+      MYSQL_USER: ${MYSQL_USER:-jatos}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-devpass}
+    volumes:
+      - jatos-db-data:/var/lib/mysql
+    healthcheck:
+      test:
+        ["CMD-SHELL", "mysqladmin ping -h localhost -u$$MYSQL_USER -p$$MYSQL_PASSWORD || exit 1"]
+      interval: 5s
+      retries: 10
+      timeout: 5s
+      start_period: 10s
+
+volumes:
+  jatos-db-data:

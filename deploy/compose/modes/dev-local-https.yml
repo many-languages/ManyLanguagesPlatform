@@ -1,0 +1,35 @@
+# deploy/compose/modes/dev-local-https.yml
+#
+# TLS overlay: adds mkcert-based HTTPS to any dev mode.
+# Combine with dev-jatos-only, dev-host-app, or dev-fullstack.
+#
+# Requires certs in deploy/traefik/certs/:
+#   - jatos.localhost.pem / jatos.localhost-key.pem
+#   - app.localhost.pem / app.localhost-key.pem  (when used with dev-fullstack)
+#
+# Generate with: ./deploy/scripts/gen-certs.sh
+#
+# This overlay switches JATOS to the websecure entrypoint and configures
+# Traefik with the file provider for local mkcert certificates.
+#
+# For dev-fullstack + HTTPS, also include dev-fullstack-https.yml to switch
+# the app router to HTTPS. See deploy/README.md for the full -f chain.
+
+services:
+  jatos:
+    labels:
+      - "traefik.http.routers.jatos.entrypoints=websecure"
+      - "traefik.http.routers.jatos.tls=true"
+
+  traefik:
+    command:
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+      - "--providers.file.directory=/etc/traefik/dynamic"
+      - "--providers.file.watch=true"
+    volumes:
+      - "../../deploy/traefik/certs:/certs:ro"
+      - "../../deploy/traefik/dynamic:/etc/traefik/dynamic:ro"
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"

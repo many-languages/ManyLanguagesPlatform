@@ -1,0 +1,24 @@
+# deploy/compose/modes/dev-host-app.yml
+#
+# Mode: App runs on the host; all infrastructure in Docker.
+# Includes app Postgres, JATOS stack, Traefik, and optional dev services.
+#
+# Usage (from repo root):
+#   docker compose \
+#     -f deploy/compose/base.yml \
+#     -f deploy/compose/services/postgres.yml \
+#     -f deploy/compose/services/jatos-db.yml \
+#     -f deploy/compose/services/jatos.yml \
+#     -f deploy/compose/services/traefik.yml \
+#     -f deploy/compose/modes/dev-host-app.yml \
+#     up -d
+#
+# Optional: add -f deploy/compose/services/mailhog.yml for email testing.
+# For HTTPS, append: -f deploy/compose/modes/dev-local-https.yml
+
+services:
+  jatos:
+    labels:
+      - "traefik.http.routers.jatos.rule=Host(`${JATOS_DOMAIN:-jatos.localhost}`)"
+      - "traefik.http.routers.jatos.entrypoints=web"
+      - "traefik.http.services.jatos.loadbalancer.server.port=9000"

@@ -1,0 +1,52 @@
+# deploy/compose/modes/prod-online-https.yml
+#
+# TLS overlay for production: automatic certificates via Let's Encrypt (ACME).
+# Combine with prod.yml for a fully deployed stack with public TLS.
+#
+# Requires:
+#   - TLS_EMAIL set in env (ACME contact)
+#   - Ports 80+443 open and DNS resolving to this host
+#   - deploy/traefik/acme/ directory exists (for acme.json state)
+#
+# Usage (from repo root):
+#   docker compose \
+#     -f deploy/compose/base.yml \
+#     -f deploy/compose/services/postgres.yml \
+#     -f deploy/compose/services/jatos-db.yml \
+#     -f deploy/compose/services/jatos.yml \
+#     -f deploy/compose/services/traefik.yml \
+#     -f deploy/compose/services/app.yml \
+#     -f deploy/compose/services/cron-study-status.yml \
+#     -f deploy/compose/modes/prod.yml \
+#     -f deploy/compose/modes/prod-online-https.yml \
+#     --env-file deploy/env/prod.env \
+#     up -d
+
+services:
+  jatos:
+    labels:
+      - "traefik.http.routers.jatos.tls.certresolver=letsencrypt"
+      - "traefik.docker.network=mlp-network"
+
+  app:
+    labels:
+      - "traefik.http.routers.app.tls.certresolver=letsencrypt"
+      - "traefik.docker.network=mlp-network"
+
+  traefik:
+    command:
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--providers.docker.watch=true"
+      - "--providers.docker.network=mlp-network"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+      - "--entrypoints.web.http.redirections.entryPoint.to=websecure"
+      - "--entrypoints.web.http.redirections.entryPoint.scheme=https"
+      - "--certificatesresolvers.letsencrypt.acme.tlschallenge=true"
+      - "--certificatesresolvers.letsencrypt.acme.email=${TLS_EMAIL}"
+      - "--certificatesresolvers.letsencrypt.acme.storage=/acme/acme.json"
+      - "--log.level=INFO"
+    volumes:
+      - "../../deploy/traefik/acme:/acme"
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"

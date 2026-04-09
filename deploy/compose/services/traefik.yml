@@ -1,0 +1,21 @@
+# deploy/compose/services/traefik.yml
+#
+# Canonical Traefik reverse-proxy definition.
+# Mode overlays add TLS config, cert mounts, and certresolvers.
+
+services:
+  traefik:
+    image: traefik:v2.11
+    restart: unless-stopped
+    depends_on:
+      - jatos
+    command:
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"

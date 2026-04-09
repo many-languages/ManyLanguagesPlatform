@@ -1,0 +1,58 @@
+# deploy/compose/modes/dev-fullstack.yml
+#
+# Mode: Everything in Docker — app, databases, JATOS, Traefik.
+# Useful for onboarding, CI parity checks, or reproducing the full stack.
+#
+# Usage (from repo root):
+#   docker compose \
+#     -f deploy/compose/base.yml \
+#     -f deploy/compose/services/postgres.yml \
+#     -f deploy/compose/services/jatos-db.yml \
+#     -f deploy/compose/services/jatos.yml \
+#     -f deploy/compose/services/traefik.yml \
+#     -f deploy/compose/services/app.yml \
+#     -f deploy/compose/modes/dev-fullstack.yml \
+#     --env-file deploy/env/dev-fullstack.env \
+#     up -d
+#
+# Optional: add -f deploy/compose/services/mailhog.yml
+#           add -f deploy/compose/services/cron-study-status.yml
+# For HTTPS, append:
+#     -f deploy/compose/modes/dev-local-https.yml \
+#     -f deploy/compose/modes/dev-fullstack-https.yml
+
+services:
+  jatos:
+    labels:
+      - "traefik.http.routers.jatos.rule=Host(`${JATOS_DOMAIN:-jatos.localhost}`)"
+      - "traefik.http.routers.jatos.entrypoints=web"
+      - "traefik.http.services.jatos.loadbalancer.server.port=9000"
+
+  app:
+    environment:
+      NODE_ENV: development
+    volumes:
+      - ../..:/app
+      - /app/node_modules
+      - /app/.next
+      - /app/.blitz
+      - /dev/null:/app/.env.local:ro
+    command:
+      - sh
+      - -c
+      - |
+        echo 'Waiting for services to be ready...' &&
+        echo 'Waiting for JATOS to start (this may take 30-60 seconds)...' &&
+        sleep 45 &&
+        echo 'Generating Prisma client...' &&
+        npx prisma generate &&
+        echo 'Running database migrations...' &&
+        npx prisma migrate deploy &&
+        echo 'Ensuring JATOS service account...' &&
+        npx tsx scripts/ensure-service-account.ts &&
+        echo 'Starting development server...' &&
+        npm run dev
+    labels:
+      - "traefik.http.routers.app.rule=Host(`${APP_DOMAIN:-app.localhost}`)"
+      - "traefik.http.routers.app.entrypoints=web"
+      - "traefik.http.services.app.loadbalancer.server.port=3000"

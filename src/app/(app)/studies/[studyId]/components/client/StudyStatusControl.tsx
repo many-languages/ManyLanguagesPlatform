@@ -63,11 +63,6 @@ export default function StudyStatusControl({ study }: StudyStatusControlProps) {
           {isOpen ? "Deactivate" : "Activate"}
         </button>
       </span>
-      {!isArchived && !canActivate && (
-        <span className="text-xs text-base-content/60">
-          Complete setup and get admin approval to activate
-        </span>
-      )}
     </div>
   )
 }

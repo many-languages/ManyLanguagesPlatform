@@ -1,7 +1,7 @@
 "use server"
 
 import { getSetupCompletionRsc } from "../../setup/queries/getSetupCompletion"
-import { STEP_KEYS } from "../../setup/utils/constants"
+import { isSetupCompleteFromFlags, type SetupStepFlags } from "../../setup/utils/setupStatus"
 import { createFeedbackTemplateRsc } from "../mutations/createFeedbackTemplate"
 import { updateFeedbackTemplateRsc } from "../mutations/updateFeedbackTemplate"
 import type { FeedbackTemplate, FeedbackTemplateEditorInitial } from "../types"
@@ -49,8 +49,8 @@ export async function saveFeedbackTemplateAction(
           requiredVariableNames,
         })
 
-    const flags = await getSetupCompletionRsc(studyId)
-    const setupComplete = STEP_KEYS.every((key) => flags[key] === true)
+    const flags = (await getSetupCompletionRsc(studyId)) as SetupStepFlags
+    const setupComplete = isSetupCompleteFromFlags(flags)
 
     return { ok: true, template, setupComplete }
   } catch (error) {

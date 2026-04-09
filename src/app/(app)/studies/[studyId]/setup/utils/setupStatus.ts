@@ -27,7 +27,8 @@ export interface StudyWithMinimalRelations extends Partial<Study> {
   } | null
 }
 
-type StepFlags = {
+/** Resolved step completion flags (same shape as latest upload fields + step 1 derivation). */
+export type SetupStepFlags = {
   step1Completed: boolean
   step2Completed: boolean
   step3Completed: boolean
@@ -36,9 +37,9 @@ type StepFlags = {
   step6Completed: boolean
 }
 
-function resolveStepFlags(study: StudyWithRelations | StudyWithMinimalRelations): StepFlags {
+function resolveStepFlags(study: StudyWithRelations | StudyWithMinimalRelations): SetupStepFlags {
   const upload = study.latestJatosStudyUpload
-  const flags = {} as StepFlags
+  const flags = {} as SetupStepFlags
 
   STEP_KEYS.forEach((key) => {
     const uploadValue = upload?.[key]
@@ -52,11 +53,12 @@ function resolveStepFlags(study: StudyWithRelations | StudyWithMinimalRelations)
   return flags
 }
 
-function isSetupCompleteFromFlags(steps: StepFlags): boolean {
-  return STEP_KEYS.every((key) => steps[key])
+/** True when every setup step flag is explicitly `true` (same rule as server actions using `getSetupCompletionRsc`). */
+export function isSetupCompleteFromFlags(steps: SetupStepFlags): boolean {
+  return STEP_KEYS.every((key) => steps[key] === true)
 }
 
-function getIncompleteStepFromFlags(steps: StepFlags): number | null {
+function getIncompleteStepFromFlags(steps: SetupStepFlags): number | null {
   for (let index = 0; index < STEP_KEYS.length; index += 1) {
     const key = STEP_KEYS[index]
     if (!steps[key]) return index + 1
@@ -64,7 +66,7 @@ function getIncompleteStepFromFlags(steps: StepFlags): number | null {
   return null
 }
 
-function getCompletedStepsFromFlags(steps: StepFlags): number[] {
+function getCompletedStepsFromFlags(steps: SetupStepFlags): number[] {
   const completed: number[] = []
   STEP_KEYS.forEach((key, index) => {
     if (steps[key]) completed.push(index + 1)

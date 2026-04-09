@@ -66,6 +66,7 @@ const enableDataCollection = resolver.pipe(
             path: "/studies/[studyId]",
             params: { studyId: study.id },
           },
+          studyId: study.id,
         })
       }
     }

@@ -14,7 +14,8 @@ import { StudyWithRelations } from "../../queries/getStudy"
 import ResearcherFeedbackData from "../feedback/components/ResearcherFeedbackData"
 import StudyInformationCard from "./client/StudyInformationCard"
 import { NavigationButton } from "@/src/app/components/NavigationButton"
-import ArchiveStudyButton from "../../components/client/ArchiveStudyButton"
+import StudyLifecycleActions from "@/src/app/components/studies/StudyLifecycleActions"
+import { hasParticipantResponses as hasParticipantResponsesInResults } from "@/src/lib/jatos/utils/studyHasParticipantResponses"
 
 interface ResearcherDataProps {
   studyId: number
@@ -106,9 +107,21 @@ export default async function ResearcherData({ studyId, study }: ResearcherDataP
     )
   }
 
+  const jatosUuid = study.jatosStudyUUID?.trim()
+  let lifecycleHasResponses: boolean | null = null
+  if (metadata) {
+    const entry =
+      metadata.data?.find((d) => d.studyUuid === jatosUuid) ?? metadata.data?.[0] ?? null
+    lifecycleHasResponses = entry
+      ? hasParticipantResponsesInResults(entry.studyResults ?? [])
+      : false
+  }
+
+  const isPi = study.researchers.some((r) => r.userId === userId && r.role === "PI")
+
   // Build actions for researcher
   const researcherActions = (
-    <div className="flex flex-wrap justify-end gap-2">
+    <div className="flex flex-wrap justify-end gap-2 items-start">
       <NavigationButton
         href={`/studies/${study.id}/setup/step1?edit=true&returnTo=study`}
         className="btn-primary"
@@ -116,7 +129,12 @@ export default async function ResearcherData({ studyId, study }: ResearcherDataP
       >
         Edit
       </NavigationButton>
-      <ArchiveStudyButton studyId={study.id} isArchived={study.archived} />
+      <StudyLifecycleActions
+        studyId={study.id}
+        isArchived={study.archived}
+        hasParticipantResponses={lifecycleHasResponses}
+        showLifecycleActions={isPi}
+      />
     </div>
   )
 
@@ -129,16 +147,18 @@ export default async function ResearcherData({ studyId, study }: ResearcherDataP
       {metadata && <StudySummary metadata={metadata} />}
 
       {/* Manage participants for the study */}
-      <ParticipantManagementCard participants={participants} metadata={metadata} />
+      {metadata && <ParticipantManagementCard participants={participants} metadata={metadata} />}
 
       {/* Showing detailed results */}
-      <ResultsCardWrapper
-        jatosStudyId={jatosStudyId}
-        metadata={metadata}
-        properties={properties}
-        studyId={studyId}
-        initialEnrichedResults={enrichedResults}
-      />
+      {metadata && (
+        <ResultsCardWrapper
+          jatosStudyId={jatosStudyId}
+          metadata={metadata}
+          properties={properties}
+          studyId={studyId}
+          initialEnrichedResults={enrichedResults}
+        />
+      )}
 
       {/* Feedback preview with pilot results */}
       <ResearcherFeedbackData studyId={studyId} />

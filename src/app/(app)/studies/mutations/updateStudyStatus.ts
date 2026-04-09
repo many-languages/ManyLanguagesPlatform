@@ -23,6 +23,7 @@ export default resolver.pipe(
         status: true,
         title: true,
         adminApproved: true,
+        archived: true,
       },
     })
 
@@ -32,6 +33,12 @@ export default resolver.pipe(
 
     if (existingStudy.status === status) {
       return existingStudy
+    }
+
+    if (existingStudy.archived) {
+      throw new Error(
+        "Archived studies cannot have data collection activated or deactivated. Unarchive the study first."
+      )
     }
 
     // Require admin approval before allowing status = OPEN
@@ -77,6 +84,7 @@ export default resolver.pipe(
             path: "/studies/[studyId]",
             params: { studyId },
           },
+          studyId,
         })
       }
     }

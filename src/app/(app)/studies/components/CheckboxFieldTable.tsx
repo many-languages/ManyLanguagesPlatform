@@ -105,7 +105,7 @@ const CheckboxFieldTable = <T,>({
   )
 
   return (
-    <div className="flex flex-col gap-1">
+    <div className="flex min-w-0 flex-col gap-1">
       <Table columns={columns} data={data} addPagination={true} />
       {error && <span className="text-error text-sm">{error.message as string}</span>}
     </div>

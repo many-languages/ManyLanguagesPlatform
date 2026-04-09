@@ -92,6 +92,8 @@ export interface FeedbackCardProps {
   researcherHasPilotData?: boolean
   onRefresh?: () => Promise<void> | void
   showEditButton?: boolean
+  /** When `showEditButton` is true, disable Edit (e.g. archived study) but keep the control visible. Defaults to true. */
+  canEditStudySetup?: boolean
   /** Participant feedback only: shows a notice if latest of multiple responses was used. */
   participantMatchingResponseCount?: number
   participantSelectedResponseEndDate?: number | null

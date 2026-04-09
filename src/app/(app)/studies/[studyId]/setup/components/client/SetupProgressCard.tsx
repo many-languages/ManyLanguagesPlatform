@@ -12,12 +12,18 @@ import {
   StudyWithMinimalRelations,
 } from "../../utils/setupStatus"
 import { studySetupStepPath } from "../../utils/setupRoutes"
+import { ARCHIVED_STUDY_CANNOT_EDIT_MESSAGE } from "@/src/lib/studies/studyEditability"
 
 interface SetupProgressCardProps {
   study: StudyWithMinimalRelations
+  /** When false, setup navigation and “Continue Setup” are disabled (e.g. archived study). */
+  canEditStudySetup?: boolean
 }
 
-export default function SetupProgressCard({ study }: SetupProgressCardProps) {
+export default function SetupProgressCard({
+  study,
+  canEditStudySetup = true,
+}: SetupProgressCardProps) {
   const router = useRouter()
   const studyId = study.id
   if (studyId == null) {
@@ -43,10 +49,16 @@ export default function SetupProgressCard({ study }: SetupProgressCardProps) {
 
   return (
     <Card title="Setup Progress" collapsible={isComplete} className="mt-4">
+      {!canEditStudySetup && (
+        <Alert variant="info" className="mb-4">
+          <p>{ARCHIVED_STUDY_CANNOT_EDIT_MESSAGE}</p>
+        </Alert>
+      )}
       <StepIndicator
         completedSteps={completedStepsList}
         onClickStep={handleStepClick}
-        editable={true}
+        editable={canEditStudySetup}
+        editBlockedTooltip={!canEditStudySetup ? ARCHIVED_STUDY_CANNOT_EDIT_MESSAGE : undefined}
       />
       {step6NeedsRevision && (
         <Alert variant="info" className="mt-4">
@@ -60,13 +72,19 @@ export default function SetupProgressCard({ study }: SetupProgressCardProps) {
         <Alert variant="warning" className="mt-4">
           <p className="mb-2">Complete all steps to open your study for participants.</p>
           {incompleteStep && (
-            <NavigationButton
-              className="btn btn-sm btn-primary"
-              href={getNextSetupStepUrl(studyId, study) as Route}
-              pendingText="Loading"
+            <span
+              className={!canEditStudySetup ? "tooltip tooltip-top inline-block" : "inline-block"}
+              data-tip={!canEditStudySetup ? ARCHIVED_STUDY_CANNOT_EDIT_MESSAGE : undefined}
             >
-              Continue Setup
-            </NavigationButton>
+              <NavigationButton
+                className={`btn btn-sm btn-primary ${!canEditStudySetup ? "btn-disabled" : ""}`}
+                href={getNextSetupStepUrl(studyId, study) as Route}
+                pendingText="Loading"
+                disabled={!canEditStudySetup}
+              >
+                Continue Setup
+              </NavigationButton>
+            </span>
           )}
         </Alert>
       )}

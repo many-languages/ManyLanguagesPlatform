@@ -17,13 +17,20 @@ import StudyInformationCard from "./client/StudyInformationCard"
 import { NavigationButton } from "@/src/app/components/NavigationButton"
 import StudyLifecycleActions from "@/src/app/components/studies/StudyLifecycleActions"
 import { hasParticipantResponses as hasParticipantResponsesInResults } from "@/src/lib/jatos/utils/studyHasParticipantResponses"
+import { ARCHIVED_STUDY_CANNOT_EDIT_MESSAGE } from "@/src/lib/studies/studyEditability"
 
 interface ResearcherDataProps {
   studyId: number
   study: StudyWithRelations
+  /** When false, “Edit” (setup) is disabled — e.g. archived study. */
+  canEditStudySetup?: boolean
 }
 
-export default async function ResearcherData({ studyId, study }: ResearcherDataProps) {
+export default async function ResearcherData({
+  studyId,
+  study,
+  canEditStudySetup = true,
+}: ResearcherDataProps) {
   const setupComplete = isSetupComplete(study)
   const latestUpload = study.latestJatosStudyUpload
   const jatosStudyId = latestUpload?.jatosStudyId ?? null
@@ -123,13 +130,19 @@ export default async function ResearcherData({ studyId, study }: ResearcherDataP
   // Build actions for researcher
   const researcherActions = (
     <div className="flex flex-wrap justify-end gap-2 items-start">
-      <NavigationButton
-        href={studySetupStepPath(study.id, 1, { edit: true, returnTo: "study" })}
-        className="btn-primary"
-        pendingText="Opening"
+      <span
+        className={!canEditStudySetup ? "tooltip tooltip-top inline-block" : "inline-block"}
+        data-tip={!canEditStudySetup ? ARCHIVED_STUDY_CANNOT_EDIT_MESSAGE : undefined}
       >
-        Edit
-      </NavigationButton>
+        <NavigationButton
+          href={studySetupStepPath(study.id, 1, { edit: true, returnTo: "study" })}
+          className={`btn-primary ${!canEditStudySetup ? "btn-disabled" : ""}`}
+          pendingText="Opening"
+          disabled={!canEditStudySetup}
+        >
+          Edit
+        </NavigationButton>
+      </span>
       <StudyLifecycleActions
         studyId={study.id}
         isArchived={study.archived}
@@ -162,7 +175,7 @@ export default async function ResearcherData({ studyId, study }: ResearcherDataP
       )}
 
       {/* Feedback preview with pilot results */}
-      <ResearcherFeedbackData studyId={studyId} />
+      <ResearcherFeedbackData studyId={studyId} canEditStudySetup={canEditStudySetup} />
     </>
   )
 }

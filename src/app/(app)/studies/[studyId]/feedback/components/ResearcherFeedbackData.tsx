@@ -10,9 +10,14 @@ import {
 
 interface ResearcherFeedbackDataProps {
   studyId: number
+  /** When false, hide “Edit” (Step 6) on the feedback preview card. */
+  canEditStudySetup?: boolean
 }
 
-export default async function ResearcherFeedbackData({ studyId }: ResearcherFeedbackDataProps) {
+export default async function ResearcherFeedbackData({
+  studyId,
+  canEditStudySetup = true,
+}: ResearcherFeedbackDataProps) {
   const step = await loadResearcherFeedbackViewModel(studyId)
 
   if (step.kind === "not_authenticated") {
@@ -39,6 +44,7 @@ export default async function ResearcherFeedbackData({ studyId }: ResearcherFeed
         researcherHasPilotData={true}
         feedbackMessage={RESEARCHER_FEEDBACK_RSC_NO_TEMPLATE}
         feedbackTone="info"
+        canEditStudySetup={canEditStudySetup}
       />
     )
   }
@@ -53,6 +59,7 @@ export default async function ResearcherFeedbackData({ studyId }: ResearcherFeed
         researcherHasPilotData={true}
         feedbackMessage={loaded.error}
         feedbackTone="error"
+        canEditStudySetup={canEditStudySetup}
       />
     )
   }
@@ -65,6 +72,7 @@ export default async function ResearcherFeedbackData({ studyId }: ResearcherFeed
         researcherHasPilotData={true}
         feedbackMessage={researcherFeedbackPersonalDataBlockedMessage(loaded.variableNames)}
         feedbackTone="warning"
+        canEditStudySetup={canEditStudySetup}
       />
     )
   }
@@ -74,6 +82,7 @@ export default async function ResearcherFeedbackData({ studyId }: ResearcherFeed
       studyId={studyId}
       renderedMarkdown={loaded.renderedMarkdown}
       researcherHasPilotData={loaded.researcherHasPilotData}
+      canEditStudySetup={canEditStudySetup}
     />
   )
 }

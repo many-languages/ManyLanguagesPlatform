@@ -2,6 +2,7 @@ import { Suspense } from "react"
 import { notFound } from "next/navigation"
 import { getStudyRsc } from "../queries/getStudy"
 import { getBlitzContext } from "@/src/app/blitz-server"
+import { canEditStudySetup } from "@/src/lib/studies/studyEditability"
 import ResearcherData from "./components/ResearcherData"
 import ParticipantData from "./components/ParticipantData"
 import SetupProgressCard from "./setup/components/client/SetupProgressCard"
@@ -24,6 +25,7 @@ export default async function StudyPage({ params }: { params: Promise<{ studyId:
 
     // Fetch core study data first (always needed for progressive loading)
     const study = await getStudyRsc(studyId)
+    const canEditSetup = canEditStudySetup(study)
 
     // Ensure role is defined (should be after authentication check)
     const userRole = session.role as "RESEARCHER" | "PARTICIPANT"
@@ -41,12 +43,14 @@ export default async function StudyPage({ params }: { params: Promise<{ studyId:
         )}
 
         {/* Setup Progress Card for researchers */}
-        {userRole === "RESEARCHER" && <SetupProgressCard study={study} />}
+        {userRole === "RESEARCHER" && (
+          <SetupProgressCard study={study} canEditStudySetup={canEditSetup} />
+        )}
 
         {/* Researcher-specific data - progressive loading via Suspense */}
         {userRole === "RESEARCHER" && (
           <Suspense fallback={<div className="skeleton h-32 w-full mt-4" />}>
-            <ResearcherData studyId={studyId} study={study} />
+            <ResearcherData studyId={studyId} study={study} canEditStudySetup={canEditSetup} />
           </Suspense>
         )}
 

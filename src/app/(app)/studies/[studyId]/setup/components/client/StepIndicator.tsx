@@ -7,6 +7,8 @@ interface StepIndicatorProps {
   completedSteps: number[]
   onClickStep?: (stepId: number) => void
   editable?: boolean
+  /** When `editable` is false but steps are completed, explain why edit navigation is blocked (e.g. archived). */
+  editBlockedTooltip?: string
 }
 
 const steps = [
@@ -22,6 +24,7 @@ export default function StepIndicator({
   completedSteps,
   onClickStep,
   editable = false,
+  editBlockedTooltip,
 }: StepIndicatorProps) {
   const pathname = usePathname()
 
@@ -56,6 +59,8 @@ export default function StepIndicator({
                 ? "Complete this step first"
                 : isCompleted && editable
                 ? "Click to edit"
+                : !editable && isCompleted && editBlockedTooltip
+                ? editBlockedTooltip
                 : undefined
             }
           >

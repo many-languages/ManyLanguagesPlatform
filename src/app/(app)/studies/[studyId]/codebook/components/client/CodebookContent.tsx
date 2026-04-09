@@ -28,6 +28,10 @@ interface VariableCodebookEntry {
 
 import { StudyWithRelations } from "@/src/app/(app)/studies/queries/getStudy"
 import { studySetupStepPath } from "../../../setup/utils/setupRoutes"
+import {
+  ARCHIVED_STUDY_CANNOT_EDIT_MESSAGE,
+  canEditStudySetup,
+} from "@/src/lib/studies/studyEditability"
 
 interface CodebookContentProps {
   initialVariables: Array<{
@@ -60,6 +64,7 @@ export default function CodebookContent({
   const router = useRouter()
   // const { study, studyId } = useStudySetup() // Removed context
   const studyId = study.id
+  const canEditSetup = canEditStudySetup(study)
   const step5Completed = study.latestJatosStudyUpload?.step5Completed ?? false
   const [variables, setVariables] = useState<VariableCodebookEntry[]>([])
   const [isSaving, setIsSaving] = useState(false)
@@ -145,6 +150,10 @@ export default function CodebookContent({
   }
 
   const handleNext = async () => {
+    if (!canEditSetup) {
+      toast.error(ARCHIVED_STUDY_CANNOT_EDIT_MESSAGE)
+      return
+    }
     // Always save to update step5Completed (fixes stale step flags)
     const success = await handleSave()
     if (!success) return
@@ -154,6 +163,11 @@ export default function CodebookContent({
   if (variables.length === 0) {
     return (
       <>
+        {!canEditSetup && (
+          <Alert variant="info" className="mb-4">
+            <p>{ARCHIVED_STUDY_CANNOT_EDIT_MESSAGE}</p>
+          </Alert>
+        )}
         <Alert variant="warning">
           No variables found. Please complete step 4 (Debug + approve extraction) first to extract
           variables from your pilot data.
@@ -163,7 +177,11 @@ export default function CodebookContent({
           prev="step4"
           next="step6"
           disableNext
-          nextTooltip="No variables were extracted. Go back to Step 4 and rerun extraction."
+          nextTooltip={
+            !canEditSetup
+              ? ARCHIVED_STUDY_CANNOT_EDIT_MESSAGE
+              : "No variables were extracted. Go back to Step 4 and rerun extraction."
+          }
         />
       </>
     )
@@ -177,6 +195,11 @@ export default function CodebookContent({
 
   return (
     <>
+      {!canEditSetup && (
+        <Alert variant="info" className="mb-4">
+          <p>{ARCHIVED_STUDY_CANNOT_EDIT_MESSAGE}</p>
+        </Alert>
+      )}
       <Card title="How to create your codebook?" collapsible bgColor="bg-base-100" className="mb-6">
         <ol className="list-decimal list-inside space-y-2 text-sm">
           <li>
@@ -287,9 +310,13 @@ export default function CodebookContent({
         prev="step4"
         next="step6"
         onNext={handleNext}
-        disableNext={hasMissingDescriptions}
+        disableNext={hasMissingDescriptions || !canEditSetup}
         nextTooltip={
-          hasMissingDescriptions ? "Please add descriptions for all variables" : undefined
+          !canEditSetup
+            ? ARCHIVED_STUDY_CANNOT_EDIT_MESSAGE
+            : hasMissingDescriptions
+            ? "Please add descriptions for all variables"
+            : undefined
         }
       />
     </>

@@ -11,7 +11,7 @@ export function deriveVariableFlags(diagnostics: Diagnostic[]): VariableFlag[] {
   // Diagnostic codes that map to flags
   const flagCodes: Set<DiagnosticCode> = new Set([
     "TYPE_DRIFT",
-    "MANY_NULLS",
+    "HIGH_NULL_RATE",
     "MIXED_ARRAY_ELEMENT_TYPES",
     "HIGH_OCCURRENCE",
     "HIGH_CARDINALITY",

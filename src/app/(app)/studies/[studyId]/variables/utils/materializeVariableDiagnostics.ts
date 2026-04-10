@@ -17,13 +17,11 @@ export function materializeVariableDiagnostics(
   thresholds: VariableHeuristicThresholds,
   opts: {
     maxExamplePaths: number
-    includeManyNulls?: boolean // if you decide MANY_NULLS is redundant with HIGH_NULL_RATE
   }
 ): Diagnostic[] {
   const diags: Diagnostic[] = []
   const seen = new Set<string>()
   const maxExamplePaths = opts.maxExamplePaths
-  const includeManyNulls = opts.includeManyNulls ?? true
 
   const pushOnce = (d: Diagnostic) => {
     const key = `${d.code}||${d.message}`
@@ -140,23 +138,6 @@ export function materializeVariableDiagnostics(
           nullCount,
           totalCount,
           threshold: thresholds.highNullRate,
-        },
-      })
-    }
-
-    if (includeManyNulls && nullRate >= thresholds.manyNulls) {
-      pushOnce({
-        severity: "warning",
-        code: "MANY_NULLS",
-        message: `Variable '${variableKey}' has many nulls: ${(nullRate * 100).toFixed(
-          1
-        )}% (${nullCount}/${totalCount})`,
-        metadata: {
-          variable: variableKey,
-          nullRate,
-          nullCount,
-          totalCount,
-          threshold: thresholds.manyNulls,
         },
       })
     }

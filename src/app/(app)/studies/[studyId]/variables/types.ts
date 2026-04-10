@@ -137,7 +137,6 @@ export type DiagnosticCode =
   | "SKIPPED_NON_JSON_TYPE"
   | "VALUE_JSON_UNSERIALIZABLE_FALLBACK_USED"
   | "HIGH_NULL_RATE"
-  | "MANY_NULLS"
   | "MIXED_ARRAY_ELEMENT_TYPES"
   | "HIGH_OCCURRENCE"
   | "LARGE_VALUES"
@@ -231,7 +230,7 @@ export interface VariableExample {
 export type VariableFlag = Extract<
   DiagnosticCode,
   | "TYPE_DRIFT"
-  | "MANY_NULLS"
+  | "HIGH_NULL_RATE"
   | "MIXED_ARRAY_ELEMENT_TYPES"
   | "HIGH_OCCURRENCE"
   | "HIGH_CARDINALITY"
@@ -240,7 +239,6 @@ export type VariableFlag = Extract<
 >
 
 export type VariableHeuristicThresholds = {
-  manyNulls: number
   highNullRate: number
   highOccurrence: number
   highCardinality: number
@@ -291,7 +289,6 @@ export const DEFAULT_EXTRACTION_CONFIG: ExtractionConfig = {
     maxDistinctTracking: 100,
   },
   heuristics: {
-    manyNulls: 0.2, // 20%
     highNullRate: 0.8, // 80%
     highOccurrence: 10000,
     highCardinality: 100,

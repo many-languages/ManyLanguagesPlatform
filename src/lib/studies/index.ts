@@ -7,4 +7,8 @@ export {
   assertStudyDeleteAllowedByResponses,
   assertStudyNotArchived,
 } from "./studyLifecycle"
-export { ARCHIVED_STUDY_CANNOT_EDIT_MESSAGE, canEditStudySetup } from "./studyEditability"
+export {
+  ARCHIVED_STUDY_CANNOT_EDIT_MESSAGE,
+  canEditStudySetup,
+  studyArchivedBlocksSetupWrite,
+} from "./studyEditability"

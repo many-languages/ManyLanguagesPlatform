@@ -1,6 +1,9 @@
 import db from "db"
 
-import { ARCHIVED_STUDY_CANNOT_EDIT_MESSAGE } from "./studyEditability"
+import {
+  ARCHIVED_STUDY_CANNOT_EDIT_MESSAGE,
+  studyArchivedBlocksSetupWrite,
+} from "./studyEditability"
 import { studyHasParticipantResponses } from "./participantResponses"
 
 export async function assertStudyArchiveAllowed(studyId: number): Promise<void> {
@@ -34,12 +37,12 @@ export async function assertStudyNotArchived(
     if (!study) {
       throw new Error("Study not found")
     }
-    if (study.archived === true) {
+    if (studyArchivedBlocksSetupWrite(study)) {
       throw new Error(ARCHIVED_STUDY_CANNOT_EDIT_MESSAGE)
     }
     return
   }
-  if (studyOrId.archived === true) {
+  if (studyArchivedBlocksSetupWrite(studyOrId)) {
     throw new Error(ARCHIVED_STUDY_CANNOT_EDIT_MESSAGE)
   }
 }

@@ -1,17 +1,9 @@
-import { notFound } from "next/navigation"
 import Step3Content from "./components/client/Step3Content"
 import SetupStepHeader from "../components/client/SetupStepHeader"
-import { getStudyRsc } from "../../../queries/getStudy"
+import { loadStudySetupPage } from "../utils/loadStudySetupPage"
 
 export default async function Step3Page({ params }: { params: Promise<{ studyId: string }> }) {
-  const { studyId: studyIdRaw } = await params
-  const studyId = Number(studyIdRaw)
-
-  if (!Number.isFinite(studyId)) {
-    notFound()
-  }
-
-  const study = await getStudyRsc(studyId)
+  const { studyId, study } = await loadStudySetupPage(params)
 
   return (
     <>

@@ -1,15 +1,13 @@
-import { notFound } from "next/navigation"
 import CodebookContent from "../../codebook/components/client/CodebookContent"
 import SetupStepHeader from "../components/client/SetupStepHeader"
 import { getCodebookDataRsc } from "../../codebook/queries/getCodebookData"
+import { loadStudySetupPage } from "../utils/loadStudySetupPage"
+import type { StudyWithRelations } from "@/src/app/(app)/studies/queries/getStudy"
 
-import { getStudyRsc } from "../../../queries/getStudy"
-
-async function Step5ContentWrapper({ studyId }: { studyId: number }) {
+async function Step5ContentWrapper({ study }: { study: StudyWithRelations }) {
+  const studyId = study.id
   const { variables, codebook, approvedExtractionId, approvedExtractionApprovedAt } =
     await getCodebookDataRsc(studyId)
-
-  const study = await getStudyRsc(studyId)
 
   return (
     <>
@@ -37,12 +35,7 @@ async function Step5ContentWrapper({ studyId }: { studyId: number }) {
 }
 
 export default async function Step5Page({ params }: { params: Promise<{ studyId: string }> }) {
-  const { studyId: studyIdRaw } = await params
-  const studyId = Number(studyIdRaw)
+  const { study } = await loadStudySetupPage(params)
 
-  if (!Number.isFinite(studyId)) {
-    notFound()
-  }
-
-  return <Step5ContentWrapper studyId={studyId} />
+  return <Step5ContentWrapper study={study} />
 }

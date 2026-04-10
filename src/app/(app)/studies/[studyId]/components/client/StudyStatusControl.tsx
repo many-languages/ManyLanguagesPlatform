@@ -20,10 +20,10 @@ export default function StudyStatusControl({ study }: StudyStatusControlProps) {
 
   const setupComplete = isSetupComplete(study as StudyWithMinimalRelations)
   const isApproved = study.adminApproved === true
-  const canActivate = isApproved && setupComplete
+  const canLaunch = isApproved && setupComplete
   const isArchived = study.archived
   const isOpen = study.status === "OPEN"
-  const disabled = !canActivate || isArchived
+  const disabled = !canLaunch || isArchived
 
   const handleToggle = async () => {
     try {
@@ -31,7 +31,7 @@ export default function StudyStatusControl({ study }: StudyStatusControlProps) {
         studyId: study.id,
         status: isOpen ? "CLOSED" : "OPEN",
       })
-      toast.success(isOpen ? "Data collection disabled" : "Data collection enabled")
+      toast.success(isOpen ? "Data collection paused" : "Study launched")
       router.refresh()
     } catch (error) {
       const message = error instanceof Error ? error.message : "Failed to update study status"
@@ -40,9 +40,9 @@ export default function StudyStatusControl({ study }: StudyStatusControlProps) {
   }
 
   const disabledTip = isArchived
-    ? "Archived studies cannot be activated or deactivated. Unarchive the study first — archiving turns data collection off automatically."
-    : "Complete setup and get admin approval to activate"
-  const enabledTitle = isOpen ? "Stop data collection" : "Start data collection"
+    ? "Archived studies cannot be launched or paused. Unarchive the study first — archiving turns data collection off automatically."
+    : "Complete setup and get admin approval to launch"
+  const enabledTitle = isOpen ? "Pause data collection" : "Launch data collection"
 
   return (
     <div className="flex flex-wrap items-center gap-3">
@@ -60,7 +60,7 @@ export default function StudyStatusControl({ study }: StudyStatusControlProps) {
           disabled={disabled}
           title={!disabled ? enabledTitle : undefined}
         >
-          {isOpen ? "Deactivate" : "Activate"}
+          {isOpen ? "Pause" : "Launch"}
         </button>
       </span>
     </div>

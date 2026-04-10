@@ -35,7 +35,7 @@ export default async function StudyPage({ params }: { params: Promise<{ studyId:
         {/* Study header */}
         <StudyHeader study={study} />
 
-        {/* Review status and activate/deactivate for researchers */}
+        {/* Review status and launch/pause for researchers */}
         {userRole === "RESEARCHER" && (
           <div className="mt-4 flex justify-center">
             <StudyStatusControl study={study} />

@@ -41,7 +41,7 @@ export default resolver.pipe(
     // Require admin approval before allowing status = OPEN
     if (status === "OPEN" && existingStudy.adminApproved !== true) {
       throw new Error(
-        "Study must be approved by an administrator before data collection can be activated."
+        "Study must be approved by an administrator before data collection can be launched."
       )
     }
 

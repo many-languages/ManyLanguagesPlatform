@@ -20,11 +20,16 @@ function StatItem({ href, icon, label, count }: StatItemProps) {
   return (
     <Link
       href={href as Route}
-      className="flex items-center gap-3 p-3 rounded-lg hover:bg-base-300 transition-colors"
+      className={[
+        "flex w-full items-center gap-3 rounded-lg border border-transparent p-3",
+        "text-left font-normal no-underline transition-all duration-150",
+        "hover:border-primary/45 hover:bg-primary/10 hover:shadow-md",
+        "active:scale-[0.99] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary",
+      ].join(" ")}
     >
-      <span className="text-base-content/70">{icon}</span>
+      <span className="text-base-content/70 shrink-0">{icon}</span>
       <span className="flex-1 text-sm">{label}</span>
-      <span className="badge badge-primary badge-lg">{count}</span>
+      <span className="badge badge-primary badge-lg shrink-0">{count}</span>
     </Link>
   )
 }

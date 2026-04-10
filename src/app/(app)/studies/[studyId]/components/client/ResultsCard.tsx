@@ -13,6 +13,7 @@ import { LoadingMessage } from "@/src/app/components/LoadingStates"
 import cn from "classnames"
 import FilterComponent from "./FilterComponent"
 import DownloadResultsButton from "./DownloadResultsButton"
+import DownloadCleanedResultsButton from "./DownloadCleanedResultsButton"
 
 import type {
   JatosMetadata,
@@ -27,6 +28,8 @@ interface ResultsCardProps {
   properties: JatosStudyProperties
   initialEnrichedResults: EnrichedJatosStudyResult[]
   studyId: number
+  /** True when the latest upload has an approved extraction (step 4). */
+  hasApprovedExtraction: boolean
 }
 
 export default function ResultsCard({
@@ -35,6 +38,7 @@ export default function ResultsCard({
   properties,
   initialEnrichedResults,
   studyId,
+  hasApprovedExtraction,
 }: ResultsCardProps) {
   const router = useRouter()
   const [enrichedResults, setEnrichedResults] = useState(initialEnrichedResults)
@@ -43,6 +47,8 @@ export default function ResultsCard({
   const [selectedComponentUuids, setSelectedComponentUuids] = useState<string[]>(
     properties.components?.map((c) => c.uuid) ?? []
   )
+
+  const cleanedDownloadEnabled = hasApprovedExtraction && enrichedResults.length > 0
 
   // ✅ Define DaisyUI colors
   const colorClasses = [
@@ -189,6 +195,15 @@ export default function ResultsCard({
           </AsyncButton>
           {/* Download all data */}
           <DownloadResultsButton studyId={studyId} />
+          <DownloadCleanedResultsButton
+            studyId={studyId}
+            enabled={cleanedDownloadEnabled}
+            disabledReason={
+              cleanedDownloadEnabled
+                ? undefined
+                : "Requires an approved extraction and at least one result (participant or pilot)."
+            }
+          />
           {/* Open Inspector */}
           <Link href={`/studies/${studyId}/inspector`} className="btn btn-ghost">
             Inspector

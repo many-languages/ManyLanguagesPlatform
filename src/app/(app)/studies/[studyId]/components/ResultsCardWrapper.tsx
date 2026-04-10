@@ -13,6 +13,7 @@ interface ResultsCardWrapperProps {
   properties: JatosStudyProperties
   studyId: number
   initialEnrichedResults: EnrichedJatosStudyResult[]
+  hasApprovedExtraction: boolean
 }
 
 export default function ResultsCardWrapper(props: ResultsCardWrapperProps) {
@@ -24,6 +25,7 @@ export default function ResultsCardWrapper(props: ResultsCardWrapperProps) {
         properties={props.properties}
         initialEnrichedResults={props.initialEnrichedResults}
         studyId={props.studyId}
+        hasApprovedExtraction={props.hasApprovedExtraction}
       />
     </Suspense>
   )

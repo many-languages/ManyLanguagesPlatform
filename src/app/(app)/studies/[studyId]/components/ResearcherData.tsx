@@ -177,6 +177,7 @@ export default async function ResearcherData({
           properties={properties}
           studyId={studyId}
           initialEnrichedResults={enrichedResults}
+          hasApprovedExtraction={Boolean(latestUpload?.approvedExtractionId)}
         />
       )}
 

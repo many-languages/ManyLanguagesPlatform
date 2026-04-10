@@ -1,6 +1,7 @@
-import { notFound } from "next/navigation"
+import { notFound, redirect } from "next/navigation"
 import StepIndicator from "./components/client/StepIndicator"
 import { getStudyRsc } from "../../queries/getStudy"
+import { studyPath } from "./utils/setupRoutes"
 import { getCompletedSteps } from "./utils/setupStatus"
 
 export default async function StudySetupLayout({
@@ -17,20 +18,26 @@ export default async function StudySetupLayout({
     notFound()
   }
 
+  let study: Awaited<ReturnType<typeof getStudyRsc>>
   try {
-    const study = await getStudyRsc(studyId)
-    const completedSteps = getCompletedSteps(study)
-
-    return (
-      <div className="max-w-6xl mx-auto mt-10">
-        <StepIndicator completedSteps={completedSteps} />
-        <div className="card bg-base-200 p-6 shadow-md mt-4">{children}</div>
-      </div>
-    )
-  } catch (error: any) {
-    if (error.name === "NotFoundError") {
+    study = await getStudyRsc(studyId)
+  } catch (error: unknown) {
+    if ((error as { name?: string })?.name === "NotFoundError") {
       notFound()
     }
     throw error
   }
+
+  if (study.archived === true) {
+    redirect(studyPath(studyId))
+  }
+
+  const completedSteps = getCompletedSteps(study)
+
+  return (
+    <div className="max-w-6xl mx-auto mt-10">
+      <StepIndicator completedSteps={completedSteps} />
+      <div className="card bg-base-200 p-6 shadow-md mt-4">{children}</div>
+    </div>
+  )
 }

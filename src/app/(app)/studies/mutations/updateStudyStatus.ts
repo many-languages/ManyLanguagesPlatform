@@ -1,5 +1,6 @@
 import { resolver } from "@blitzjs/rpc"
 import db from "db"
+import { assertStudyNotArchived } from "@/src/lib/studies"
 import { UpdateStudyStatus } from "../validations"
 import { sendNotification } from "../../notifications/services"
 
@@ -35,11 +36,7 @@ export default resolver.pipe(
       return existingStudy
     }
 
-    if (existingStudy.archived) {
-      throw new Error(
-        "Archived studies cannot have data collection activated or deactivated. Unarchive the study first."
-      )
-    }
+    await assertStudyNotArchived(existingStudy)
 
     // Require admin approval before allowing status = OPEN
     if (status === "OPEN" && existingStudy.adminApproved !== true) {

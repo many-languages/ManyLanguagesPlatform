@@ -1,7 +1,7 @@
 import { resolver } from "@blitzjs/rpc"
 import db from "db"
 import { z } from "zod"
-import { withStudyAccess } from "../../utils/withStudyAccess"
+import { withStudyWriteAccess } from "../../utils/withStudyWriteAccess"
 import { computeCodebookValidation } from "../utils/computeCodebookValidation"
 import { getPersonalDataViolationsForPersistedTemplate } from "../../feedback/utils/feedbackTemplatePersonalDataViolations"
 
@@ -32,7 +32,7 @@ export async function updateVariableCodebookRsc(input: {
     personalData: boolean
   }>
 }): Promise<UpdateVariableCodebookResult> {
-  return withStudyAccess(input.studyId, async (_sId, _uId) => {
+  return withStudyWriteAccess(input.studyId, async (_sId, _uId) => {
     const study = await db.study.findUnique({
       where: { id: input.studyId },
       select: {

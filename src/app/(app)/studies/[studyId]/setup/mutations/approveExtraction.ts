@@ -2,7 +2,7 @@ import { resolver } from "@blitzjs/rpc"
 import { z } from "zod"
 import db, { Prisma } from "db"
 import { getAllPilotResultsRsc } from "../../utils/getAllPilotResults"
-import { withStudyAccess } from "../../utils/withStudyAccess"
+import { withStudyWriteAccess } from "../../utils/withStudyWriteAccess"
 import { DEFAULT_EXTRACTION_CONFIG } from "../../variables/types"
 import { extractVariableBundleFromResults } from "../../variables/utils/extractVariable"
 import { extractionBundleCache } from "../utils/extractionBundleCache"
@@ -42,7 +42,7 @@ function buildExtractionOutputHash(
 export async function approveExtractionRsc(input: {
   studyId: number
 }): Promise<{ extractionSnapshotId: number; variableCount: number }> {
-  return withStudyAccess(input.studyId, async (_sId, _uId) => {
+  return withStudyWriteAccess(input.studyId, async (_sId, _uId) => {
     const study = await db.study.findUnique({
       where: { id: input.studyId },
       select: {

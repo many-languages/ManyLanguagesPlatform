@@ -161,7 +161,13 @@ export default async function ResearcherData({
       {metadata && <StudySummary metadata={metadata} />}
 
       {/* Manage participants for the study */}
-      {metadata && <ParticipantManagementCard participants={participants} metadata={metadata} />}
+      {metadata && (
+        <ParticipantManagementCard
+          participants={participants}
+          metadata={metadata}
+          canEditStudySetup={canEditStudySetup}
+        />
+      )}
 
       {/* Showing detailed results */}
       {metadata && (

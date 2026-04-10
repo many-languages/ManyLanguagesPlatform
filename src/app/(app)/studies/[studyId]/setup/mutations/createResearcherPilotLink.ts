@@ -1,7 +1,7 @@
 import { resolver } from "@blitzjs/rpc"
 import db from "db"
 import { z } from "zod"
-import { withStudyAccess } from "../../utils/withStudyAccess"
+import { withStudyWriteAccess } from "../../utils/withStudyWriteAccess"
 import { AuthenticationError } from "blitz"
 
 export const createResearcherPilotLinkSchema = z.object({
@@ -58,8 +58,8 @@ export default resolver.pipe(
   resolver.zod(createResearcherPilotLinkSchema),
   resolver.authorize("RESEARCHER"),
   async ({ studyId, studyResearcherId, jatosStudyUploadId, jatosRunUrl, markerToken }) => {
-    // 3. Use withStudyAccess to ensure the user has general access to the study
-    return await withStudyAccess(studyId, async (verifiedStudyId: number, userId: number) => {
+    // 3. Use withStudyWriteAccess (membership + not archived) for pilot link creation
+    return await withStudyWriteAccess(studyId, async (verifiedStudyId: number, userId: number) => {
       // 4. Call the core logic with the trusted userId
       return await createResearcherPilotLink(
         verifiedStudyId,

@@ -2,7 +2,7 @@ import { resolver } from "@blitzjs/rpc"
 import db from "db"
 import { CreateFeedbackTemplateSchema } from "../validations"
 import type { FeedbackTemplate } from "../types"
-import { withStudyAccess } from "../../utils/withStudyAccess"
+import { withStudyWriteAccess } from "../../utils/withStudyWriteAccess"
 import { assertFeedbackTemplatePersonalDataPolicy } from "../utils/assertFeedbackTemplatePersonalDataPolicy"
 import { createFeedbackTemplateInTransaction } from "../utils/feedbackTemplateSaveShared"
 
@@ -12,7 +12,7 @@ export async function createFeedbackTemplateRsc(input: {
   content: string
   requiredVariableNames?: string[]
 }): Promise<FeedbackTemplate> {
-  return withStudyAccess(input.studyId, async (_sId, _uId) => {
+  return withStudyWriteAccess(input.studyId, async (_sId, _uId) => {
     await assertFeedbackTemplatePersonalDataPolicy(
       input.studyId,
       input.content,

@@ -7,12 +7,14 @@ import DashboardUpcomingDeadlinesCard from "./DashboardUpcomingDeadlinesCard"
 import DashboardParticipantIncompleteStudiesCard from "./DashboardParticipantIncompleteStudiesCard"
 import DashboardParticipantSummaryCard from "./DashboardParticipantSummaryCard"
 import DashboardParticipantCompletedNotPaidCard from "./DashboardParticipantCompletedNotPaidCard"
+import DashboardStaleAdminInvitesCard from "./DashboardStaleAdminInvitesCard"
 import type { ResearcherStudyCounts } from "../queries/getResearcherStudyCounts"
 import type { ParticipantStudyCounts } from "../queries/getParticipantStudyCounts"
 import type { ActiveStudyWithResponseCount } from "../queries/getActiveStudiesWithResponseCounts"
 import type { UpcomingDeadlines } from "../queries/getUpcomingDeadlines"
 import type { ParticipantIncompleteStudies } from "../queries/getParticipantIncompleteStudies"
 import type { ParticipantCompletedNotPaidStudy } from "../queries/getParticipantCompletedNotPaidStudies"
+import type { StalePendingAdminInvite } from "@/src/app/(admin)/admin/invitations/queries/getAdminInvites"
 
 type CurrentUser = {
   id: number
@@ -33,6 +35,7 @@ interface DashboardContentProps {
   participantIncompleteStudies: ParticipantIncompleteStudies
   participantCounts: ParticipantStudyCounts | null
   participantCompletedNotPaid: ParticipantCompletedNotPaidStudy[]
+  staleAdminInvites: StalePendingAdminInvite[]
 }
 
 export default function DashboardContent({
@@ -43,12 +46,15 @@ export default function DashboardContent({
   participantIncompleteStudies,
   participantCounts,
   participantCompletedNotPaid,
+  staleAdminInvites,
 }: DashboardContentProps) {
   const isParticipant = currentUser?.role === "PARTICIPANT"
+  const isSuperAdmin = currentUser?.role === "SUPERADMIN"
 
   return (
     <main>
       <div className="max-w-6xl mx-auto mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+        {isSuperAdmin && <DashboardStaleAdminInvitesCard invites={staleAdminInvites} />}
         {researcherCounts && <DashboardResearcherSummaryCard counts={researcherCounts} />}
         {participantCounts && <DashboardParticipantSummaryCard counts={participantCounts} />}
         {activeStudiesWithResponses.length > 0 && (

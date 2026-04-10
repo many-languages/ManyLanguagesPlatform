@@ -13,6 +13,7 @@ import {
   getParticipantCompletedNotPaidStudies,
   type ParticipantCompletedNotPaidStudy,
 } from "./queries/getParticipantCompletedNotPaidStudies"
+import { getStalePendingAdminInvitesRsc } from "@/src/app/(admin)/admin/invitations/queries/getAdminInvites"
 import DashboardContent from "./components/DashboardContent"
 import DashboardSkeleton from "./components/DashboardSkeleton"
 
@@ -55,6 +56,9 @@ export default async function DashboardPage() {
         ])
       : [emptyParticipantStudies, null, []]
 
+  const staleAdminInvites =
+    currentUser?.role === "SUPERADMIN" ? await getStalePendingAdminInvitesRsc().catch(() => []) : []
+
   return (
     <Suspense fallback={<DashboardSkeleton />}>
       <DashboardContent
@@ -65,6 +69,7 @@ export default async function DashboardPage() {
         participantIncompleteStudies={participantIncompleteStudies}
         participantCounts={participantCounts}
         participantCompletedNotPaid={participantCompletedNotPaid}
+        staleAdminInvites={staleAdminInvites}
       />
     </Suspense>
   )

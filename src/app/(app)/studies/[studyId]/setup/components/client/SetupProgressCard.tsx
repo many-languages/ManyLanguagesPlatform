@@ -9,6 +9,7 @@ import { NavigationButton } from "@/src/app/components/NavigationButton"
 import {
   getNextSetupStepUrl,
   getSetupProgress,
+  step6NeedsRevision,
   StudyWithMinimalRelations,
 } from "../../utils/setupStatus"
 import { studySetupStepPath } from "../../utils/setupRoutes"
@@ -31,16 +32,7 @@ export default function SetupProgressCard({
   }
   const progress = getSetupProgress(study)
   const { completedStepsList, incompleteStep, isComplete } = progress
-  const latestUpload = study.latestJatosStudyUpload
-  const step3Completed = latestUpload?.step3Completed ?? false
-  const step4Completed = latestUpload?.step4Completed ?? false
-  const step5Completed = latestUpload?.step5Completed ?? false
-
-  // Check if Step 6 needs revision (has template but Step 3, Step 4, or Step 5 is incomplete)
-  // This happens when JATOS study is updated after feedback template was created
-  const hasFeedbackTemplate = Boolean(study.FeedbackTemplate)
-  const step6NeedsRevision =
-    hasFeedbackTemplate && (!step3Completed || !step4Completed || !step5Completed)
+  const showStep6RevisionBanner = step6NeedsRevision(study)
 
   const handleStepClick = (stepId: number) => {
     // Only completed steps are clickable, so we always navigate with edit mode
@@ -60,7 +52,7 @@ export default function SetupProgressCard({
           <p>{ARCHIVED_STUDY_CANNOT_EDIT_MESSAGE}</p>
         </Alert>
       )}
-      {step6NeedsRevision && (
+      {showStep6RevisionBanner && (
         <Alert variant="info" className="mt-4">
           <p className="mb-2">
             Your feedback template needs to be reviewed after the JATOS study was updated. Please
@@ -68,7 +60,7 @@ export default function SetupProgressCard({
           </p>
         </Alert>
       )}
-      {!isComplete && !step6NeedsRevision && (
+      {!isComplete && !showStep6RevisionBanner && (
         <Alert variant="warning" className="mt-4">
           <p className="mb-2">Complete all steps to open your study for participants.</p>
           {incompleteStep && (

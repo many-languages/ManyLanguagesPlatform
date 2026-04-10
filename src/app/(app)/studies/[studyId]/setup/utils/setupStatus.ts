@@ -140,6 +140,21 @@ export function getSetupProgress(study: StudyWithRelations | StudyWithMinimalRel
 }
 
 /**
+ * True when a saved feedback template exists but steps 3–5 are not all complete on the current
+ * JATOS upload. Unlike clearing `step6Completed` outright, this flags that Step 6 should be
+ * revisited after upstream work (e.g. a new JATOS study or revised extraction) without treating
+ * setup as a simple linear gap at step 6 alone.
+ */
+export function step6NeedsRevision(study: StudyWithRelations | StudyWithMinimalRelations): boolean {
+  const hasFeedbackTemplate = Boolean(study.FeedbackTemplate)
+  const upload = study.latestJatosStudyUpload
+  const step3Completed = upload?.step3Completed ?? false
+  const step4Completed = upload?.step4Completed ?? false
+  const step5Completed = upload?.step5Completed ?? false
+  return hasFeedbackTemplate && (!step3Completed || !step4Completed || !step5Completed)
+}
+
+/**
  * Returns the next step URL for continuing setup
  * Uses DB fields as source of truth
  */

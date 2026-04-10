@@ -2,12 +2,20 @@ export const metadata = {
   title: "Admin Invites",
 }
 
+import { redirect } from "next/navigation"
 import Card from "@/src/app/components/Card"
 import { AdminInviteForm } from "./components/AdminInviteForm"
 import AdminInviteManagementCard from "./components/AdminInviteManagementCard"
 import { getAdminInvitesRsc } from "./queries/getAdminInvites"
+import { getBlitzContext } from "@/src/app/blitz-server"
+import { isSuperAdmin } from "@/src/lib/auth/roles"
 
 export default async function AdminInvitesPage() {
+  const { session } = await getBlitzContext()
+  if (!isSuperAdmin(session.role)) {
+    redirect("/admin")
+  }
+
   const invites = await getAdminInvitesRsc()
 
   return (

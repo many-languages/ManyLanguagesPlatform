@@ -1,4 +1,4 @@
-import db from "db"
+import db, { type UserRole } from "db"
 import { getTokenForResearcher } from "../tokenBroker"
 import { grantAdminStudyAccessForDeletion } from "./grantAdminStudyAccess"
 import { deleteJatosStudy } from "../client/deleteStudy"
@@ -9,7 +9,7 @@ export type DeleteStudyFromJatosMode = "admin" | "pi"
  * Deletes the study from JATOS using a per-user API token from {@link getTokenForResearcher}
  * (never the env admin token as the acting identity on the delete request).
  *
- * - **admin:** verifies app ADMIN role, grants study membership via delegate researcher, then deletes.
+ * - **admin:** verifies app ADMIN or SUPERADMIN role, grants study membership via delegate researcher, then deletes.
  * - **pi:** caller must have verified PI; acting user is typically already a study member.
  *
  * No-op when there is no JATOS upload for the study (nothing to delete on JATOS).
@@ -29,7 +29,8 @@ export async function deletePlatformStudyFromJatos({
       where: { id: actingUserId },
       select: { role: true },
     })
-    if (!admin || admin.role !== "ADMIN") {
+    const role = admin?.role as UserRole | undefined
+    if (!admin || (role !== "ADMIN" && role !== "SUPERADMIN")) {
       throw new Error(
         `User ${actingUserId} is not an app admin; cannot perform admin study deletion.`
       )

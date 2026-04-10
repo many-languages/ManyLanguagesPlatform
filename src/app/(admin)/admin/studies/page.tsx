@@ -4,9 +4,13 @@ export const metadata = {
 
 import AdminStudyManagementCard from "./components/AdminStudyManagementCard"
 import { getStudiesRsc } from "./queries/getAdminStudies"
+import { getBlitzContext } from "@/src/app/blitz-server"
+import type { UserRole } from "@/db"
 
 export default async function AdminStudiesPage() {
   const studies = await getStudiesRsc()
+  const { session } = await getBlitzContext()
+  const viewerRole = session.role as UserRole
 
   return (
     <section className="space-y-6">
@@ -18,7 +22,7 @@ export default async function AdminStudiesPage() {
         </p>
       </header>
 
-      <AdminStudyManagementCard studies={studies} />
+      <AdminStudyManagementCard studies={studies} viewerRole={viewerRole} />
     </section>
   )
 }

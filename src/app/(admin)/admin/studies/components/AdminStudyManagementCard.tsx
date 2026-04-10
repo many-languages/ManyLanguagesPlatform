@@ -17,6 +17,7 @@ import {
 } from "@/src/lib/utils/statusBadgePresets"
 import MDEditor from "@uiw/react-md-editor"
 import type { AdminStudyWithLatestUpload } from "../queries/getAdminStudies"
+import type { UserRole } from "@/db"
 import { getSetupStatusLabel } from "@/src/app/(app)/studies/[studyId]/setup/utils/setupStatus"
 import type { StudyWithMinimalRelations } from "@/src/app/(app)/studies/[studyId]/setup/utils/setupStatus"
 import StudyActions from "./StudyActions"
@@ -156,8 +157,10 @@ function FeedbackTemplateModal({
 
 export default function AdminStudyManagementCard({
   studies,
+  viewerRole,
 }: {
   studies: StudyWithFeedbackTemplate[]
+  viewerRole: UserRole
 }) {
   const rows = useMemo(() => {
     return studies.map((study) => {
@@ -279,7 +282,7 @@ export default function AdminStudyManagementCard({
         title=""
         bgColor="bg-base-100"
         className="mt-4"
-        actions={<StudyActions studies={studies} />}
+        actions={<StudyActions studies={studies} viewerRole={viewerRole} />}
       >
         <CheckboxFieldTable
           name="selectedStudyIds"

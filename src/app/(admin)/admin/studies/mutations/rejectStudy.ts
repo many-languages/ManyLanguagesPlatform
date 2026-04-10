@@ -12,7 +12,7 @@ const RejectStudySchema = z.object({
 
 export default resolver.pipe(
   resolver.zod(RejectStudySchema),
-  resolver.authorize("ADMIN"),
+  resolver.authorize(["ADMIN", "SUPERADMIN"]),
   async ({ studyIds }) => {
     const session = await getAuthorizedSession()
     const now = new Date()

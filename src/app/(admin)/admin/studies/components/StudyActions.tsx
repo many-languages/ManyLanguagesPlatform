@@ -17,6 +17,8 @@ import { ConfirmButton } from "@/src/app/components/ConfirmButton"
 import { isSetupComplete } from "@/src/app/(app)/studies/[studyId]/setup/utils/setupStatus"
 import type { StudyWithMinimalRelations } from "@/src/app/(app)/studies/[studyId]/setup/utils/setupStatus"
 import type { AdminStudyWithLatestUpload } from "../queries/getAdminStudies"
+import type { UserRole } from "@/db"
+import { isSuperAdmin } from "@/src/lib/auth/roles"
 
 type StudyWithFeedbackTemplate = AdminStudyWithLatestUpload
 
@@ -52,7 +54,13 @@ async function withStudyAction(
   }
 }
 
-export default function StudyActions({ studies }: { studies: StudyWithFeedbackTemplate[] }) {
+export default function StudyActions({
+  studies,
+  viewerRole,
+}: {
+  studies: StudyWithFeedbackTemplate[]
+  viewerRole: UserRole
+}) {
   const router = useRouter()
   const { watch, setValue, trigger } = useFormContext<AdminStudyFormValues>()
 
@@ -101,9 +109,28 @@ export default function StudyActions({ studies }: { studies: StudyWithFeedbackTe
   /** Unarchive when every selected study is archived (same idea as researcher StudyLifecycleActions). */
   const allArchived = selectedStudies.length > 0 && selectedStudies.every((s) => s.archived)
   const showUnarchiveButton = allArchived
-  /** Delete when no study in the selection is known to have participant responses. */
-  const showDeleteButton =
-    selectedStudies.length > 0 && selectedStudies.every((s) => s.hasParticipantResponses !== true)
+  const superadmin = isSuperAdmin(viewerRole)
+
+  /** Non–super-admins cannot delete archived studies that have responses; hide Delete entirely so it is not shown disabled. */
+  const hideDeleteForStaffAdmin =
+    !superadmin && selectedStudies.some((s) => s.hasParticipantResponses === true && s.archived)
+
+  const deleteDisabledReason =
+    selectedStudies.length === 0
+      ? null
+      : selectedStudies.some((s) => s.hasParticipantResponses === null)
+      ? "Could not verify participant response data. Try again later."
+      : selectedStudies.some((s) => s.hasParticipantResponses === true && !s.archived)
+      ? "Studies with participant responses must be archived before they can be deleted. Adjust your selection."
+      : null
+
+  const deleteEnabled =
+    selectedStudies.length > 0 && !hideDeleteForStaffAdmin && deleteDisabledReason === null
+
+  const deleteConfirmMessage =
+    superadmin && selectedStudies.some((s) => s.archived)
+      ? "This will permanently remove the selected archived study/studies from the platform and JATOS. All related data will be lost. Before continuing, confirm that study materials and results are copied to a long-term archive (for example Zenodo). This cannot be undone. Continue?"
+      : "This will permanently delete the selected study/studies from the database and JATOS. This cannot be undone. Continue?"
 
   const showApproveButton = hasPendingWithSetupComplete
   const showRejectButton = hasPending
@@ -289,17 +316,33 @@ export default function StudyActions({ studies }: { studies: StudyWithFeedbackTe
           Unarchive
         </ConfirmButton>
       )}
-      {showDeleteButton && (
-        <ConfirmButton
-          onConfirm={handleDelete}
-          confirmMessage="This will permanently delete the selected study/studies from the database and JATOS when they have no participant responses. This cannot be undone. Continue?"
-          loadingText="Deleting"
-          className="btn btn-error"
-          disabled={isSubmitting}
-        >
-          Delete study
-        </ConfirmButton>
-      )}
+      {selectedStudies.length > 0 &&
+        !hideDeleteForStaffAdmin &&
+        (deleteEnabled ? (
+          <ConfirmButton
+            onConfirm={handleDelete}
+            confirmMessage={deleteConfirmMessage}
+            loadingText="Deleting"
+            className="btn btn-error"
+            disabled={isSubmitting}
+          >
+            Delete study
+          </ConfirmButton>
+        ) : (
+          <span
+            className="tooltip tooltip-top before:max-w-sm"
+            data-tip={deleteDisabledReason ?? ""}
+          >
+            <button
+              type="button"
+              className="btn btn-error btn-disabled"
+              disabled
+              aria-disabled="true"
+            >
+              Delete study
+            </button>
+          </span>
+        ))}
     </div>
   )
 }

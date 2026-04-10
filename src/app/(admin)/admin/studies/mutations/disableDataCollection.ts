@@ -11,7 +11,7 @@ const DisableDataCollectionSchema = z.object({
 
 const disableDataCollection = resolver.pipe(
   resolver.zod(DisableDataCollectionSchema),
-  resolver.authorize("ADMIN"),
+  resolver.authorize(["ADMIN", "SUPERADMIN"]),
   async ({ studyIds }) => {
     // Fetch studies with their researchers before updating
     const studies = await db.study.findMany({

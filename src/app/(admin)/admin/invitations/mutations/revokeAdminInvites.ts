@@ -10,7 +10,7 @@ const RevokeAdminInvitesSchema = z.object({
 
 const revokeAdminInvites = resolver.pipe(
   resolver.zod(RevokeAdminInvitesSchema),
-  resolver.authorize("ADMIN"),
+  resolver.authorize("SUPERADMIN"),
   async ({ inviteIds }) => {
     const now = new Date()
 

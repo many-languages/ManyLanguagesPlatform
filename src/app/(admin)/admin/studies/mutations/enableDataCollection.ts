@@ -13,7 +13,7 @@ const EnableDataCollectionSchema = z.object({
 
 const enableDataCollection = resolver.pipe(
   resolver.zod(EnableDataCollectionSchema),
-  resolver.authorize("ADMIN"),
+  resolver.authorize(["ADMIN", "SUPERADMIN"]),
   async ({ studyIds }) => {
     // Fetch studies with researchers and latest upload for validation
     const studies = await db.study.findMany({

@@ -48,16 +48,15 @@ export default function AdminNavbar({ currentUser }: AdminNavbarProps) {
   }
 
   return (
-    <div className="navbar bg-base-100 sticky top-0 z-50 shadow-sm border-b border-primary/40 min-h-0 py-2">
-      <div className="flex-1 gap-3 items-center">
+    <div className="navbar bg-base-100 sticky top-0 z-50 shadow-sm border-b border-gray-300 min-h-0 py-2">
+      <div className="flex-1">
         <Link className="btn btn-ghost text-xl" href="/admin" onClick={closeActiveDropdown}>
           ManyLanguagesPlatform
         </Link>
-        <span className="badge badge-primary badge-outline uppercase tracking-wide">Admin</span>
       </div>
 
-      <div className="flex-none px-6 flex items-center gap-4">
-        <ul className="menu menu-horizontal items-center gap-1">
+      <div className="flex-none px-6 flex items-center gap-2">
+        <ul className="menu menu-horizontal px-6 items-center">
           <li>
             <Link href={"/admin"} onClick={closeActiveDropdown}>
               Dashboard

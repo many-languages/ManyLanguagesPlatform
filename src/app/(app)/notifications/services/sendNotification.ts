@@ -15,6 +15,8 @@ type SendNotificationInput<TData extends Record<string, any>> = {
   data: TData
   recipients: number[]
   routeData?: RouteData
+  /** When set, deleting the study cascades to this notification (optional for non-study notifications). */
+  studyId?: number
   announcement?: boolean
   pinForRecipients?: boolean
 }
@@ -24,6 +26,7 @@ export const sendNotification = async <TData extends Record<string, any>>({
   data,
   recipients,
   routeData,
+  studyId,
   announcement = false,
   pinForRecipients = false,
 }: SendNotificationInput<TData>) => {
@@ -48,6 +51,7 @@ export const sendNotification = async <TData extends Record<string, any>>({
       message: compiledMessage,
       announcement,
       routeData: routeData ?? undefined,
+      studyId: studyId ?? undefined,
     },
   })
 

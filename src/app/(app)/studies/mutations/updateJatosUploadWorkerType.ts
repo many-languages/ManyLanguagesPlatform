@@ -1,5 +1,6 @@
 import { resolver } from "@blitzjs/rpc"
 import db from "db"
+import { assertStudyNotArchived } from "@/src/lib/studies"
 import { UpdateJatosUploadWorkerType } from "../validations"
 import { verifyResearcherStudyAccess } from "@/src/app/(app)/studies/[studyId]/utils/verifyResearchersStudyAccess"
 
@@ -8,6 +9,7 @@ export default resolver.pipe(
   resolver.authorize(),
   async ({ studyId, jatosWorkerType }, ctx) => {
     await verifyResearcherStudyAccess(studyId, ctx.session.userId!)
+    await assertStudyNotArchived(studyId)
 
     const latestUpload = await db.jatosStudyUpload.findFirst({
       where: { studyId },

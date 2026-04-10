@@ -2,12 +2,18 @@ import { Suspense } from "react"
 import { notFound } from "next/navigation"
 import Step4Content from "./components/client/Step4Content"
 import SetupStepHeader from "../components/client/SetupStepHeader"
-import { getStudyRsc } from "../../../queries/getStudy"
 import { getValidationDataRsc } from "../../inspector/utils/getValidationData"
+import { loadStudySetupPage } from "../utils/loadStudySetupPage"
+import type { StudyWithRelations } from "@/src/app/(app)/studies/queries/getStudy"
 
-async function Step4ContentWrapper({ studyId }: { studyId: number }) {
+async function Step4ContentWrapper({
+  studyId,
+  study,
+}: {
+  studyId: number
+  study: StudyWithRelations
+}) {
   try {
-    const study = await getStudyRsc(studyId)
     // Access verification happens inside getValidationDataRsc
     const validationData = await getValidationDataRsc(studyId)
     return (
@@ -29,16 +35,11 @@ async function Step4ContentWrapper({ studyId }: { studyId: number }) {
 }
 
 export default async function Step4Page({ params }: { params: Promise<{ studyId: string }> }) {
-  const { studyId: studyIdRaw } = await params
-  const studyId = Number(studyIdRaw)
-
-  if (!Number.isFinite(studyId)) {
-    notFound()
-  }
+  const { studyId, study } = await loadStudySetupPage(params)
 
   return (
     <Suspense fallback={<div className="skeleton h-96 w-full" />}>
-      <Step4ContentWrapper studyId={studyId} />
+      <Step4ContentWrapper studyId={studyId} study={study} />
     </Suspense>
   )
 }

@@ -9,6 +9,8 @@ import { EmptyState } from "@/src/app/components/EmptyState"
 import RefreshFeedbackButton from "./RefreshFeedbackButton"
 import type { FeedbackCardProps, FeedbackCardTone } from "../../types"
 import { mdEditorStyles, mdEditorClassName } from "../../styles/feedbackStyles"
+import { studySetupStepPath } from "../../../setup/utils/setupRoutes"
+import { ARCHIVED_STUDY_CANNOT_EDIT_MESSAGE } from "@/src/lib/studies/studyEditability"
 
 const TONE_BG: Record<FeedbackCardTone, string> = {
   default: "bg-base-200",
@@ -35,6 +37,7 @@ export default function FeedbackCard({
   researcherHasPilotData = true,
   onRefresh,
   showEditButton = false,
+  canEditStudySetup = true,
   participantMatchingResponseCount = 0,
   participantSelectedResponseEndDate = null,
 }: FeedbackCardProps) {
@@ -52,13 +55,19 @@ export default function FeedbackCard({
     <div className="flex gap-2">
       {onRefresh && <RefreshFeedbackButton onRefresh={onRefresh} />}
       {showEditButton && (
-        <NavigationButton
-          href={`/studies/${studyId}/setup/step6`}
-          className="btn-primary"
-          pendingText="Opening"
+        <span
+          className={!canEditStudySetup ? "tooltip tooltip-top inline-block" : "inline-block"}
+          data-tip={!canEditStudySetup ? ARCHIVED_STUDY_CANNOT_EDIT_MESSAGE : undefined}
         >
-          Edit
-        </NavigationButton>
+          <NavigationButton
+            href={studySetupStepPath(studyId, 6)}
+            className={`btn-primary ${!canEditStudySetup ? "btn-disabled" : ""}`}
+            pendingText="Opening"
+            disabled={!canEditStudySetup}
+          >
+            Edit
+          </NavigationButton>
+        </span>
       )}
     </div>
   ) : undefined

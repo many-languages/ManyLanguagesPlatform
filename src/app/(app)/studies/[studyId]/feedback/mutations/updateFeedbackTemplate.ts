@@ -2,7 +2,7 @@ import { resolver } from "@blitzjs/rpc"
 import db from "db"
 import { UpdateFeedbackTemplateSchema } from "../validations"
 import type { FeedbackTemplate } from "../types"
-import { withStudyAccess } from "../../utils/withStudyAccess"
+import { withStudyWriteAccess } from "../../utils/withStudyWriteAccess"
 import { assertFeedbackTemplatePersonalDataPolicy } from "../utils/assertFeedbackTemplatePersonalDataPolicy"
 import { updateFeedbackTemplateInTransaction } from "../utils/feedbackTemplateSaveShared"
 
@@ -21,7 +21,7 @@ export async function updateFeedbackTemplateRsc(input: {
     throw new Error("Feedback template not found")
   }
 
-  return withStudyAccess(existingTemplate.studyId, async (_sId, _uId) => {
+  return withStudyWriteAccess(existingTemplate.studyId, async (_sId, _uId) => {
     await assertFeedbackTemplatePersonalDataPolicy(
       existingTemplate.studyId,
       input.content,

@@ -10,6 +10,8 @@ import disableDataCollection from "../mutations/disableDataCollection"
 import approveStudy from "../mutations/approveStudy"
 import rejectStudy from "../mutations/rejectStudy"
 import deleteStudy from "../mutations/deleteStudy"
+import archiveStudy from "@/src/app/(app)/studies/mutations/archiveStudy"
+import unarchiveStudy from "@/src/app/(app)/studies/mutations/unarchiveStudy"
 import { AdminStudyFormValues } from "../validations"
 import { ConfirmButton } from "@/src/app/components/ConfirmButton"
 import { isSetupComplete } from "@/src/app/(app)/studies/[studyId]/setup/utils/setupStatus"
@@ -68,11 +70,15 @@ export default function StudyActions({ studies }: { studies: StudyWithFeedbackTe
   const [approveMutation] = useMutation(approveStudy)
   const [rejectMutation] = useMutation(rejectStudy)
   const [deleteMutation] = useMutation(deleteStudy)
+  const [archiveMutation] = useMutation(archiveStudy)
+  const [unarchiveMutation] = useMutation(unarchiveStudy)
   const [isEnabling, setIsEnabling] = useState(false)
   const [isDisabling, setIsDisabling] = useState(false)
   const [isApproving, setIsApproving] = useState(false)
   const [isRejecting, setIsRejecting] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
+  const [isArchiving, setIsArchiving] = useState(false)
+  const [isUnarchiving, setIsUnarchiving] = useState(false)
 
   const selectedIds = watch("selectedStudyIds")
   const selectedStudies = studies.filter((s) => selectedIds.includes(s.id))
@@ -88,13 +94,21 @@ export default function StudyActions({ studies }: { studies: StudyWithFeedbackTe
     selectedStudies.length > 0 && selectedStudies.every((s) => s.status === "CLOSED")
   const mixed = selectedStudies.length > 0 && !allEnabled && !allDisabled
 
-  const canDelete =
+  /** Archive only when every selected study has real participant responses and is not already archived. */
+  const showArchiveButton =
     selectedStudies.length > 0 &&
-    selectedStudies.every((s) => !isSetupComplete(s as StudyWithMinimalRelations) || s.archived)
+    selectedStudies.every((s) => !s.archived && s.hasParticipantResponses === true)
+  /** Unarchive when every selected study is archived (same idea as researcher StudyLifecycleActions). */
+  const allArchived = selectedStudies.length > 0 && selectedStudies.every((s) => s.archived)
+  const showUnarchiveButton = allArchived
+  /** Delete when no study in the selection is known to have participant responses. */
+  const showDeleteButton =
+    selectedStudies.length > 0 && selectedStudies.every((s) => s.hasParticipantResponses !== true)
+
   const showApproveButton = hasPendingWithSetupComplete
   const showRejectButton = hasPending
-  const showDisableButton = allApproved && (allEnabled || mixed)
-  const showEnableButton = allApproved && (allDisabled || mixed)
+  const showDisableButton = allApproved && (allEnabled || mixed) && !allArchived
+  const showEnableButton = allApproved && (allDisabled || mixed) && !allArchived
 
   const handleEnable = () =>
     runWithStudyAction({
@@ -161,27 +175,51 @@ export default function StudyActions({ studies }: { studies: StudyWithFeedbackTe
 
   const handleDelete = () =>
     runWithStudyAction({
-      action: async (ids) => {
-        const invalid = studies.filter(
-          (s) =>
-            ids.includes(s.id) && isSetupComplete(s as StudyWithMinimalRelations) && !s.archived
-        )
-        if (invalid.length > 0) {
-          const titles = invalid.map((s) => s.title?.trim() || `Study #${s.id}`).join(", ")
-          toast.error(
-            `Cannot delete. Only studies with incomplete setup or archived studies can be deleted: ${titles}`,
-            { duration: 5000 }
-          )
-          return null
-        }
-        return deleteMutation({ studyIds: ids, reason: "Admin deletion from dashboard" })
-      },
+      action: async (ids) =>
+        deleteMutation({ studyIds: ids, reason: "Admin deletion from dashboard" }),
       successMessage: (count) => `Deleted ${count} study/studies`,
       errorMessage: "Failed to delete studies.",
       setLoading: setIsDeleting,
     })
 
-  const isSubmitting = isEnabling || isDisabling || isApproving || isRejecting || isDeleting
+  const handleArchive = () =>
+    runWithStudyAction({
+      action: async (ids) => {
+        const targets = studies.filter((s) => ids.includes(s.id) && !s.archived)
+        if (targets.length === 0) return null
+        for (const s of targets) {
+          await archiveMutation({ id: s.id })
+        }
+        return { updated: targets.length }
+      },
+      successMessage: (count) => `Archived ${count} study/studies`,
+      errorMessage: "Failed to archive studies.",
+      setLoading: setIsArchiving,
+    })
+
+  const handleUnarchive = () =>
+    runWithStudyAction({
+      action: async (ids) => {
+        const targets = studies.filter((s) => ids.includes(s.id) && s.archived)
+        if (targets.length === 0) return null
+        for (const s of targets) {
+          await unarchiveMutation({ id: s.id })
+        }
+        return { updated: targets.length }
+      },
+      successMessage: (count) => `Unarchived ${count} study/studies`,
+      errorMessage: "Failed to unarchive studies.",
+      setLoading: setIsUnarchiving,
+    })
+
+  const isSubmitting =
+    isEnabling ||
+    isDisabling ||
+    isApproving ||
+    isRejecting ||
+    isDeleting ||
+    isArchiving ||
+    isUnarchiving
 
   if (selectedIds.length === 0) {
     return null
@@ -229,10 +267,32 @@ export default function StudyActions({ studies }: { studies: StudyWithFeedbackTe
           {isEnabling ? "Enabling..." : "Enable data collection"}
         </button>
       )}
-      {canDelete && (
+      {showArchiveButton && (
+        <ConfirmButton
+          onConfirm={handleArchive}
+          confirmMessage="Selected studies will be archived (not permanently deleted). Continue?"
+          loadingText="Archiving"
+          className="btn btn-warning"
+          disabled={isSubmitting}
+        >
+          Archive study
+        </ConfirmButton>
+      )}
+      {showUnarchiveButton && (
+        <ConfirmButton
+          onConfirm={handleUnarchive}
+          confirmMessage="Selected studies will be restored (active again in lists). Continue?"
+          loadingText="Unarchiving"
+          className="btn btn-success"
+          disabled={isSubmitting}
+        >
+          Unarchive
+        </ConfirmButton>
+      )}
+      {showDeleteButton && (
         <ConfirmButton
           onConfirm={handleDelete}
-          confirmMessage="This will permanently delete the selected study/studies from the database and JATOS. All related data will be removed. This cannot be undone. Continue?"
+          confirmMessage="This will permanently delete the selected study/studies from the database and JATOS when they have no participant responses. This cannot be undone. Continue?"
           loadingText="Deleting"
           className="btn btn-error"
           disabled={isSubmitting}

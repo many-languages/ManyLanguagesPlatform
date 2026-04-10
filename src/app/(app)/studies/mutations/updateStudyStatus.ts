@@ -1,5 +1,6 @@
 import { resolver } from "@blitzjs/rpc"
 import db from "db"
+import { assertStudyNotArchived } from "@/src/lib/studies"
 import { UpdateStudyStatus } from "../validations"
 import { sendNotification } from "../../notifications/services"
 
@@ -23,6 +24,7 @@ export default resolver.pipe(
         status: true,
         title: true,
         adminApproved: true,
+        archived: true,
       },
     })
 
@@ -33,6 +35,8 @@ export default resolver.pipe(
     if (existingStudy.status === status) {
       return existingStudy
     }
+
+    await assertStudyNotArchived(existingStudy)
 
     // Require admin approval before allowing status = OPEN
     if (status === "OPEN" && existingStudy.adminApproved !== true) {
@@ -77,6 +81,7 @@ export default resolver.pipe(
             path: "/studies/[studyId]",
             params: { studyId },
           },
+          studyId,
         })
       }
     }

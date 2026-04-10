@@ -5,8 +5,7 @@ import db from "db"
 import { z } from "zod"
 import { getAuthorizedSession } from "@/src/app/(auth)/utils/getAuthorizedSession"
 import { deleteStudyAsAdmin } from "@/src/lib/jatos/admin/deleteStudyWorkflow"
-import { isSetupComplete } from "@/src/app/(app)/studies/[studyId]/setup/utils/setupStatus"
-import type { StudyWithMinimalRelations } from "@/src/app/(app)/studies/[studyId]/setup/utils/setupStatus"
+import { studyHasParticipantResponses } from "@/src/lib/studies"
 
 const DeleteStudySchema = z.object({
   studyIds: z.array(z.number()).min(1, "Select at least one study"),
@@ -35,28 +34,19 @@ export default resolver.pipe(
       },
     })
 
-    const studiesWithLatestUpload = studies.map((s) => ({
-      ...s,
-      latestJatosStudyUpload: s.jatosStudyUploads[0] ?? null,
-    }))
-
-    const deletable = studiesWithLatestUpload.filter(
-      (s) => !isSetupComplete(s as StudyWithMinimalRelations) || s.archived
-    )
-    const notDeletable = studiesWithLatestUpload.filter(
-      (s) => isSetupComplete(s as StudyWithMinimalRelations) && !s.archived
-    )
-
-    if (notDeletable.length > 0) {
-      const titles = notDeletable.map((s) => s.title?.trim() || `Study #${s.id}`).join(", ")
-      throw new Error(
-        `Cannot delete: only studies with incomplete setup or archived studies can be deleted. The following have complete setup and are not archived: ${titles}`
-      )
+    for (const study of studies) {
+      const hasResponses = await studyHasParticipantResponses(study.id)
+      if (hasResponses) {
+        const title = study.title?.trim() || `Study #${study.id}`
+        throw new Error(
+          `Cannot delete: studies with participant responses must be archived, not deleted. Affected: ${title}`
+        )
+      }
     }
 
-    const idsToDelete = deletable.map((s) => s.id)
+    const idsToDelete = studies.map((s) => s.id)
 
-    for (const study of deletable) {
+    for (const study of studies) {
       await deleteStudyAsAdmin({
         studyId: study.id,
         adminUserId,

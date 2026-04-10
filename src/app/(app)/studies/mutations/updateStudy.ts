@@ -1,5 +1,6 @@
 import { resolver } from "@blitzjs/rpc"
 import db from "db"
+import { assertStudyNotArchived } from "@/src/lib/studies"
 import { UpdateStudy, UpdateStudyInput } from "../validations"
 
 export async function updateStudy(
@@ -15,6 +16,8 @@ export async function updateStudy(
   if (!isPI) {
     throw new Error("You are not authorized to update this study")
   }
+
+  await assertStudyNotArchived(studyId)
 
   // Apply update — no redundant transformations
   return db.study.update({

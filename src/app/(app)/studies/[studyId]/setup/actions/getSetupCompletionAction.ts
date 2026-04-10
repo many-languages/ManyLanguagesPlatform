@@ -1,7 +1,7 @@
 "use server"
 
 import { getSetupCompletionRsc } from "../queries/getSetupCompletion"
-import { STEP_KEYS } from "../utils/constants"
+import { isSetupCompleteFromFlags, type SetupStepFlags } from "../utils/setupStatus"
 
 /**
  * Authoritative setup completion for the latest upload + step 1 derivation (same basis as RSC).
@@ -10,7 +10,6 @@ import { STEP_KEYS } from "../utils/constants"
 export async function getSetupCompletionAction(
   studyId: number
 ): Promise<{ setupComplete: boolean }> {
-  const flags = await getSetupCompletionRsc(studyId)
-  const setupComplete = STEP_KEYS.every((key) => flags[key] === true)
-  return { setupComplete }
+  const flags = (await getSetupCompletionRsc(studyId)) as SetupStepFlags
+  return { setupComplete: isSetupCompleteFromFlags(flags) }
 }

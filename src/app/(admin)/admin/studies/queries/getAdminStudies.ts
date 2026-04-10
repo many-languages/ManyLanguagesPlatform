@@ -4,6 +4,7 @@ import { resolver } from "@blitzjs/rpc"
 import { AuthorizationError } from "blitz"
 import db from "db"
 import { getAuthorizedSession } from "@/src/app/(auth)/utils/getAuthorizedSession"
+import { studyHasParticipantResponsesSafe } from "@/src/lib/studies"
 
 async function findAdminStudies() {
   const studies = await db.study.findMany({
@@ -24,10 +25,17 @@ async function findAdminStudies() {
     orderBy: { createdAt: "desc" },
   })
 
-  return studies.map((study) => ({
+  const mapped = studies.map((study) => ({
     ...study,
     latestJatosStudyUpload: study.jatosStudyUploads[0] ?? null,
   }))
+
+  return Promise.all(
+    mapped.map(async (study) => ({
+      ...study,
+      hasParticipantResponses: await studyHasParticipantResponsesSafe(study.id),
+    }))
+  )
 }
 
 export type AdminStudyWithLatestUpload = Awaited<ReturnType<typeof findAdminStudies>>[number]

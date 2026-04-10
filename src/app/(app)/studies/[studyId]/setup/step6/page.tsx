@@ -1,14 +1,19 @@
-import { notFound } from "next/navigation"
 import Step6Content from "./components/client/Step6Content"
 import SetupStepHeader from "../components/client/SetupStepHeader"
 import { getFeedbackTemplateRsc } from "../../feedback/queries/getFeedbackTemplate"
 import { loadFeedbackPreviewContext } from "../../feedback/utils/loadFeedbackPreviewContext"
 import { computeFeedbackTemplateValidation } from "../../feedback/utils/computeFeedbackTemplateValidation"
-
-import { getStudyRsc } from "../../../queries/getStudy"
+import { loadStudySetupPage } from "../utils/loadStudySetupPage"
+import type { StudyWithRelations } from "@/src/app/(app)/studies/queries/getStudy"
 import { Alert } from "@/src/app/components/Alert"
 
-async function Step6ContentWrapper({ studyId }: { studyId: number }) {
+async function Step6ContentWrapper({
+  studyId,
+  study,
+}: {
+  studyId: number
+  study: StudyWithRelations
+}) {
   const previewLoad = await loadFeedbackPreviewContext(studyId)
 
   if (previewLoad.kind === "error") {
@@ -24,8 +29,6 @@ async function Step6ContentWrapper({ studyId }: { studyId: number }) {
 
   const feedbackTemplate = await getFeedbackTemplateRsc(studyId)
   const templateValidation = await computeFeedbackTemplateValidation(studyId)
-
-  const study = await getStudyRsc(studyId)
 
   const latestUploadWithExtraction = study.latestJatosStudyUpload
   const approvedExtraction = latestUploadWithExtraction?.approvedExtraction ?? null
@@ -47,12 +50,7 @@ async function Step6ContentWrapper({ studyId }: { studyId: number }) {
 }
 
 export default async function Step6Page({ params }: { params: Promise<{ studyId: string }> }) {
-  const { studyId: studyIdRaw } = await params
-  const studyId = Number(studyIdRaw)
+  const { studyId, study } = await loadStudySetupPage(params)
 
-  if (!Number.isFinite(studyId)) {
-    notFound()
-  }
-
-  return <Step6ContentWrapper studyId={studyId} />
+  return <Step6ContentWrapper studyId={studyId} study={study} />
 }

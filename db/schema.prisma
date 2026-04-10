@@ -149,6 +149,7 @@ model Study {
   researchers      StudyResearcher[]
   participations   ParticipantStudy[]
   FeedbackTemplate FeedbackTemplate?
+  notifications    Notification[]
 
   @@index([archived, createdAt])
 }
@@ -166,7 +167,12 @@ model Notification {
   announcement Boolean  @default(false)
   routeData    Json? // Flexible JSON field to store dynamic routing data
 
+  studyId Int?
+  study   Study? @relation(fields: [studyId], references: [id], onDelete: Cascade)
+
   recipients NotificationRecipient[]
+
+  @@index([studyId])
 }
 
 model NotificationRecipient {

@@ -4,6 +4,8 @@ import { NavigationButton } from "@/src/app/components/NavigationButton"
 import { AsyncButton } from "@/src/app/components/AsyncButton"
 import type { Route } from "next"
 
+import { studyPath, studySetupSegmentPath } from "../../utils/setupRoutes"
+
 interface StepNavigationProps {
   studyId: number
   prev?: string // e.g., "step2"
@@ -30,9 +32,9 @@ export default function StepNavigation({
   const getHref = (step: string): Route => {
     // Handle special case for final step navigation to study page
     if (step === "study") {
-      return `/studies/${studyId}` as Route
+      return studyPath(studyId) as Route
     }
-    return `/studies/${studyId}/setup/${step}` as Route
+    return studySetupSegmentPath(studyId, step) as Route
   }
 
   return (

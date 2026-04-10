@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation"
 import type { JatosMetadata } from "@/src/types/jatos"
 import Card from "@/src/app/components/Card"
 import CheckboxFieldTable from "../../../components/CheckboxFieldTable"
-import { Form, FORM_ERROR } from "@/src/app/components/Form"
+import { Form } from "@/src/app/components/Form"
 import { FormErrorDisplay } from "@/src/app/components/FormErrorDisplay"
 import { useFormContext } from "react-hook-form"
 import { z } from "zod"
@@ -14,10 +14,13 @@ import { useMutation } from "@blitzjs/rpc"
 import toggleParticipantActive from "../../../mutations/toggleParticipantActive"
 import toggleParticipantPayed from "../../../mutations/toggleParticipantPayed"
 import { ParticipantWithEmail } from "../../../queries/getStudyParticipants"
+import { ARCHIVED_STUDY_CANNOT_EDIT_MESSAGE } from "@/src/lib/studies/studyEditability"
 
 interface ParticipantManagementCardProps {
   participants: ParticipantWithEmail[]
   metadata: JatosMetadata
+  /** When false, participant toggles and selection are disabled (e.g. archived study). */
+  canEditStudySetup?: boolean
 }
 
 const ParticipantSchema = z.object({
@@ -32,11 +35,13 @@ function ActionButton({
   label,
   className,
   participants,
+  canEditStudySetup,
 }: {
   action: "TOGGLE_ACTIVE" | "TOGGLE_PAYED"
   label: string
   className: string
   participants: ParticipantWithEmail[]
+  canEditStudySetup: boolean
 }) {
   const { watch, setValue, formState, trigger } = useFormContext<ParticipantFormData>()
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -45,6 +50,8 @@ function ActionButton({
   const [togglePayedMutation] = useMutation(toggleParticipantPayed)
 
   const handleClick = async () => {
+    if (!canEditStudySetup) return
+
     const selectedIds = watch("selectedParticipantIds")
 
     // Validate form before proceeding
@@ -92,21 +99,29 @@ function ActionButton({
     }
   }
 
+  const disabled = formState.isSubmitting || isSubmitting || !canEditStudySetup
+
   return (
-    <button
-      type="button"
-      className={className}
-      disabled={formState.isSubmitting || isSubmitting}
-      onClick={handleClick}
+    <span
+      className={!canEditStudySetup ? "tooltip tooltip-top inline-block" : "inline-block"}
+      data-tip={!canEditStudySetup ? ARCHIVED_STUDY_CANNOT_EDIT_MESSAGE : undefined}
     >
-      {isSubmitting ? "Processing..." : label}
-    </button>
+      <button
+        type="button"
+        className={`${className} ${!canEditStudySetup ? "btn-disabled" : ""}`}
+        disabled={disabled}
+        onClick={handleClick}
+      >
+        {isSubmitting ? "Processing..." : label}
+      </button>
+    </span>
   )
 }
 
 export default function ParticipantManagementCard({
   participants,
   metadata,
+  canEditStudySetup = true,
 }: ParticipantManagementCardProps) {
   const router = useRouter()
 
@@ -234,12 +249,14 @@ export default function ParticipantManagementCard({
               label="Toggle Active"
               className="btn btn-secondary"
               participants={participants}
+              canEditStudySetup={canEditStudySetup}
             />
             <ActionButton
               action="TOGGLE_PAYED"
               label="Toggle Payed"
               className="btn btn-accent"
               participants={participants}
+              canEditStudySetup={canEditStudySetup}
             />
           </div>
         }
@@ -249,6 +266,7 @@ export default function ParticipantManagementCard({
           options={participantRows.map((p) => ({ id: p.id, label: p.label }))}
           extraData={participantRows}
           extraColumns={columns}
+          selectionDisabled={!canEditStudySetup}
         />
         <FormErrorDisplay />
       </Card>

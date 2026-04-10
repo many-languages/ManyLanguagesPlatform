@@ -12,6 +12,7 @@ interface ResearcherFeedbackProps {
   /** Plain message in place of markdown; whole card uses `feedbackTone`. */
   feedbackMessage?: string
   feedbackTone?: FeedbackCardTone
+  canEditStudySetup?: boolean
 }
 
 export default function ResearcherFeedback({
@@ -20,6 +21,7 @@ export default function ResearcherFeedback({
   researcherHasPilotData,
   feedbackMessage,
   feedbackTone,
+  canEditStudySetup = true,
 }: ResearcherFeedbackProps) {
   const router = useRouter()
   const [, startTransition] = useTransition()
@@ -39,7 +41,8 @@ export default function ResearcherFeedback({
       title="Feedback Preview"
       researcherHasPilotData={researcherHasPilotData}
       onRefresh={handleRefresh}
-      showEditButton={true}
+      showEditButton
+      canEditStudySetup={canEditStudySetup}
     />
   )
 }

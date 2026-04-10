@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo } from "react"
+import { useMemo, type MouseEvent } from "react"
 import Card from "@/src/app/components/Card"
 import Form from "@/src/app/components/Form"
 import CheckboxFieldTable from "@/src/app/(app)/studies/components/CheckboxFieldTable"
@@ -9,7 +9,7 @@ import { AdminStudySchema } from "../validations"
 import { Codebook, CodebookEntry, FeedbackTemplate } from "db"
 import Modal from "@/src/app/components/Modal"
 import ViewDetailsButton from "@/src/app/components/ViewDetailsButton"
-import StatusBadge from "@/src/app/components/StatusBadge"
+import StatusBadge, { type StatusBadgeVariant } from "@/src/app/components/StatusBadge"
 import {
   getAdminApprovalVariant,
   getSetupStatusProps,
@@ -20,12 +20,42 @@ import type { AdminStudyWithLatestUpload } from "../queries/getAdminStudies"
 import { getSetupStatusLabel } from "@/src/app/(app)/studies/[studyId]/setup/utils/setupStatus"
 import type { StudyWithMinimalRelations } from "@/src/app/(app)/studies/[studyId]/setup/utils/setupStatus"
 import StudyActions from "./StudyActions"
+import toast from "react-hot-toast"
+
+function JatosStudyUuidCell({ uuid }: { uuid: string }) {
+  if (uuid === "NA") {
+    return <span className="text-base-content/50">{uuid}</span>
+  }
+
+  const copy = async (e: MouseEvent<HTMLButtonElement>) => {
+    e.stopPropagation()
+    try {
+      await navigator.clipboard.writeText(uuid)
+      toast.success("JATOS study UUID copied")
+    } catch {
+      toast.error("Could not copy UUID")
+    }
+  }
+
+  return (
+    <button
+      type="button"
+      className="m-0 border-0 bg-transparent p-0 text-left font-inherit text-inherit hover:underline decoration-dashed underline-offset-2 cursor-pointer break-all"
+      onClick={copy}
+      aria-label={`Copy JATOS study UUID (${uuid})`}
+    >
+      {uuid}
+    </button>
+  )
+}
 
 type CodebookWithEntries = Codebook & { entries: CodebookEntry[] }
 
 type StudyWithFeedbackTemplate = AdminStudyWithLatestUpload & {
   FeedbackTemplate: FeedbackTemplate | null
   codebook: CodebookWithEntries | null
+  /** From admin studies query; null if JATOS metadata could not be loaded */
+  hasParticipantResponses?: boolean | null
 }
 
 function CodebookButton({ codebook }: { codebook: CodebookWithEntries | null }) {
@@ -137,6 +167,10 @@ export default function AdminStudyManagementCard({
       const approvalLabel =
         adminApproved === true ? "Approved" : adminApproved === false ? "Rejected" : "Pending"
 
+      const hpr = study.hasParticipantResponses
+      const participantResponsesLabel =
+        hpr === true ? "Yes" : hpr === false ? "No" : hpr === null ? "Unknown" : "—"
+
       return {
         id: study.id,
         label: study.title?.trim() || "NA",
@@ -145,6 +179,9 @@ export default function AdminStudyManagementCard({
         setupStatus: getSetupStatusLabel(study as StudyWithMinimalRelations),
         adminApproval: approvalLabel,
         dataCollectionStatus: study.status,
+        archived: study.archived,
+        archivedLabel: study.archived ? "Yes" : "No",
+        participantResponsesLabel,
         codebook: study.codebook ?? null,
         feedbackTemplate: study.FeedbackTemplate ?? null,
       }
@@ -157,10 +194,7 @@ export default function AdminStudyManagementCard({
         id: "jatosStudyUUID",
         header: "JATOS Study UUID",
         accessorKey: "jatosStudyUUID",
-        cell: ({ row }: any) => {
-          const uuid = row.original.jatosStudyUUID as string
-          return <span className={uuid === "NA" ? "text-base-content/50" : ""}>{uuid}</span>
-        },
+        cell: ({ row }: any) => <JatosStudyUuidCell uuid={row.original.jatosStudyUUID as string} />,
       },
       {
         id: "adminApproval",
@@ -187,6 +221,31 @@ export default function AdminStudyManagementCard({
         cell: ({ row }: any) => {
           const props = getDataCollectionProps(row.original.dataCollectionStatus as string)
           return <StatusBadge {...props} />
+        },
+      },
+      {
+        id: "archived",
+        header: "Archived",
+        accessorKey: "archivedLabel",
+        cell: ({ row }: any) => {
+          const archived = row.original.archived as boolean
+          return (
+            <StatusBadge
+              label={archived ? "Yes" : "No"}
+              variant={archived ? "warning" : "success"}
+            />
+          )
+        },
+      },
+      {
+        id: "participantResponses",
+        header: "Participant responses",
+        accessorKey: "participantResponsesLabel",
+        cell: ({ row }: any) => {
+          const label = row.original.participantResponsesLabel as string
+          const variant: StatusBadgeVariant =
+            label === "Yes" ? "warning" : label === "No" ? "success" : "ghost"
+          return <StatusBadge label={label} variant={variant} />
         },
       },
       {

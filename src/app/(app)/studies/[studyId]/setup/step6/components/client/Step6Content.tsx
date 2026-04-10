@@ -1,6 +1,7 @@
 "use client"
 
 import { useRouter } from "next/navigation"
+import type { Route } from "next"
 import { useRef, useState } from "react"
 
 import { toast } from "react-hot-toast"
@@ -15,6 +16,7 @@ import { useNotificationMenuContext } from "@/src/app/(app)/notifications/contex
 import type { FeedbackPreviewContextClientDto } from "../../../../feedback/utils/loadFeedbackPreviewContext"
 
 import { StudyWithRelations } from "@/src/app/(app)/studies/queries/getStudy"
+import { studyPath } from "../../../utils/setupRoutes"
 import { getSetupCompletionAction } from "../../../actions/getSetupCompletionAction"
 
 interface Step6ContentProps {
@@ -89,7 +91,7 @@ export default function Step6Content({
     }
 
     await refetchNotifications()
-    router.replace(`/studies/${studyId}`)
+    router.replace(studyPath(studyId) as Route)
 
     if (setupCompleteFromServer) {
       const isApproved = study.adminApproved === true

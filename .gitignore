@@ -64,3 +64,7 @@ deploy/env/*.env
 # Traefik runtime state
 deploy/traefik/certs/*.pem
 deploy/traefik/acme/
+
+docs/refactor/*.md
+.cursor/
+.codex

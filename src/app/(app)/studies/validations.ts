@@ -72,6 +72,8 @@ export const ArchiveStudy = z.object({ id: Id })
 
 export const UnarchiveStudy = z.object({ id: Id })
 
+export const DeleteStudy = z.object({ id: Id })
+
 // Mutation validations
 export const JoinStudy = z.object({
   studyId: Id,

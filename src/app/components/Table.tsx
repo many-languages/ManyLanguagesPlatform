@@ -89,86 +89,88 @@ const Table = <TData extends unknown>({
 
   return (
     <>
-      <table className={classNames?.table || "table"}>
-        <thead className={classNames?.thead || "text-xl text-base-content"}>
-          {table.getHeaderGroups().map((headerGroup) => (
-            <tr key={headerGroup.id}>
-              {headerGroup.headers.map((header) => (
-                <th key={header.id} className={classNames?.th}>
-                  {header.isPlaceholder ? null : (
-                    <>
-                      <div
-                        className={
-                          header.column.getCanSort()
-                            ? "cursor-pointer select-none flex flex-row gap-2"
-                            : "flex flex-row gap-2"
-                        }
-                        onClick={header.column.getToggleSortingHandler()}
-                      >
-                        {flexRender(header.column.columnDef.header, header.getContext())}
-                        {{
-                          asc: <ChevronUpIcon className="w-5 h-5" />,
-                          desc: <ChevronDownIcon className="w-5 h-5" />,
-                        }[header.column.getIsSorted() as string] ?? null}
-                        {header.column.getCanSort() && !header.column.getIsSorted() ? (
-                          <ChevronUpDownIcon className="w-5 h-5" />
-                        ) : null}
-                      </div>
-                      {header.column.getCanFilter() ? (
-                        <div>
-                          <Filter column={header.column} />
+      <div className="w-full min-w-0 overflow-x-auto">
+        <table className={classNames?.table || "table"}>
+          <thead className={classNames?.thead || "text-xl text-base-content"}>
+            {table.getHeaderGroups().map((headerGroup) => (
+              <tr key={headerGroup.id}>
+                {headerGroup.headers.map((header) => (
+                  <th key={header.id} className={classNames?.th}>
+                    {header.isPlaceholder ? null : (
+                      <>
+                        <div
+                          className={
+                            header.column.getCanSort()
+                              ? "cursor-pointer select-none flex flex-row gap-2"
+                              : "flex flex-row gap-2"
+                          }
+                          onClick={header.column.getToggleSortingHandler()}
+                        >
+                          {flexRender(header.column.columnDef.header, header.getContext())}
+                          {{
+                            asc: <ChevronUpIcon className="w-5 h-5" />,
+                            desc: <ChevronDownIcon className="w-5 h-5" />,
+                          }[header.column.getIsSorted() as string] ?? null}
+                          {header.column.getCanSort() && !header.column.getIsSorted() ? (
+                            <ChevronUpDownIcon className="w-5 h-5" />
+                          ) : null}
                         </div>
-                      ) : null}
-                    </>
-                  )}
-                </th>
-              ))}
-            </tr>
-          ))}
-        </thead>
-        <tbody className={classNames?.tbody || "text-lg"}>
-          {table.getRowModel().rows.length === 0 ? (
-            <tr>
-              <td colSpan={columns.length} className="text-center p-3">
-                <EmptyState message="No data found" className="p-0" />
-              </td>
-            </tr>
-          ) : (
-            table.getRowModel().rows.map((row) => (
-              <React.Fragment key={row.id}>
-                <tr
-                  className={`${classNames?.tr || ""} ${onRowClick ? "cursor-pointer" : ""}`}
-                  onClick={() => onRowClick && onRowClick(row)}
-                >
-                  {row.getVisibleCells().map((cell) => (
-                    <td key={cell.id} className={classNames?.td}>
-                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                    </td>
-                  ))}
-                </tr>
-                {row.getIsExpanded() && renderSubComponent && (
-                  <tr>
-                    <td colSpan={row.getVisibleCells().length}>{renderSubComponent({ row })}</td>
+                        {header.column.getCanFilter() ? (
+                          <div>
+                            <Filter column={header.column} />
+                          </div>
+                        ) : null}
+                      </>
+                    )}
+                  </th>
+                ))}
+              </tr>
+            ))}
+          </thead>
+          <tbody className={classNames?.tbody || "text-lg"}>
+            {table.getRowModel().rows.length === 0 ? (
+              <tr>
+                <td colSpan={columns.length} className="text-center p-3">
+                  <EmptyState message="No data found" className="p-0" />
+                </td>
+              </tr>
+            ) : (
+              table.getRowModel().rows.map((row) => (
+                <React.Fragment key={row.id}>
+                  <tr
+                    className={`${classNames?.tr || ""} ${onRowClick ? "cursor-pointer" : ""}`}
+                    onClick={() => onRowClick && onRowClick(row)}
+                  >
+                    {row.getVisibleCells().map((cell) => (
+                      <td key={cell.id} className={classNames?.td}>
+                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                      </td>
+                    ))}
                   </tr>
-                )}
-              </React.Fragment>
-            ))
-          )}
-        </tbody>
-        <tfoot className={classNames?.tfoot}>
-          {table.getFooterGroups().map((footerGroup) => (
-            <tr key={footerGroup.id}>
-              {footerGroup.headers.map((header) => (
-                <th key={header.id}>
-                  {header.isPlaceholder
-                    ? null
-                    : flexRender(header.column.columnDef.footer, header.getContext())}
-                </th>
-              ))}
-            </tr>
-          ))}
-        </tfoot>
-      </table>
+                  {row.getIsExpanded() && renderSubComponent && (
+                    <tr>
+                      <td colSpan={row.getVisibleCells().length}>{renderSubComponent({ row })}</td>
+                    </tr>
+                  )}
+                </React.Fragment>
+              ))
+            )}
+          </tbody>
+          <tfoot className={classNames?.tfoot}>
+            {table.getFooterGroups().map((footerGroup) => (
+              <tr key={footerGroup.id}>
+                {footerGroup.headers.map((header) => (
+                  <th key={header.id}>
+                    {header.isPlaceholder
+                      ? null
+                      : flexRender(header.column.columnDef.footer, header.getContext())}
+                  </th>
+                ))}
+              </tr>
+            ))}
+          </tfoot>
+        </table>
+      </div>
       {addPagination && table.getRowModel().rows.length > 0 && pageCount > 1 && (
         <>
           {/* Pagination buttons */}

@@ -9,6 +9,8 @@ interface CheckboxFieldTableProps<T> {
   options: { id: number; label: string }[]
   extraData?: T[]
   extraColumns?: any[]
+  /** When true, selection checkboxes are disabled (e.g. archived study). */
+  selectionDisabled?: boolean
 }
 
 const CheckboxFieldTable = <T,>({
@@ -16,6 +18,7 @@ const CheckboxFieldTable = <T,>({
   options,
   extraData = [],
   extraColumns = [],
+  selectionDisabled = false,
 }: CheckboxFieldTableProps<T>) => {
   const {
     watch,
@@ -29,6 +32,7 @@ const CheckboxFieldTable = <T,>({
   // ✅ Toggle one
   const toggleSelection = useCallback(
     (id: number) => {
+      if (selectionDisabled) return
       const currentIds = watch(name) || []
       const isSelected = currentIds.includes(id)
       const newSelectedIds = isSelected
@@ -36,11 +40,12 @@ const CheckboxFieldTable = <T,>({
         : [...currentIds, id]
       setValue(name, newSelectedIds, { shouldValidate: true, shouldDirty: true })
     },
-    [watch, setValue, name]
+    [watch, setValue, name, selectionDisabled]
   )
 
   // ✅ Toggle all
   const toggleAll = useCallback(() => {
+    if (selectionDisabled) return
     const currentIds = watch(name) || []
     if (currentIds.length === options.length) {
       setValue(name, [], { shouldValidate: true, shouldDirty: true }) // deselect all
@@ -51,7 +56,7 @@ const CheckboxFieldTable = <T,>({
         { shouldValidate: true, shouldDirty: true }
       ) // select all
     }
-  }, [watch, setValue, name, options])
+  }, [watch, setValue, name, options, selectionDisabled])
 
   // ✅ Ref for indeterminate checkbox
   const headerCheckboxRef = useRef<HTMLInputElement>(null)
@@ -74,7 +79,7 @@ const CheckboxFieldTable = <T,>({
             className="checkbox checkbox-primary border-2"
             checked={selectedIds.length === options.length && options.length > 0}
             onChange={toggleAll}
-            disabled={isSubmitting}
+            disabled={isSubmitting || selectionDisabled}
             title="Select / Deselect all"
           />
         ),
@@ -83,7 +88,7 @@ const CheckboxFieldTable = <T,>({
             type="checkbox"
             className="checkbox checkbox-primary border-2"
             checked={selectedIds.includes(row.original.id)}
-            disabled={isSubmitting}
+            disabled={isSubmitting || selectionDisabled}
             onChange={() => toggleSelection(row.original.id)}
           />
         ),
@@ -96,7 +101,16 @@ const CheckboxFieldTable = <T,>({
       },
       ...extraColumns,
     ],
-    [selectedIds, toggleSelection, extraColumns, isSubmitting, toggleAll, options.length, watch]
+    [
+      selectedIds,
+      toggleSelection,
+      extraColumns,
+      isSubmitting,
+      selectionDisabled,
+      toggleAll,
+      options.length,
+      watch,
+    ]
   )
 
   const data = useMemo(
@@ -105,7 +119,7 @@ const CheckboxFieldTable = <T,>({
   )
 
   return (
-    <div className="flex flex-col gap-1">
+    <div className="flex min-w-0 flex-col gap-1">
       <Table columns={columns} data={data} addPagination={true} />
       {error && <span className="text-error text-sm">{error.message as string}</span>}
     </div>

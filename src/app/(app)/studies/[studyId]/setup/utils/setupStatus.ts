@@ -2,6 +2,7 @@ import { Study, FeedbackTemplate } from "@prisma/client"
 import { StudyWithRelations } from "../../../queries/getStudy"
 import { deriveStep1Completed } from "./deriveStep1Completed"
 import { STEP_KEYS, STEP_NAMES, TOTAL_STEPS } from "./constants"
+import { studyPath, studySetupStepPath } from "./setupRoutes"
 
 // More flexible interface for studies with minimal researcher data
 // Using Partial<Study> allows us to pass lightweight objects from optimized queries
@@ -26,7 +27,8 @@ export interface StudyWithMinimalRelations extends Partial<Study> {
   } | null
 }
 
-type StepFlags = {
+/** Resolved step completion flags (same shape as latest upload fields + step 1 derivation). */
+export type SetupStepFlags = {
   step1Completed: boolean
   step2Completed: boolean
   step3Completed: boolean
@@ -35,9 +37,9 @@ type StepFlags = {
   step6Completed: boolean
 }
 
-function resolveStepFlags(study: StudyWithRelations | StudyWithMinimalRelations): StepFlags {
+function resolveStepFlags(study: StudyWithRelations | StudyWithMinimalRelations): SetupStepFlags {
   const upload = study.latestJatosStudyUpload
-  const flags = {} as StepFlags
+  const flags = {} as SetupStepFlags
 
   STEP_KEYS.forEach((key) => {
     const uploadValue = upload?.[key]
@@ -51,11 +53,12 @@ function resolveStepFlags(study: StudyWithRelations | StudyWithMinimalRelations)
   return flags
 }
 
-function isSetupCompleteFromFlags(steps: StepFlags): boolean {
-  return STEP_KEYS.every((key) => steps[key])
+/** True when every setup step flag is explicitly `true` (same rule as server actions using `getSetupCompletionRsc`). */
+export function isSetupCompleteFromFlags(steps: SetupStepFlags): boolean {
+  return STEP_KEYS.every((key) => steps[key] === true)
 }
 
-function getIncompleteStepFromFlags(steps: StepFlags): number | null {
+function getIncompleteStepFromFlags(steps: SetupStepFlags): number | null {
   for (let index = 0; index < STEP_KEYS.length; index += 1) {
     const key = STEP_KEYS[index]
     if (!steps[key]) return index + 1
@@ -63,7 +66,7 @@ function getIncompleteStepFromFlags(steps: StepFlags): number | null {
   return null
 }
 
-function getCompletedStepsFromFlags(steps: StepFlags): number[] {
+function getCompletedStepsFromFlags(steps: SetupStepFlags): number[] {
   const completed: number[] = []
   STEP_KEYS.forEach((key, index) => {
     if (steps[key]) completed.push(index + 1)
@@ -137,6 +140,21 @@ export function getSetupProgress(study: StudyWithRelations | StudyWithMinimalRel
 }
 
 /**
+ * True when a saved feedback template exists but steps 3–5 are not all complete on the current
+ * JATOS upload. Unlike clearing `step6Completed` outright, this flags that Step 6 should be
+ * revisited after upstream work (e.g. a new JATOS study or revised extraction) without treating
+ * setup as a simple linear gap at step 6 alone.
+ */
+export function step6NeedsRevision(study: StudyWithRelations | StudyWithMinimalRelations): boolean {
+  const hasFeedbackTemplate = Boolean(study.FeedbackTemplate)
+  const upload = study.latestJatosStudyUpload
+  const step3Completed = upload?.step3Completed ?? false
+  const step4Completed = upload?.step4Completed ?? false
+  const step5Completed = upload?.step5Completed ?? false
+  return hasFeedbackTemplate && (!step3Completed || !step4Completed || !step5Completed)
+}
+
+/**
  * Returns the next step URL for continuing setup
  * Uses DB fields as source of truth
  */
@@ -146,9 +164,9 @@ export function getNextSetupStepUrl(
 ): string {
   const incompleteStep = getIncompleteStep(study)
   if (!incompleteStep) {
-    return `/studies/${studyId}` // All complete, go to study page
+    return studyPath(studyId) // All complete, go to study page
   }
-  return `/studies/${studyId}/setup/step${incompleteStep}`
+  return studySetupStepPath(studyId, incompleteStep)
 }
 
 /**
@@ -165,15 +183,15 @@ export function getPostStepNavigationUrl(
   study?: StudyWithRelations | StudyWithMinimalRelations
 ): string {
   if (returnTo === "study") {
-    return `/studies/${studyId}`
+    return studyPath(studyId)
   }
 
   if (typeof returnTo === "number") {
     if (returnTo < 1 || returnTo > TOTAL_STEPS) {
       // Invalid step number, default to study page
-      return `/studies/${studyId}`
+      return studyPath(studyId)
     }
-    return `/studies/${studyId}/setup/step${returnTo}`
+    return studySetupStepPath(studyId, returnTo)
   }
 
   // returnTo === "next"
@@ -185,7 +203,7 @@ export function getPostStepNavigationUrl(
   // Default to next step if study not provided
   const nextStep = currentStep + 1
   if (nextStep > TOTAL_STEPS) {
-    return `/studies/${studyId}` // All steps complete, go to study page
+    return studyPath(studyId) // All steps complete, go to study page
   }
-  return `/studies/${studyId}/setup/step${nextStep}`
+  return studySetupStepPath(studyId, nextStep)
 }

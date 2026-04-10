@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
+import type { Route } from "next"
 import { useSession } from "@blitzjs/auth"
 
 import JatosForm from "./JatosForm"
@@ -19,6 +20,7 @@ import { FORM_ERROR } from "@/src/app/components/Form"
 import { generateAndSaveResearcherPilotRunUrl } from "../../../../utils/generateResearcherPilotRunUrl"
 
 import { StudyWithRelations } from "@/src/app/(app)/studies/queries/getStudy"
+import { studySetupStepPath } from "../../../utils/setupRoutes"
 
 interface Step2ContentProps {
   study: StudyWithRelations
@@ -95,7 +97,7 @@ export default function Step2Content({ study }: Step2ContentProps) {
 
     // 4️⃣ Success
     toast.success(options?.successToast ?? "JATOS instance created")
-    router.push(`/studies/${study.id}/setup/step3`)
+    router.push(studySetupStepPath(study.id, 3) as Route)
     // Refresh after navigation to ensure fresh data is loaded
     router.refresh()
     return true
@@ -166,7 +168,7 @@ export default function Step2Content({ study }: Step2ContentProps) {
       <JatosForm
         submitText="Save and continue"
         cancelText="Back"
-        onCancel={() => router.push(`/studies/${study.id}/setup/step1`)}
+        onCancel={() => router.push(studySetupStepPath(study.id, 1) as Route)}
         defaultValues={defaultValues}
         currentStudyFileUploadedAt={latestUpload?.createdAt}
         jatosStudyUuid={study.jatosStudyUUID}

@@ -1,11 +1,16 @@
 import { resolver } from "@blitzjs/rpc"
 import db from "db"
+import { assertStudyNotArchived } from "@/src/lib/studies"
+import { verifyResearcherStudyAccess } from "@/src/app/(app)/studies/[studyId]/utils/verifyResearchersStudyAccess"
 import { UpdateStudyBatch } from "../validations"
 
 export default resolver.pipe(
   resolver.zod(UpdateStudyBatch),
   resolver.authorize(),
-  async ({ studyId, jatosBatchId }) => {
+  async ({ studyId, jatosBatchId }, ctx) => {
+    await verifyResearcherStudyAccess(studyId, ctx.session.userId!)
+    await assertStudyNotArchived(studyId)
+
     const latestUpload = await db.jatosStudyUpload.findFirst({
       where: { studyId },
       orderBy: { createdAt: "desc" },

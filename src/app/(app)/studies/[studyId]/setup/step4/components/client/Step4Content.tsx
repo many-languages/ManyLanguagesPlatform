@@ -1,6 +1,7 @@
 "use client"
 
 import { useRouter } from "next/navigation"
+import type { Route } from "next"
 
 import { useMutation, useQuery } from "@blitzjs/rpc"
 import approveExtraction from "../../../mutations/approveExtraction"
@@ -16,6 +17,7 @@ import type { SerializedExtractionBundle } from "../../../utils/serializeExtract
 import Step4Instructions from "./Step4Instructions"
 
 import { StudyWithRelations } from "@/src/app/(app)/studies/queries/getStudy"
+import { studySetupStepPath } from "../../../utils/setupRoutes"
 
 // Dashboard Components
 import SummaryDashboard from "./dashboard/SummaryDashboard"
@@ -79,14 +81,14 @@ export default function Step4Content({ validationData, study }: Step4ContentProp
   const handleComplete = async () => {
     try {
       if (step4Completed) {
-        router.push(`/studies/${studyId}/setup/step5`)
+        router.push(studySetupStepPath(studyId, 5) as Route)
         return
       }
       await approveExtractionMutation({
         studyId: study.id,
       })
       router.refresh()
-      router.push(`/studies/${studyId}/setup/step5`)
+      router.push(studySetupStepPath(studyId, 5) as Route)
     } catch (err) {
       console.error("Failed to update step 4 completion:", err)
     }
@@ -142,7 +144,7 @@ export default function Step4Content({ validationData, study }: Step4ContentProp
           </div>
           <div className="mt-4 flex justify-end">
             <AsyncButton
-              onClick={() => router.push(`/studies/${studyId}/setup/step3`)}
+              onClick={() => router.push(studySetupStepPath(studyId, 3) as Route)}
               className="btn btn-primary"
             >
               Go to Step 3

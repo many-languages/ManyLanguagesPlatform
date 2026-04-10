@@ -10,18 +10,27 @@ import ParticipantManagementCard from "./client/ParticipantManagementCard"
 import ResultsCardWrapper from "./ResultsCardWrapper"
 import { Alert } from "@/src/app/components/Alert"
 import { isSetupComplete } from "../setup/utils/setupStatus"
+import { studySetupStepPath } from "../setup/utils/setupRoutes"
 import { StudyWithRelations } from "../../queries/getStudy"
 import ResearcherFeedbackData from "../feedback/components/ResearcherFeedbackData"
 import StudyInformationCard from "./client/StudyInformationCard"
 import { NavigationButton } from "@/src/app/components/NavigationButton"
-import ArchiveStudyButton from "../../components/client/ArchiveStudyButton"
+import StudyLifecycleActions from "@/src/app/components/studies/StudyLifecycleActions"
+import { hasParticipantResponses as hasParticipantResponsesInResults } from "@/src/lib/jatos/utils/studyHasParticipantResponses"
+import { ARCHIVED_STUDY_CANNOT_EDIT_MESSAGE } from "@/src/lib/studies/studyEditability"
 
 interface ResearcherDataProps {
   studyId: number
   study: StudyWithRelations
+  /** When false, “Edit” (setup) is disabled — e.g. archived study. */
+  canEditStudySetup?: boolean
 }
 
-export default async function ResearcherData({ studyId, study }: ResearcherDataProps) {
+export default async function ResearcherData({
+  studyId,
+  study,
+  canEditStudySetup = true,
+}: ResearcherDataProps) {
   const setupComplete = isSetupComplete(study)
   const latestUpload = study.latestJatosStudyUpload
   const jatosStudyId = latestUpload?.jatosStudyId ?? null
@@ -106,17 +115,40 @@ export default async function ResearcherData({ studyId, study }: ResearcherDataP
     )
   }
 
+  const jatosUuid = study.jatosStudyUUID?.trim()
+  let lifecycleHasResponses: boolean | null = null
+  if (metadata) {
+    const entry =
+      metadata.data?.find((d) => d.studyUuid === jatosUuid) ?? metadata.data?.[0] ?? null
+    lifecycleHasResponses = entry
+      ? hasParticipantResponsesInResults(entry.studyResults ?? [])
+      : false
+  }
+
+  const isPi = study.researchers.some((r) => r.userId === userId && r.role === "PI")
+
   // Build actions for researcher
   const researcherActions = (
-    <div className="flex flex-wrap justify-end gap-2">
-      <NavigationButton
-        href={`/studies/${study.id}/setup/step1?edit=true&returnTo=study`}
-        className="btn-primary"
-        pendingText="Opening"
+    <div className="flex flex-wrap justify-end gap-2 items-start">
+      <span
+        className={!canEditStudySetup ? "tooltip tooltip-top inline-block" : "inline-block"}
+        data-tip={!canEditStudySetup ? ARCHIVED_STUDY_CANNOT_EDIT_MESSAGE : undefined}
       >
-        Edit
-      </NavigationButton>
-      <ArchiveStudyButton studyId={study.id} isArchived={study.archived} />
+        <NavigationButton
+          href={studySetupStepPath(study.id, 1, { edit: true, returnTo: "study" })}
+          className={`btn-primary ${!canEditStudySetup ? "btn-disabled" : ""}`}
+          pendingText="Opening"
+          disabled={!canEditStudySetup}
+        >
+          Edit
+        </NavigationButton>
+      </span>
+      <StudyLifecycleActions
+        studyId={study.id}
+        isArchived={study.archived}
+        hasParticipantResponses={lifecycleHasResponses}
+        showLifecycleActions={isPi}
+      />
     </div>
   )
 
@@ -129,19 +161,27 @@ export default async function ResearcherData({ studyId, study }: ResearcherDataP
       {metadata && <StudySummary metadata={metadata} />}
 
       {/* Manage participants for the study */}
-      <ParticipantManagementCard participants={participants} metadata={metadata} />
+      {metadata && (
+        <ParticipantManagementCard
+          participants={participants}
+          metadata={metadata}
+          canEditStudySetup={canEditStudySetup}
+        />
+      )}
 
       {/* Showing detailed results */}
-      <ResultsCardWrapper
-        jatosStudyId={jatosStudyId}
-        metadata={metadata}
-        properties={properties}
-        studyId={studyId}
-        initialEnrichedResults={enrichedResults}
-      />
+      {metadata && (
+        <ResultsCardWrapper
+          jatosStudyId={jatosStudyId}
+          metadata={metadata}
+          properties={properties}
+          studyId={studyId}
+          initialEnrichedResults={enrichedResults}
+        />
+      )}
 
       {/* Feedback preview with pilot results */}
-      <ResearcherFeedbackData studyId={studyId} />
+      <ResearcherFeedbackData studyId={studyId} canEditStudySetup={canEditStudySetup} />
     </>
   )
 }

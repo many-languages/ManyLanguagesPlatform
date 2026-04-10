@@ -49,17 +49,17 @@ export default function SetupProgressCard({
 
   return (
     <Card title="Setup Progress" collapsible={isComplete} className="mt-4">
-      {!canEditStudySetup && (
-        <Alert variant="info" className="mb-4">
-          <p>{ARCHIVED_STUDY_CANNOT_EDIT_MESSAGE}</p>
-        </Alert>
-      )}
       <StepIndicator
         completedSteps={completedStepsList}
         onClickStep={handleStepClick}
         editable={canEditStudySetup}
         editBlockedTooltip={!canEditStudySetup ? ARCHIVED_STUDY_CANNOT_EDIT_MESSAGE : undefined}
       />
+      {!canEditStudySetup && (
+        <Alert variant="info" className="mt-4">
+          <p>{ARCHIVED_STUDY_CANNOT_EDIT_MESSAGE}</p>
+        </Alert>
+      )}
       {step6NeedsRevision && (
         <Alert variant="info" className="mt-4">
           <p className="mb-2">

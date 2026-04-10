@@ -14,7 +14,7 @@ const SendAdminInviteReminders = z.object({
 
 export default resolver.pipe(
   resolver.zod(SendAdminInviteReminders),
-  resolver.authorize("ADMIN"),
+  resolver.authorize("SUPERADMIN"),
   async ({ inviteIds }) => {
     const now = new Date()
 

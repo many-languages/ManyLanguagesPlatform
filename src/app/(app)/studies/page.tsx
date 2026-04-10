@@ -13,7 +13,7 @@ import { isSetupComplete } from "./[studyId]/setup/utils/setupStatus"
 import { parseStudyView, type StudyView } from "./utils/studyView"
 import { parseParticipantStudyView, type ParticipantStudyView } from "./utils/participantStudyView"
 
-type SessionRole = "RESEARCHER" | "PARTICIPANT" | "ADMIN"
+type SessionRole = "RESEARCHER" | "PARTICIPANT" | "ADMIN" | "SUPERADMIN"
 
 const ITEMS_PER_PAGE = 7
 const MAX_STUDIES_FOR_SETUP_FILTER = 500

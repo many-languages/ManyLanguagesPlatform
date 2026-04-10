@@ -63,11 +63,13 @@ export default function AdminNavbar({ currentUser }: AdminNavbarProps) {
               Dashboard
             </Link>
           </li>
-          <li>
-            <Link href={"/admin/invitations"} onClick={closeActiveDropdown}>
-              Invites
-            </Link>
-          </li>
+          {currentUser?.role === "SUPERADMIN" && (
+            <li>
+              <Link href={"/admin/invitations"} onClick={closeActiveDropdown}>
+                Invites
+              </Link>
+            </li>
+          )}
           <li>
             <Link href={"/admin/studies"} onClick={closeActiveDropdown}>
               Studies

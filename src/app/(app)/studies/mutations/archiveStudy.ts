@@ -6,8 +6,8 @@ import type { UserRole } from "@/db"
 
 /** Shared logic for PI and ADMIN archive paths. */
 async function performArchiveStudy(studyId: number, userId: number, role: UserRole) {
-  if (role === "ADMIN") {
-    // Admin may archive any study; no StudyResearcher row required.
+  if (role === "ADMIN" || role === "SUPERADMIN") {
+    // Staff admin may archive any study; no StudyResearcher row required.
   } else {
     const researcher = await db.studyResearcher.findFirst({
       where: { studyId, userId, role: "PI" },
@@ -40,7 +40,7 @@ export default resolver.pipe(
     }
 
     const role = ctx.session.role as UserRole
-    if (role !== "ADMIN" && role !== "RESEARCHER") {
+    if (role !== "ADMIN" && role !== "SUPERADMIN" && role !== "RESEARCHER") {
       throw new Error("You are not authorized to archive this study")
     }
 

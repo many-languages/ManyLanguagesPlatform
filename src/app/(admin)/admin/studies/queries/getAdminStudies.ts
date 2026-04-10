@@ -4,6 +4,7 @@ import { resolver } from "@blitzjs/rpc"
 import { AuthorizationError } from "blitz"
 import db from "db"
 import { getAuthorizedSession } from "@/src/app/(auth)/utils/getAuthorizedSession"
+import { isStaffAdmin } from "@/src/lib/auth/roles"
 import { studyHasParticipantResponsesSafe } from "@/src/lib/studies"
 
 async function findAdminStudies() {
@@ -40,13 +41,13 @@ async function findAdminStudies() {
 
 export type AdminStudyWithLatestUpload = Awaited<ReturnType<typeof findAdminStudies>>[number]
 
-const getAdminStudies = resolver.pipe(resolver.authorize("ADMIN"), async () => {
+const getAdminStudies = resolver.pipe(resolver.authorize(["ADMIN", "SUPERADMIN"]), async () => {
   return findAdminStudies()
 })
 
 export async function getStudiesRsc() {
   const session = await getAuthorizedSession()
-  if (session.role !== "ADMIN") {
+  if (!isStaffAdmin(session.role)) {
     throw new AuthorizationError()
   }
 

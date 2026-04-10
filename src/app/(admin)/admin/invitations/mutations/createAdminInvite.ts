@@ -11,7 +11,7 @@ const hashToken = (token: string) => createHash("sha256").update(token).digest("
 
 export default resolver.pipe(
   resolver.zod(createAdminInviteInputSchema),
-  resolver.authorize("ADMIN"),
+  resolver.authorize("SUPERADMIN"),
   async ({ email, expiresInHours }) => {
     const session = await getAuthorizedSession()
     const expiresAt = new Date(Date.now() + expiresInHours * 60 * 60 * 1000)

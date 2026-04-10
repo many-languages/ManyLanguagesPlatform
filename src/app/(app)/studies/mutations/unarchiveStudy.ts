@@ -7,7 +7,7 @@ export default resolver.pipe(
   resolver.zod(UnarchiveStudy),
   async ({ id }, ctx) => {
     const role = ctx.session.role as UserRole
-    if (role !== "ADMIN") {
+    if (role !== "ADMIN" && role !== "SUPERADMIN") {
       const can = await db.studyResearcher.findFirst({
         where: { studyId: id, userId: ctx.session.userId, role: "PI" },
       })

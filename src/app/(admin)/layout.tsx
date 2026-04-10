@@ -5,6 +5,7 @@ import { getBlitzContext } from "../blitz-server"
 import { getCurrentUserRsc } from "../users/queries/getCurrentUser"
 import AdminNavbar from "../components/AdminNavbar"
 import NavbarSkeleton from "../components/NavbarSkeleton"
+import { isStaffAdmin } from "@/src/lib/auth/roles"
 
 export default async function AdminAppLayout({ children }: { children: React.ReactNode }) {
   const { session } = await getBlitzContext()
@@ -13,7 +14,7 @@ export default async function AdminAppLayout({ children }: { children: React.Rea
     redirect("/login")
   }
 
-  if (session.role !== "ADMIN") {
+  if (!isStaffAdmin(session.role)) {
     redirect("/dashboard")
   }
 

@@ -97,7 +97,7 @@ export default function Step6Content({
       const isApproved = study.adminApproved === true
       toast.success(
         isApproved
-          ? "Setup complete! You can activate your study when ready."
+          ? "Setup complete! You can launch your study when ready."
           : "Setup complete. Your study is pending admin approval."
       )
     }

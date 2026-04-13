@@ -15,8 +15,8 @@ import type { ActiveStudyWithResponseCount } from "../queries/getActiveStudiesWi
 import type { UpcomingDeadlines } from "../queries/getUpcomingDeadlines"
 import type { ParticipantIncompleteStudies } from "../queries/getParticipantIncompleteStudies"
 import type { ParticipantCompletedNotPaidStudy } from "../queries/getParticipantCompletedNotPaidStudies"
-import type { StalePendingAdminInvite } from "@/src/app/(admin)/admin/invitations/queries/getAdminInvites"
-import type { PendingAdminApprovalStudyRow } from "@/src/app/(admin)/admin/studies/queries/getPendingAdminApprovalStudies"
+import type { StalePendingAdminInvite } from "@/src/app/admin/invitations/queries/getAdminInvites"
+import type { PendingAdminApprovalStudyRow } from "@/src/app/admin/studies/queries/getPendingAdminApprovalStudies"
 import { isStaffAdmin } from "@/src/lib/auth/roles"
 
 type CurrentUser = {

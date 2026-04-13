@@ -4,7 +4,7 @@ import db, { UserRole } from "db"
 import { SecurePassword } from "@blitzjs/auth/secure-password"
 import { Signup } from "../validations"
 import { createHash } from "crypto"
-import validateAdminInviteToken from "@/src/app/(admin)/admin/invitations/queries/validateAdminInviteToken"
+import validateAdminInviteToken from "@/src/app/admin/invitations/queries/validateAdminInviteToken"
 import { ensureResearcherProvisioned } from "@/src/lib/jatos/tokenBroker"
 
 const hashToken = (token: string) => createHash("sha256").update(token).digest("hex")

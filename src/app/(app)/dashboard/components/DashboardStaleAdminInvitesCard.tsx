@@ -6,8 +6,8 @@ import { useRouter } from "next/navigation"
 import { useMutation } from "@blitzjs/rpc"
 import toast from "react-hot-toast"
 import Card from "@/src/app/components/Card"
-import sendAdminInviteReminders from "@/src/app/(admin)/admin/invitations/mutations/sendAdminInviteReminders"
-import type { StalePendingAdminInvite } from "@/src/app/(admin)/admin/invitations/queries/getAdminInvites"
+import sendAdminInviteReminders from "@/src/app/admin/invitations/mutations/sendAdminInviteReminders"
+import type { StalePendingAdminInvite } from "@/src/app/admin/invitations/queries/getAdminInvites"
 
 function formatDate(value: StalePendingAdminInvite["createdAt"]) {
   const d = value instanceof Date ? value : new Date(value)

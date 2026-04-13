@@ -13,8 +13,8 @@ import {
   getParticipantCompletedNotPaidStudies,
   type ParticipantCompletedNotPaidStudy,
 } from "./queries/getParticipantCompletedNotPaidStudies"
-import { getStalePendingAdminInvitesRsc } from "@/src/app/(admin)/admin/invitations/queries/getAdminInvites"
-import { getPendingAdminApprovalStudiesForDashboardRsc } from "@/src/app/(admin)/admin/studies/queries/getPendingAdminApprovalStudies"
+import { getStalePendingAdminInvitesRsc } from "@/src/app/admin/invitations/queries/getAdminInvites"
+import { getPendingAdminApprovalStudiesForDashboardRsc } from "@/src/app/admin/studies/queries/getPendingAdminApprovalStudies"
 import { isStaffAdmin } from "@/src/lib/auth/roles"
 import DashboardContent from "./components/DashboardContent"
 import DashboardSkeleton from "./components/DashboardSkeleton"

@@ -2,8 +2,8 @@ import StudySummaryCard, { ADMIN_STUDY_SUMMARY_LINKS } from "@/src/app/component
 import { getBlitzContext } from "@/src/app/blitz-server"
 import DashboardStaleAdminInvitesCard from "@/src/app/(app)/dashboard/components/DashboardStaleAdminInvitesCard"
 import DashboardPendingAdminApprovalCard from "@/src/app/(app)/dashboard/components/DashboardPendingAdminApprovalCard"
-import { getStalePendingAdminInvitesRsc } from "@/src/app/(admin)/admin/invitations/queries/getAdminInvites"
-import { getPendingAdminApprovalStudiesForDashboardRsc } from "@/src/app/(admin)/admin/studies/queries/getPendingAdminApprovalStudies"
+import { getStalePendingAdminInvitesRsc } from "@/src/app/admin/invitations/queries/getAdminInvites"
+import { getPendingAdminApprovalStudiesForDashboardRsc } from "@/src/app/admin/studies/queries/getPendingAdminApprovalStudies"
 import { isStaffAdmin } from "@/src/lib/auth/roles"
 import { getAdminStudyCounts } from "./studies/queries/getAdminStudyCounts"
 

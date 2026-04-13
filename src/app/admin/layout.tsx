@@ -1,11 +1,11 @@
 import { Suspense } from "react"
 import { redirect } from "next/navigation"
 import { Toaster } from "react-hot-toast"
-import { getBlitzContext } from "../../blitz-server"
-import { getCurrentUserRsc } from "../../users/queries/getCurrentUser"
-import AdminNavbar from "../../components/AdminNavbar"
-import NavbarSkeleton from "../../components/NavbarSkeleton"
 import { isStaffAdmin } from "@/src/lib/auth/roles"
+import { getBlitzContext } from "../blitz-server"
+import NavbarSkeleton from "../components/NavbarSkeleton"
+import AdminNavbar from "../components/AdminNavbar"
+import { getCurrentUserRsc } from "../users/queries/getCurrentUser"
 
 export default async function AdminAppLayout({ children }: { children: React.ReactNode }) {
   const { session } = await getBlitzContext()

@@ -15,7 +15,7 @@ import { useMutation, useQuery } from "@blitzjs/rpc"
 import { useRouter } from "next/navigation"
 import { UserRole } from "db"
 import Link from "next/link"
-import validateAdminInviteToken from "@/src/app/(admin)/admin/invitations/queries/validateAdminInviteToken"
+import validateAdminInviteToken from "@/src/app/admin/invitations/queries/validateAdminInviteToken"
 
 export const RoleOptions = [
   { value: UserRole.RESEARCHER, label: "Researcher" },

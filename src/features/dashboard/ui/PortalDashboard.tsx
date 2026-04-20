@@ -49,7 +49,7 @@ export default function PortalDashboard({
           <ParticipantIncompleteStudiesCard studies={participantIncompleteStudies} />
         )}
         {isParticipant && <ParticipantCompletedNotPaidCard studies={participantCompletedNotPaid} />}
-        <NotificationsCard />
+        <NotificationsCard variant="portal" />
       </div>
     </main>
   )

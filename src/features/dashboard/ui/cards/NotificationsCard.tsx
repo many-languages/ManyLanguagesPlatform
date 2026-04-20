@@ -4,7 +4,18 @@ import Link from "next/link"
 import { NotificationItem, useNotificationMenuContext } from "@/src/features/notifications"
 import Card from "@/src/app/components/Card"
 
-export default function NotificationsCard() {
+type NotificationsCardVariant = "portal" | "admin"
+
+interface NotificationsCardProps {
+  variant: NotificationsCardVariant
+}
+
+const VIEW_ALL_HREF: Record<NotificationsCardVariant, string> = {
+  portal: "/notifications",
+  admin: "/admin/notifications",
+}
+
+export default function NotificationsCard({ variant }: NotificationsCardProps) {
   const { unreadCount, latestNotifications } = useNotificationMenuContext()
 
   return (
@@ -16,7 +27,7 @@ export default function NotificationsCard() {
         </span>
       }
       actions={
-        <Link href="/notifications" className="btn btn-primary">
+        <Link href={{ pathname: VIEW_ALL_HREF[variant] }} className="btn btn-primary">
           View all notifications
         </Link>
       }

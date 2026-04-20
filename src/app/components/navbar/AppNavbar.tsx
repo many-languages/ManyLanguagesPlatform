@@ -60,13 +60,11 @@ export default function AppNavbar({ variant, currentUser }: AppNavbarProps) {
 
       <div className="flex-none px-6 flex items-center gap-2">
         <ul className="menu menu-horizontal px-6 items-center">
-          {variant === "portal" && (
-            <li>
-              <NotificationMenuProvider>
-                <NotificationsMenu />
-              </NotificationMenuProvider>
-            </li>
-          )}
+          <li>
+            <NotificationMenuProvider>
+              <NotificationsMenu variant={variant} />
+            </NotificationMenuProvider>
+          </li>
           {items.map((item) => (
             <li key={item.href}>
               <Link href={item.href} onClick={closeActiveDropdown}>

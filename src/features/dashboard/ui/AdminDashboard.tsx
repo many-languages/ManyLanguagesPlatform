@@ -2,6 +2,7 @@ import type { UserRole } from "@/db"
 import AdminSummaryCard from "./cards/AdminSummaryCard"
 import StaleAdminInvitesCard from "./cards/StaleAdminInvitesCard"
 import PendingAdminApprovalCard from "./cards/PendingAdminApprovalCard"
+import NotificationsCard from "./cards/NotificationsCard"
 import { isStaffAdmin } from "@/src/lib/auth/roles"
 import type { StudySummaryCounts } from "@/src/app/admin/studies/queries/getAdminStudyCounts"
 import type { StalePendingAdminInvite } from "../admin-data/getStalePendingAdminInvites"
@@ -30,6 +31,7 @@ export default function AdminDashboard({
         <PendingAdminApprovalCard studies={pendingAdminApprovalStudies} />
       )}
       <AdminSummaryCard counts={studyCounts} />
+      <NotificationsCard variant="admin" />
     </section>
   )
 }

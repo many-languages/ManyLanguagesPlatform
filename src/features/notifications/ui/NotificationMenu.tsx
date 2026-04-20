@@ -5,7 +5,18 @@ import Link from "next/link"
 import NotificationItem from "./NotificationItem"
 import { useNotificationMenuContext } from "../context/NotificationMenuContext"
 
-const NotificationsMenu = () => {
+export type NotificationMenuVariant = "portal" | "admin"
+
+interface NotificationsMenuProps {
+  variant: NotificationMenuVariant
+}
+
+const VIEW_ALL_HREF: Record<NotificationMenuVariant, string> = {
+  portal: "/notifications",
+  admin: "/admin/notifications",
+}
+
+const NotificationsMenu = ({ variant }: NotificationsMenuProps) => {
   const { unreadCount, latestNotifications } = useNotificationMenuContext()
 
   const closeDropdown = () => {
@@ -41,7 +52,7 @@ const NotificationsMenu = () => {
           <div className="card-actions">
             <Link
               className="btn btn-primary btn-block"
-              href={{ pathname: "/notifications" }}
+              href={{ pathname: VIEW_ALL_HREF[variant] }}
               onClick={closeDropdown}
             >
               View All Notifications

@@ -1,5 +1,8 @@
 "use server"
 
+import db from "db"
+
+import { notifyAdminsOfPendingStudyReview } from "@/src/features/notifications"
 import { getSetupCompletionRsc } from "../../setup/queries/getSetupCompletion"
 import { isSetupCompleteFromFlags, type SetupStepFlags } from "../../setup/utils/setupStatus"
 import { createFeedbackTemplateRsc } from "../mutations/createFeedbackTemplate"
@@ -51,6 +54,27 @@ export async function saveFeedbackTemplateAction(
 
     const flags = (await getSetupCompletionRsc(studyId)) as SetupStepFlags
     const setupComplete = isSetupCompleteFromFlags(flags)
+
+    // Push "new study pending admin review" to staff admins on the canonical submission
+    // transition: first-time feedback template creation whose save leaves the study in the
+    // admin-review queue (setup complete + not yet admin-approved). Updates to an existing
+    // template are intentionally skipped — admins already saw it when it was first submitted.
+    if (!initialTemplate && setupComplete) {
+      const studyRow = await db.study.findUnique({
+        where: { id: studyId },
+        select: { id: true, title: true, adminApproved: true, archived: true },
+      })
+
+      if (studyRow && studyRow.adminApproved === null && !studyRow.archived) {
+        // Fire-and-forget style: failures here must not roll back the save the user just made.
+        notifyAdminsOfPendingStudyReview({
+          studyId: studyRow.id,
+          studyTitle: studyRow.title,
+        }).catch((error) => {
+          console.error("notifyAdminsOfPendingStudyReview failed:", error)
+        })
+      }
+    }
 
     return { ok: true, template, setupComplete }
   } catch (error) {

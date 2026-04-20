@@ -13,6 +13,7 @@ export { NotificationMenuRootProvider } from "./context/NotificationMenuRootProv
 // Server-side entry points for routes + other features
 export { getNotificationsRsc } from "./queries/getNotifications"
 export { sendNotification } from "./services/sendNotification"
+export { notifyAdminsOfPendingStudyReview } from "./services/notifyAdminsOfPendingStudyReview"
 
 // Types
 export type { NotificationWithRecipient, RouteData } from "./types"

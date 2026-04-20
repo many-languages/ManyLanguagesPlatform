@@ -54,9 +54,3 @@ export default resolver.pipe(resolver.zod(ValidateAdminInviteToken), async ({ to
     expiresAt: invite.expiresAt,
   }
 })
-
-// RSC helper for server components
-export async function validateAdminInviteTokenRsc(token: string, email?: string) {
-  const { default: validateToken } = await import("./validateAdminInviteToken")
-  return validateToken({ token, email }, { session: null } as any)
-}

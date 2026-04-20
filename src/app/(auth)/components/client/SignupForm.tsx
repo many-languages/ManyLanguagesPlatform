@@ -16,7 +16,7 @@ import { useRouter } from "next/navigation"
 import type { Route } from "next"
 import { UserRole } from "db"
 import Link from "next/link"
-import validateAdminInviteToken from "@/src/app/admin/invitations/queries/validateAdminInviteToken"
+import validateAdminInviteToken from "@/src/features/admin-invitations/queries/validateAdminInviteToken"
 import { getDefaultAuthenticatedPath } from "@/src/lib/auth/routing"
 
 export const RoleOptions = [

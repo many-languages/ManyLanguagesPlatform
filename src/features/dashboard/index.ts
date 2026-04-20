@@ -26,10 +26,7 @@ export { getParticipantCompletedNotPaidStudies } from "./queries/getParticipantC
 export type { ParticipantCompletedNotPaidStudy } from "./queries/getParticipantCompletedNotPaidStudies"
 
 // Admin queries (called from `/admin/dashboard`)
-// Colocated here for the pilot; will be promoted to `features/admin-invitations/`
-// and `features/studies/queries/` respectively once those features land.
-export { getStalePendingAdminInvitesRsc } from "./admin-data/getStalePendingAdminInvites"
-export type { StalePendingAdminInvite } from "./admin-data/getStalePendingAdminInvites"
-
+// `getStalePendingAdminInvitesRsc` was promoted to `features/admin-invitations/` (ADR-003);
+// `getPendingAdminApprovalStudies` stays here until `features/studies/queries/` lands.
 export { getPendingAdminApprovalStudiesForDashboardRsc } from "./admin-data/getPendingAdminApprovalStudies"
 export type { PendingAdminApprovalStudyRow } from "./admin-data/getPendingAdminApprovalStudies"

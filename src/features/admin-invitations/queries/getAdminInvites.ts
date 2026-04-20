@@ -5,17 +5,7 @@ import { AuthorizationError } from "blitz"
 import db from "db"
 import { getAuthorizedSession } from "@/src/app/(auth)/utils/getAuthorizedSession"
 import { isSuperAdmin } from "@/src/lib/auth/roles"
-
-const inviteSelect = {
-  id: true,
-  email: true,
-  expiresAt: true,
-  redeemedAt: true,
-  revokedAt: true,
-  reminderSentAt: true,
-  createdAt: true,
-  createdById: true,
-} as const
+import { inviteSelect } from "../inviteSelect"
 
 const getAdminInvites = resolver.pipe(resolver.authorize("SUPERADMIN"), async () => {
   return db.adminInvite.findMany({

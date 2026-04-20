@@ -2,8 +2,8 @@ import { getBlitzContext } from "@/src/app/blitz-server"
 import {
   AdminDashboard,
   getPendingAdminApprovalStudiesForDashboardRsc,
-  getStalePendingAdminInvitesRsc,
 } from "@/src/features/dashboard"
+import { getStalePendingAdminInvitesRsc } from "@/src/features/admin-invitations"
 import { isStaffAdmin } from "@/src/lib/auth/roles"
 import { getAdminStudyCounts } from "../studies/queries/getAdminStudyCounts"
 

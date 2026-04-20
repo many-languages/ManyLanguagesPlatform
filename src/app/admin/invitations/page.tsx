@@ -4,9 +4,11 @@ export const metadata = {
 
 import { redirect } from "next/navigation"
 import Card from "@/src/app/components/Card"
-import { AdminInviteForm } from "./components/AdminInviteForm"
-import AdminInviteManagementCard from "./components/AdminInviteManagementCard"
-import { getAdminInvitesRsc } from "./queries/getAdminInvites"
+import {
+  AdminInviteForm,
+  AdminInviteManagementCard,
+  getAdminInvitesRsc,
+} from "@/src/features/admin-invitations"
 import { getBlitzContext } from "@/src/app/blitz-server"
 import { isSuperAdmin } from "@/src/lib/auth/roles"
 import { DEFAULT_ADMIN_PATH } from "@/src/lib/auth/routing"

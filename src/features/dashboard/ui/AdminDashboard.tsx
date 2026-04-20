@@ -5,7 +5,7 @@ import PendingAdminApprovalCard from "./cards/PendingAdminApprovalCard"
 import NotificationsCard from "./cards/NotificationsCard"
 import { isStaffAdmin } from "@/src/lib/auth/roles"
 import type { StudySummaryCounts } from "@/src/app/admin/studies/queries/getAdminStudyCounts"
-import type { StalePendingAdminInvite } from "../admin-data/getStalePendingAdminInvites"
+import type { StalePendingAdminInvite } from "@/src/features/admin-invitations"
 import type { PendingAdminApprovalStudyRow } from "../admin-data/getPendingAdminApprovalStudies"
 
 interface AdminDashboardProps {

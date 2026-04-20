@@ -75,7 +75,7 @@ export async function getPendingAdminApprovalStudiesForDashboardRsc() {
   return findPendingAdminApprovalStudiesForDashboard()
 }
 
-/** Blitz RPC handler — required for files in queries/. Prefer getPendingAdminApprovalStudiesForDashboardRsc from RSC. */
+/** Blitz RPC handler — retained from the original `queries/` location; not currently used via RPC. */
 const getPendingAdminApprovalStudies = resolver.pipe(
   resolver.authorize(["ADMIN", "SUPERADMIN"]),
   async () => findPendingAdminApprovalStudiesForDashboard()

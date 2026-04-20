@@ -9,11 +9,12 @@ import AdminInviteManagementCard from "./components/AdminInviteManagementCard"
 import { getAdminInvitesRsc } from "./queries/getAdminInvites"
 import { getBlitzContext } from "@/src/app/blitz-server"
 import { isSuperAdmin } from "@/src/lib/auth/roles"
+import { DEFAULT_ADMIN_PATH } from "@/src/lib/auth/routing"
 
 export default async function AdminInvitesPage() {
   const { session } = await getBlitzContext()
   if (!isSuperAdmin(session.role)) {
-    redirect("/admin")
+    redirect(DEFAULT_ADMIN_PATH)
   }
 
   const invites = await getAdminInvitesRsc()

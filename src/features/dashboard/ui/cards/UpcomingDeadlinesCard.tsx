@@ -1,6 +1,6 @@
 import Link from "next/link"
 import Card from "@/src/app/components/Card"
-import type { DeadlineStudy, UpcomingDeadlines } from "../queries/getUpcomingDeadlines"
+import type { DeadlineStudy, UpcomingDeadlines } from "../../queries/getUpcomingDeadlines"
 
 /** Urgency: ≤3 days = error (urgent), ≤7 days = warning (soon), ≤14 days = info (upcoming) */
 function getUrgencyClasses(daysOffset: number): string {
@@ -50,13 +50,11 @@ function DeadlineItem({ study, label }: { study: DeadlineStudy; label: string })
   )
 }
 
-interface DashboardUpcomingDeadlinesCardProps {
+interface UpcomingDeadlinesCardProps {
   deadlines: UpcomingDeadlines
 }
 
-export default function DashboardUpcomingDeadlinesCard({
-  deadlines,
-}: DashboardUpcomingDeadlinesCardProps) {
+export default function UpcomingDeadlinesCard({ deadlines }: UpcomingDeadlinesCardProps) {
   const hasAny =
     deadlines.endingSoon.length > 0 ||
     deadlines.startingSoon.length > 0 ||

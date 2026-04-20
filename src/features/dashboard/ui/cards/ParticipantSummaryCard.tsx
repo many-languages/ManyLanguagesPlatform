@@ -7,7 +7,7 @@ import {
   MagnifyingGlassIcon,
 } from "@heroicons/react/24/outline"
 import Card from "@/src/app/components/Card"
-import type { ParticipantStudyCounts } from "../queries/getParticipantStudyCounts"
+import type { ParticipantStudyCounts } from "../../queries/getParticipantStudyCounts"
 
 interface StatItemProps {
   href: string
@@ -34,13 +34,11 @@ function StatItem({ href, icon, label, count }: StatItemProps) {
   )
 }
 
-interface DashboardParticipantSummaryCardProps {
+interface ParticipantSummaryCardProps {
   counts: ParticipantStudyCounts
 }
 
-export default function DashboardParticipantSummaryCard({
-  counts,
-}: DashboardParticipantSummaryCardProps) {
+export default function ParticipantSummaryCard({ counts }: ParticipantSummaryCardProps) {
   return (
     <Card title="Study summary" bgColor="bg-base-300">
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">

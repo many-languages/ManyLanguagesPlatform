@@ -46,7 +46,7 @@ export default function AppNavbar({ variant, currentUser }: AppNavbarProps) {
       ? adminNavItems.filter((item) => !item.superAdminOnly || currentUser?.role === "SUPERADMIN")
       : portalNavItems
 
-  const brandHref = variant === "admin" ? "/admin" : "/dashboard"
+  const brandHref = variant === "admin" ? "/admin/dashboard" : "/dashboard"
 
   return (
     <div className="navbar bg-base-100 sticky top-0 z-50 shadow-sm border-b border-gray-300 min-h-0 py-2">

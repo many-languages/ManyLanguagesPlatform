@@ -3,7 +3,7 @@ import Card from "@/src/app/components/Card"
 import type {
   ParticipantIncompleteStudy,
   ParticipantIncompleteStudies,
-} from "../queries/getParticipantIncompleteStudies"
+} from "../../queries/getParticipantIncompleteStudies"
 
 /** Urgency for nearing: ≤3 days = error, ≤7 days = warning, else info */
 function getNearingUrgencyClasses(daysUntilDeadline: number): string {
@@ -64,13 +64,13 @@ function StudyItem({
   )
 }
 
-interface DashboardParticipantIncompleteStudiesCardProps {
+interface ParticipantIncompleteStudiesCardProps {
   studies: ParticipantIncompleteStudies
 }
 
-export default function DashboardParticipantIncompleteStudiesCard({
+export default function ParticipantIncompleteStudiesCard({
   studies,
-}: DashboardParticipantIncompleteStudiesCardProps) {
+}: ParticipantIncompleteStudiesCardProps) {
   const hasAny = studies.nearingDeadline.length > 0 || studies.passedDeadline.length > 0
 
   if (!hasAny) {

@@ -7,18 +7,14 @@ import { useMutation } from "@blitzjs/rpc"
 import toast from "react-hot-toast"
 import Card from "@/src/app/components/Card"
 import sendAdminInviteReminders from "@/src/app/admin/invitations/mutations/sendAdminInviteReminders"
-import type { StalePendingAdminInvite } from "@/src/app/admin/invitations/queries/getAdminInvites"
+import type { StalePendingAdminInvite } from "../../admin-data/getStalePendingAdminInvites"
 
 function formatDate(value: StalePendingAdminInvite["createdAt"]) {
   const d = value instanceof Date ? value : new Date(value)
   return Number.isNaN(d.getTime()) ? "—" : d.toLocaleString()
 }
 
-export default function DashboardStaleAdminInvitesCard({
-  invites,
-}: {
-  invites: StalePendingAdminInvite[]
-}) {
+export default function StaleAdminInvitesCard({ invites }: { invites: StalePendingAdminInvite[] }) {
   const router = useRouter()
   const [sendReminderMutation] = useMutation(sendAdminInviteReminders)
   const [busyId, setBusyId] = useState<number | null>(null)

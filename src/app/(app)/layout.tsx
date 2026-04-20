@@ -7,11 +7,12 @@ import { AppNavbar } from "../components/navbar"
 import NavbarSkeleton from "../components/NavbarSkeleton"
 import { NotificationMenuRootProvider } from "./notifications/context/NotificationMenuRootProvider"
 import { isStaffAdmin } from "@/src/lib/auth/roles"
+import { DEFAULT_ADMIN_PATH } from "@/src/lib/auth/routing"
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const { session } = await getBlitzContext()
   if (isStaffAdmin(session.role)) {
-    redirect("/admin")
+    redirect(DEFAULT_ADMIN_PATH)
   }
   const currentUser = session.userId ? await getCurrentUserRsc().catch(() => null) : null
 

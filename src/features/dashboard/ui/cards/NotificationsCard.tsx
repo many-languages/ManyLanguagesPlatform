@@ -1,11 +1,11 @@
 "use client"
 
 import Link from "next/link"
-import { useNotificationMenuContext } from "../../notifications/context/NotificationMenuContext"
-import NotificationItem from "../../notifications/components/clients/NotificationItem"
+import { useNotificationMenuContext } from "@/src/app/(app)/notifications/context/NotificationMenuContext"
+import NotificationItem from "@/src/app/(app)/notifications/components/clients/NotificationItem"
 import Card from "@/src/app/components/Card"
 
-export default function DashboardNotificationsCard() {
+export default function NotificationsCard() {
   const { unreadCount, latestNotifications } = useNotificationMenuContext()
 
   return (

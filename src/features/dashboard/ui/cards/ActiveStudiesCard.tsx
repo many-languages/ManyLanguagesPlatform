@@ -1,13 +1,13 @@
 import Link from "next/link"
 import { SignalIcon } from "@heroicons/react/24/outline"
 import Card from "@/src/app/components/Card"
-import type { ActiveStudyWithResponseCount } from "../queries/getActiveStudiesWithResponseCounts"
+import type { ActiveStudyWithResponseCount } from "../../queries/getActiveStudiesWithResponseCounts"
 
-interface DashboardActiveStudiesCardProps {
+interface ActiveStudiesCardProps {
   studies: ActiveStudyWithResponseCount[]
 }
 
-export default function DashboardActiveStudiesCard({ studies }: DashboardActiveStudiesCardProps) {
+export default function ActiveStudiesCard({ studies }: ActiveStudiesCardProps) {
   return (
     <Card title="Active data collection" bgColor="bg-base-300">
       <div className="flex flex-col gap-4">

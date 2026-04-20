@@ -1,23 +1,19 @@
 import { Suspense } from "react"
 import { getBlitzContext } from "../../blitz-server"
 import { getCurrentUserRsc } from "../../users/queries/getCurrentUser"
-import { getResearcherStudyCounts } from "./queries/getResearcherStudyCounts"
-import { getActiveStudiesWithResponseCounts } from "./queries/getActiveStudiesWithResponseCounts"
-import { getUpcomingDeadlines, type UpcomingDeadlines } from "./queries/getUpcomingDeadlines"
 import {
-  getParticipantIncompleteStudies,
-  type ParticipantIncompleteStudies,
-} from "./queries/getParticipantIncompleteStudies"
-import { getParticipantStudyCounts } from "./queries/getParticipantStudyCounts"
-import {
+  DashboardSkeleton,
+  PortalDashboard,
+  getActiveStudiesWithResponseCounts,
   getParticipantCompletedNotPaidStudies,
+  getParticipantIncompleteStudies,
+  getParticipantStudyCounts,
+  getResearcherStudyCounts,
+  getUpcomingDeadlines,
   type ParticipantCompletedNotPaidStudy,
-} from "./queries/getParticipantCompletedNotPaidStudies"
-import { getStalePendingAdminInvitesRsc } from "@/src/app/admin/invitations/queries/getAdminInvites"
-import { getPendingAdminApprovalStudiesForDashboardRsc } from "@/src/app/admin/studies/queries/getPendingAdminApprovalStudies"
-import { isStaffAdmin } from "@/src/lib/auth/roles"
-import DashboardContent from "./components/DashboardContent"
-import DashboardSkeleton from "./components/DashboardSkeleton"
+  type ParticipantIncompleteStudies,
+  type UpcomingDeadlines,
+} from "@/src/features/dashboard"
 
 const emptyDeadlines: UpcomingDeadlines = {
   endingSoon: [],
@@ -33,10 +29,8 @@ const emptyParticipantStudies: ParticipantIncompleteStudies = {
 export default async function DashboardPage() {
   const { session } = await getBlitzContext()
 
-  // Fetch user data server-side (will be cached if already fetched in layout)
   const currentUser = session.userId ? await getCurrentUserRsc().catch(() => null) : null
 
-  // Fetch researcher data for researchers
   const [researcherCounts, activeStudiesWithResponses, upcomingDeadlines] =
     currentUser?.role === "RESEARCHER" && session.userId
       ? await Promise.all([
@@ -46,7 +40,6 @@ export default async function DashboardPage() {
         ])
       : [null, [], emptyDeadlines]
 
-  // Fetch participant data for participants
   const [participantIncompleteStudies, participantCounts, participantCompletedNotPaid] =
     currentUser?.role === "PARTICIPANT" && session.userId
       ? await Promise.all([
@@ -58,17 +51,9 @@ export default async function DashboardPage() {
         ])
       : [emptyParticipantStudies, null, []]
 
-  const staleAdminInvites =
-    currentUser?.role === "SUPERADMIN" ? await getStalePendingAdminInvitesRsc().catch(() => []) : []
-
-  const pendingAdminApprovalStudies =
-    currentUser && isStaffAdmin(currentUser.role)
-      ? await getPendingAdminApprovalStudiesForDashboardRsc().catch(() => [])
-      : []
-
   return (
     <Suspense fallback={<DashboardSkeleton />}>
-      <DashboardContent
+      <PortalDashboard
         currentUser={currentUser}
         researcherCounts={researcherCounts}
         activeStudiesWithResponses={activeStudiesWithResponses}
@@ -76,8 +61,6 @@ export default async function DashboardPage() {
         participantIncompleteStudies={participantIncompleteStudies}
         participantCounts={participantCounts}
         participantCompletedNotPaid={participantCompletedNotPaid}
-        staleAdminInvites={staleAdminInvites}
-        pendingAdminApprovalStudies={pendingAdminApprovalStudies}
       />
     </Suspense>
   )

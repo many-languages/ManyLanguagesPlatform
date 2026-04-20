@@ -6,7 +6,7 @@ import {
   ChevronRightIcon,
 } from "@heroicons/react/24/outline"
 import Card from "@/src/app/components/Card"
-import type { ParticipantCompletedNotPaidStudy } from "../queries/getParticipantCompletedNotPaidStudies"
+import type { ParticipantCompletedNotPaidStudy } from "../../queries/getParticipantCompletedNotPaidStudies"
 
 function formatDate(date: Date): string {
   return date.toLocaleDateString(undefined, {
@@ -46,13 +46,13 @@ function StudyItem({ study }: { study: ParticipantCompletedNotPaidStudy }) {
   )
 }
 
-interface DashboardParticipantCompletedNotPaidCardProps {
+interface ParticipantCompletedNotPaidCardProps {
   studies: ParticipantCompletedNotPaidStudy[]
 }
 
-export default function DashboardParticipantCompletedNotPaidCard({
+export default function ParticipantCompletedNotPaidCard({
   studies,
-}: DashboardParticipantCompletedNotPaidCardProps) {
+}: ParticipantCompletedNotPaidCardProps) {
   if (studies.length === 0) {
     return (
       <Card title="Awaiting payment" bgColor="bg-base-300">

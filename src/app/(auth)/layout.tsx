@@ -1,8 +1,11 @@
+import type { UserRole } from "db"
+import { getDefaultAuthenticatedPath } from "@/src/lib/auth/routing"
 import { useAuthenticatedBlitzContext } from "../blitz-server"
 
 export default async function AuthLayout({ children }: { children: React.ReactNode }) {
   await useAuthenticatedBlitzContext({
-    redirectAuthenticatedTo: "/dashboard",
+    redirectAuthenticatedTo: (ctx) =>
+      getDefaultAuthenticatedPath(ctx.session.role as UserRole | undefined),
   })
   return (
     <main className="min-h-screen flex items-center justify-center">

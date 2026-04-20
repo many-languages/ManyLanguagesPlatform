@@ -11,6 +11,7 @@ import { useSearchParams } from "next/navigation"
 import { useRouter } from "next/navigation"
 import type { Route } from "next"
 import { usePendingNavigation } from "@/src/app/hooks/usePendingNavigation"
+import { getDefaultAuthenticatedPath } from "@/src/lib/auth/routing"
 
 export const LoginForm = () => {
   const [loginMutation] = useMutation(login)
@@ -35,12 +36,16 @@ export const LoginForm = () => {
               return { [FORM_ERROR]: result.error }
             }
 
+            if (!result.user) {
+              return { [FORM_ERROR]: "Login succeeded but user data was missing." }
+            }
+
             startNavigation(() => {
               router.refresh()
               if (next) {
                 router.push(next as Route)
               } else {
-                router.push("/dashboard")
+                router.push(getDefaultAuthenticatedPath(result.user.role) as Route)
               }
             })
           } catch (error: any) {

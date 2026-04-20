@@ -4,7 +4,7 @@ import { Toaster } from "react-hot-toast"
 import { isStaffAdmin } from "@/src/lib/auth/roles"
 import { getBlitzContext } from "../blitz-server"
 import NavbarSkeleton from "../components/NavbarSkeleton"
-import AdminNavbar from "../components/AdminNavbar"
+import { AppNavbar } from "../components/navbar"
 import { getCurrentUserRsc } from "../users/queries/getCurrentUser"
 
 export default async function AdminAppLayout({ children }: { children: React.ReactNode }) {
@@ -23,7 +23,7 @@ export default async function AdminAppLayout({ children }: { children: React.Rea
   return (
     <div className="min-h-screen flex flex-col bg-base-200">
       <Suspense fallback={<NavbarSkeleton />}>
-        <AdminNavbar currentUser={currentUser} />
+        <AppNavbar variant="admin" currentUser={currentUser} />
       </Suspense>
       <main className="flex-1 mt-6 px-6 sm:px-8 lg:px-12">{children}</main>
       <Toaster position="top-right" />

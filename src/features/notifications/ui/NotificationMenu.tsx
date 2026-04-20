@@ -3,7 +3,7 @@
 import { BellIcon } from "@heroicons/react/24/outline"
 import Link from "next/link"
 import NotificationItem from "./NotificationItem"
-import { useNotificationMenuContext } from "../../context/NotificationMenuContext"
+import { useNotificationMenuContext } from "../context/NotificationMenuContext"
 
 const NotificationsMenu = () => {
   const { unreadCount, latestNotifications } = useNotificationMenuContext()

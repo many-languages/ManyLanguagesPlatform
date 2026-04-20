@@ -4,9 +4,9 @@ import { useMemo, useTransition } from "react"
 import { useFormContext } from "react-hook-form"
 import toast from "react-hot-toast"
 
-import { markNotificationsRead, markNotificationsUnread } from "../../actions"
-import { NotificationWithRecipient } from "../../types"
-import { useNotificationMenuContext } from "../../context/NotificationMenuContext"
+import { markNotificationsRead, markNotificationsUnread } from "../actions"
+import { NotificationWithRecipient } from "../types"
+import { useNotificationMenuContext } from "../context/NotificationMenuContext"
 
 type FormValues = {
   selectedIds: number[]

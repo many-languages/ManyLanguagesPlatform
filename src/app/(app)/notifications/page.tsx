@@ -1,6 +1,5 @@
 import { Suspense } from "react"
-import { NotificationContent } from "./components/clients/NotificationContent"
-import { getNotificationsRsc } from "./queries/getNotifications"
+import { NotificationContent, getNotificationsRsc } from "@/src/features/notifications"
 
 const NotificationsPage = async () => {
   const notifications = await getNotificationsRsc()

@@ -1,8 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { useNotificationMenuContext } from "@/src/app/(app)/notifications/context/NotificationMenuContext"
-import NotificationItem from "@/src/app/(app)/notifications/components/clients/NotificationItem"
+import { NotificationItem, useNotificationMenuContext } from "@/src/features/notifications"
 import Card from "@/src/app/components/Card"
 
 export default function NotificationsCard() {

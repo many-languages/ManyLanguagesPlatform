@@ -2,7 +2,7 @@ import { resolver } from "@blitzjs/rpc"
 import db from "db"
 import { assertStudyNotArchived } from "@/src/lib/studies"
 import { UpdateStudyStatus } from "../validations"
-import { sendNotification } from "../../notifications/services"
+import { sendNotification } from "@/src/features/notifications"
 
 export default resolver.pipe(
   resolver.zod(UpdateStudyStatus),

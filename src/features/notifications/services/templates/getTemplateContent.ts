@@ -1,7 +1,7 @@
 import { promises as fs } from "fs"
 import path from "path"
 
-const TEMPLATE_ROOT = path.join(process.cwd(), "src", "app", "(app)", "notifications", "templates")
+const TEMPLATE_ROOT = path.join(process.cwd(), "src", "features", "notifications", "templates")
 
 export const getTemplateContent = async (templateId: string): Promise<string> => {
   const templatePath = path.join(TEMPLATE_ROOT, `${templateId}.hbs`)

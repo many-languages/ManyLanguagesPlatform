@@ -12,7 +12,7 @@ import {
   type FeedbackTemplateEditorInitial,
 } from "../../../../feedback/types"
 import FeedbackFormEditor from "../../../../feedback/components/client/FeedbackFormEditor"
-import { useNotificationMenuContext } from "@/src/app/(app)/notifications/context/NotificationMenuContext"
+import { useNotificationMenuContext } from "@/src/features/notifications"
 import type { FeedbackPreviewContextClientDto } from "../../../../feedback/utils/loadFeedbackPreviewContext"
 
 import { StudyWithRelations } from "@/src/app/(app)/studies/queries/getStudy"

@@ -3,7 +3,7 @@
 import { resolver } from "@blitzjs/rpc"
 import db from "db"
 import { z } from "zod"
-import { sendNotification } from "@/src/app/(app)/notifications/services/sendNotification"
+import { sendNotification } from "@/src/features/notifications"
 import { isSetupComplete } from "@/src/app/(app)/studies/[studyId]/setup/utils/setupStatus"
 import type { StudyWithMinimalRelations } from "@/src/app/(app)/studies/[studyId]/setup/utils/setupStatus"
 

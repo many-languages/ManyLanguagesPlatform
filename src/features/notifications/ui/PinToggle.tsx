@@ -4,9 +4,9 @@ import { useTransition } from "react"
 import { StarIcon as StarIconSolid } from "@heroicons/react/24/solid"
 import { StarIcon as StarIconOutline } from "@heroicons/react/24/outline"
 
-import { toggleNotificationPinned } from "../../actions/toggleNotificationPinned"
-import { useNotificationMenuContext } from "../../context/NotificationMenuContext"
-import type { NotificationWithRecipient } from "../../types"
+import { toggleNotificationPinned } from "../actions/toggleNotificationPinned"
+import { useNotificationMenuContext } from "../context/NotificationMenuContext"
+import type { NotificationWithRecipient } from "../types"
 
 type PinToggleProps = {
   recipient: NotificationWithRecipient

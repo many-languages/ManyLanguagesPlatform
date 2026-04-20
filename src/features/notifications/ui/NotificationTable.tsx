@@ -5,14 +5,14 @@ import { createColumnHelper } from "@tanstack/react-table"
 import { StarIcon as StarIconSolid } from "@heroicons/react/24/solid"
 import { StarIcon as StarIconOutline } from "@heroicons/react/24/outline"
 
-import Table from "../../../../components/Table"
-import DateFormat from "../../../../components/DateFormat"
+import Table from "@/src/app/components/Table"
+import DateFormat from "@/src/app/components/DateFormat"
 import NotificationMessage from "./NotificationMessage"
 import ReadToggle from "./ReadToggle"
 import { PinToggle } from "./PinToggle"
-import { SelectCheckbox, SelectAllCheckbox } from "../../../../components/fields/SelectCheckbox"
-import { NotificationWithRecipient } from "../../types"
-import { parseRouteData } from "../../utils/parseRouteData"
+import { SelectCheckbox, SelectAllCheckbox } from "@/src/app/components/fields/SelectCheckbox"
+import { NotificationWithRecipient } from "../types"
+import { parseRouteData } from "../utils/parseRouteData"
 
 type NotificationRow = {
   notificationId: number

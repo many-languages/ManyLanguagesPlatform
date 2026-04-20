@@ -4,7 +4,7 @@ import { resolver } from "@blitzjs/rpc"
 import db from "db"
 import { z } from "zod"
 import { getAuthorizedSession } from "@/src/app/(auth)/utils/getAuthorizedSession"
-import { sendNotification } from "@/src/app/(app)/notifications/services/sendNotification"
+import { sendNotification } from "@/src/features/notifications"
 
 const ApproveStudySchema = z.object({
   studyIds: z.array(z.number()).min(1, "Select at least one study"),

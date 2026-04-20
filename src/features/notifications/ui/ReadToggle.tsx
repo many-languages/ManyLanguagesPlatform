@@ -3,9 +3,9 @@
 import { useTransition } from "react"
 import { EyeIcon, EyeSlashIcon } from "@heroicons/react/24/outline"
 
-import { markNotificationsRead, markNotificationsUnread } from "../../actions"
-import { NotificationWithRecipient } from "../../types"
-import { useNotificationMenuContext } from "../../context/NotificationMenuContext"
+import { markNotificationsRead, markNotificationsUnread } from "../actions"
+import { NotificationWithRecipient } from "../types"
+import { useNotificationMenuContext } from "../context/NotificationMenuContext"
 
 type ReadToggleProps = {
   recipient: NotificationWithRecipient

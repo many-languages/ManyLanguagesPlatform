@@ -3,7 +3,7 @@
 import { resolver } from "@blitzjs/rpc"
 import db from "db"
 import { z } from "zod"
-import { sendNotification } from "@/src/app/(app)/notifications/services/sendNotification"
+import { sendNotification } from "@/src/features/notifications"
 
 const DisableDataCollectionSchema = z.object({
   studyIds: z.array(z.number()).min(1, "Select at least one study"),

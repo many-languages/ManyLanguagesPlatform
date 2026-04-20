@@ -3,11 +3,11 @@
 import { InformationCircleIcon } from "@heroicons/react/24/outline"
 import { FormProvider, useForm } from "react-hook-form"
 
-import Card from "../../../../components/Card"
+import Card from "@/src/app/components/Card"
 import { NotificationTable } from "./NotificationTable"
 import { NotificationsBulkActions } from "./NotificationsBulkActions"
 import { DeleteNotificationButton } from "./DeleteNotificationButton"
-import { NotificationWithRecipient } from "../../types"
+import { NotificationWithRecipient } from "../types"
 
 type FormValues = {
   selectedIds: number[]

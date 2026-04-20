@@ -3,8 +3,8 @@
 import { useTransition } from "react"
 import toast from "react-hot-toast"
 
-import { deleteNotifications } from "../../actions"
-import { useNotificationMenuContext } from "../../context/NotificationMenuContext"
+import { deleteNotifications } from "../actions"
+import { useNotificationMenuContext } from "../context/NotificationMenuContext"
 
 interface DeleteNotificationButtonProps {
   ids: number[]

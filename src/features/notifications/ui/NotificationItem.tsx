@@ -1,5 +1,5 @@
 import NotificationMessage from "./NotificationMessage"
-import { RouteData } from "../../types"
+import { RouteData } from "../types"
 
 interface Notification {
   id: number

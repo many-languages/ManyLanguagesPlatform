@@ -5,7 +5,7 @@ import { getBlitzContext } from "../blitz-server"
 import { getCurrentUserRsc } from "../users/queries/getCurrentUser"
 import { AppNavbar } from "../components/navbar"
 import NavbarSkeleton from "../components/NavbarSkeleton"
-import { NotificationMenuRootProvider } from "./notifications/context/NotificationMenuRootProvider"
+import { NotificationMenuRootProvider } from "@/src/features/notifications"
 import { isStaffAdmin } from "@/src/lib/auth/roles"
 import { DEFAULT_ADMIN_PATH } from "@/src/lib/auth/routing"
 

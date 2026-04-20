@@ -1,8 +1,8 @@
 import Link from "next/link"
 import DOMPurify from "isomorphic-dompurify"
-import { RouteData } from "../../types"
-import { isRouteData } from "../../utils/isRouteData"
-import { resolveRouteHref } from "../../utils/resolveRouteHref"
+import { RouteData } from "../types"
+import { isRouteData } from "../utils/isRouteData"
+import { resolveRouteHref } from "../utils/resolveRouteHref"
 
 interface NotificatioMessageProps {
   message: string

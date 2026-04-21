@@ -5,15 +5,36 @@ import { TextField, FormSubmitButton, FormErrorDisplay } from "@/src/app/compone
 import { Form, FORM_ERROR } from "@/src/app/components/Form"
 import { useMutation } from "@blitzjs/rpc"
 import { useRouter } from "next/navigation"
+import type { Route } from "next"
 import updateProfile from "../../mutations/updateProfile"
 import { UpdateProfile } from "../../validations"
+import type { ProfilePaths } from "../../types"
 import toast from "react-hot-toast"
 
-export const EditProfileForm = () => {
+export type ProfileEditInitialValues = {
+  firstname: string
+  lastname: string
+  username: string
+}
+
+interface EditProfileFormProps {
+  profilePaths: ProfilePaths
+  /** Current DB values — must be supplied by the route (RSC) so fields are prefilled. */
+  initialValues: ProfileEditInitialValues
+}
+
+export const EditProfileForm = ({ profilePaths, initialValues }: EditProfileFormProps) => {
   const [updateProfileMutation] = useMutation(updateProfile)
   const router = useRouter()
 
-  const defaultValues = useMemo(() => ({ firstname: "", lastname: "", username: "" }), [])
+  const defaultValues = useMemo(
+    () => ({
+      firstname: initialValues.firstname,
+      lastname: initialValues.lastname,
+      username: initialValues.username,
+    }),
+    [initialValues.firstname, initialValues.lastname, initialValues.username]
+  )
 
   return (
     <div className="space-y-6">
@@ -24,7 +45,7 @@ export const EditProfileForm = () => {
           try {
             await updateProfileMutation(values)
             toast.success("Profile updated successfully")
-            router.push("/profile")
+            router.push(profilePaths.root as Route)
           } catch (error: any) {
             const errorMessage =
               error?.message || "Sorry, we had an unexpected error. Please try again."
@@ -44,7 +65,7 @@ export const EditProfileForm = () => {
             <button
               type="button"
               className="btn btn-secondary"
-              onClick={() => router.push("/profile")}
+              onClick={() => router.push(profilePaths.root as Route)}
             >
               Cancel
             </button>

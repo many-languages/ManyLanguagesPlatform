@@ -2,23 +2,15 @@
 
 import Card from "@/src/app/components/Card"
 import Link from "next/link"
-
-type CurrentUser = {
-  id: number
-  firstname: string | null
-  lastname: string | null
-  username: string | null
-  email: string
-  role: string
-  gravatar: string | null
-  createdAt: Date
-}
+import type { Route } from "next"
+import type { ProfileContentUser, ProfilePaths } from "../types"
 
 interface ProfileContentProps {
-  currentUser: CurrentUser
+  currentUser: ProfileContentUser
+  profilePaths: ProfilePaths
 }
 
-export default function ProfileContent({ currentUser }: ProfileContentProps) {
+export default function ProfileContent({ currentUser, profilePaths }: ProfileContentProps) {
   // Construct name
   const fullname =
     currentUser.firstname && currentUser.lastname
@@ -32,7 +24,7 @@ export default function ProfileContent({ currentUser }: ProfileContentProps) {
         title={"Profile information"}
         actions={
           <>
-            <Link className="btn btn-primary" href="/profile/edit">
+            <Link className="btn btn-primary" href={profilePaths.edit as Route}>
               Edit Profile
             </Link>
 

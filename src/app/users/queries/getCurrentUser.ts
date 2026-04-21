@@ -1,23 +1,29 @@
 import { Ctx } from "blitz"
+import type { Prisma } from "@prisma/client"
 import db from "db"
 import { cache } from "react"
 import { getBlitzContext } from "@/src/app/blitz-server"
+
+/** Shared with Prisma inference — keep in sync with `findCurrentUser`. */
+export const currentUserSelect = {
+  id: true,
+  firstname: true,
+  lastname: true,
+  username: true,
+  email: true,
+  role: true,
+  gravatar: true,
+  createdAt: true,
+  language: true,
+} satisfies Prisma.UserSelect
+
+export type CurrentUserFromSession = Prisma.UserGetPayload<{ select: typeof currentUserSelect }>
 
 // Core database function
 async function findCurrentUser(userId: number) {
   const user = await db.user.findFirst({
     where: { id: userId },
-    select: {
-      id: true,
-      firstname: true,
-      lastname: true,
-      username: true,
-      email: true,
-      role: true,
-      gravatar: true,
-      createdAt: true,
-      language: true,
-    },
+    select: currentUserSelect,
   })
 
   return user

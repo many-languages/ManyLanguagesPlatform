@@ -1,6 +1,7 @@
 "use client"
 
 import Link from "next/link"
+import type { Route } from "next"
 import { useMemo } from "react"
 import { useMutation } from "@blitzjs/rpc"
 import { useRouter } from "next/navigation"
@@ -67,7 +68,7 @@ export default function AppNavbar({ variant, currentUser }: AppNavbarProps) {
           </li>
           {items.map((item) => (
             <li key={item.href}>
-              <Link href={item.href} onClick={closeActiveDropdown}>
+              <Link href={item.href as Route} onClick={closeActiveDropdown}>
                 {item.label}
               </Link>
             </li>
@@ -94,7 +95,11 @@ export default function AppNavbar({ variant, currentUser }: AppNavbarProps) {
           </label>
           <ul className="menu menu-sm dropdown-content mt-3 z-[1] p-2 shadow bg-base-300 rounded-box w-52">
             <li>
-              <Link className="justify-between" href="/profile" onClick={closeActiveDropdown}>
+              <Link
+                className="justify-between"
+                href={(variant === "admin" ? "/admin/profile" : "/profile") as Route}
+                onClick={closeActiveDropdown}
+              >
                 Profile
               </Link>
             </li>

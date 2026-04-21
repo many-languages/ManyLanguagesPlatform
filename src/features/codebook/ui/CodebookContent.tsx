@@ -8,13 +8,14 @@ import { toast } from "react-hot-toast"
 
 import updateVariableCodebook, {
   type UpdateVariableCodebookResult,
-} from "../../mutations/updateVariableCodebook"
-import { CODEBOOK_SAVE_FEEDBACK_PERSONAL_DATA_HINT } from "../../utils/codebookSaveMessages"
-import StepNavigation from "../../../setup/components/client/StepNavigation"
+} from "../mutations/updateVariableCodebook"
+import { CODEBOOK_SAVE_FEEDBACK_PERSONAL_DATA_HINT } from "../domain/codebookSaveMessages"
+import StepNavigation from "@/src/app/(app)/studies/[studyId]/setup/components/client/StepNavigation"
 import { Alert } from "@/src/app/components/Alert"
 import { AsyncButton } from "@/src/app/components/AsyncButton"
 import Card from "@/src/app/components/Card"
 import { Textarea } from "@/src/app/components/fields"
+import { StudyWithRelations } from "@/src/app/(app)/studies/queries/getStudy"
 
 interface VariableCodebookEntry {
   id: number
@@ -25,15 +26,13 @@ interface VariableCodebookEntry {
   description: string | null
   personalData: boolean
 }
-
-import { StudyWithRelations } from "@/src/app/(app)/studies/queries/getStudy"
-import { studySetupStepPath } from "../../../setup/utils/setupRoutes"
+import { studySetupStepPath } from "@/src/app/(app)/studies/[studyId]/setup/utils/setupRoutes"
 import {
   ARCHIVED_STUDY_CANNOT_EDIT_MESSAGE,
   canEditStudySetup,
 } from "@/src/lib/studies/studyEditability"
 
-interface CodebookContentProps {
+export interface CodebookContentProps {
   initialVariables: Array<{
     id: number
     variableKey: string
@@ -65,7 +64,6 @@ export default function CodebookContent({
   // const { study, studyId } = useStudySetup() // Removed context
   const studyId = study.id
   const canEditSetup = canEditStudySetup(study)
-  const step5Completed = study.latestJatosStudyUpload?.step5Completed ?? false
   const [variables, setVariables] = useState<VariableCodebookEntry[]>([])
   const [isSaving, setIsSaving] = useState(false)
   const [updateVariableCodebookMutation] = useMutation(updateVariableCodebook)

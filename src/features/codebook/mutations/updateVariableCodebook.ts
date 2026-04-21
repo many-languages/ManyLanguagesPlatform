@@ -1,9 +1,9 @@
 import { resolver } from "@blitzjs/rpc"
 import db from "db"
 import { z } from "zod"
-import { withStudyWriteAccess } from "../../utils/withStudyWriteAccess"
-import { computeCodebookValidation } from "../utils/computeCodebookValidation"
-import { getPersonalDataViolationsForPersistedTemplate } from "../../feedback/utils/feedbackTemplatePersonalDataViolations"
+import { withStudyWriteAccess } from "@/src/app/(app)/studies/[studyId]/utils/withStudyWriteAccess"
+import { computeCodebookValidation } from "../domain/computeCodebookValidation"
+import { getPersonalDataViolationsForPersistedTemplate } from "@/src/app/(app)/studies/[studyId]/feedback/utils/feedbackTemplatePersonalDataViolations"
 
 const UpdateVariableCodebook = z.object({
   studyId: z.number(),

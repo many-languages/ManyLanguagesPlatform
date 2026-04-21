@@ -2,8 +2,8 @@ import db from "db"
 import { resolver } from "@blitzjs/rpc"
 import { z } from "zod"
 import { cache } from "react"
-import { withStudyAccess } from "../../utils/withStudyAccess"
-import { computeCodebookValidation } from "../utils/computeCodebookValidation"
+import { withStudyAccess } from "@/src/app/(app)/studies/[studyId]/utils/withStudyAccess"
+import { computeCodebookValidation } from "../domain/computeCodebookValidation"
 
 const GetCodebookData = z.object({
   studyId: z.number(),

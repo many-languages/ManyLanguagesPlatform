@@ -13,7 +13,7 @@ import {
   hashJson,
 } from "../utils/extractionCache"
 import { computeFeedbackTemplateValidation } from "../../feedback/utils/computeFeedbackTemplateValidation"
-import { computeCodebookValidation } from "../../codebook/utils/computeCodebookValidation"
+import { computeCodebookValidation } from "@/src/features/codebook"
 
 const ApproveExtraction = z.object({
   studyId: z.number(),

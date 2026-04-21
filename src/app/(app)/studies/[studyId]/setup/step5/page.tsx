@@ -1,6 +1,5 @@
-import CodebookContent from "../../codebook/components/client/CodebookContent"
 import SetupStepHeader from "../components/client/SetupStepHeader"
-import { getCodebookDataRsc } from "../../codebook/queries/getCodebookData"
+import { CodebookContent, getCodebookDataRsc } from "@/src/features/codebook"
 import { loadStudySetupPage } from "../utils/loadStudySetupPage"
 import type { StudyWithRelations } from "@/src/app/(app)/studies/queries/getStudy"
 

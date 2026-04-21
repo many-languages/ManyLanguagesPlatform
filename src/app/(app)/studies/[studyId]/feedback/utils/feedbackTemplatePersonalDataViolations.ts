@@ -1,5 +1,5 @@
 import { collectPersonalDataViolationsForFeedbackTemplate } from "@/src/lib/feedback/feedbackTemplatePersonalDataPolicy"
-import { fetchCodebookMergedVariablesForStudy } from "../../codebook/queries/getCodebookData"
+import { fetchCodebookMergedVariablesForStudy } from "@/src/features/codebook"
 import type { FeedbackTemplateRscRow } from "../feedbackTemplateRscSelect"
 import { parseRequiredVariableNamesFromDb } from "./parseRequiredVariableNamesFromDb"
 

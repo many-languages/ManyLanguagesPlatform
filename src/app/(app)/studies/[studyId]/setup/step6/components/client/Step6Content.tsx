@@ -10,10 +10,10 @@ import { Alert } from "@/src/app/components/Alert"
 import {
   FeedbackFormEditorRef,
   type FeedbackTemplateEditorInitial,
-} from "../../../../feedback/types"
-import FeedbackFormEditor from "../../../../feedback/components/client/FeedbackFormEditor"
+} from "@/src/features/feedback/types"
+import { FeedbackFormEditor } from "@/src/features/feedback"
 import { useNotificationMenuContext } from "@/src/features/notifications"
-import type { FeedbackPreviewContextClientDto } from "../../../../feedback/utils/loadFeedbackPreviewContext"
+import type { FeedbackPreviewContextClientDto } from "@/src/features/feedback/server/loadFeedbackPreviewContext"
 
 import { StudyWithRelations } from "@/src/app/(app)/studies/queries/getStudy"
 import { studyPath } from "../../../utils/setupRoutes"

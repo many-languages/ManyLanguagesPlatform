@@ -28,20 +28,18 @@ tokenBroker — token resolution only
     → getAdminToken() — provisioning only
 ```
 
-### Feedback helpers (`src/lib/feedback`)
+### Feedback helpers (`src/features/feedback/domain/`)
 
-Feedback template rendering and cohort aggregation for `stat:…:across` live in **`src/lib/feedback/`** so **`jatosAccessService` does not import from `src/app/**`**. That keeps the JATOS use-case layer depending only on other `src/lib` modules (plus shared types).
+Feedback template rendering and cohort aggregation for `stat:…:across` live under **`src/features/feedback/domain/`** so **`jatosAccessService` does not import from `src/app/**`**. Import via `@/src/features/feedback/domain/...`.
 
-| Module                           | Role                                                                                                                                                              |
-| -------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `types`, `feedbackRenderContext` | `FeedbackRenderContext`, `buildFeedbackRenderContext`                                                                                                             |
-| `requiredVariableNames`          | `extractRequiredVariableNames`, `buildRequiredKeysHash`                                                                                                           |
-| `statAcrossKeys`                 | `statAcrossLookupKey`; `templateUsesStatAcross` (uses `createFeedbackStatPlaceholderRegex` from `feedbackStatPlaceholder.ts` so “uses across” matches render/DSL) |
-| `variableRowAggregation`         | `collectVariableValuesAcrossAllRows`, `buildPredicate` (where-clauses)                                                                                            |
-| `computeAggregatedAcrossStats`   | `computeAggregatedAcrossStatsForTemplate` — used inside `getParticipantFeedback` when the template uses `stat:…:across`, and for researcher static feedback       |
-| `extractVariableBundleForRender` | Re-exports `extractVariableBundleForRenderFromResults` from the study **variables** module — single supported import path for lib code                            |
-
-Routes under `src/app/.../feedback/utils/` may **re-export** the same symbols for relative imports; prefer `@/src/lib/feedback/...` in new code.
+| Module                                 | Role                                                                                                                                                                             |
+| -------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `renderTypes`, `feedbackRenderContext` | `FeedbackRenderContext`, `Primitive`, `FeedbackRenderBundleInput`; `buildFeedbackRenderContext`                                                                                  |
+| `requiredVariableNames`                | `extractRequiredVariableNames`, `buildRequiredKeysHash`                                                                                                                          |
+| `statAcrossKeys`                       | `statAcrossLookupKey`; `templateUsesStatAcross` (uses `createFeedbackStatPlaceholderRegex` from `feedbackStatPlaceholder.ts` so “uses across” matches render/DSL)                |
+| `variableRowAggregation`               | `collectVariableValuesAcrossAllRows`, `buildPredicate` (where-clauses)                                                                                                           |
+| `computeAggregatedAcrossStats`         | `computeAggregatedAcrossStatsForTemplate` — used inside `getParticipantFeedback` when the template uses `stat:…:across`, and for researcher static feedback                      |
+| `extractVariableBundleForRender`       | Re-exports `extractVariableBundleForRenderFromResults` from the study **variables** module — single supported import path for JATOS-facing code (no direct `src/app/**` imports) |
 
 ### Key Principles
 
@@ -250,4 +248,4 @@ App admins can delete studies from both the database and JATOS. This is a **priv
 
 - [JATOS Refactor Plan](./JATOS_REFACTOR_PLAN.md) — Architecture and migration details
 - [JATOS User-Scoped Tokens](./JATOS_USER_SCOPED_TOKENS_IMPLEMENTATION_PLAN.md) — Token types and provisioning
-- [Feedback rendering (server-side)](./FEEDBACK_RENDERING_SERVER_SIDE_PLAN.md) — Markdown pipeline, `aggregatedAcrossStats`, `src/lib/feedback`
+- [Feedback rendering (server-side)](./FEEDBACK_RENDERING_SERVER_SIDE_PLAN.md) — Markdown pipeline, `aggregatedAcrossStats`, `src/features/feedback/domain`

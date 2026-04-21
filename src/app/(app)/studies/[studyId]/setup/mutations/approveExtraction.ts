@@ -12,7 +12,7 @@ import {
   buildPilotDatasetHash,
   hashJson,
 } from "../utils/extractionCache"
-import { computeFeedbackTemplateValidation } from "../../feedback/utils/computeFeedbackTemplateValidation"
+import { computeFeedbackTemplateValidation } from "@/src/features/feedback/server/computeFeedbackTemplateValidation"
 import { computeCodebookValidation } from "@/src/features/codebook"
 
 const ApproveExtraction = z.object({

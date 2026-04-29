@@ -3,8 +3,7 @@ import { z } from "zod"
 import db, { Prisma } from "db"
 import { getAllPilotResultsRsc } from "../../utils/getAllPilotResults"
 import { withStudyWriteAccess } from "../../utils/withStudyWriteAccess"
-import { DEFAULT_EXTRACTION_CONFIG } from "../../variables/types"
-import { extractVariableBundleFromResults } from "../../variables/utils/extractVariable"
+import { DEFAULT_EXTRACTION_CONFIG, extractVariableBundleFromResults } from "@/src/features/studies"
 import { extractionBundleCache } from "../utils/extractionBundleCache"
 import {
   EXTRACTOR_VERSION,

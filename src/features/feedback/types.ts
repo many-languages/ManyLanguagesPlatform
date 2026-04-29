@@ -2,7 +2,7 @@ import type { ReactNode } from "react"
 import type { FeedbackTemplateRscRow } from "./feedbackTemplateRscSelect"
 
 // Re-export variable types from shared variables module
-export type { ExtractedVariable } from "@/src/app/(app)/studies/[studyId]/variables/types"
+export type { ExtractedVariable } from "@/src/features/studies"
 
 /** JATOS + enrichment outcome for participant feedback (see `getParticipantFeedback`). */
 export type { GetParticipantFeedbackResult } from "@/src/lib/jatos/participantFeedbackTypes"

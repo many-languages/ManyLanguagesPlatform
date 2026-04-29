@@ -17,7 +17,7 @@ import StudyInformationCard from "./client/StudyInformationCard"
 import { NavigationButton } from "@/src/app/components/NavigationButton"
 import StudyLifecycleActions from "@/src/app/components/studies/StudyLifecycleActions"
 import { hasParticipantResponses as hasParticipantResponsesInResults } from "@/src/lib/jatos/utils/studyHasParticipantResponses"
-import { ARCHIVED_STUDY_CANNOT_EDIT_MESSAGE } from "@/src/lib/studies/studyEditability"
+import { ARCHIVED_STUDY_CANNOT_EDIT_MESSAGE } from "@/src/features/studies"
 
 interface ResearcherDataProps {
   studyId: number

@@ -68,10 +68,8 @@ import type {
   EnrichedJatosStudyResult,
   JatosStudyResult,
 } from "@/src/types/jatos"
-import {
-  computeAggregatedAcrossStatsForTemplate,
-  templateUsesStatAcross,
-} from "@/src/features/feedback/server/jatos-bridge"
+import { computeAggregatedAcrossStatsForTemplate } from "@/src/features/feedback/domain/computeAggregatedAcrossStats"
+import { templateUsesStatAcross } from "@/src/features/feedback/domain/statAcrossKeys"
 
 // --- Internal helpers (not exported) ---
 

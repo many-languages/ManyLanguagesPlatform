@@ -1,4 +1,4 @@
-import { Diagnostic } from "../../../../../variables/types"
+import type { Diagnostic } from "@/src/features/studies"
 import { ExclamationCircleIcon, ExclamationTriangleIcon } from "@heroicons/react/24/outline"
 
 interface CrossRunDiagnosticsListProps {

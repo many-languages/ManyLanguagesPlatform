@@ -27,10 +27,7 @@ interface VariableCodebookEntry {
   personalData: boolean
 }
 import { studySetupStepPath } from "@/src/app/(app)/studies/[studyId]/setup/utils/setupRoutes"
-import {
-  ARCHIVED_STUDY_CANNOT_EDIT_MESSAGE,
-  canEditStudySetup,
-} from "@/src/lib/studies/studyEditability"
+import { ARCHIVED_STUDY_CANNOT_EDIT_MESSAGE, canEditStudySetup } from "@/src/features/studies"
 
 export interface CodebookContentProps {
   initialVariables: Array<{

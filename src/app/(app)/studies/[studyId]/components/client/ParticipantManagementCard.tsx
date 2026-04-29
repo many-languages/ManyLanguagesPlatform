@@ -14,7 +14,7 @@ import { useMutation } from "@blitzjs/rpc"
 import toggleParticipantActive from "../../../mutations/toggleParticipantActive"
 import toggleParticipantPayed from "../../../mutations/toggleParticipantPayed"
 import { ParticipantWithEmail } from "../../../queries/getStudyParticipants"
-import { ARCHIVED_STUDY_CANNOT_EDIT_MESSAGE } from "@/src/lib/studies/studyEditability"
+import { ARCHIVED_STUDY_CANNOT_EDIT_MESSAGE } from "@/src/features/studies"
 
 interface ParticipantManagementCardProps {
   participants: ParticipantWithEmail[]

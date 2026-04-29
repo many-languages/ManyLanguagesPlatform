@@ -1,4 +1,4 @@
-import type { ExtractionBundle } from "@/src/app/(app)/studies/[studyId]/variables/types"
+import type { ExtractionBundle } from "@/src/features/studies"
 
 const DEFAULT_TTL_MS = 15 * 60 * 1000
 const DEFAULT_MAX_ENTRIES = 50

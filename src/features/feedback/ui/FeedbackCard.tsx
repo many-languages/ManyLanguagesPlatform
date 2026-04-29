@@ -10,7 +10,7 @@ import RefreshFeedbackButton from "./RefreshFeedbackButton"
 import type { FeedbackCardProps, FeedbackCardTone } from "@/src/features/feedback/types"
 import { mdEditorStyles, mdEditorClassName } from "@/src/features/feedback/styles/feedbackStyles"
 import { studySetupStepPath } from "@/src/app/(app)/studies/[studyId]/setup/utils/setupRoutes"
-import { ARCHIVED_STUDY_CANNOT_EDIT_MESSAGE } from "@/src/lib/studies/studyEditability"
+import { ARCHIVED_STUDY_CANNOT_EDIT_MESSAGE } from "@/src/features/studies"
 
 const TONE_BG: Record<FeedbackCardTone, string> = {
   default: "bg-base-200",

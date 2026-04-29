@@ -5,7 +5,7 @@ import { AuthorizationError } from "blitz"
 import db from "db"
 import { getAuthorizedSession } from "@/src/app/(auth)/utils/getAuthorizedSession"
 import { isStaffAdmin } from "@/src/lib/auth/roles"
-import { studyHasParticipantResponsesSafe } from "@/src/lib/studies"
+import { studyHasParticipantResponsesSafe } from "@/src/features/studies"
 
 async function findAdminStudies() {
   const studies = await db.study.findMany({

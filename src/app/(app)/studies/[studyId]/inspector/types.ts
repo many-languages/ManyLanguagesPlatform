@@ -1,6 +1,6 @@
 import { EnrichedJatosStudyResult } from "@/src/types/jatos"
 import { ComponentStats } from "./utils/componentStats"
-import { ExtractedVariable } from "../variables/types"
+import type { ExtractedVariable } from "@/src/features/studies"
 
 // Highlighted path state for badge and JSON tree highlighting
 export type SelectedPath = {

@@ -3,7 +3,7 @@ import type {
   ExtractedVariable,
   ExtractionBundle,
   ExtractionObservation,
-} from "../../variables/types"
+} from "@/src/features/studies"
 
 export type SerializedDiagnostics = {
   run: Diagnostic[]

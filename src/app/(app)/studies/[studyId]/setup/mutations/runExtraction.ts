@@ -4,8 +4,7 @@ import { extractionBundleCache } from "../utils/extractionBundleCache"
 import { getAllPilotResultsRsc } from "../../utils/getAllPilotResults"
 import db from "db"
 import { withStudyAccess } from "../../utils/withStudyAccess"
-import { DEFAULT_EXTRACTION_CONFIG } from "../../variables/types"
-import { extractVariableBundleFromResults } from "../../variables/utils/extractVariable"
+import { DEFAULT_EXTRACTION_CONFIG, extractVariableBundleFromResults } from "@/src/features/studies"
 import { buildCacheKey, buildPilotDatasetHash } from "../utils/extractionCache"
 import {
   serializeExtractionBundle,

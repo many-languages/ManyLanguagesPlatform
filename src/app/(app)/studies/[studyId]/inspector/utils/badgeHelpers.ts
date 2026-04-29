@@ -1,9 +1,9 @@
 import { TYPE_BADGE_CLASSES } from "../constants"
-import type { VariableType } from "../../variables/types"
+import type { VariableType } from "@/src/features/studies"
 
 /**
  * Maps a variable type to its corresponding badge class
- * @param type - The variable type from variables/types.ts
+ * @param type - The variable type from studies variable types (`features/studies/domain/variables/types`).
  * @returns The DaisyUI badge class name
  */
 export function getTypeBadgeClass(type: VariableType): string {

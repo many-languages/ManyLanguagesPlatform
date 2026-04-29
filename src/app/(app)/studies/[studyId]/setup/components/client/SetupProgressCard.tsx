@@ -13,7 +13,7 @@ import {
   StudyWithMinimalRelations,
 } from "../../utils/setupStatus"
 import { studySetupStepPath } from "../../utils/setupRoutes"
-import { ARCHIVED_STUDY_CANNOT_EDIT_MESSAGE } from "@/src/lib/studies/studyEditability"
+import { ARCHIVED_STUDY_CANNOT_EDIT_MESSAGE } from "@/src/features/studies"
 
 interface SetupProgressCardProps {
   study: StudyWithMinimalRelations

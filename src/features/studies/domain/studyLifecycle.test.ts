@@ -17,13 +17,17 @@ describe("assertStudyNotArchived", () => {
   })
 
   it("throws when study is archived (by id)", async () => {
-    vi.mocked(db.study.findUnique).mockResolvedValue({ archived: true })
+    vi.mocked(db.study.findUnique).mockResolvedValue({ archived: true } as Awaited<
+      ReturnType<typeof db.study.findUnique>
+    >)
 
     await expect(assertStudyNotArchived(1)).rejects.toThrow(ARCHIVED_STUDY_CANNOT_EDIT_MESSAGE)
   })
 
   it("resolves when study is not archived (by id)", async () => {
-    vi.mocked(db.study.findUnique).mockResolvedValue({ archived: false })
+    vi.mocked(db.study.findUnique).mockResolvedValue({ archived: false } as Awaited<
+      ReturnType<typeof db.study.findUnique>
+    >)
 
     await expect(assertStudyNotArchived(1)).resolves.toBeUndefined()
   })

@@ -3,8 +3,11 @@
 import { useMemo } from "react"
 import Modal from "@/src/app/components/Modal"
 import JsonView from "@/src/app/components/JsonView"
-import type { ExtractedVariable, ExtractionObservation } from "../../../../variables/types"
-import type { ExtractionIndexStore } from "../../../../variables/utils/extractionIndexStore"
+import type {
+  ExtractedVariable,
+  ExtractionObservation,
+  ExtractionIndexStore,
+} from "@/src/features/studies"
 import { formatValue } from "@/src/lib/utils/formatValue"
 import { formatJson } from "@/src/lib/utils/formatJson"
 import { tryParseJson } from "../../../utils/tryParseJson"

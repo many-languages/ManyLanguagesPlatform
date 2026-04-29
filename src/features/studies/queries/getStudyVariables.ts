@@ -2,7 +2,7 @@ import db from "db"
 import { resolver } from "@blitzjs/rpc"
 import { z } from "zod"
 import { cache } from "react"
-import { withStudyAccess } from "../../utils/withStudyAccess"
+import { withStudyAccess } from "@/src/app/(app)/studies/[studyId]/utils/withStudyAccess"
 
 const GetStudyVariables = z.object({
   studyId: z.number(),

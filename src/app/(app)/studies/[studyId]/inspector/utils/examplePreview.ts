@@ -1,4 +1,4 @@
-import { ExtractedVariable } from "../../variables/types"
+import { ExtractedVariable } from "@/src/features/studies"
 import { tryParseJson } from "./tryParseJson"
 
 export function examplePreview(variable: ExtractedVariable): string {

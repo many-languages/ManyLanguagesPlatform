@@ -1,9 +1,6 @@
 import { Ctx } from "blitz"
 import { Prisma } from "db"
-import {
-  getStudySummaryCounts,
-  type StudySummaryCounts,
-} from "@/src/lib/studies/studySummaryCounts"
+import { getStudySummaryCounts, type StudySummaryCounts } from "@/src/features/studies"
 
 export type ResearcherStudyCounts = StudySummaryCounts
 

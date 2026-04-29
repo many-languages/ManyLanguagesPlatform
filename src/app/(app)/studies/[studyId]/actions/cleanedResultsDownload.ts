@@ -9,9 +9,11 @@ import {
 import { mapJatosErrorToUserMessage } from "@/src/lib/jatos/errors"
 import { verifyResearcherStudyAccess } from "../utils/verifyResearchersStudyAccess"
 import { isSetupComplete } from "../setup/utils/setupStatus"
-import { extractVariableBundleForRenderFromResults } from "../variables/utils/extractVariable"
-import { DEFAULT_EXTRACTION_CONFIG } from "../variables/types"
-import { observationsToLongCsv } from "../variables/utils/observationsLongCsv"
+import {
+  extractVariableBundleForRenderFromResults,
+  DEFAULT_EXTRACTION_CONFIG,
+  observationsToLongCsv,
+} from "@/src/features/studies"
 
 type StudyForSetupCheck = Parameters<typeof isSetupComplete>[0]
 

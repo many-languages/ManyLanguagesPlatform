@@ -1,4 +1,4 @@
-import type { ExtractedVariable } from "../../variables/types"
+import type { ExtractedVariable } from "@/src/features/studies"
 
 export interface ComponentStats {
   maxDepth: number

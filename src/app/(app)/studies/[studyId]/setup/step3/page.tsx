@@ -1,6 +1,6 @@
 import Step3Content from "./components/client/Step3Content"
 import SetupStepHeader from "../components/client/SetupStepHeader"
-import { loadStudySetupPage } from "../utils/loadStudySetupPage"
+import { loadStudySetupPage } from "@/src/features/studies/server/loadStudySetupPage"
 
 export default async function Step3Page({ params }: { params: Promise<{ studyId: string }> }) {
   const { studyId, study } = await loadStudySetupPage(params)

@@ -1,9 +1,10 @@
 import { useState, useMemo } from "react"
 import { EnrichedJatosStudyResult } from "@/src/types/jatos"
-import { SerializedExtractionBundle } from "../../../../utils/serializeExtractionBundle"
-import StructureAnalysisCard from "../../../../../inspector/components/client/structureAnalysis/StructureAnalysisCard"
-import { createExtractionIndexStore } from "@/src/features/studies"
-import type { ExtractionObservation } from "@/src/features/studies"
+import {
+  createExtractionIndexStore,
+  type SerializedExtractionBundle,
+  type ExtractionObservation,
+} from "@/src/features/studies"
 
 interface RunInspectorProps {
   runs: EnrichedJatosStudyResult[]

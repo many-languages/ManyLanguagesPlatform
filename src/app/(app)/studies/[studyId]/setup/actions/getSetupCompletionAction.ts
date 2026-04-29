@@ -1,7 +1,7 @@
 "use server"
 
 import { getSetupCompletionRsc } from "../queries/getSetupCompletion"
-import { isSetupCompleteFromFlags, type SetupStepFlags } from "../utils/setupStatus"
+import { isSetupCompleteFromFlags, type SetupStepFlags } from "@/src/features/studies"
 
 /**
  * Authoritative setup completion for the latest upload + step 1 derivation (same basis as RSC).

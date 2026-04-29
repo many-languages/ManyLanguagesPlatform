@@ -6,7 +6,7 @@
 import type { EnrichedJatosStudyResult } from "@/src/types/jatos"
 import { computeAggregatedAcrossStatsForTemplate } from "@/src/features/feedback/domain/computeAggregatedAcrossStats"
 import type { ExtractionBundle } from "@/src/features/studies"
-import type { SerializedExtractionBundle } from "@/src/app/(app)/studies/[studyId]/setup/utils/serializeExtractionBundle"
+import type { SerializedExtractionBundle } from "@/src/features/studies"
 import type { FeedbackRenderBundleInput } from "@/src/features/feedback/domain/feedbackRenderContext"
 import { extractVariableBundleForRenderFromResults } from "@/src/features/feedback/domain/extractVariableBundleForRender"
 import { buildFeedbackRenderContext } from "@/src/features/feedback/domain/feedbackRenderContext"

@@ -1,6 +1,6 @@
 import { getStudyParticipantRsc } from "../../queries/getStudyParticipant"
 import { Alert } from "@/src/app/components/Alert"
-import { isSetupComplete } from "../setup/utils/setupStatus"
+import { isSetupComplete } from "@/src/features/studies"
 import { StudyWithRelations } from "../../queries/getStudy"
 import { ParticipantFeedbackData, checkParticipantCompletionAction } from "@/src/features/feedback"
 import { CheckCircleIcon } from "@heroicons/react/24/solid"

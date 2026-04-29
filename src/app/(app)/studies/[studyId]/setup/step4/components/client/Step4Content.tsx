@@ -13,11 +13,10 @@ import { useEffect, useMemo, useState } from "react"
 import { Alert } from "@/src/app/components/Alert"
 import { AsyncButton } from "@/src/app/components/AsyncButton"
 import Card from "@/src/app/components/Card"
-import type { SerializedExtractionBundle } from "../../../utils/serializeExtractionBundle"
+import { studySetupStepPath, type SerializedExtractionBundle } from "@/src/features/studies"
 import Step4Instructions from "./Step4Instructions"
 
 import { StudyWithRelations } from "@/src/app/(app)/studies/queries/getStudy"
-import { studySetupStepPath } from "../../../utils/setupRoutes"
 
 // Dashboard Components
 import SummaryDashboard from "./dashboard/SummaryDashboard"

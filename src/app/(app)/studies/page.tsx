@@ -9,7 +9,7 @@ import { Prisma } from "@/db"
 import StudiesViewTabs from "./components/client/StudiesViewTabs"
 import ParticipantStudiesViewTabs from "./components/client/ParticipantStudiesViewTabs"
 import CreateStudyButton from "./components/client/CreateStudyButton"
-import { isSetupComplete } from "./[studyId]/setup/utils/setupStatus"
+import { isSetupComplete } from "@/src/features/studies"
 import { parseStudyView, type StudyView } from "./utils/studyView"
 import { parseParticipantStudyView, type ParticipantStudyView } from "./utils/participantStudyView"
 

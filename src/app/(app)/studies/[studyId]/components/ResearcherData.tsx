@@ -9,8 +9,11 @@ import StudySummary from "./client/StudySummary"
 import ParticipantManagementCard from "./client/ParticipantManagementCard"
 import ResultsCardWrapper from "./ResultsCardWrapper"
 import { Alert } from "@/src/app/components/Alert"
-import { isSetupComplete } from "../setup/utils/setupStatus"
-import { studySetupStepPath } from "../setup/utils/setupRoutes"
+import {
+  type StudyWithMinimalRelations,
+  isSetupComplete,
+  studySetupStepPath,
+} from "@/src/features/studies"
 import { StudyWithRelations } from "../../queries/getStudy"
 import { ResearcherFeedbackData } from "@/src/features/feedback"
 import StudyInformationCard from "./client/StudyInformationCard"

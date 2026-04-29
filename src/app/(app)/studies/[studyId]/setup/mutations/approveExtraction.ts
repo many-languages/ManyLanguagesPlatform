@@ -3,14 +3,15 @@ import { z } from "zod"
 import db, { Prisma } from "db"
 import { getAllPilotResultsRsc } from "../../utils/getAllPilotResults"
 import { withStudyWriteAccess } from "../../utils/withStudyWriteAccess"
-import { DEFAULT_EXTRACTION_CONFIG, extractVariableBundleFromResults } from "@/src/features/studies"
-import { extractionBundleCache } from "../utils/extractionBundleCache"
 import {
+  DEFAULT_EXTRACTION_CONFIG,
+  extractVariableBundleFromResults,
+  extractionBundleCache,
   EXTRACTOR_VERSION,
   buildCacheKey,
   buildPilotDatasetHash,
   hashJson,
-} from "../utils/extractionCache"
+} from "@/src/features/studies"
 import { computeFeedbackTemplateValidation } from "@/src/features/feedback/server/computeFeedbackTemplateValidation"
 import { computeCodebookValidation } from "@/src/features/codebook"
 

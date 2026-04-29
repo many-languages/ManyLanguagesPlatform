@@ -12,7 +12,7 @@ import { uploadStudy } from "../client/uploadStudy"
 import { addStudyMember } from "../client/addStudyMember"
 import { ensureResearcherJatosMember } from "./ensureResearcherJatosMember"
 import { getServiceAccountJatosUserId } from "../serviceAccount"
-import { deriveStep1Completed } from "@/src/app/(app)/studies/[studyId]/setup/utils/deriveStep1Completed"
+import { deriveStep1Completed } from "@/src/features/studies"
 import { verifyResearcherStudyAccess } from "@/src/app/(app)/studies/[studyId]/utils/verifyResearchersStudyAccess"
 
 export interface ImportJatosStudyResult {

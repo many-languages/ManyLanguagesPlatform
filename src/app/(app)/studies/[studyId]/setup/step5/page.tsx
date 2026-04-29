@@ -1,6 +1,6 @@
 import SetupStepHeader from "../components/client/SetupStepHeader"
 import { CodebookContent, getCodebookDataRsc } from "@/src/features/codebook"
-import { loadStudySetupPage } from "../utils/loadStudySetupPage"
+import { loadStudySetupPage } from "@/src/features/studies/server/loadStudySetupPage"
 import type { StudyWithRelations } from "@/src/app/(app)/studies/queries/getStudy"
 
 async function Step5ContentWrapper({ study }: { study: StudyWithRelations }) {

@@ -1,6 +1,6 @@
 import Step1Content from "./components/client/Step1Content"
 import SetupStepHeader from "../components/client/SetupStepHeader"
-import { loadStudySetupPage } from "../utils/loadStudySetupPage"
+import { loadStudySetupPage } from "@/src/features/studies/server/loadStudySetupPage"
 
 export default async function Step1Page({
   params,

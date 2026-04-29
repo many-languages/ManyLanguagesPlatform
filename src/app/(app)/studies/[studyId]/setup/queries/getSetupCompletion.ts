@@ -2,7 +2,7 @@ import { resolver } from "@blitzjs/rpc"
 import db from "db"
 import { z } from "zod"
 import { cache } from "react"
-import { deriveStep1Completed } from "../utils/deriveStep1Completed"
+import { deriveStep1Completed } from "@/src/features/studies"
 import { withStudyAccess } from "../../utils/withStudyAccess"
 
 const GetSetupCompletion = z.object({

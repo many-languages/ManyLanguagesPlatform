@@ -27,7 +27,7 @@ vi.mock("../getAdminToken", () => ({
   getAdminToken: () => "admin-token",
 }))
 
-vi.mock("@/src/app/(app)/studies/[studyId]/setup/utils/deriveStep1Completed", () => ({
+vi.mock("@/src/features/studies", () => ({
   deriveStep1Completed: (study: { title?: string; description?: string }) =>
     Boolean(study?.title && study?.description),
 }))

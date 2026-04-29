@@ -16,7 +16,7 @@ import { useNotificationMenuContext } from "@/src/features/notifications"
 import type { FeedbackPreviewContextClientDto } from "@/src/features/feedback/server/loadFeedbackPreviewContext"
 
 import { StudyWithRelations } from "@/src/app/(app)/studies/queries/getStudy"
-import { studyPath } from "../../../utils/setupRoutes"
+import { studyPath } from "@/src/features/studies"
 import { getSetupCompletionAction } from "../../../actions/getSetupCompletionAction"
 
 interface Step6ContentProps {

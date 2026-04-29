@@ -4,7 +4,7 @@ import { NavigationButton } from "@/src/app/components/NavigationButton"
 import { AsyncButton } from "@/src/app/components/AsyncButton"
 import type { Route } from "next"
 
-import { studyPath, studySetupSegmentPath } from "../../utils/setupRoutes"
+import { studyPath, studySetupSegmentPath } from "@/src/features/studies"
 
 interface StepNavigationProps {
   studyId: number

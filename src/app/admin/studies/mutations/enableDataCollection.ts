@@ -4,8 +4,8 @@ import { resolver } from "@blitzjs/rpc"
 import db from "db"
 import { z } from "zod"
 import { sendNotification } from "@/src/features/notifications"
-import { isSetupComplete } from "@/src/app/(app)/studies/[studyId]/setup/utils/setupStatus"
-import type { StudyWithMinimalRelations } from "@/src/app/(app)/studies/[studyId]/setup/utils/setupStatus"
+import { isSetupComplete } from "@/src/features/studies"
+import type { StudyWithMinimalRelations } from "@/src/features/studies"
 
 const EnableDataCollectionSchema = z.object({
   studyIds: z.array(z.number()).min(1, "Select at least one study"),

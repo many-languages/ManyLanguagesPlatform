@@ -1,5 +1,5 @@
 import { Study, FeedbackTemplate } from "@prisma/client"
-import { StudyWithRelations } from "../../../queries/getStudy"
+import type { StudyWithRelations } from "@/src/app/(app)/studies/queries/getStudy"
 import { deriveStep1Completed } from "./deriveStep1Completed"
 import { STEP_KEYS, STEP_NAMES, TOTAL_STEPS } from "./constants"
 import { studyPath, studySetupStepPath } from "./setupRoutes"

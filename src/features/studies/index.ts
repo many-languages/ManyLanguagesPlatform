@@ -34,3 +34,38 @@ export {
 } from "./domain/variables/utils/extractionIndexStore"
 export { observationsToLongCsv } from "./domain/variables/utils/observationsLongCsv"
 export { getStudyVariablesRsc } from "./queries/getStudyVariables"
+
+/** Setup wizard — pure domain + in-memory caches (Phase 4). */
+export type { StudyWithMinimalRelations, SetupStepFlags } from "./domain/setup/setupStatus"
+export {
+  isSetupCompleteFromFlags,
+  isSetupComplete,
+  getIncompleteStep,
+  getCompletedSteps,
+  getSetupStatusLabel,
+  getSetupProgress,
+  step6NeedsRevision,
+  getNextSetupStepUrl,
+  getPostStepNavigationUrl,
+} from "./domain/setup/setupStatus"
+export type { StudySetupStepQuery } from "./domain/setup/setupRoutes"
+export { studyPath, studySetupStepPath, studySetupSegmentPath } from "./domain/setup/setupRoutes"
+export type {
+  SerializedDiagnostics,
+  SerializedExtractionBundle,
+} from "./domain/setup/serializeExtractionBundle"
+export { serializeExtractionBundle } from "./domain/setup/serializeExtractionBundle"
+export { deriveStep1Completed } from "./domain/setup/deriveStep1Completed"
+export { STEP_KEYS, STEP_NAMES, TOTAL_STEPS } from "./domain/setup/constants"
+export type { ExtractionCacheKeyParts } from "./domain/setup/extractionBundleCache"
+export {
+  extractionBundleCache,
+  buildExtractionCacheKey,
+} from "./domain/setup/extractionBundleCache"
+export {
+  EXTRACTOR_VERSION,
+  REQUIRED_KEYS_HASH,
+  hashJson,
+  buildPilotDatasetHash,
+  buildCacheKey,
+} from "./domain/setup/extractionCache"

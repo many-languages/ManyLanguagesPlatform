@@ -4,10 +4,7 @@ import db from "db"
 
 import { notifyAdminsOfPendingStudyReview } from "@/src/features/notifications"
 import { getSetupCompletionRsc } from "@/src/app/(app)/studies/[studyId]/setup/queries/getSetupCompletion"
-import {
-  isSetupCompleteFromFlags,
-  type SetupStepFlags,
-} from "@/src/app/(app)/studies/[studyId]/setup/utils/setupStatus"
+import { isSetupCompleteFromFlags, type SetupStepFlags } from "@/src/features/studies"
 import { createFeedbackTemplateRsc } from "../mutations/createFeedbackTemplate"
 import { updateFeedbackTemplateRsc } from "../mutations/updateFeedbackTemplate"
 import type { FeedbackTemplate, FeedbackTemplateEditorInitial } from "@/src/features/feedback/types"

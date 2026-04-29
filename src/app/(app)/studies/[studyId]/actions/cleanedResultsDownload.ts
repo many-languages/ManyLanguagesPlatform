@@ -8,7 +8,7 @@ import {
 } from "@/src/lib/jatos/jatosAccessService"
 import { mapJatosErrorToUserMessage } from "@/src/lib/jatos/errors"
 import { verifyResearcherStudyAccess } from "../utils/verifyResearchersStudyAccess"
-import { isSetupComplete } from "../setup/utils/setupStatus"
+import { isSetupComplete } from "@/src/features/studies"
 import {
   extractVariableBundleForRenderFromResults,
   DEFAULT_EXTRACTION_CONFIG,

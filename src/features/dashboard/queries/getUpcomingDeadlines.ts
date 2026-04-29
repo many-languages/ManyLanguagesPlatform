@@ -1,7 +1,7 @@
 import { Ctx } from "blitz"
 import db from "db"
 import { Prisma } from "db"
-import { isSetupComplete } from "@/src/app/(app)/studies/[studyId]/setup/utils/setupStatus"
+import { isSetupComplete } from "@/src/features/studies"
 
 const ENDING_SOON_DAYS = 14
 const STARTING_SOON_DAYS = 14

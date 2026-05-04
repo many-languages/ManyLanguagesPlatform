@@ -2,7 +2,7 @@
 
 import type { ReactNode } from "react"
 import toast from "react-hot-toast"
-import { generateAndSaveResearcherPilotRunUrl } from "../../../../utils/generateResearcherPilotRunUrl"
+import { createResearcherPilotUrlAndSaveAction } from "@/src/features/studies/actions/createResearcherPilotUrl"
 import { AsyncButton } from "@/src/app/components/AsyncButton"
 
 interface GeneratePilotLinkButtonProps {
@@ -30,7 +30,7 @@ export default function GeneratePilotLinkButton({
 }: GeneratePilotLinkButtonProps) {
   const handleGenerate = async () => {
     try {
-      const runUrl = await generateAndSaveResearcherPilotRunUrl({
+      const runUrl = await createResearcherPilotUrlAndSaveAction({
         studyId,
         studyResearcherId,
         jatosStudyUploadId,

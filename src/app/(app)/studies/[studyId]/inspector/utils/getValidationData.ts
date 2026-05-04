@@ -4,7 +4,7 @@ import {
   getResultsMetadataForResearcher,
   getStudyPropertiesForResearcher,
 } from "@/src/lib/jatos/jatosAccessService"
-import { getAllPilotResultsRsc } from "../../utils/getAllPilotResults"
+import { getAllPilotResultsRsc } from "@/src/features/studies/server/getAllPilotResults"
 import type {
   JatosMetadata,
   EnrichedJatosStudyResult,

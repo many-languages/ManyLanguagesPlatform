@@ -13,7 +13,7 @@ import { addStudyMember } from "../client/addStudyMember"
 import { ensureResearcherJatosMember } from "./ensureResearcherJatosMember"
 import { getServiceAccountJatosUserId } from "../serviceAccount"
 import { deriveStep1Completed } from "@/src/features/studies"
-import { verifyResearcherStudyAccess } from "@/src/app/(app)/studies/[studyId]/utils/verifyResearchersStudyAccess"
+import { verifyResearcherStudyAccess } from "@/src/features/studies/server/verifyResearcherStudyAccess"
 
 export interface ImportJatosStudyResult {
   jatosStudyId: number

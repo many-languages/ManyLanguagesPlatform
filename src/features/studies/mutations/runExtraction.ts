@@ -1,8 +1,8 @@
 import { resolver } from "@blitzjs/rpc"
 import { z } from "zod"
-import { getAllPilotResultsRsc } from "@/src/app/(app)/studies/[studyId]/utils/getAllPilotResults"
+import { getAllPilotResultsRsc } from "@/src/features/studies/server/getAllPilotResults"
 import db from "db"
-import { withStudyAccess } from "@/src/app/(app)/studies/[studyId]/utils/withStudyAccess"
+import { withStudyAccess } from "@/src/features/studies/server/withStudyAccess"
 import {
   DEFAULT_EXTRACTION_CONFIG,
   extractVariableBundleFromResults,

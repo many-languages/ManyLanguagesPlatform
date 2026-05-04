@@ -1,7 +1,7 @@
 import { resolver } from "@blitzjs/rpc"
 import db from "db"
 import { assertStudyNotArchived } from "@/src/features/studies"
-import { verifyResearcherStudyAccess } from "@/src/app/(app)/studies/[studyId]/utils/verifyResearchersStudyAccess"
+import { verifyResearcherStudyAccess } from "@/src/features/studies/server/verifyResearcherStudyAccess"
 import { UpdateStudyBatch } from "@/src/app/(app)/studies/validations"
 
 export default resolver.pipe(

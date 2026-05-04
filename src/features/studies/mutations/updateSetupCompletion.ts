@@ -1,7 +1,7 @@
 import { resolver } from "@blitzjs/rpc"
 import db from "db"
 import { z } from "zod"
-import { withStudyWriteAccess } from "@/src/app/(app)/studies/[studyId]/utils/withStudyWriteAccess"
+import { withStudyWriteAccess } from "@/src/features/studies/server/withStudyWriteAccess"
 
 const UpdateSetupCompletion = z.object({
   studyId: z.number(),

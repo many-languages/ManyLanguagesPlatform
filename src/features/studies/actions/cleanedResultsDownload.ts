@@ -7,7 +7,7 @@ import {
   type DownloadPayload,
 } from "@/src/lib/jatos/jatosAccessService"
 import { mapJatosErrorToUserMessage } from "@/src/lib/jatos/errors"
-import { verifyResearcherStudyAccess } from "@/src/app/(app)/studies/[studyId]/utils/verifyResearchersStudyAccess"
+import { verifyResearcherStudyAccess } from "@/src/features/studies/server/verifyResearcherStudyAccess"
 import { isSetupComplete } from "@/src/features/studies"
 import {
   extractVariableBundleForRenderFromResults,

@@ -17,7 +17,7 @@ import { uploadStudyFile } from "@/src/lib/jatos/browser/uploadStudyFile"
 import { extractJatosStudyUuidFromJzip } from "@/src/lib/jatos/parsers/extractJatosStudyUuid"
 import { Alert } from "@/src/app/components/Alert"
 import { FORM_ERROR } from "@/src/app/components/Form"
-import { generateAndSaveResearcherPilotRunUrl } from "../../../../utils/generateResearcherPilotRunUrl"
+import { createResearcherPilotUrlAndSaveAction } from "@/src/features/studies/actions/createResearcherPilotUrl"
 
 import { StudyWithRelations } from "@/src/features/studies/queries/getStudy"
 import { studySetupStepPath } from "@/src/features/studies"
@@ -81,7 +81,7 @@ export default function Step2Content({ study }: Step2ContentProps) {
     try {
       const researcher = study.researchers?.find((r) => r.userId === userId)
       if (researcher?.id && jatosBatchId && latestUploadId) {
-        await generateAndSaveResearcherPilotRunUrl({
+        await createResearcherPilotUrlAndSaveAction({
           studyId: study.id,
           studyResearcherId: researcher.id,
           jatosStudyUploadId: latestUploadId,

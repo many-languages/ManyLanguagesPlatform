@@ -1,6 +1,6 @@
 "use server"
 
-import { withStudyAccess } from "@/src/app/(app)/studies/[studyId]/utils/withStudyAccess"
+import { withStudyAccess } from "@/src/features/studies/server/withStudyAccess"
 import { renderStaticFeedbackMarkdownForPersistedTemplate } from "@/src/features/feedback/server/renderFeedbackServer"
 import { prepareFeedbackPreviewRenderInputs } from "@/src/features/feedback/server/prepareFeedbackPreviewRenderInputs"
 import { getFeedbackPreviewContext } from "@/src/features/feedback/domain/previewContextStore"

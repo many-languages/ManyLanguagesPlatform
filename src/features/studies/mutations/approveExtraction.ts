@@ -1,8 +1,8 @@
 import { resolver } from "@blitzjs/rpc"
 import { z } from "zod"
 import db, { Prisma } from "db"
-import { getAllPilotResultsRsc } from "@/src/app/(app)/studies/[studyId]/utils/getAllPilotResults"
-import { withStudyWriteAccess } from "@/src/app/(app)/studies/[studyId]/utils/withStudyWriteAccess"
+import { getAllPilotResultsRsc } from "@/src/features/studies/server/getAllPilotResults"
+import { withStudyWriteAccess } from "@/src/features/studies/server/withStudyWriteAccess"
 import {
   DEFAULT_EXTRACTION_CONFIG,
   extractVariableBundleFromResults,

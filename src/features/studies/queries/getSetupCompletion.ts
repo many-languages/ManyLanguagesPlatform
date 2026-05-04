@@ -3,7 +3,7 @@ import db from "db"
 import { z } from "zod"
 import { cache } from "react"
 import { deriveStep1Completed } from "../domain/setup/deriveStep1Completed"
-import { withStudyAccess } from "@/src/app/(app)/studies/[studyId]/utils/withStudyAccess"
+import { withStudyAccess } from "@/src/features/studies/server/withStudyAccess"
 
 const GetSetupCompletion = z.object({
   studyId: z.number(),

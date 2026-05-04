@@ -1,5 +1,5 @@
 import { getBlitzContext } from "@/src/app/blitz-server"
-import { verifyResearcherStudyAccess } from "./verifyResearchersStudyAccess"
+import { verifyResearcherStudyAccess } from "./verifyResearcherStudyAccess"
 
 type StudyCallback<T> = (studyId: number, userId: number) => Promise<T>
 

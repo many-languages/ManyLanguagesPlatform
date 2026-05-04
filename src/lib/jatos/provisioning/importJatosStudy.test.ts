@@ -1,14 +1,14 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest"
 import { importJatosStudyForResearcher } from "./importJatosStudy"
 import JSZip from "jszip"
-import * as verifyResearchersStudyAccess from "@/src/app/(app)/studies/[studyId]/utils/verifyResearchersStudyAccess"
+import * as verifyResearchersStudyAccess from "@/src/features/studies/server/verifyResearcherStudyAccess"
 
 const mockUploadStudy = vi.fn()
 const mockEnsureResearcherJatosMember = vi.fn()
 const mockAddStudyMember = vi.fn()
 const mockGetServiceAccountJatosUserId = vi.fn()
 
-vi.mock("@/src/app/(app)/studies/[studyId]/utils/verifyResearchersStudyAccess", () => ({
+vi.mock("@/src/features/studies/server/verifyResearcherStudyAccess", () => ({
   verifyResearcherStudyAccess: vi.fn(),
 }))
 vi.mock("../client/uploadStudy", () => ({

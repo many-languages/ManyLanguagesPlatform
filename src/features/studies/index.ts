@@ -69,3 +69,6 @@ export {
   buildPilotDatasetHash,
   buildCacheKey,
 } from "./domain/setup/extractionCache"
+
+/** Server-side access helpers (Phase 6). */
+export { verifyResearcherStudyAccess } from "./server/verifyResearcherStudyAccess"

@@ -1,7 +1,7 @@
 import { resolver } from "@blitzjs/rpc"
 import db from "db"
 import { assertStudyNotArchived } from "@/src/features/studies"
-import { UpdateStudy, UpdateStudyInput } from "@/src/app/(app)/studies/validations"
+import { UpdateStudy, UpdateStudyInput } from "@/src/features/studies/validations"
 
 export async function updateStudy(
   studyId: number,

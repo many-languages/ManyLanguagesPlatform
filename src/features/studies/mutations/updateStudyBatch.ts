@@ -2,7 +2,7 @@ import { resolver } from "@blitzjs/rpc"
 import db from "db"
 import { assertStudyNotArchived } from "@/src/features/studies"
 import { verifyResearcherStudyAccess } from "@/src/features/studies/server/verifyResearcherStudyAccess"
-import { UpdateStudyBatch } from "@/src/app/(app)/studies/validations"
+import { UpdateStudyBatch } from "@/src/features/studies/validations"
 
 export default resolver.pipe(
   resolver.zod(UpdateStudyBatch),

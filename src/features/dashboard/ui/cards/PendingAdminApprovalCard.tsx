@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import Card from "@/src/app/components/Card"
-import type { PendingAdminApprovalStudyRow } from "../../admin-data/getPendingAdminApprovalStudies"
+import type { PendingAdminApprovalStudyRow } from "@/src/features/studies"
 
 function formatWaitingSinceLine(value: PendingAdminApprovalStudyRow["feedbackTemplateCreatedAt"]) {
   const start = new Date(value).getTime()

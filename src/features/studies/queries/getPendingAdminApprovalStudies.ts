@@ -5,7 +5,7 @@ import { resolver } from "@blitzjs/rpc"
 import db from "db"
 import { getAuthorizedSession } from "@/src/app/(auth)/utils/getAuthorizedSession"
 import { isStaffAdmin } from "@/src/lib/auth/roles"
-import { isSetupComplete, type StudyWithMinimalRelations } from "@/src/features/studies"
+import { isSetupComplete, type StudyWithMinimalRelations } from "../domain/setup/setupStatus"
 
 const DASHBOARD_LIMIT = 3
 

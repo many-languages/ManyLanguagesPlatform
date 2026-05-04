@@ -1,5 +1,5 @@
 import { resolver } from "@blitzjs/rpc"
-import { UnarchiveStudy } from "@/src/app/(app)/studies/validations"
+import { UnarchiveStudy } from "@/src/features/studies/validations"
 import db, { type UserRole } from "@/db"
 
 export default resolver.pipe(

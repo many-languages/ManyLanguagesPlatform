@@ -2,7 +2,7 @@ import db from "db"
 import { resolver } from "@blitzjs/rpc"
 import { Prisma } from "db"
 import { cache } from "react"
-import { GetStudyParticipants } from "@/src/app/(app)/studies/validations"
+import { GetStudyParticipants } from "@/src/features/studies/validations"
 import { getBlitzContext } from "@/src/app/blitz-server"
 
 export const participantWithEmail = Prisma.validator<Prisma.ParticipantStudyDefaultArgs>()({

@@ -27,6 +27,6 @@ export type { ParticipantCompletedNotPaidStudy } from "./queries/getParticipantC
 
 // Admin queries (called from `/admin/dashboard`)
 // `getStalePendingAdminInvitesRsc` was promoted to `features/admin-invitations/` (ADR-003).
-// `getPendingAdminApprovalStudiesForDashboardRsc` remains here until Phase 11 moves it into `features/studies/queries/`.
-export { getPendingAdminApprovalStudiesForDashboardRsc } from "./admin-data/getPendingAdminApprovalStudies"
-export type { PendingAdminApprovalStudyRow } from "./admin-data/getPendingAdminApprovalStudies"
+// Pending-approval slice lives in `features/studies/`; re-exported here for dashboard callers.
+export { getPendingAdminApprovalStudiesForDashboardRsc } from "@/src/features/studies"
+export type { PendingAdminApprovalStudyRow } from "@/src/features/studies"

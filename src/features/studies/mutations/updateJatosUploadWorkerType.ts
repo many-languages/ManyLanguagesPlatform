@@ -1,7 +1,7 @@
 import { resolver } from "@blitzjs/rpc"
 import db from "db"
 import { assertStudyNotArchived } from "@/src/features/studies"
-import { UpdateJatosUploadWorkerType } from "@/src/app/(app)/studies/validations"
+import { UpdateJatosUploadWorkerType } from "@/src/features/studies/validations"
 import { verifyResearcherStudyAccess } from "@/src/features/studies/server/verifyResearcherStudyAccess"
 
 export default resolver.pipe(

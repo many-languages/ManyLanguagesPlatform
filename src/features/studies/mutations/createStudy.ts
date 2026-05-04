@@ -1,7 +1,7 @@
 import { resolver } from "@blitzjs/rpc"
 import db from "db"
 import { ensureResearcherStudyMembership } from "@/src/lib/jatos/jatosAccessService"
-import { CreateStudy, CreateStudyInput } from "@/src/app/(app)/studies/validations"
+import { CreateStudy, CreateStudyInput } from "@/src/features/studies/validations"
 
 export async function createStudy(data: CreateStudyInput, userId: number) {
   const study = await db.study.create({

@@ -1,7 +1,7 @@
 import { resolver } from "@blitzjs/rpc"
 import db from "db"
 import { assertStudyNotArchived } from "@/src/features/studies"
-import { UpdateStudyStatus } from "@/src/app/(app)/studies/validations"
+import { UpdateStudyStatus } from "@/src/features/studies/validations"
 import { sendNotification } from "@/src/features/notifications"
 
 export default resolver.pipe(

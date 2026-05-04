@@ -1,6 +1,6 @@
 import db from "db"
 import { resolver } from "@blitzjs/rpc"
-import { JoinStudy } from "@/src/app/(app)/studies/validations"
+import { JoinStudy } from "@/src/features/studies/validations"
 
 export default resolver.pipe(
   resolver.zod(JoinStudy),

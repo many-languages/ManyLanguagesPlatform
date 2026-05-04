@@ -5,7 +5,7 @@ import {
 } from "@/src/features/dashboard"
 import { getStalePendingAdminInvitesRsc } from "@/src/features/admin-invitations"
 import { isStaffAdmin } from "@/src/lib/auth/roles"
-import { getAdminStudyCounts } from "@/src/features/studies/queries/getAdminStudyCounts"
+import { getAdminStudyCounts } from "@/src/features/studies"
 
 export const metadata = {
   title: "Admin Console",

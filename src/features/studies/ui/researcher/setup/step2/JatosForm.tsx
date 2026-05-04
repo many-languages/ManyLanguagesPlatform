@@ -3,7 +3,7 @@
 import { useMemo } from "react"
 import { useFormContext } from "react-hook-form"
 import { Form } from "@/src/app/components/Form"
-import { JatosFormSchema } from "@/src/app/(app)/studies/validations"
+import { JatosFormSchema } from "@/src/features/studies/validations"
 import { z } from "zod"
 import {
   SelectField,

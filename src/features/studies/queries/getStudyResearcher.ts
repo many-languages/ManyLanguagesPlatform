@@ -1,7 +1,7 @@
 import { resolver } from "@blitzjs/rpc"
 import db from "db"
 import { cache } from "react"
-import { GetStudyResearcher } from "@/src/app/(app)/studies/validations"
+import { GetStudyResearcher } from "@/src/features/studies/validations"
 import { getBlitzContext } from "@/src/app/blitz-server"
 
 // Core database function

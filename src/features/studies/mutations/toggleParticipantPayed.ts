@@ -2,7 +2,7 @@ import db from "db"
 import { resolver } from "@blitzjs/rpc"
 import { assertStudyNotArchived } from "@/src/features/studies"
 import { verifyResearcherStudyAccess } from "@/src/features/studies/server/verifyResearcherStudyAccess"
-import { ToggleParticipantPayed } from "@/src/app/(app)/studies/validations"
+import { ToggleParticipantPayed } from "@/src/features/studies/validations"
 
 export default resolver.pipe(
   resolver.zod(ToggleParticipantPayed),

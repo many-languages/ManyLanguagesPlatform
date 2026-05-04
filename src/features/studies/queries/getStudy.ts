@@ -1,7 +1,7 @@
 import db from "db"
 import { NotFoundError } from "blitz"
 import { cache } from "react"
-import { GetStudy, IdInput } from "@/src/app/(app)/studies/validations"
+import { GetStudy, IdInput } from "@/src/features/studies/validations"
 import { resolver } from "@blitzjs/rpc"
 import { getBlitzContext } from "@/src/app/blitz-server"
 

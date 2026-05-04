@@ -6,6 +6,7 @@
 export type {
   AdminStudyWithLatestUpload,
   ParticipantStudyView,
+  PendingAdminApprovalStudyRow,
   SetupStepFlags,
   StudySummaryCounts,
   StudyView,
@@ -88,7 +89,7 @@ export { verifyResearcherStudyAccess } from "./server/verifyResearcherStudyAcces
 export { STUDY_VIEWS, parseStudyView } from "./domain/studyView"
 export { PARTICIPANT_STUDY_VIEWS, parseParticipantStudyView } from "./domain/participantStudyView"
 
-/** RSC helpers for routes & cross-feature callers (pending-approval stays in Dashboard until Phase 11). */
+/** RSC helpers for routes & cross-feature callers */
 export { getStudyRsc } from "./queries/getStudy"
 export { getStudies } from "./queries/getStudies"
 export { getParticipantStudiesWithStatus } from "./queries/getParticipantStudiesWithStatus"
@@ -103,6 +104,7 @@ export { getValidationDataRsc } from "./server/getValidationData"
 export type { ValidationData } from "./server/getValidationData"
 export { getStudiesRsc } from "./queries/getAdminStudies"
 export { getAdminStudyCounts } from "./queries/getAdminStudyCounts"
+export { getPendingAdminApprovalStudiesForDashboardRsc } from "./queries/getPendingAdminApprovalStudies"
 
 /**
  * Shared UI exports first — `ResearcherData` imports `StudyLifecycleActions` from this barrel,

@@ -1,6 +1,6 @@
 import { resolver } from "@blitzjs/rpc"
 import db from "db"
-import { DeleteStudy } from "@/src/app/(app)/studies/validations"
+import { DeleteStudy } from "@/src/features/studies/validations"
 import { assertStudyDeleteAllowedByResponses } from "@/src/features/studies"
 import { deletePlatformStudyFromJatos } from "@/src/lib/jatos/admin/deleteStudyWorkflow"
 

@@ -1,6 +1,6 @@
 import { resolver } from "@blitzjs/rpc"
 import db from "db"
-import { ArchiveStudy } from "@/src/app/(app)/studies/validations"
+import { ArchiveStudy } from "@/src/features/studies/validations"
 import { assertStudyArchiveAllowed } from "@/src/features/studies"
 import type { UserRole } from "@/db"
 

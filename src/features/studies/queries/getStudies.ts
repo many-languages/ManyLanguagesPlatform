@@ -2,7 +2,7 @@ import db, { Prisma } from "db"
 import { cache } from "react"
 import { resolver } from "@blitzjs/rpc"
 import { getBlitzContext } from "@/src/app/blitz-server"
-import { GetStudiesInput } from "@/src/app/(app)/studies/validations"
+import { GetStudiesInput } from "@/src/features/studies/validations"
 
 interface GetStudiesInputType
   extends Pick<Prisma.StudyFindManyArgs, "where" | "orderBy" | "skip" | "take" | "include"> {}

@@ -1,16 +1,12 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest"
 import { importJatosStudyForResearcher } from "./importJatosStudy"
 import JSZip from "jszip"
-import * as verifyResearchersStudyAccess from "@/src/features/studies/server/verifyResearcherStudyAccess"
+import { verifyResearcherStudyAccess } from "@/src/features/studies"
 
 const mockUploadStudy = vi.fn()
 const mockEnsureResearcherJatosMember = vi.fn()
 const mockAddStudyMember = vi.fn()
 const mockGetServiceAccountJatosUserId = vi.fn()
-
-vi.mock("@/src/features/studies/server/verifyResearcherStudyAccess", () => ({
-  verifyResearcherStudyAccess: vi.fn(),
-}))
 vi.mock("../client/uploadStudy", () => ({
   uploadStudy: (...args: unknown[]) => mockUploadStudy(...args),
 }))
@@ -30,6 +26,7 @@ vi.mock("../getAdminToken", () => ({
 vi.mock("@/src/features/studies", () => ({
   deriveStep1Completed: (study: { title?: string; description?: string }) =>
     Boolean(study?.title && study?.description),
+  verifyResearcherStudyAccess: vi.fn(),
 }))
 
 const mockTransaction = vi.fn()
@@ -63,7 +60,7 @@ async function createTestJzipFile(): Promise<File> {
 describe("importJatosStudyForResearcher", () => {
   beforeEach(() => {
     vi.resetAllMocks()
-    vi.mocked(verifyResearchersStudyAccess.verifyResearcherStudyAccess).mockResolvedValue(undefined)
+    vi.mocked(verifyResearcherStudyAccess).mockResolvedValue(undefined)
     mockUploadStudy.mockResolvedValue({
       id: 100,
       uuid: "jatos-uuid-456",
@@ -114,7 +111,7 @@ describe("importJatosStudyForResearcher", () => {
       jatosWorkerType: "SINGLE",
     })
 
-    expect(verifyResearchersStudyAccess.verifyResearcherStudyAccess).toHaveBeenCalledWith(1, 42)
+    expect(verifyResearcherStudyAccess).toHaveBeenCalledWith(1, 42)
     expect(mockUploadStudy).toHaveBeenCalledWith(
       file,
       expect.objectContaining({ token: expect.any(String) })
@@ -138,7 +135,7 @@ describe("importJatosStudyForResearcher", () => {
 
   it("throws when researcher has no study access", async () => {
     vi
-      .mocked(verifyResearchersStudyAccess.verifyResearcherStudyAccess)
+      .mocked(verifyResearcherStudyAccess)
       .mockRejectedValueOnce(new Error("You are not authorized to access this study.")) as any
     const file = await createTestJzipFile()
 

@@ -3,7 +3,7 @@ import db from "db"
 import { getResultsMetadataForParticipantDashboard } from "@/src/lib/jatos/jatosAccessService"
 import { hasCompletedStudy } from "@/src/lib/jatos/utils/findStudyResultIdByComment"
 import type { StudyWithLatestUpload } from "./getStudies"
-import type { ParticipantStudyView } from "@/src/app/(app)/studies/utils/participantStudyView"
+import type { ParticipantStudyView } from "@/src/features/studies/domain/participantStudyView"
 
 type ParticipantStudyWithStatus = {
   study: StudyWithLatestUpload

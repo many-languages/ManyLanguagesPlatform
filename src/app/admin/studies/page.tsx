@@ -2,7 +2,7 @@ export const metadata = {
   title: "Admin Studies",
 }
 
-import AdminStudyManagementCard from "./components/AdminStudyManagementCard"
+import AdminStudyManagementCard from "@/src/features/studies/ui/admin/AdminStudyManagementCard"
 import { getStudiesRsc } from "@/src/features/studies/queries/getAdminStudies"
 import { getBlitzContext } from "@/src/app/blitz-server"
 import type { UserRole } from "@/db"

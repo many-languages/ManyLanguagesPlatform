@@ -1,5 +1,5 @@
-import Step3Content from "./components/client/Step3Content"
-import SetupStepHeader from "../components/client/SetupStepHeader"
+import Step3Content from "@/src/features/studies/ui/researcher/setup/step3/Step3Content"
+import SetupStepHeader from "@/src/features/studies/ui/researcher/setup/SetupStepHeader"
 import { loadStudySetupPage } from "@/src/features/studies/server/loadStudySetupPage"
 
 export default async function Step3Page({ params }: { params: Promise<{ studyId: string }> }) {

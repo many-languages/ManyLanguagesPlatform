@@ -3,11 +3,11 @@ import { notFound } from "next/navigation"
 import { getStudyRsc } from "@/src/features/studies/queries/getStudy"
 import { getBlitzContext } from "@/src/app/blitz-server"
 import { canEditStudySetup } from "@/src/features/studies"
-import ResearcherData from "./components/ResearcherData"
-import ParticipantData from "./components/ParticipantData"
-import SetupProgressCard from "./setup/components/client/SetupProgressCard"
-import StudyHeader from "./components/StudyHeader"
-import StudyStatusControl from "./components/client/StudyStatusControl"
+import ResearcherData from "@/src/features/studies/ui/researcher/ResearcherData"
+import ParticipantData from "@/src/features/studies/ui/participant/ParticipantData"
+import SetupProgressCard from "@/src/features/studies/ui/researcher/setup/SetupProgressCard"
+import StudyHeader from "@/src/features/studies/ui/shared/StudyHeader"
+import StudyStatusControl from "@/src/features/studies/ui/researcher/StudyStatusControl"
 
 export default async function StudyPage({ params }: { params: Promise<{ studyId: string }> }) {
   const { studyId: studyIdRaw } = await params

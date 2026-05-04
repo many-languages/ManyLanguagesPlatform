@@ -1,5 +1,5 @@
-import Step6Content from "./components/client/Step6Content"
-import SetupStepHeader from "../components/client/SetupStepHeader"
+import Step6Content from "@/src/features/studies/ui/researcher/setup/step6/Step6Content"
+import SetupStepHeader from "@/src/features/studies/ui/researcher/setup/SetupStepHeader"
 import { getFeedbackTemplateRsc } from "@/src/features/feedback"
 import { loadFeedbackPreviewContext } from "@/src/features/feedback/server/loadFeedbackPreviewContext"
 import { computeFeedbackTemplateValidation } from "@/src/features/feedback/server/computeFeedbackTemplateValidation"

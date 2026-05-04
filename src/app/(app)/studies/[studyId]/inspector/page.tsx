@@ -1,7 +1,7 @@
 import { Suspense } from "react"
 import { notFound } from "next/navigation"
-import DebugContent from "./components/client/DebugContent"
-import { getValidationDataRsc } from "./utils/getValidationData"
+import DebugContent from "@/src/features/studies/ui/researcher/inspector/DebugContent"
+import { getValidationDataRsc } from "@/src/features/studies/server/getValidationData"
 
 export default async function DebugPage({ params }: { params: Promise<{ studyId: string }> }) {
   const { studyId: studyIdRaw } = await params

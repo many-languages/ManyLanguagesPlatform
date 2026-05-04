@@ -10,7 +10,7 @@ import updateVariableCodebook, {
   type UpdateVariableCodebookResult,
 } from "../mutations/updateVariableCodebook"
 import { CODEBOOK_SAVE_FEEDBACK_PERSONAL_DATA_HINT } from "../domain/codebookSaveMessages"
-import StepNavigation from "@/src/app/(app)/studies/[studyId]/setup/components/client/StepNavigation"
+import StepNavigation from "@/src/features/studies/ui/researcher/setup/StepNavigation"
 import { Alert } from "@/src/app/components/Alert"
 import { AsyncButton } from "@/src/app/components/AsyncButton"
 import Card from "@/src/app/components/Card"

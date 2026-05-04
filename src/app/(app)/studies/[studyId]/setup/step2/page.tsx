@@ -1,5 +1,5 @@
-import Step2Content from "./components/client/Step2Content"
-import SetupStepHeader from "../components/client/SetupStepHeader"
+import Step2Content from "@/src/features/studies/ui/researcher/setup/step2/Step2Content"
+import SetupStepHeader from "@/src/features/studies/ui/researcher/setup/SetupStepHeader"
 import { loadStudySetupPage } from "@/src/features/studies/server/loadStudySetupPage"
 
 export default async function Step2Page({ params }: { params: Promise<{ studyId: string }> }) {

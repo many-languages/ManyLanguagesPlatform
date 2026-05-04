@@ -1,5 +1,5 @@
 import { notFound, redirect } from "next/navigation"
-import StepIndicator from "./components/client/StepIndicator"
+import StepIndicator from "@/src/features/studies/ui/researcher/setup/StepIndicator"
 import { getStudyRsc } from "@/src/features/studies/queries/getStudy"
 import { canEditStudySetup } from "@/src/features/studies"
 import { studyPath, getCompletedSteps } from "@/src/features/studies"

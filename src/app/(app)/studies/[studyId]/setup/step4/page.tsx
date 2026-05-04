@@ -1,8 +1,8 @@
 import { Suspense } from "react"
 import { notFound } from "next/navigation"
-import Step4Content from "./components/client/Step4Content"
-import SetupStepHeader from "../components/client/SetupStepHeader"
-import { getValidationDataRsc } from "../../inspector/utils/getValidationData"
+import Step4Content from "@/src/features/studies/ui/researcher/setup/step4/Step4Content"
+import SetupStepHeader from "@/src/features/studies/ui/researcher/setup/SetupStepHeader"
+import { getValidationDataRsc } from "@/src/features/studies/server/getValidationData"
 import { loadStudySetupPage } from "@/src/features/studies/server/loadStudySetupPage"
 import type { StudyWithRelations } from "@/src/features/studies/queries/getStudy"
 

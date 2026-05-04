@@ -72,3 +72,9 @@ export {
 
 /** Server-side access helpers (Phase 6). */
 export { verifyResearcherStudyAccess } from "./server/verifyResearcherStudyAccess"
+
+/** Study view domain types (Phase 7 pre-work). */
+export type { StudyView } from "./domain/studyView"
+export { STUDY_VIEWS, parseStudyView } from "./domain/studyView"
+export type { ParticipantStudyView } from "./domain/participantStudyView"
+export { PARTICIPANT_STUDY_VIEWS, parseParticipantStudyView } from "./domain/participantStudyView"

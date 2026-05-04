@@ -1,4 +1,4 @@
-import StudyList from "./components/client/StudyList"
+import StudyList from "@/src/features/studies/ui/shared/StudyList"
 import { getStudies } from "@/src/features/studies/queries/getStudies"
 import type { StudyWithLatestUpload } from "@/src/features/studies/queries/getStudies"
 import { getParticipantStudiesWithStatus } from "@/src/features/studies/queries/getParticipantStudiesWithStatus"
@@ -6,12 +6,15 @@ import PaginationControls from "./components/PaginationControls"
 import { getBlitzContext } from "../../blitz-server"
 import { redirect } from "next/navigation"
 import { Prisma } from "@/db"
-import StudiesViewTabs from "./components/client/StudiesViewTabs"
-import ParticipantStudiesViewTabs from "./components/client/ParticipantStudiesViewTabs"
-import CreateStudyButton from "./components/client/CreateStudyButton"
+import StudiesViewTabs from "@/src/features/studies/ui/shared/StudiesViewTabs"
+import ParticipantStudiesViewTabs from "@/src/features/studies/ui/shared/ParticipantStudiesViewTabs"
+import CreateStudyButton from "@/src/features/studies/ui/researcher/CreateStudyButton"
 import { isSetupComplete } from "@/src/features/studies"
-import { parseStudyView, type StudyView } from "./utils/studyView"
-import { parseParticipantStudyView, type ParticipantStudyView } from "./utils/participantStudyView"
+import { parseStudyView, type StudyView } from "@/src/features/studies/domain/studyView"
+import {
+  parseParticipantStudyView,
+  type ParticipantStudyView,
+} from "@/src/features/studies/domain/participantStudyView"
 
 type SessionRole = "RESEARCHER" | "PARTICIPANT" | "ADMIN" | "SUPERADMIN"
 

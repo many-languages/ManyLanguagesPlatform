@@ -1,4 +1,4 @@
-import SetupStepHeader from "../components/client/SetupStepHeader"
+import SetupStepHeader from "@/src/features/studies/ui/researcher/setup/SetupStepHeader"
 import { CodebookContent, getCodebookDataRsc } from "@/src/features/codebook"
 import { loadStudySetupPage } from "@/src/features/studies/server/loadStudySetupPage"
 import type { StudyWithRelations } from "@/src/features/studies/queries/getStudy"

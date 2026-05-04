@@ -3,10 +3,10 @@
 import { useMutation } from "@blitzjs/rpc"
 import { useRouter } from "next/navigation"
 import toast from "react-hot-toast"
-import updateStudyStatus from "@/src/app/(app)/studies/mutations/updateStudyStatus"
+import updateStudyStatus from "@/src/features/studies/mutations/updateStudyStatus"
 import type { StudyWithMinimalRelations } from "@/src/features/studies"
 import { isSetupComplete } from "@/src/features/studies"
-import { StudyWithRelations } from "../../../queries/getStudy"
+import { StudyWithRelations } from "@/src/features/studies/queries/getStudy"
 import StatusBadge from "@/src/app/components/StatusBadge"
 import { getAdminApprovalProps } from "@/src/lib/utils/statusBadgePresets"
 

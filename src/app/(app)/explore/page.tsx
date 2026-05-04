@@ -1,5 +1,5 @@
 import StudyList from "../studies/components/client/StudyList"
-import { getStudies } from "../studies/queries/getStudies"
+import { getStudies } from "@/src/features/studies/queries/getStudies"
 import PaginationControls from "../studies/components/PaginationControls"
 import { getBlitzContext } from "../../blitz-server"
 import { redirect } from "next/navigation"

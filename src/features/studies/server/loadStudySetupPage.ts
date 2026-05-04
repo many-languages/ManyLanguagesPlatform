@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation"
-import { getStudyRsc, type StudyWithRelations } from "@/src/app/(app)/studies/queries/getStudy"
+import { getStudyRsc, type StudyWithRelations } from "@/src/features/studies/queries/getStudy"
 
 export type StudySetupPageContext = {
   studyId: number

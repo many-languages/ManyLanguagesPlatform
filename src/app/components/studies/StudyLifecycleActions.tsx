@@ -4,9 +4,9 @@ import { useRouter } from "next/navigation"
 import { useMutation } from "@blitzjs/rpc"
 import toast from "react-hot-toast"
 import { ConfirmButton } from "@/src/app/components/ConfirmButton"
-import archiveStudy from "@/src/app/(app)/studies/mutations/archiveStudy"
-import deleteResearcherStudy from "@/src/app/(app)/studies/mutations/deleteResearcherStudy"
-import unarchiveStudy from "@/src/app/(app)/studies/mutations/unarchiveStudy"
+import archiveStudy from "@/src/features/studies/mutations/archiveStudy"
+import deleteResearcherStudy from "@/src/features/studies/mutations/deleteResearcherStudy"
+import unarchiveStudy from "@/src/features/studies/mutations/unarchiveStudy"
 
 export type StudyLifecycleActionsProps = {
   studyId: number

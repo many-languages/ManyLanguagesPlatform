@@ -6,15 +6,15 @@ import { toast } from "react-hot-toast"
 import { useSession } from "@blitzjs/auth"
 import { useMutation, useQuery } from "@blitzjs/rpc"
 
-import updateSetupCompletion from "../../../mutations/updateSetupCompletion"
-import { checkPilotStatusAction } from "../../actions/checkPilotStatus"
-import getResearcherRunUrl from "../../../queries/getResearcherRunUrl"
+import updateSetupCompletion from "@/src/features/studies/mutations/updateSetupCompletion"
+import { checkPilotStatusAction } from "@/src/features/studies/actions/checkPilotStatus"
+import getResearcherRunUrl from "@/src/features/studies/queries/getResearcherRunUrl"
 import Step3Instructions from "./Step3Instructions"
 import Step3Actions from "./Step3Actions"
 import StepNavigation from "../../../components/client/StepNavigation"
 import { useWindowResumeCheck } from "@/src/app/hooks/useWindowResumeCheck"
 
-import { StudyWithRelations } from "@/src/app/(app)/studies/queries/getStudy"
+import { StudyWithRelations } from "@/src/features/studies/queries/getStudy"
 
 interface Step3ContentProps {
   study: StudyWithRelations

@@ -1,4 +1,4 @@
-import { createResearcherPilotUrlAndSaveAction } from "../setup/actions/createResearcherPilotUrl"
+import { createResearcherPilotUrlAndSaveAction } from "@/src/features/studies/actions/createResearcherPilotUrl"
 
 interface GenerateRunUrlArgs {
   studyId: number

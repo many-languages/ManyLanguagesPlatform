@@ -1,4 +1,4 @@
-import type { StudyWithLatestUpload } from "../../queries/getStudies"
+import type { StudyWithLatestUpload } from "@/src/features/studies/queries/getStudies"
 import StudyItem from "./StudyItem"
 
 interface StudyListProps {

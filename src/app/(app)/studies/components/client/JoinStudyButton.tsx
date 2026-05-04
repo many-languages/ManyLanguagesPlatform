@@ -1,10 +1,10 @@
 "use client"
 
 import { useMutation, useQuery } from "@blitzjs/rpc"
-import joinStudy from "../../mutations/joinStudy"
+import joinStudy from "@/src/features/studies/mutations/joinStudy"
 import toast from "react-hot-toast"
-import isParticipantInStudy from "../../queries/isParticipantInStudy"
-import { createParticipantStudyCodeAndSaveAction } from "../../[studyId]/setup/actions/createParticipantStudyCode"
+import isParticipantInStudy from "@/src/features/studies/queries/isParticipantInStudy"
+import { createParticipantStudyCodeAndSaveAction } from "@/src/features/studies/actions/createParticipantStudyCode"
 import { AsyncButton } from "@/src/app/components/AsyncButton"
 import { useRouter } from "next/navigation"
 

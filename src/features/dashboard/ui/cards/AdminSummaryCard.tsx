@@ -1,5 +1,5 @@
 import StudySummaryCard, { ADMIN_STUDY_SUMMARY_LINKS } from "@/src/app/components/StudySummaryCard"
-import type { StudySummaryCounts } from "@/src/app/admin/studies/queries/getAdminStudyCounts"
+import type { StudySummaryCounts } from "@/src/features/studies/queries/getAdminStudyCounts"
 
 interface AdminSummaryCardProps {
   counts: StudySummaryCounts

@@ -4,7 +4,7 @@ import {
   getStudyPropertiesForResearcher,
   getEnrichedResultsForResearcher,
 } from "@/src/lib/jatos/jatosAccessService"
-import { getStudyParticipantsRsc } from "../../queries/getStudyParticipants"
+import { getStudyParticipantsRsc } from "@/src/features/studies/queries/getStudyParticipants"
 import StudySummary from "./client/StudySummary"
 import ParticipantManagementCard from "./client/ParticipantManagementCard"
 import ResultsCardWrapper from "./ResultsCardWrapper"
@@ -14,7 +14,7 @@ import {
   isSetupComplete,
   studySetupStepPath,
 } from "@/src/features/studies"
-import { StudyWithRelations } from "../../queries/getStudy"
+import { StudyWithRelations } from "@/src/features/studies/queries/getStudy"
 import { ResearcherFeedbackData } from "@/src/features/feedback"
 import StudyInformationCard from "./client/StudyInformationCard"
 import { NavigationButton } from "@/src/app/components/NavigationButton"

@@ -1,8 +1,8 @@
 import db from "db"
 import { Prisma } from "db"
-import { getStudies } from "@/src/app/(app)/studies/queries/getStudies"
+import { getStudies } from "@/src/features/studies/queries/getStudies"
 import { isSetupComplete } from "./setup/setupStatus"
-import type { StudyWithLatestUpload } from "@/src/app/(app)/studies/queries/getStudies"
+import type { StudyWithLatestUpload } from "@/src/features/studies/queries/getStudies"
 
 export type StudySummaryCounts = {
   all: number

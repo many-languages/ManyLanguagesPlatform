@@ -1,4 +1,4 @@
-import type { StudyWithLatestUpload } from "../../queries/getStudies"
+import type { StudyWithLatestUpload } from "@/src/features/studies/queries/getStudies"
 import CollapseCard from "../CollapseCard"
 import JoinStudyButton from "./JoinStudyButton"
 import { NavigationButton } from "@/src/app/components/NavigationButton"

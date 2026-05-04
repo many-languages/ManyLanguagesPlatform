@@ -2,7 +2,7 @@
 
 import { ArrowDownTrayIcon } from "@heroicons/react/24/outline"
 import toast from "react-hot-toast"
-import { downloadCleanedResultsAction } from "../../actions/cleanedResultsDownload"
+import { downloadCleanedResultsAction } from "@/src/features/studies/actions/cleanedResultsDownload"
 import { AsyncButton } from "@/src/app/components/AsyncButton"
 
 interface DownloadCleanedResultsButtonProps {

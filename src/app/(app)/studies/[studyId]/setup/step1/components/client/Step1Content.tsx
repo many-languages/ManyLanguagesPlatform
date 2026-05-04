@@ -6,11 +6,11 @@ import { useMutation } from "@blitzjs/rpc"
 import { FORM_ERROR } from "@/src/app/components/Form"
 import toast from "react-hot-toast"
 
-import updateStudy from "@/src/app/(app)/studies/mutations/updateStudy"
+import updateStudy from "@/src/features/studies/mutations/updateStudy"
 import StudyInformationForm from "@/src/app/(app)/studies/[studyId]/setup/step1/components/client/StudyInformationForm"
 import { getPostStepNavigationUrl, studyPath } from "@/src/features/studies"
 
-import { StudyWithRelations } from "@/src/app/(app)/studies/queries/getStudy"
+import { StudyWithRelations } from "@/src/features/studies/queries/getStudy"
 
 interface Step1ContentProps {
   study: StudyWithRelations

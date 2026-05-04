@@ -4,9 +4,9 @@ import { useRouter } from "next/navigation"
 import type { Route } from "next"
 
 import { useMutation, useQuery } from "@blitzjs/rpc"
-import approveExtraction from "../../../mutations/approveExtraction"
-import runExtraction from "../../../mutations/runExtraction"
-import getCachedExtractionBundle from "../../../queries/getCachedExtractionBundle"
+import approveExtraction from "@/src/features/studies/mutations/approveExtraction"
+import runExtraction from "@/src/features/studies/mutations/runExtraction"
+import getCachedExtractionBundle from "@/src/features/studies/queries/getCachedExtractionBundle"
 import StepNavigation from "../../../components/client/StepNavigation"
 import type { ValidationData } from "../../../../inspector/utils/getValidationData"
 import { useEffect, useMemo, useState } from "react"
@@ -16,7 +16,7 @@ import Card from "@/src/app/components/Card"
 import { studySetupStepPath, type SerializedExtractionBundle } from "@/src/features/studies"
 import Step4Instructions from "./Step4Instructions"
 
-import { StudyWithRelations } from "@/src/app/(app)/studies/queries/getStudy"
+import { StudyWithRelations } from "@/src/features/studies/queries/getStudy"
 
 // Dashboard Components
 import SummaryDashboard from "./dashboard/SummaryDashboard"

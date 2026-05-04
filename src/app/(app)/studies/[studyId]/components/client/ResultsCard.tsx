@@ -20,7 +20,7 @@ import type {
   JatosStudyProperties,
   EnrichedJatosStudyResult,
 } from "@/src/types/jatos"
-import { refetchEnrichedResultsAction } from "../../actions/results"
+import { refetchEnrichedResultsAction } from "@/src/features/studies/actions/results"
 
 interface ResultsCardProps {
   jatosStudyId: number

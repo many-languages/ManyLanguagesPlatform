@@ -15,9 +15,9 @@ import { FeedbackFormEditor } from "@/src/features/feedback"
 import { useNotificationMenuContext } from "@/src/features/notifications"
 import type { FeedbackPreviewContextClientDto } from "@/src/features/feedback/server/loadFeedbackPreviewContext"
 
-import { StudyWithRelations } from "@/src/app/(app)/studies/queries/getStudy"
+import { StudyWithRelations } from "@/src/features/studies/queries/getStudy"
 import { studyPath } from "@/src/features/studies"
-import { getSetupCompletionAction } from "../../../actions/getSetupCompletionAction"
+import { getSetupCompletionAction } from "@/src/features/studies/actions/getSetupCompletionAction"
 
 interface Step6ContentProps {
   initialFeedbackTemplate?: FeedbackTemplateEditorInitial | null

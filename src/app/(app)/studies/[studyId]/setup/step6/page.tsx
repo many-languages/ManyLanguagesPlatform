@@ -4,7 +4,7 @@ import { getFeedbackTemplateRsc } from "@/src/features/feedback"
 import { loadFeedbackPreviewContext } from "@/src/features/feedback/server/loadFeedbackPreviewContext"
 import { computeFeedbackTemplateValidation } from "@/src/features/feedback/server/computeFeedbackTemplateValidation"
 import { loadStudySetupPage } from "@/src/features/studies/server/loadStudySetupPage"
-import type { StudyWithRelations } from "@/src/app/(app)/studies/queries/getStudy"
+import type { StudyWithRelations } from "@/src/features/studies/queries/getStudy"
 import { Alert } from "@/src/app/components/Alert"
 
 async function Step6ContentWrapper({

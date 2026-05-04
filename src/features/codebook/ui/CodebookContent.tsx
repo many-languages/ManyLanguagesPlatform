@@ -15,7 +15,7 @@ import { Alert } from "@/src/app/components/Alert"
 import { AsyncButton } from "@/src/app/components/AsyncButton"
 import Card from "@/src/app/components/Card"
 import { Textarea } from "@/src/app/components/fields"
-import { StudyWithRelations } from "@/src/app/(app)/studies/queries/getStudy"
+import { StudyWithRelations } from "@/src/features/studies/queries/getStudy"
 
 interface VariableCodebookEntry {
   id: number

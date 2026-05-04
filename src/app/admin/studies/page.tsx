@@ -3,7 +3,7 @@ export const metadata = {
 }
 
 import AdminStudyManagementCard from "./components/AdminStudyManagementCard"
-import { getStudiesRsc } from "./queries/getAdminStudies"
+import { getStudiesRsc } from "@/src/features/studies/queries/getAdminStudies"
 import { getBlitzContext } from "@/src/app/blitz-server"
 import type { UserRole } from "@/db"
 

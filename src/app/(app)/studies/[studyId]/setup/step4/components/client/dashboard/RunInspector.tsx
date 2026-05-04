@@ -1,5 +1,7 @@
 import { useState, useMemo } from "react"
 import { EnrichedJatosStudyResult } from "@/src/types/jatos"
+import StructureAnalysisCard from "../../../../inspector/components/client/structureAnalysis/StructureAnalysisCard"
+import { ExclamationCircleIcon } from "@heroicons/react/24/outline"
 import {
   createExtractionIndexStore,
   type SerializedExtractionBundle,

@@ -4,7 +4,7 @@ import { useMutation } from "@blitzjs/rpc"
 import { useRouter } from "next/navigation"
 import type { Route } from "next"
 import toast from "react-hot-toast"
-import createStudy from "../../mutations/createStudy"
+import createStudy from "@/src/features/studies/mutations/createStudy"
 import { AsyncButton } from "@/src/app/components/AsyncButton"
 import { studySetupStepPath } from "@/src/features/studies"
 

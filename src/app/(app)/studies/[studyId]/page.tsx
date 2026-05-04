@@ -1,6 +1,6 @@
 import { Suspense } from "react"
 import { notFound } from "next/navigation"
-import { getStudyRsc } from "../queries/getStudy"
+import { getStudyRsc } from "@/src/features/studies/queries/getStudy"
 import { getBlitzContext } from "@/src/app/blitz-server"
 import { canEditStudySetup } from "@/src/features/studies"
 import ResearcherData from "./components/ResearcherData"

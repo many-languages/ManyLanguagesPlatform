@@ -1,25 +1,20 @@
-import StudyList from "@/src/features/studies/ui/shared/StudyList"
-import { getStudies } from "@/src/features/studies/queries/getStudies"
-import type { StudyWithLatestUpload } from "@/src/features/studies/queries/getStudies"
-import { getParticipantStudiesWithStatus } from "@/src/features/studies/queries/getParticipantStudiesWithStatus"
 import PaginationControls from "@/src/app/components/PaginationControls"
-import { getBlitzContext } from "../../blitz-server"
 import { redirect } from "next/navigation"
-import { Prisma } from "@/db"
-import StudiesViewTabs from "@/src/features/studies/ui/shared/StudiesViewTabs"
-import ParticipantStudiesViewTabs from "@/src/features/studies/ui/shared/ParticipantStudiesViewTabs"
-import CreateStudyButton from "@/src/features/studies/ui/researcher/CreateStudyButton"
-import { isSetupComplete } from "@/src/features/studies"
-import { parseStudyView, type StudyView } from "@/src/features/studies/domain/studyView"
 import {
+  StudyList,
+  StudiesViewTabs,
+  ParticipantStudiesViewTabs,
+  CreateStudyButton,
+  getParticipantStudiesWithStatus,
+  getResearcherStudiesPageSlice,
+  parseStudyView,
   parseParticipantStudyView,
-  type ParticipantStudyView,
-} from "@/src/features/studies/domain/participantStudyView"
+  STUDIES_LIST_PAGE_SIZE,
+} from "@/src/features/studies"
+import type { ParticipantStudyView, StudyView } from "@/src/features/studies"
+import { getBlitzContext } from "@/src/app/blitz-server"
 
 type SessionRole = "RESEARCHER" | "PARTICIPANT" | "ADMIN" | "SUPERADMIN"
-
-const ITEMS_PER_PAGE = 7
-const MAX_STUDIES_FOR_SETUP_FILTER = 500
 
 export const metadata = {
   title: "My Studies",
@@ -34,53 +29,15 @@ async function ResearcherStudiesContent({
   userId: number
   view: StudyView
 }) {
-  const baseWhere: Prisma.StudyWhereInput = {
-    OR: [{ researchers: { some: { userId } } }, { participations: { some: { userId } } }],
-  }
-
-  let where: Prisma.StudyWhereInput
-  switch (view) {
-    case "archived":
-      where = { AND: [baseWhere, { archived: true }] }
-      break
-    case "active":
-      where = { AND: [baseWhere, { archived: false }, { status: "OPEN" }] }
-      break
-    case "incomplete":
-      where = { AND: [baseWhere, { archived: false }] }
-      break
-    default:
-      // all
-      where = { AND: [baseWhere, { archived: false }] }
-  }
-
-  const extraQuery = view !== "all" ? { view } : undefined
-
-  let paginatedStudies: StudyWithLatestUpload[]
-  let hasMore: boolean
-
-  if (view === "incomplete") {
-    const result = await getStudies({
-      where: { AND: [baseWhere, { archived: false }] },
-      orderBy: { createdAt: "desc" },
-      skip: 0,
-      take: MAX_STUDIES_FOR_SETUP_FILTER,
-    })
-    const filtered = result.studies.filter((s) => !isSetupComplete(s as StudyWithLatestUpload))
-    const start = page * ITEMS_PER_PAGE
-    paginatedStudies = filtered.slice(start, start + ITEMS_PER_PAGE)
-    hasMore = filtered.length > start + ITEMS_PER_PAGE
-  } else {
-    const result = await getStudies({
-      where,
-      orderBy: { createdAt: "desc" },
-      skip: ITEMS_PER_PAGE * page,
-      take: ITEMS_PER_PAGE,
-    })
-    paginatedStudies = result.studies
-    hasMore = result.hasMore
-  }
-
+  const {
+    studies: paginatedStudies,
+    hasMore,
+    extraQuery,
+  } = await getResearcherStudiesPageSlice({
+    page,
+    userId,
+    view,
+  })
   return (
     <>
       <StudyList studies={paginatedStudies} showJoinButton={false} />
@@ -102,7 +59,7 @@ async function ParticipantStudiesContent({
     userId,
     view,
     page,
-    ITEMS_PER_PAGE
+    STUDIES_LIST_PAGE_SIZE
   )
   const extraQuery = view !== "all" ? { view } : undefined
 

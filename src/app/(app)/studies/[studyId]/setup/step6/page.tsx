@@ -1,11 +1,13 @@
-import Step6Content from "@/src/features/studies/ui/researcher/setup/step6/Step6Content"
-import SetupStepHeader from "@/src/features/studies/ui/researcher/setup/SetupStepHeader"
+import { Alert } from "@/src/app/components/Alert"
+import {
+  Step6Content,
+  SetupStepHeader,
+  loadStudySetupPage,
+  type StudyWithRelations,
+} from "@/src/features/studies"
 import { getFeedbackTemplateRsc } from "@/src/features/feedback"
 import { loadFeedbackPreviewContext } from "@/src/features/feedback/server/loadFeedbackPreviewContext"
 import { computeFeedbackTemplateValidation } from "@/src/features/feedback/server/computeFeedbackTemplateValidation"
-import { loadStudySetupPage } from "@/src/features/studies/server/loadStudySetupPage"
-import type { StudyWithRelations } from "@/src/features/studies/queries/getStudy"
-import { Alert } from "@/src/app/components/Alert"
 
 async function Step6ContentWrapper({
   studyId,

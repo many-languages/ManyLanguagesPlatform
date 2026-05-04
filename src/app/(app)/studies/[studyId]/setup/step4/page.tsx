@@ -1,10 +1,12 @@
 import { Suspense } from "react"
 import { notFound } from "next/navigation"
-import Step4Content from "@/src/features/studies/ui/researcher/setup/step4/Step4Content"
-import SetupStepHeader from "@/src/features/studies/ui/researcher/setup/SetupStepHeader"
-import { getValidationDataRsc } from "@/src/features/studies/server/getValidationData"
-import { loadStudySetupPage } from "@/src/features/studies/server/loadStudySetupPage"
-import type { StudyWithRelations } from "@/src/features/studies/queries/getStudy"
+import {
+  Step4Content,
+  SetupStepHeader,
+  getValidationDataRsc,
+  loadStudySetupPage,
+  type StudyWithRelations,
+} from "@/src/features/studies"
 
 async function Step4ContentWrapper({
   studyId,
@@ -14,7 +16,6 @@ async function Step4ContentWrapper({
   study: StudyWithRelations
 }) {
   try {
-    // Access verification happens inside getValidationDataRsc
     const validationData = await getValidationDataRsc(studyId)
     return (
       <>

@@ -1,11 +1,10 @@
+import { AdminStudyManagementCard, getStudiesRsc } from "@/src/features/studies"
+import { getBlitzContext } from "@/src/app/blitz-server"
+import type { UserRole } from "@/db"
+
 export const metadata = {
   title: "Admin Studies",
 }
-
-import AdminStudyManagementCard from "@/src/features/studies/ui/admin/AdminStudyManagementCard"
-import { getStudiesRsc } from "@/src/features/studies/queries/getAdminStudies"
-import { getBlitzContext } from "@/src/app/blitz-server"
-import type { UserRole } from "@/db"
 
 export default async function AdminStudiesPage() {
   const studies = await getStudiesRsc()

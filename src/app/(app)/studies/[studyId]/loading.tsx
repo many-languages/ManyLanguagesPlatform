@@ -1,4 +1,4 @@
-import StudySkeleton from "@/src/features/studies/ui/shared/StudySkeleton"
+import { StudySkeleton } from "@/src/features/studies"
 
 export default function Loading() {
   return <StudySkeleton />

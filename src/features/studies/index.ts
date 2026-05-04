@@ -90,6 +90,17 @@ export { PARTICIPANT_STUDY_VIEWS, parseParticipantStudyView } from "./domain/par
 
 /** RSC helpers for routes & cross-feature callers (pending-approval stays in Dashboard until Phase 11). */
 export { getStudyRsc } from "./queries/getStudy"
+export { getStudies } from "./queries/getStudies"
+export { getParticipantStudiesWithStatus } from "./queries/getParticipantStudiesWithStatus"
+export {
+  getResearcherStudiesPageSlice,
+  STUDIES_LIST_PAGE_SIZE,
+  RESEARCHER_STUDIES_MAX_SETUP_FILTER,
+} from "./server/getResearcherStudiesPageSlice"
+export { loadStudySetupPage } from "./server/loadStudySetupPage"
+export type { StudySetupPageContext } from "./server/loadStudySetupPage"
+export { getValidationDataRsc } from "./server/getValidationData"
+export type { ValidationData } from "./server/getValidationData"
 export { getStudiesRsc } from "./queries/getAdminStudies"
 export { getAdminStudyCounts } from "./queries/getAdminStudyCounts"
 
@@ -120,6 +131,15 @@ export { default as ResultsCard } from "./ui/researcher/ResultsCard"
 export { default as ResultsCardWrapper } from "./ui/researcher/ResultsCardWrapper"
 export { default as CreateStudyButton } from "./ui/researcher/CreateStudyButton"
 export { default as SetupProgressCard } from "./ui/researcher/setup/SetupProgressCard"
+export { default as StepIndicator } from "./ui/researcher/setup/StepIndicator"
+export { default as SetupContentSkeleton } from "./ui/researcher/setup/SetupContentSkeleton"
+export { default as SetupStepHeader } from "./ui/researcher/setup/SetupStepHeader"
+export { default as Step1Content } from "./ui/researcher/setup/step1/Step1Content"
+export { default as Step2Content } from "./ui/researcher/setup/step2/Step2Content"
+export { default as Step3Content } from "./ui/researcher/setup/step3/Step3Content"
+export { default as Step4Content } from "./ui/researcher/setup/step4/Step4Content"
+export { default as Step6Content } from "./ui/researcher/setup/step6/Step6Content"
+export { default as DebugContent } from "./ui/researcher/inspector/DebugContent"
 
 /** UI — participant */
 export { default as ParticipantData } from "./ui/participant/ParticipantData"

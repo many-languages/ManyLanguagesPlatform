@@ -1,7 +1,9 @@
-import SetupStepHeader from "@/src/features/studies/ui/researcher/setup/SetupStepHeader"
+import {
+  SetupStepHeader,
+  loadStudySetupPage,
+  type StudyWithRelations,
+} from "@/src/features/studies"
 import { CodebookContent, getCodebookDataRsc } from "@/src/features/codebook"
-import { loadStudySetupPage } from "@/src/features/studies/server/loadStudySetupPage"
-import type { StudyWithRelations } from "@/src/features/studies/queries/getStudy"
 
 async function Step5ContentWrapper({ study }: { study: StudyWithRelations }) {
   const studyId = study.id

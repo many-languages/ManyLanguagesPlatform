@@ -1,6 +1,4 @@
-import Step3Content from "@/src/features/studies/ui/researcher/setup/step3/Step3Content"
-import SetupStepHeader from "@/src/features/studies/ui/researcher/setup/SetupStepHeader"
-import { loadStudySetupPage } from "@/src/features/studies/server/loadStudySetupPage"
+import { Step3Content, SetupStepHeader, loadStudySetupPage } from "@/src/features/studies"
 
 export default async function Step3Page({ params }: { params: Promise<{ studyId: string }> }) {
   const { studyId, study } = await loadStudySetupPage(params)

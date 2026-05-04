@@ -1,7 +1,6 @@
 import { Suspense } from "react"
 import { notFound } from "next/navigation"
-import DebugContent from "@/src/features/studies/ui/researcher/inspector/DebugContent"
-import { getValidationDataRsc } from "@/src/features/studies/server/getValidationData"
+import { DebugContent, getValidationDataRsc } from "@/src/features/studies"
 
 export default async function DebugPage({ params }: { params: Promise<{ studyId: string }> }) {
   const { studyId: studyIdRaw } = await params
@@ -30,7 +29,6 @@ export default async function DebugPage({ params }: { params: Promise<{ studyId:
 
 async function DebugContentWrapper({ studyId }: { studyId: number }) {
   try {
-    // Access verification happens inside getValidationDataRsc
     const validationData = await getValidationDataRsc(studyId)
     return <DebugContent validationData={validationData} />
   } catch (error: any) {

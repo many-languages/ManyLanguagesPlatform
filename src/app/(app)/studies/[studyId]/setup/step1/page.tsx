@@ -1,6 +1,4 @@
-import Step1Content from "@/src/features/studies/ui/researcher/setup/step1/Step1Content"
-import SetupStepHeader from "@/src/features/studies/ui/researcher/setup/SetupStepHeader"
-import { loadStudySetupPage } from "@/src/features/studies/server/loadStudySetupPage"
+import { Step1Content, SetupStepHeader, loadStudySetupPage } from "@/src/features/studies"
 
 export default async function Step1Page({
   params,

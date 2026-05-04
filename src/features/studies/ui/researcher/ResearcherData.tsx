@@ -18,7 +18,7 @@ import { StudyWithRelations } from "@/src/features/studies/queries/getStudy"
 import { ResearcherFeedbackData } from "@/src/features/feedback"
 import StudyInformationCard from "../shared/StudyInformationCard"
 import { NavigationButton } from "@/src/app/components/NavigationButton"
-import StudyLifecycleActions from "@/src/app/components/studies/StudyLifecycleActions"
+import { StudyLifecycleActions } from "@/src/features/studies"
 import { hasParticipantResponses as hasParticipantResponsesInResults } from "@/src/lib/jatos/utils/studyHasParticipantResponses"
 import { ARCHIVED_STUDY_CANNOT_EDIT_MESSAGE } from "@/src/features/studies"
 

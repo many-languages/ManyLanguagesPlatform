@@ -14,7 +14,7 @@ import type { SortingState, ExpandedState, Row } from "@tanstack/react-table"
 import React from "react"
 
 import { ChevronUpIcon, ChevronDownIcon, ChevronUpDownIcon } from "@heroicons/react/24/outline"
-import Filter from "../(app)/studies/components/Filter"
+import Filter from "./Filter"
 import { EmptyState } from "./EmptyState"
 
 type TableProps<TData> = {

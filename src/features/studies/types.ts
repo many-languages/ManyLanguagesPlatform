@@ -1,5 +1,11 @@
 /**
- * Study-centric types — migrated from app routes in later phases (domain from `src/lib/studies` landed in Phase 2).
- * Skeleton only (Phase 1 for this file).
+ * Study-centric types surfaced through `@/src/features/studies` (Phase 9).
  */
-export {}
+
+export type { StudyWithRelations } from "./queries/getStudy"
+export type { StudyWithLatestUpload } from "./queries/getStudies"
+export type { AdminStudyWithLatestUpload } from "./queries/getAdminStudies"
+export type { StudySummaryCounts } from "./domain/studySummaryCounts"
+export type { StudyView } from "./domain/studyView"
+export type { ParticipantStudyView } from "./domain/participantStudyView"
+export type { StudyWithMinimalRelations, SetupStepFlags } from "./domain/setup/setupStatus"

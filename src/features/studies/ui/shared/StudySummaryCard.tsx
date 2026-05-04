@@ -8,7 +8,7 @@ import {
   WrenchScrewdriverIcon,
 } from "@heroicons/react/24/outline"
 import Card from "@/src/app/components/Card"
-import type { StudySummaryCounts } from "@/src/features/studies"
+import type { StudySummaryCounts } from "@/src/features/studies/domain/studySummaryCounts"
 
 export type StudySummaryLinks = {
   all: string

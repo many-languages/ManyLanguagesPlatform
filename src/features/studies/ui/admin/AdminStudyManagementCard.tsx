@@ -3,7 +3,7 @@
 import { useMemo, type MouseEvent } from "react"
 import Card from "@/src/app/components/Card"
 import Form from "@/src/app/components/Form"
-import CheckboxFieldTable from "@/src/app/(app)/studies/components/CheckboxFieldTable"
+import CheckboxFieldTable from "@/src/app/components/CheckboxFieldTable"
 import { FormErrorDisplay } from "@/src/app/components/FormErrorDisplay"
 import { AdminStudySchema } from "../validations"
 import { Codebook, CodebookEntry, FeedbackTemplate } from "db"

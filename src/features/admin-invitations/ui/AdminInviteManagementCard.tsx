@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react"
 import Card from "@/src/app/components/Card"
 import Form from "@/src/app/components/Form"
-import CheckboxFieldTable from "@/src/app/(app)/studies/components/CheckboxFieldTable"
+import CheckboxFieldTable from "@/src/app/components/CheckboxFieldTable"
 import { FormErrorDisplay } from "@/src/app/components/FormErrorDisplay"
 import { AdminInviteSchema, AdminInviteFormValues } from "../validations"
 import revokeAdminInvites from "../mutations/revokeAdminInvites"

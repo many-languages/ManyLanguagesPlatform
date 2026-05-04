@@ -1,6 +1,4 @@
-import StudySummaryCard, {
-  RESEARCHER_STUDY_SUMMARY_LINKS,
-} from "@/src/app/components/StudySummaryCard"
+import StudySummaryCard, { RESEARCHER_STUDY_SUMMARY_LINKS } from "@/src/features/studies"
 import type { ResearcherStudyCounts } from "../../queries/getResearcherStudyCounts"
 
 interface ResearcherSummaryCardProps {

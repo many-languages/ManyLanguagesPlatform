@@ -1,6 +1,18 @@
-/** Public barrel for `features/studies` — extended in later phases (see docs/refactor/studies-feature-migration.md). */
+/**
+ * Public barrel for `@/src/features/studies` — see `docs/refactor/studies-feature-migration.md` §6.7.
+ * Server actions / RPC resolvers are not re-exported here (ADR-003).
+ */
 
-export type { StudySummaryCounts } from "./domain/studySummaryCounts"
+export type {
+  AdminStudyWithLatestUpload,
+  ParticipantStudyView,
+  SetupStepFlags,
+  StudySummaryCounts,
+  StudyView,
+  StudyWithLatestUpload,
+  StudyWithMinimalRelations,
+  StudyWithRelations,
+} from "./types"
 export { getStudySummaryCounts } from "./domain/studySummaryCounts"
 export {
   studyHasParticipantResponses,
@@ -36,7 +48,6 @@ export { observationsToLongCsv } from "./domain/variables/utils/observationsLong
 export { getStudyVariablesRsc } from "./queries/getStudyVariables"
 
 /** Setup wizard — pure domain + in-memory caches (Phase 4). */
-export type { StudyWithMinimalRelations, SetupStepFlags } from "./domain/setup/setupStatus"
 export {
   isSetupCompleteFromFlags,
   isSetupComplete,
@@ -73,8 +84,51 @@ export {
 /** Server-side access helpers (Phase 6). */
 export { verifyResearcherStudyAccess } from "./server/verifyResearcherStudyAccess"
 
-/** Study view domain types (Phase 7 pre-work). */
-export type { StudyView } from "./domain/studyView"
+/** Study views — parsers + enums (minimal relations come from `./types`). */
 export { STUDY_VIEWS, parseStudyView } from "./domain/studyView"
-export type { ParticipantStudyView } from "./domain/participantStudyView"
 export { PARTICIPANT_STUDY_VIEWS, parseParticipantStudyView } from "./domain/participantStudyView"
+
+/** RSC helpers for routes & cross-feature callers (pending-approval stays in Dashboard until Phase 11). */
+export { getStudyRsc } from "./queries/getStudy"
+export { getStudiesRsc } from "./queries/getAdminStudies"
+export { getAdminStudyCounts } from "./queries/getAdminStudyCounts"
+
+/**
+ * Shared UI exports first — `ResearcherData` imports `StudyLifecycleActions` from this barrel,
+ * so those bindings must initialise before `./ui/researcher/ResearcherData` is evaluated.
+ */
+export { default as StudyHeader } from "./ui/shared/StudyHeader"
+export { default as StudyList } from "./ui/shared/StudyList"
+export { default as StudyItem } from "./ui/shared/StudyItem"
+export { default as StudiesViewTabs } from "./ui/shared/StudiesViewTabs"
+export { default as ParticipantStudiesViewTabs } from "./ui/shared/ParticipantStudiesViewTabs"
+export { default as StudyLifecycleActions } from "./ui/shared/StudyLifecycleActions"
+export type { StudyLifecycleActionsProps } from "./ui/shared/StudyLifecycleActions"
+export {
+  default as StudySummaryCard,
+  RESEARCHER_STUDY_SUMMARY_LINKS,
+  ADMIN_STUDY_SUMMARY_LINKS,
+} from "./ui/shared/StudySummaryCard"
+export type { StudySummaryLinks } from "./ui/shared/StudySummaryCard"
+
+/** UI — researcher */
+export { default as ResearcherData } from "./ui/researcher/ResearcherData"
+export { default as StudyInformationCard } from "./ui/shared/StudyInformationCard"
+export { default as StudyStatusControl } from "./ui/researcher/StudyStatusControl"
+export { default as StudySummary } from "./ui/researcher/StudySummary"
+export { default as ResultsCard } from "./ui/researcher/ResultsCard"
+export { default as ResultsCardWrapper } from "./ui/researcher/ResultsCardWrapper"
+export { default as CreateStudyButton } from "./ui/researcher/CreateStudyButton"
+export { default as SetupProgressCard } from "./ui/researcher/setup/SetupProgressCard"
+
+/** UI — participant */
+export { default as ParticipantData } from "./ui/participant/ParticipantData"
+export { default as JoinStudyButton } from "./ui/participant/JoinStudyButton"
+
+/** UI — admin */
+export { default as AdminStudyManagementCard } from "./ui/admin/AdminStudyManagementCard"
+
+/** Skeletons */
+export { default as StudiesSkeleton } from "./ui/shared/StudiesSkeleton"
+export { default as StudySkeleton } from "./ui/shared/StudySkeleton"
+export { default as StudyFormSkeleton } from "./ui/shared/StudyFormSkeleton"

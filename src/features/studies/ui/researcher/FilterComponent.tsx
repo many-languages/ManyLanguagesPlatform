@@ -5,7 +5,7 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 import Modal from "@/src/app/components/Modal"
-import CheckboxFieldTable from "@/src/app/(app)/studies/components/CheckboxFieldTable"
+import CheckboxFieldTable from "@/src/app/components/CheckboxFieldTable"
 import { FormProvider } from "react-hook-form"
 
 interface FilterComponentProps {

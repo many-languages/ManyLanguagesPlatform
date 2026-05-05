@@ -1,5 +1,4 @@
-import StudyListSkeleton from "@/src/features/studies/ui/shared/StudyListSkeleton"
-import PaginationControlsSkeleton from "@/src/features/studies/ui/shared/PaginationControlsSkeleton"
+import { StudyListSkeleton, PaginationControlsSkeleton } from "@/src/features/studies"
 
 export default function ExploreSkeleton() {
   return (

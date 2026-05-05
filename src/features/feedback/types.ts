@@ -112,6 +112,22 @@ export interface FeedbackVariable {
   variableKey?: string
 }
 
+export interface FeedbackPreviewContextClientDto {
+  pilotResultCount: number
+  primaryPilotResultId: number | null
+  pilotResultIds: number[]
+  previewContextVersion: string
+  hasPilotData: boolean
+  variables: FeedbackVariable[]
+  hiddenVariables: string[]
+}
+
+export interface FeedbackTemplateValidation {
+  status: "VALID" | "INVALID" | "NO_TEMPLATE" | "NO_EXTRACTION"
+  missingVariableNames: string[]
+  extraVariableNames: string[]
+}
+
 export interface FeedbackFormEditorProps {
   /** Server-stored preview snapshot key (in-memory; Redis later). Required when preview runs. */
   feedbackPreviewContextKey: string

@@ -1,16 +1,13 @@
 import db, { Prisma } from "db"
 import { extractRequiredVariableNames } from "@/src/features/feedback/domain/requiredVariableNames"
+import type { FeedbackTemplateValidation } from "@/src/features/feedback/types"
 
 type DbClient = Prisma.TransactionClient | typeof db
 
 export async function computeFeedbackTemplateValidation(
   studyId: number,
   client: DbClient = db
-): Promise<{
-  status: "VALID" | "INVALID" | "NO_TEMPLATE" | "NO_EXTRACTION"
-  missingVariableNames: string[]
-  extraVariableNames: string[]
-}> {
+): Promise<FeedbackTemplateValidation> {
   const latestUpload = await client.jatosStudyUpload.findFirst({
     where: { studyId },
     orderBy: { createdAt: "desc" },

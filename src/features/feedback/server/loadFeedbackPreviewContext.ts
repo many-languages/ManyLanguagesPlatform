@@ -6,17 +6,7 @@ import {
   putFeedbackPreviewContext,
   type StoredFeedbackPreviewContext,
 } from "@/src/features/feedback/domain/previewContextStore"
-import type { FeedbackVariable } from "@/src/features/feedback/types"
-
-export type FeedbackPreviewContextClientDto = {
-  pilotResultCount: number
-  primaryPilotResultId: number | null
-  pilotResultIds: number[]
-  previewContextVersion: string
-  hasPilotData: boolean
-  variables: FeedbackVariable[]
-  hiddenVariables: string[]
-}
+import type { FeedbackPreviewContextClientDto } from "@/src/features/feedback/types"
 
 export type LoadFeedbackPreviewContextResult =
   | { kind: "ok"; contextKey: string; client: FeedbackPreviewContextClientDto }

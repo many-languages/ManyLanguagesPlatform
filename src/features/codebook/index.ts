@@ -1,5 +1,9 @@
 export { default as CodebookContent } from "./ui/CodebookContent"
-export type { CodebookContentProps } from "./ui/CodebookContent"
+export type {
+  CodebookContentProps,
+  CodebookContentRef,
+  CodebookStepState,
+} from "./ui/CodebookContent"
 
 export {
   getCodebookDataRsc,

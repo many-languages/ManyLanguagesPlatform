@@ -6,26 +6,22 @@ import { useRef, useState } from "react"
 
 import { toast } from "react-hot-toast"
 import StepNavigation from "../StepNavigation"
-import { Alert } from "@/src/app/components/Alert"
 import {
-  FeedbackFormEditorRef,
+  FeedbackStepEditor,
+  type FeedbackPreviewContextClientDto,
+  type FeedbackStepEditorState,
+  type FeedbackFormEditorRef,
   type FeedbackTemplateEditorInitial,
-} from "@/src/features/feedback/types"
-import { FeedbackFormEditor } from "@/src/features/feedback"
+  type FeedbackTemplateValidation,
+} from "@/src/features/feedback"
 import { useNotificationMenuContext } from "@/src/features/notifications"
-import type { FeedbackPreviewContextClientDto } from "@/src/features/feedback/server/loadFeedbackPreviewContext"
-
-import { StudyWithRelations } from "@/src/features/studies/queries/getStudy"
 import { studyPath } from "../../../../domain/setup/setupRoutes"
-import { getSetupCompletionAction } from "@/src/features/studies/actions/getSetupCompletionAction"
+import { getSetupCompletionAction } from "../../../../actions/getSetupCompletionAction"
+import type { StudyWithRelations } from "../../../../types"
 
 interface Step6ContentProps {
   initialFeedbackTemplate?: FeedbackTemplateEditorInitial | null
-  validation: {
-    status: "VALID" | "INVALID" | "NO_TEMPLATE" | "NO_EXTRACTION"
-    missingVariableNames: string[]
-    extraVariableNames: string[]
-  }
+  validation: FeedbackTemplateValidation
   approvedExtractionId: number | null
   approvedExtractionApprovedAt: Date | string | null
   /** UI-safe metadata for pilot selection; no enriched JATOS payloads. */
@@ -48,25 +44,10 @@ export default function Step6Content({
   const studyId = study.id
   const feedbackEditorRef = useRef<FeedbackFormEditorRef>(null)
   const { refetch: refetchNotifications } = useNotificationMenuContext()
-  const [isTemplateValid, setIsTemplateValid] = useState(true)
-
-  const { missingVariableNames, extraVariableNames } = validation
-  const validationStatus = validation.status
-  const templateUpdatedAt = initialFeedbackTemplate?.updatedAt
-    ? new Date(initialFeedbackTemplate.updatedAt)
-    : null
-  const approvedExtractionAt = approvedExtractionApprovedAt
-    ? new Date(approvedExtractionApprovedAt)
-    : null
-  const showInvalidKeys =
-    validationStatus === "INVALID" &&
-    (missingVariableNames.length > 0 || extraVariableNames.length > 0)
-  const showSoftWarning =
-    validationStatus === "VALID" &&
-    approvedExtractionId !== null &&
-    approvedExtractionAt !== null &&
-    templateUpdatedAt !== null &&
-    templateUpdatedAt < approvedExtractionAt
+  const [stepState, setStepState] = useState<FeedbackStepEditorState>({
+    disableNext: !previewClient.hasPilotData,
+    nextTooltip: previewClient.hasPilotData ? undefined : "No pilot data found.",
+  })
 
   const handleFinish = async () => {
     let setupCompleteFromServer: boolean
@@ -103,54 +84,22 @@ export default function Step6Content({
     }
   }
 
-  if (!previewClient.hasPilotData) {
-    return <Alert variant="warning">No pilot data found.</Alert>
-  }
-
   return (
     <>
-      {showInvalidKeys && (
-        <Alert variant="warning">
-          <div className="space-y-2">
-            <p>
-              This feedback template no longer matches the latest extraction. Please review and save
-              the template again to complete Step 6.
-            </p>
-            {missingVariableNames.length > 0 && (
-              <div>
-                <div className="font-semibold">Missing variables</div>
-                <div className="text-sm">{missingVariableNames.join(", ")}</div>
-              </div>
-            )}
-            {extraVariableNames.length > 0 && (
-              <div>
-                <div className="font-semibold">Additional variables</div>
-                <div className="text-sm">{extraVariableNames.join(", ")}</div>
-              </div>
-            )}
-          </div>
-        </Alert>
-      )}
-      {showSoftWarning && (
-        <Alert variant="info">
-          A new extraction was approved for this study version. The variables match your existing
-          template, but we recommend reviewing it again.
-        </Alert>
-      )}
-      <FeedbackFormEditor
+      <FeedbackStepEditor
         ref={feedbackEditorRef}
-        initialTemplate={initialFeedbackTemplate}
         studyId={studyId}
+        initialFeedbackTemplate={initialFeedbackTemplate}
+        validation={validation}
+        approvedExtractionId={approvedExtractionId}
+        approvedExtractionApprovedAt={approvedExtractionApprovedAt}
+        previewClient={previewClient}
         feedbackPreviewContextKey={feedbackPreviewContextKey}
-        withinStudyResultId={previewClient.primaryPilotResultId ?? undefined}
-        pilotResultCount={previewClient.pilotResultCount}
-        variables={previewClient.variables}
         onTemplateSaved={() => {
           // Refresh to get updated study data (step6Completed will be updated)
           router.refresh()
         }}
-        onValidationChange={setIsTemplateValid}
-        hiddenVariables={previewClient.hiddenVariables}
+        onStepStateChange={setStepState}
       />
       <StepNavigation
         studyId={studyId}
@@ -158,8 +107,8 @@ export default function Step6Content({
         next="study"
         nextLabel="Finish Setup"
         onNext={handleFinish}
-        disableNext={!isTemplateValid}
-        nextTooltip="Please fix validation errors in the feedback template before finishing."
+        disableNext={stepState.disableNext}
+        nextTooltip={stepState.nextTooltip}
       />
     </>
   )

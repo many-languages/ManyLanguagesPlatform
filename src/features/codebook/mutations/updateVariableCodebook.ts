@@ -3,7 +3,7 @@ import db from "db"
 import { z } from "zod"
 import { withStudyWriteAccess } from "@/src/features/studies/services"
 import { computeCodebookValidation } from "../domain/computeCodebookValidation"
-import { getPersonalDataViolationsForPersistedTemplate } from "@/src/features/feedback/server/feedbackTemplatePersonalDataViolations"
+import { getPersonalDataViolationsForPersistedTemplate } from "@/src/features/feedback"
 
 const UpdateVariableCodebook = z.object({
   studyId: z.number(),

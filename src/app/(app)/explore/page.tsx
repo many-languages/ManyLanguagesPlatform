@@ -1,5 +1,4 @@
-import StudyList from "@/src/features/studies/ui/shared/StudyList"
-import { getStudies } from "@/src/features/studies/queries/getStudies"
+import { StudyList, getStudies } from "@/src/features/studies"
 import PaginationControls from "@/src/app/components/PaginationControls"
 import { getBlitzContext } from "../../blitz-server"
 import { redirect } from "next/navigation"

@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest"
 import { assertStudyNotArchived } from "./studyLifecycle"
-import { ARCHIVED_STUDY_CANNOT_EDIT_MESSAGE } from "./studyEditability"
+import { ARCHIVED_STUDY_CANNOT_EDIT_MESSAGE } from "../domain/studyEditability"
 import db from "db"
 
 vi.mock("db", () => ({

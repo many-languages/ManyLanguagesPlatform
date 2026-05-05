@@ -5,7 +5,7 @@ import db, { type UserRole } from "db"
 import { z } from "zod"
 import { getAuthorizedSession } from "@/src/app/(auth)/utils/getAuthorizedSession"
 import { deleteStudyAsAdmin } from "@/src/lib/jatos/admin/deleteStudyWorkflow"
-import { studyHasParticipantResponsesSafe } from "../domain/participantResponses"
+import { studyHasParticipantResponsesSafe } from "../server/participantResponses"
 import { isSuperAdmin } from "@/src/lib/auth/roles"
 
 const DeleteStudySchema = z.object({

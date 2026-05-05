@@ -5,7 +5,7 @@
 export type { StudyWithRelations } from "./queries/getStudy"
 export type { StudyWithLatestUpload } from "./queries/getStudies"
 export type { AdminStudyWithLatestUpload } from "./queries/getAdminStudies"
-export type { StudySummaryCounts } from "./domain/studySummaryCounts"
+export type { StudySummaryCounts } from "./server/studySummaryCounts"
 export type { StudyView } from "./domain/studyView"
 export type { ParticipantStudyView } from "./domain/participantStudyView"
 export type { StudyWithMinimalRelations, SetupStepFlags } from "./domain/setup/setupStatus"

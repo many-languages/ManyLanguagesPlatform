@@ -1,18 +1,13 @@
-import { Study, FeedbackTemplate } from "@prisma/client"
-import type { StudyWithRelations } from "@/src/features/studies/queries/getStudy"
 import { deriveStep1Completed } from "./deriveStep1Completed"
 import { STEP_KEYS, STEP_NAMES, TOTAL_STEPS } from "./constants"
 import { studyPath, studySetupStepPath } from "./setupRoutes"
 
-// More flexible interface for studies with minimal researcher data
-// Using Partial<Study> allows us to pass lightweight objects from optimized queries
-export interface StudyWithMinimalRelations extends Partial<Study> {
-  // We need at least these for deriving step 1
-  title?: string
-  description?: string
-
-  researchers?: { userId?: number; role?: string; id?: number }[]
-  FeedbackTemplate?: FeedbackTemplate | { id: number } | null
+export interface StudyWithMinimalRelations {
+  id?: number
+  archived?: boolean | null
+  title?: string | null
+  description?: string | null
+  FeedbackTemplate?: { id: number } | null
   latestJatosStudyUpload?: {
     step1Completed?: boolean
     step2Completed?: boolean
@@ -37,7 +32,7 @@ export type SetupStepFlags = {
   step6Completed: boolean
 }
 
-function resolveStepFlags(study: StudyWithRelations | StudyWithMinimalRelations): SetupStepFlags {
+function resolveStepFlags(study: StudyWithMinimalRelations): SetupStepFlags {
   const upload = study.latestJatosStudyUpload
   const flags = {} as SetupStepFlags
 
@@ -74,11 +69,7 @@ function getCompletedStepsFromFlags(steps: SetupStepFlags): number[] {
   return completed
 }
 
-/**
- * Determines if a study's setup is complete by checking all required steps
- * Uses DB fields as source of truth
- */
-export function isSetupComplete(study: StudyWithRelations | StudyWithMinimalRelations): boolean {
+export function isSetupComplete(study: StudyWithMinimalRelations): boolean {
   const steps = resolveStepFlags(study)
   return isSetupCompleteFromFlags(steps)
 }
@@ -87,9 +78,7 @@ export function isSetupComplete(study: StudyWithRelations | StudyWithMinimalRela
  * Returns the first incomplete step number, or null if all complete
  * Uses DB fields as source of truth
  */
-export function getIncompleteStep(
-  study: StudyWithRelations | StudyWithMinimalRelations
-): number | null {
+export function getIncompleteStep(study: StudyWithMinimalRelations): number | null {
   const steps = resolveStepFlags(study)
   return getIncompleteStepFromFlags(steps)
 }
@@ -98,7 +87,7 @@ export function getIncompleteStep(
  * Returns an array of completed step numbers (1-6)
  * Uses DB fields as source of truth
  */
-export function getCompletedSteps(study: StudyWithRelations | StudyWithMinimalRelations): number[] {
+export function getCompletedSteps(study: StudyWithMinimalRelations): number[] {
   const steps = resolveStepFlags(study)
   return getCompletedStepsFromFlags(steps)
 }
@@ -107,7 +96,7 @@ export function getCompletedSteps(study: StudyWithRelations | StudyWithMinimalRe
  * Returns a human-readable setup status label for display (e.g. in admin tables)
  * Uses DB fields as source of truth
  */
-export function getSetupStatusLabel(study: StudyWithRelations | StudyWithMinimalRelations): string {
+export function getSetupStatusLabel(study: StudyWithMinimalRelations): string {
   const steps = resolveStepFlags(study)
   const isComplete = isSetupCompleteFromFlags(steps)
   const completedSteps = getCompletedStepsFromFlags(steps)
@@ -123,7 +112,7 @@ export function getSetupStatusLabel(study: StudyWithRelations | StudyWithMinimal
  * Returns setup progress information for display
  * Uses DB fields as source of truth
  */
-export function getSetupProgress(study: StudyWithRelations | StudyWithMinimalRelations) {
+export function getSetupProgress(study: StudyWithMinimalRelations) {
   const steps = resolveStepFlags(study)
   const incompleteStep = getIncompleteStepFromFlags(steps)
   const isComplete = isSetupCompleteFromFlags(steps)
@@ -145,7 +134,7 @@ export function getSetupProgress(study: StudyWithRelations | StudyWithMinimalRel
  * revisited after upstream work (e.g. a new JATOS study or revised extraction) without treating
  * setup as a simple linear gap at step 6 alone.
  */
-export function step6NeedsRevision(study: StudyWithRelations | StudyWithMinimalRelations): boolean {
+export function step6NeedsRevision(study: StudyWithMinimalRelations): boolean {
   const hasFeedbackTemplate = Boolean(study.FeedbackTemplate)
   const upload = study.latestJatosStudyUpload
   const step3Completed = upload?.step3Completed ?? false
@@ -158,10 +147,7 @@ export function step6NeedsRevision(study: StudyWithRelations | StudyWithMinimalR
  * Returns the next step URL for continuing setup
  * Uses DB fields as source of truth
  */
-export function getNextSetupStepUrl(
-  studyId: number,
-  study: StudyWithRelations | StudyWithMinimalRelations
-): string {
+export function getNextSetupStepUrl(studyId: number, study: StudyWithMinimalRelations): string {
   const incompleteStep = getIncompleteStep(study)
   if (!incompleteStep) {
     return studyPath(studyId) // All complete, go to study page
@@ -180,7 +166,7 @@ export function getPostStepNavigationUrl(
   studyId: number,
   currentStep: number,
   returnTo: "study" | "next" | number = "next",
-  study?: StudyWithRelations | StudyWithMinimalRelations
+  study?: StudyWithMinimalRelations
 ): string {
   if (returnTo === "study") {
     return studyPath(studyId)

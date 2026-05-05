@@ -1,6 +1,6 @@
 import { resolver } from "@blitzjs/rpc"
 import db from "db"
-import { assertStudyNotArchived } from "../domain/studyLifecycle"
+import { assertStudyNotArchived } from "../server/studyLifecycle"
 import { UpdateStudy, UpdateStudyInput } from "@/src/features/studies/validations"
 
 export async function updateStudy(

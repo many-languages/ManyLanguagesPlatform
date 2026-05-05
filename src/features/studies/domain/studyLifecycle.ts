@@ -1,48 +1,28 @@
-import db from "db"
-
 import {
   ARCHIVED_STUDY_CANNOT_EDIT_MESSAGE,
   studyArchivedBlocksSetupWrite,
 } from "./studyEditability"
-import { studyHasParticipantResponses } from "./participantResponses"
 
-export async function assertStudyArchiveAllowed(studyId: number): Promise<void> {
-  const has = await studyHasParticipantResponses(studyId)
-  if (!has) {
-    throw new Error(
-      "This study cannot be archived because it has no participant responses. Delete the study instead if you no longer need it."
-    )
+export const STUDY_ARCHIVE_REQUIRES_RESPONSES_MESSAGE =
+  "This study cannot be archived because it has no participant responses. Delete the study instead if you no longer need it."
+
+export const STUDY_DELETE_BLOCKED_BY_RESPONSES_MESSAGE =
+  "This study cannot be deleted because it has participant responses. Archive the study instead."
+
+export function assertStudyArchiveAllowedFromResponses(hasParticipantResponses: boolean): void {
+  if (!hasParticipantResponses) {
+    throw new Error(STUDY_ARCHIVE_REQUIRES_RESPONSES_MESSAGE)
   }
 }
 
-export async function assertStudyDeleteAllowedByResponses(studyId: number): Promise<void> {
-  const has = await studyHasParticipantResponses(studyId)
-  if (has) {
-    throw new Error(
-      "This study cannot be deleted because it has participant responses. Archive the study instead."
-    )
+export function assertStudyDeleteAllowedFromResponses(hasParticipantResponses: boolean): void {
+  if (hasParticipantResponses) {
+    throw new Error(STUDY_DELETE_BLOCKED_BY_RESPONSES_MESSAGE)
   }
 }
 
-export async function assertStudyNotArchived(studyId: number): Promise<void>
-export async function assertStudyNotArchived(study: { archived?: boolean | null }): Promise<void>
-export async function assertStudyNotArchived(
-  studyOrId: number | { archived?: boolean | null }
-): Promise<void> {
-  if (typeof studyOrId === "number") {
-    const study = await db.study.findUnique({
-      where: { id: studyOrId },
-      select: { archived: true },
-    })
-    if (!study) {
-      throw new Error("Study not found")
-    }
-    if (studyArchivedBlocksSetupWrite(study)) {
-      throw new Error(ARCHIVED_STUDY_CANNOT_EDIT_MESSAGE)
-    }
-    return
-  }
-  if (studyArchivedBlocksSetupWrite(studyOrId)) {
+export function assertStudyNotArchivedState(study: { archived?: boolean | null }): void {
+  if (studyArchivedBlocksSetupWrite(study)) {
     throw new Error(ARCHIVED_STUDY_CANNOT_EDIT_MESSAGE)
   }
 }

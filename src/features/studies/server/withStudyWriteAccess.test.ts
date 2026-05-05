@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest"
 
 const assertStudyNotArchived = vi.hoisted(() => vi.fn().mockResolvedValue(undefined))
 
-vi.mock("@/src/features/studies", () => ({
+vi.mock("./studyLifecycle", () => ({
   assertStudyNotArchived,
 }))
 

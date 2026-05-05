@@ -14,17 +14,19 @@ export type {
   StudyWithMinimalRelations,
   StudyWithRelations,
 } from "./types"
-export { getStudySummaryCounts } from "./domain/studySummaryCounts"
+export { getStudySummaryCounts } from "./server/studySummaryCounts"
 export {
   studyHasParticipantResponses,
   studyHasParticipantResponsesSafe,
   assertStudyArchiveAllowed,
   assertStudyDeleteAllowedByResponses,
   assertStudyNotArchived,
+} from "./server"
+export {
   ARCHIVED_STUDY_CANNOT_EDIT_MESSAGE,
   canEditStudySetup,
   studyArchivedBlocksSetupWrite,
-} from "./domain"
+} from "./domain/studyEditability"
 
 /** Study variables — domain types + extraction (Phase 3). */
 export type {

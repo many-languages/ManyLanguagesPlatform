@@ -1,4 +1,4 @@
-import { useCurrentUser } from "@/src/app/users/hooks/useCurrentUser"
+import { useCurrentUser } from "@/src/features/auth/hooks/useCurrentUser"
 
 interface DateFormatProps {
   date?: Date | null

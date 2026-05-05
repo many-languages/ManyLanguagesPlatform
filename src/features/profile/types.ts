@@ -1,4 +1,4 @@
-import type { CurrentUserFromSession } from "@/src/app/users/queries/getCurrentUser"
+import type { CurrentUserFromSession } from "@/src/features/auth/queries/getCurrentUser"
 
 /** Props for profile UI — same shape as `getCurrentUserRsc` / `getCurrentUser` (Prisma-inferred). */
 export type ProfileContentUser = CurrentUserFromSession

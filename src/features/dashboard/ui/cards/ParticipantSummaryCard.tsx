@@ -6,7 +6,7 @@ import {
   BanknotesIcon,
   MagnifyingGlassIcon,
 } from "@heroicons/react/24/outline"
-import Card from "@/src/app/components/Card"
+import Card from "@/src/components/ui/Card"
 import type { ParticipantStudyCounts } from "../../queries/getParticipantStudyCounts"
 
 interface StatItemProps {

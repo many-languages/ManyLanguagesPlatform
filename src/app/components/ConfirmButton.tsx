@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { AsyncButton } from "./AsyncButton"
+import { AsyncButton } from "@/src/components/ui/AsyncButton"
 
 /**
  * ConfirmButton Component

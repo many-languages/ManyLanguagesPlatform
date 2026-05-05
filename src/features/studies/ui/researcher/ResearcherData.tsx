@@ -8,7 +8,7 @@ import { getStudyParticipantsRsc } from "@/src/features/studies/queries/getStudy
 import StudySummary from "./StudySummary"
 import ParticipantManagementCard from "./ParticipantManagementCard"
 import ResultsCardWrapper from "./ResultsCardWrapper"
-import { Alert } from "@/src/app/components/Alert"
+import { Alert } from "@/src/components/ui/Alert"
 import { isSetupComplete } from "../../domain/setup/setupStatus"
 import { studySetupStepPath } from "../../domain/setup/setupRoutes"
 import type { StudyWithRelations } from "../../types"

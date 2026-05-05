@@ -15,7 +15,7 @@ import updateSetupCompletion from "@/src/features/studies/mutations/updateSetupC
 import { getBatchIdAction } from "@/src/features/studies/actions/getBatchId"
 import { uploadStudyFile } from "@/src/lib/jatos/browser/uploadStudyFile"
 import { extractJatosStudyUuidFromJzip } from "@/src/lib/jatos/parsers/extractJatosStudyUuid"
-import { Alert } from "@/src/app/components/Alert"
+import { Alert } from "@/src/components/ui/Alert"
 import { FORM_ERROR } from "@/src/app/components/Form"
 import { createResearcherPilotUrlAndSaveAction } from "@/src/features/studies/actions/createResearcherPilotUrl"
 

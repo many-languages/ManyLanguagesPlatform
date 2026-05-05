@@ -1,7 +1,7 @@
 "use client"
 
 import { ArrowPathIcon } from "@heroicons/react/24/outline"
-import { AsyncButton } from "@/src/app/components/AsyncButton"
+import { AsyncButton } from "@/src/components/ui/AsyncButton"
 
 interface RefreshFeedbackButtonProps {
   onRefresh?: () => Promise<void> | void

@@ -1,5 +1,5 @@
 import Link from "next/link"
-import Card from "@/src/app/components/Card"
+import Card from "@/src/components/ui/Card"
 import type { DeadlineStudy, UpcomingDeadlines } from "../../queries/getUpcomingDeadlines"
 
 /** Urgency: ≤3 days = error (urgent), ≤7 days = warning (soon), ≤14 days = info (upcoming) */

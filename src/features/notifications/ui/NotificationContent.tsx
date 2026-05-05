@@ -3,7 +3,7 @@
 import { InformationCircleIcon } from "@heroicons/react/24/outline"
 import { FormProvider, useForm } from "react-hook-form"
 
-import Card from "@/src/app/components/Card"
+import Card from "@/src/components/ui/Card"
 import { NotificationTable } from "./NotificationTable"
 import { NotificationsBulkActions } from "./NotificationsBulkActions"
 import { DeleteNotificationButton } from "./DeleteNotificationButton"

@@ -15,7 +15,7 @@ import React from "react"
 
 import { ChevronUpIcon, ChevronDownIcon, ChevronUpDownIcon } from "@heroicons/react/24/outline"
 import Filter from "./Filter"
-import { EmptyState } from "./EmptyState"
+import { EmptyState } from "@/src/components/ui/EmptyState"
 
 type TableProps<TData> = {
   columns: ColumnDef<TData, any>[]

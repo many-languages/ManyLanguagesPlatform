@@ -1,6 +1,6 @@
 "use client"
 
-import Card from "@/src/app/components/Card"
+import Card from "@/src/components/ui/Card"
 
 export default function Step4Instructions() {
   return (

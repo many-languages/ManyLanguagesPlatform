@@ -1,7 +1,7 @@
 "use client"
 
 import { NavigationButton } from "@/src/app/components/NavigationButton"
-import { AsyncButton } from "@/src/app/components/AsyncButton"
+import { AsyncButton } from "@/src/components/ui/AsyncButton"
 import type { Route } from "next"
 
 import { studyPath, studySetupSegmentPath } from "../../../domain/setup/setupRoutes"

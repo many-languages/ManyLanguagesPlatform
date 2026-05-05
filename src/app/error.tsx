@@ -1,6 +1,6 @@
 "use client" // Error components must be Client components
 import React, { useEffect } from "react"
-import { Alert } from "./components/Alert"
+import { Alert } from "@/src/components/ui/Alert"
 
 export default function Error({ error, reset }: { error: Error; reset: () => void }) {
   useEffect(() => {

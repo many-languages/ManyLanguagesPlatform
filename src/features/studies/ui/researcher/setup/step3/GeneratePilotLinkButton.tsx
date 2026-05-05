@@ -3,7 +3,7 @@
 import type { ReactNode } from "react"
 import toast from "react-hot-toast"
 import { createResearcherPilotUrlAndSaveAction } from "@/src/features/studies/actions/createResearcherPilotUrl"
-import { AsyncButton } from "@/src/app/components/AsyncButton"
+import { AsyncButton } from "@/src/components/ui/AsyncButton"
 
 interface GeneratePilotLinkButtonProps {
   studyId: number // Added

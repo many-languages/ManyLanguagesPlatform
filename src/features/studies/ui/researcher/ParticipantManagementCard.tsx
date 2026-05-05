@@ -3,7 +3,7 @@
 import React, { useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
 import type { JatosMetadata } from "@/src/types/jatos"
-import Card from "@/src/app/components/Card"
+import Card from "@/src/components/ui/Card"
 import CheckboxFieldTable from "@/src/app/components/CheckboxFieldTable"
 import { Form } from "@/src/app/components/Form"
 import { FormErrorDisplay } from "@/src/app/components/FormErrorDisplay"

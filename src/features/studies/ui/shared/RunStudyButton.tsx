@@ -1,6 +1,6 @@
 "use client"
 
-import { AsyncButton } from "@/src/app/components/AsyncButton"
+import { AsyncButton } from "@/src/components/ui/AsyncButton"
 
 interface RunStudyButtonProps {
   runUrl: string | null

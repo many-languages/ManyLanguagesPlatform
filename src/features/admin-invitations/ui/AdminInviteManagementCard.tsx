@@ -1,7 +1,7 @@
 "use client"
 
 import { useMemo, useState } from "react"
-import Card from "@/src/app/components/Card"
+import Card from "@/src/components/ui/Card"
 import Form from "@/src/app/components/Form"
 import CheckboxFieldTable from "@/src/app/components/CheckboxFieldTable"
 import { FormErrorDisplay } from "@/src/app/components/FormErrorDisplay"
@@ -12,7 +12,7 @@ import { useFormContext } from "react-hook-form"
 import { useRouter } from "next/navigation"
 import { useMutation } from "@blitzjs/rpc"
 import toast from "react-hot-toast"
-import StatusBadge from "@/src/app/components/StatusBadge"
+import StatusBadge from "@/src/components/ui/StatusBadge"
 import { getInviteStatusProps } from "@/src/lib/utils/statusBadgePresets"
 
 type InviteLite = {

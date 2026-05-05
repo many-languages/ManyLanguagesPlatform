@@ -1,15 +1,15 @@
 "use client"
 
 import { useMemo, type MouseEvent } from "react"
-import Card from "@/src/app/components/Card"
+import Card from "@/src/components/ui/Card"
 import Form from "@/src/app/components/Form"
 import CheckboxFieldTable from "@/src/app/components/CheckboxFieldTable"
 import { FormErrorDisplay } from "@/src/app/components/FormErrorDisplay"
 import { AdminStudySchema } from "../../validations"
 import { Codebook, CodebookEntry, FeedbackTemplate } from "db"
-import Modal from "@/src/app/components/Modal"
+import Modal from "@/src/components/ui/Modal"
 import ViewDetailsButton from "@/src/app/components/ViewDetailsButton"
-import StatusBadge, { type StatusBadgeVariant } from "@/src/app/components/StatusBadge"
+import StatusBadge, { type StatusBadgeVariant } from "@/src/components/ui/StatusBadge"
 import {
   getAdminApprovalVariant,
   getSetupStatusProps,

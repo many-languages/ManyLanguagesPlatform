@@ -1,4 +1,4 @@
-import { Alert } from "@/src/app/components/Alert"
+import { Alert } from "@/src/components/ui/Alert"
 import ResearcherFeedback from "./ResearcherFeedback"
 import { loadResearcherFeedbackViewModel } from "@/src/features/feedback/server/loadResearcherFeedback"
 import {

@@ -6,7 +6,7 @@ import toast from "react-hot-toast"
 import updateStudyStatus from "@/src/features/studies/mutations/updateStudyStatus"
 import { isSetupComplete, type StudyWithMinimalRelations } from "../../domain/setup/setupStatus"
 import type { StudyWithRelations } from "../../types"
-import StatusBadge from "@/src/app/components/StatusBadge"
+import StatusBadge from "@/src/components/ui/StatusBadge"
 import { getAdminApprovalProps } from "@/src/lib/utils/statusBadgePresets"
 
 interface StudyStatusControlProps {

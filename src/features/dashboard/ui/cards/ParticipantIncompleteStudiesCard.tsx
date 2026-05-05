@@ -1,5 +1,5 @@
 import Link from "next/link"
-import Card from "@/src/app/components/Card"
+import Card from "@/src/components/ui/Card"
 import type {
   ParticipantIncompleteStudy,
   ParticipantIncompleteStudies,

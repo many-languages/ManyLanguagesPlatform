@@ -71,7 +71,6 @@ const Card = ({
     )
   }
 
-  // Regular card structure
   return (
     <div
       className={clsx(

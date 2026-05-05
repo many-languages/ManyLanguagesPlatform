@@ -2,7 +2,7 @@
 
 import type { EnrichedJatosStudyResult } from "@/src/types/jatos"
 import type { SelectedPath } from "@/src/features/studies/domain/inspector/types"
-import { Alert } from "@/src/app/components/Alert"
+import { Alert } from "@/src/components/ui/Alert"
 import type { ComponentStats } from "@/src/features/studies/domain/inspector/componentStats"
 import ComponentDataViewer from "./ComponentDataViewer"
 import VariableBadge from "../structureAnalysis/VariableBadge"

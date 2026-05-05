@@ -3,7 +3,7 @@
 import { ArrowDownTrayIcon } from "@heroicons/react/24/outline"
 import toast from "react-hot-toast"
 import { downloadResultsAction } from "@/src/features/studies/actions/results"
-import { AsyncButton } from "@/src/app/components/AsyncButton"
+import { AsyncButton } from "@/src/components/ui/AsyncButton"
 
 interface DownloadResultsButtonProps {
   studyId: number

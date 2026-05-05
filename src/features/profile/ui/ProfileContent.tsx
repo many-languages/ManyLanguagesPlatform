@@ -1,6 +1,6 @@
 "use client"
 
-import Card from "@/src/app/components/Card"
+import Card from "@/src/components/ui/Card"
 import Link from "next/link"
 import type { Route } from "next"
 import type { ProfileContentUser, ProfilePaths } from "../types"

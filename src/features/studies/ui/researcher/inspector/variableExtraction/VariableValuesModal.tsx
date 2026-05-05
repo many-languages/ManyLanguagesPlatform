@@ -1,7 +1,7 @@
 "use client"
 
 import { useMemo } from "react"
-import Modal from "@/src/app/components/Modal"
+import Modal from "@/src/components/ui/Modal"
 import JsonView from "@/src/app/components/JsonView"
 import type { ExtractedVariable, ExtractionObservation } from "../../../../domain/variables/types"
 import type { ExtractionIndexStore } from "../../../../domain/variables/utils/extractionIndexStore"

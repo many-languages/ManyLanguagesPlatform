@@ -3,7 +3,7 @@ export const metadata = {
 }
 
 import { redirect } from "next/navigation"
-import Card from "@/src/app/components/Card"
+import Card from "@/src/components/ui/Card"
 import {
   AdminInviteForm,
   AdminInviteManagementCard,

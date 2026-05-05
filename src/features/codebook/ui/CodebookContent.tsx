@@ -9,9 +9,9 @@ import updateVariableCodebook, {
   type UpdateVariableCodebookResult,
 } from "../mutations/updateVariableCodebook"
 import { CODEBOOK_SAVE_FEEDBACK_PERSONAL_DATA_HINT } from "../domain/codebookSaveMessages"
-import { Alert } from "@/src/app/components/Alert"
-import { AsyncButton } from "@/src/app/components/AsyncButton"
-import Card from "@/src/app/components/Card"
+import { Alert } from "@/src/components/ui/Alert"
+import { AsyncButton } from "@/src/components/ui/AsyncButton"
+import Card from "@/src/components/ui/Card"
 import { Textarea } from "@/src/app/components/fields"
 import {
   ARCHIVED_STUDY_CANNOT_EDIT_MESSAGE,

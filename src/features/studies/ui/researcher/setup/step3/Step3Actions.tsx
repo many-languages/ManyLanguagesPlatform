@@ -1,8 +1,8 @@
 "use client"
 
 import { ArrowPathIcon } from "@heroicons/react/24/outline"
-import { Alert } from "@/src/app/components/Alert"
-import { AsyncButton } from "@/src/app/components/AsyncButton"
+import { Alert } from "@/src/components/ui/Alert"
+import { AsyncButton } from "@/src/components/ui/AsyncButton"
 import RunStudyButton from "../../../shared/RunStudyButton"
 import GeneratePilotLinkButton from "./GeneratePilotLinkButton"
 

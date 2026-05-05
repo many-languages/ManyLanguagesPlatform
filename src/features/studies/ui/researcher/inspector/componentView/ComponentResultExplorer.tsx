@@ -1,7 +1,7 @@
 "use client"
 
 import type { EnrichedJatosStudyResult } from "@/src/types/jatos"
-import Card from "@/src/app/components/Card"
+import Card from "@/src/components/ui/Card"
 
 interface ComponentResultExplorerProps {
   enrichedResult: EnrichedJatosStudyResult

@@ -7,7 +7,7 @@ import {
   ArchiveBoxIcon,
   WrenchScrewdriverIcon,
 } from "@heroicons/react/24/outline"
-import Card from "@/src/app/components/Card"
+import Card from "@/src/components/ui/Card"
 import type { StudySummaryCounts } from "../../server/studySummaryCounts"
 
 export type StudySummaryLinks = {

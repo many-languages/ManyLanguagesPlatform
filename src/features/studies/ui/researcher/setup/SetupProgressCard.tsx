@@ -2,9 +2,9 @@
 
 import { Route } from "next"
 import { useRouter } from "next/navigation"
-import Card from "@/src/app/components/Card"
+import Card from "@/src/components/ui/Card"
 import StepIndicator from "./StepIndicator"
-import { Alert } from "@/src/app/components/Alert"
+import { Alert } from "@/src/components/ui/Alert"
 import { NavigationButton } from "@/src/app/components/NavigationButton"
 import {
   getNextSetupStepUrl,

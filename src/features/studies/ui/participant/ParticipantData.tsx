@@ -1,5 +1,5 @@
 import { getStudyParticipantRsc } from "@/src/features/studies/queries/getStudyParticipant"
-import { Alert } from "@/src/app/components/Alert"
+import { Alert } from "@/src/components/ui/Alert"
 import { isSetupComplete } from "../../domain/setup/setupStatus"
 import type { StudyWithRelations } from "../../types"
 import { ParticipantFeedbackData, checkParticipantCompletionAction } from "@/src/features/feedback"

@@ -1,6 +1,6 @@
 import Link from "next/link"
 import { SignalIcon } from "@heroicons/react/24/outline"
-import Card from "@/src/app/components/Card"
+import Card from "@/src/components/ui/Card"
 import type { ActiveStudyWithResponseCount } from "../../queries/getActiveStudiesWithResponseCounts"
 
 interface ActiveStudiesCardProps {

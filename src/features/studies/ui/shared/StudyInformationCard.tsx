@@ -1,4 +1,4 @@
-import Card from "@/src/app/components/Card"
+import Card from "@/src/components/ui/Card"
 import Link from "next/link"
 import { formatDate } from "@/src/lib/utils/formatDate"
 import {

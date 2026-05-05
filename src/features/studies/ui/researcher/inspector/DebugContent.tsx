@@ -4,7 +4,7 @@ import type { ValidationData } from "@/src/features/studies/server/getValidation
 import MetadataViewer from "./MetadataViewer"
 import StudyPropertiesViewer from "./StudyPropertiesViewer"
 import SelectedResultView from "./SelectedResultView"
-import Card from "@/src/app/components/Card"
+import Card from "@/src/components/ui/Card"
 import { useState } from "react"
 import StudyHeader from "./InspectorStudyHeader"
 

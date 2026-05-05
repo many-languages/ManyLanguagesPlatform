@@ -2,8 +2,8 @@ import type { JatosMetadata } from "@/src/types/jatos"
 import { formatDuration } from "@/src/lib/utils/formatDuration"
 import { formatBytes } from "@/src/lib/utils/formatBytes"
 import { calculateStudySummary } from "@/src/features/studies/domain/inspector/calculateStudySummary"
-import { EmptyState } from "@/src/app/components/EmptyState"
-import { Alert } from "@/src/app/components/Alert"
+import { EmptyState } from "@/src/components/ui/EmptyState"
+import { Alert } from "@/src/components/ui/Alert"
 
 interface StudySummaryProps {
   metadata: JatosMetadata

@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { NotificationItem, useNotificationMenuContext } from "@/src/features/notifications"
-import Card from "@/src/app/components/Card"
+import Card from "@/src/components/ui/Card"
 
 type NotificationsCardVariant = "portal" | "admin"
 

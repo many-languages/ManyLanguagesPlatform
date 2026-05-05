@@ -4,7 +4,7 @@ import type {
   ComponentExplorerModel,
   SelectedPath,
 } from "@/src/features/studies/domain/inspector/types"
-import { Alert } from "@/src/app/components/Alert"
+import { Alert } from "@/src/components/ui/Alert"
 import { useCallback, useMemo } from "react"
 import ComponentView from "../componentView/ComponentView"
 import ComponentSelector from "../componentView/ComponentSelector"

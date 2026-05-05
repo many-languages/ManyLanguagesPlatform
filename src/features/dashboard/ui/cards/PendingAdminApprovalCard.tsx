@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import Card from "@/src/app/components/Card"
+import Card from "@/src/components/ui/Card"
 import type { PendingAdminApprovalStudyRow } from "@/src/features/studies"
 
 function formatWaitingSinceLine(value: PendingAdminApprovalStudyRow["feedbackTemplateCreatedAt"]) {

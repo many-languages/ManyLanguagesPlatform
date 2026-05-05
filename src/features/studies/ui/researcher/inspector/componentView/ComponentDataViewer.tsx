@@ -2,7 +2,7 @@
 
 import JsonTreeViewer from "@/src/app/components/JsonTreeViewer"
 import JsonView from "@/src/app/components/JsonView"
-import { Alert } from "@/src/app/components/Alert"
+import { Alert } from "@/src/components/ui/Alert"
 import { formatJson } from "@/src/lib/utils/formatJson"
 import type { EnrichedJatosStudyResult } from "@/src/types/jatos"
 

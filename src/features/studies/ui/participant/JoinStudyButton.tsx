@@ -5,7 +5,7 @@ import joinStudy from "@/src/features/studies/mutations/joinStudy"
 import toast from "react-hot-toast"
 import isParticipantInStudy from "@/src/features/studies/queries/isParticipantInStudy"
 import { createParticipantStudyCodeAndSaveAction } from "@/src/features/studies/actions/createParticipantStudyCode"
-import { AsyncButton } from "@/src/app/components/AsyncButton"
+import { AsyncButton } from "@/src/components/ui/AsyncButton"
 import { useRouter } from "next/navigation"
 
 interface JoinStudyButtonProps {

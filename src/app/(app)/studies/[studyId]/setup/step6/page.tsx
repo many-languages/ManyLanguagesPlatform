@@ -1,4 +1,4 @@
-import { Alert } from "@/src/app/components/Alert"
+import { Alert } from "@/src/components/ui/Alert"
 import {
   Step6Content,
   SetupStepHeader,

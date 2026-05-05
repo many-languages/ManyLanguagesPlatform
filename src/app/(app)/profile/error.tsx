@@ -1,7 +1,7 @@
 "use client"
 
-import { Alert } from "@/src/app/components/Alert"
-import { AsyncButton } from "@/src/app/components/AsyncButton"
+import { Alert } from "@/src/components/ui/Alert"
+import { AsyncButton } from "@/src/components/ui/AsyncButton"
 import Link from "next/link"
 
 export default function Error({ error, reset }: { error: Error; reset: () => void }) {

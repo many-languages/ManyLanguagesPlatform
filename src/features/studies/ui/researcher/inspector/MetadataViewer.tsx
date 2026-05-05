@@ -1,7 +1,7 @@
 "use client"
 
 import type { JatosMetadata } from "@/src/types/jatos"
-import Card from "@/src/app/components/Card"
+import Card from "@/src/components/ui/Card"
 import JsonView from "@/src/app/components/JsonView"
 import CopyButton from "./CopyButton"
 

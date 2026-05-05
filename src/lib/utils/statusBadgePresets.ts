@@ -1,4 +1,4 @@
-import type { StatusBadgeVariant } from "@/src/app/components/StatusBadge"
+import type { StatusBadgeVariant } from "@/src/components/ui/StatusBadge"
 
 export type StatusBadgeProps = { label: string; variant: StatusBadgeVariant }
 

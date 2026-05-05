@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation"
-import Card from "@/src/app/components/Card"
+import Card from "@/src/components/ui/Card"
 import { EditProfileForm, type ProfilePaths } from "@/src/features/profile"
 import { getBlitzContext } from "@/src/app/blitz-server"
 import { getCurrentUserRsc } from "@/src/app/users/queries/getCurrentUser"

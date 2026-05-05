@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from "react"
 import { SelectField } from "./shared"
-import Card from "@/src/app/components/Card"
+import Card from "@/src/components/ui/Card"
 import { dslHelperStyles } from "@/src/features/feedback/styles/feedbackStyles"
 import type { FeedbackVariable } from "@/src/features/feedback/types"
 

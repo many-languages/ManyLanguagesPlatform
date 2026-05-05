@@ -5,7 +5,7 @@ import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { useMutation } from "@blitzjs/rpc"
 import toast from "react-hot-toast"
-import Card from "@/src/app/components/Card"
+import Card from "@/src/components/ui/Card"
 import sendAdminInviteReminders from "@/src/features/admin-invitations/mutations/sendAdminInviteReminders"
 import type { StalePendingAdminInvite } from "@/src/features/admin-invitations"
 

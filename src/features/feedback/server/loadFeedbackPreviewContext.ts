@@ -1,6 +1,5 @@
 import db from "db"
-import { withStudyAccess } from "@/src/features/studies/server/withStudyAccess"
-import { getAllPilotResultsRsc } from "@/src/features/studies/server/getAllPilotResults"
+import { withStudyAccess, getAllPilotResultsRsc } from "@/src/features/studies/services"
 import { getCodebookDataRsc } from "@/src/features/codebook"
 import {
   hashPilotResultIds,

@@ -1,7 +1,7 @@
 import { resolver } from "@blitzjs/rpc"
 import db from "db"
 import { z } from "zod"
-import { withStudyWriteAccess } from "@/src/features/studies/server/withStudyWriteAccess"
+import { withStudyWriteAccess } from "@/src/features/studies/services"
 import { computeCodebookValidation } from "../domain/computeCodebookValidation"
 import { getPersonalDataViolationsForPersistedTemplate } from "@/src/features/feedback/server/feedbackTemplatePersonalDataViolations"
 

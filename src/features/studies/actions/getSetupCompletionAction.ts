@@ -1,6 +1,6 @@
 "use server"
 
-import { getSetupCompletionRsc } from "@/src/features/studies/queries/getSetupCompletion"
+import { getSetupCompletionRsc } from "../services/setup"
 import { isSetupCompleteFromFlags, type SetupStepFlags } from "../domain/setup/setupStatus"
 
 /**

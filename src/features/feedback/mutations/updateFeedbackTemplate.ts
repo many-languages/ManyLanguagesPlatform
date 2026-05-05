@@ -2,7 +2,7 @@ import { resolver } from "@blitzjs/rpc"
 import db from "db"
 import { UpdateFeedbackTemplateSchema } from "@/src/features/feedback/validations"
 import type { FeedbackTemplate } from "@/src/features/feedback/types"
-import { withStudyWriteAccess } from "@/src/features/studies/server/withStudyWriteAccess"
+import { withStudyWriteAccess } from "@/src/features/studies/services"
 import { assertFeedbackTemplatePersonalDataPolicy } from "@/src/features/feedback/server/assertFeedbackTemplatePersonalDataPolicy"
 import { updateFeedbackTemplateInTransaction } from "@/src/features/feedback/server/feedbackTemplateSaveShared"
 

@@ -2,7 +2,7 @@ import db from "db"
 import { resolver } from "@blitzjs/rpc"
 import { z } from "zod"
 import { cache } from "react"
-import { withStudyAccess } from "@/src/features/studies/server/withStudyAccess"
+import { withStudyAccess } from "@/src/features/studies/services"
 import { computeCodebookValidation } from "../domain/computeCodebookValidation"
 
 const GetCodebookData = z.object({

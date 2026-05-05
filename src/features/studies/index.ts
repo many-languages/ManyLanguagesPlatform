@@ -84,8 +84,15 @@ export {
   buildCacheKey,
 } from "./domain/setup/extractionCache"
 
-/** Server-side access helpers (Phase 6). */
-export { verifyResearcherStudyAccess } from "./server/verifyResearcherStudyAccess"
+/** Cross-feature services */
+export {
+  withStudyAccess,
+  withStudyWriteAccess,
+  verifyResearcherStudyAccess,
+  getAllPilotResultsRsc,
+  getSetupCompletionRsc,
+} from "./services"
+export type { PilotResultsContext } from "./services"
 
 /** Study views — parsers + enums (minimal relations come from `./types`). */
 export { STUDY_VIEWS, parseStudyView } from "./domain/studyView"

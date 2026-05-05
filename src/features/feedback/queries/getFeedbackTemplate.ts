@@ -2,7 +2,7 @@ import { resolver } from "@blitzjs/rpc"
 import db from "db"
 import { cache } from "react"
 import { GetFeedbackTemplateSchema } from "@/src/features/feedback/validations"
-import { withStudyAccess } from "@/src/features/studies/server/withStudyAccess"
+import { withStudyAccess } from "@/src/features/studies/services"
 import { getBlitzContext } from "@/src/app/blitz-server"
 import {
   feedbackTemplateSelect,

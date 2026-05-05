@@ -6,7 +6,7 @@ import type { Route } from "next"
 import toast from "react-hot-toast"
 import createStudy from "@/src/features/studies/mutations/createStudy"
 import { AsyncButton } from "@/src/app/components/AsyncButton"
-import { studySetupStepPath } from "@/src/features/studies"
+import { studySetupStepPath } from "../../domain/setup/setupRoutes"
 
 const DEFAULT_CREATE_ERROR_FALLBACK = "Could not create the study. Please try again."
 

@@ -1,12 +1,11 @@
 import { resolver } from "@blitzjs/rpc"
 import { z } from "zod"
+import { extractionBundleCache } from "../domain/setup/extractionBundleCache"
+import { buildCacheKey, buildPilotDatasetHash } from "../domain/setup/extractionCache"
 import {
-  extractionBundleCache,
-  buildCacheKey,
-  buildPilotDatasetHash,
   serializeExtractionBundle,
   type SerializedExtractionBundle,
-} from "@/src/features/studies"
+} from "../domain/setup/serializeExtractionBundle"
 import { withStudyAccess } from "@/src/features/studies/server/withStudyAccess"
 import { getAllPilotResultsRsc } from "@/src/features/studies/server/getAllPilotResults"
 import db from "db"

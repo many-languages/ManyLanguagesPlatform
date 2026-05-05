@@ -3,15 +3,14 @@ import { z } from "zod"
 import { getAllPilotResultsRsc } from "@/src/features/studies/server/getAllPilotResults"
 import db from "db"
 import { withStudyAccess } from "@/src/features/studies/server/withStudyAccess"
+import { extractVariableBundleFromResults } from "../domain/variables/utils/extractVariable"
+import { DEFAULT_EXTRACTION_CONFIG } from "../domain/variables/types"
+import { extractionBundleCache } from "../domain/setup/extractionBundleCache"
+import { buildCacheKey, buildPilotDatasetHash } from "../domain/setup/extractionCache"
 import {
-  DEFAULT_EXTRACTION_CONFIG,
-  extractVariableBundleFromResults,
-  extractionBundleCache,
-  buildCacheKey,
-  buildPilotDatasetHash,
   serializeExtractionBundle,
   type SerializedExtractionBundle,
-} from "@/src/features/studies"
+} from "../domain/setup/serializeExtractionBundle"
 
 const RunExtraction = z.object({
   studyId: z.number(),

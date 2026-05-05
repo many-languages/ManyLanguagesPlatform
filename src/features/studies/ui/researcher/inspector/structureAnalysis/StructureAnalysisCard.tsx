@@ -1,11 +1,8 @@
 "use client"
 
 import type { EnrichedJatosStudyResult } from "@/src/types/jatos"
-import type {
-  ExtractedVariable,
-  ExtractionObservation,
-  ExtractionIndexStore,
-} from "@/src/features/studies"
+import type { ExtractedVariable, ExtractionObservation } from "../../../../domain/variables/types"
+import type { ExtractionIndexStore } from "../../../../domain/variables/utils/extractionIndexStore"
 import type { SelectedPath } from "@/src/features/studies/domain/inspector/types"
 import Card from "@/src/app/components/Card"
 import clsx from "clsx"

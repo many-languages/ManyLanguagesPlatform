@@ -1,4 +1,4 @@
-import { assertStudyNotArchived } from "@/src/features/studies"
+import { assertStudyNotArchived } from "../domain/studyLifecycle"
 import { withStudyAccess } from "./withStudyAccess"
 
 type StudyCallback<T> = (studyId: number, userId: number) => Promise<T>

@@ -9,18 +9,15 @@ import StudySummary from "./StudySummary"
 import ParticipantManagementCard from "./ParticipantManagementCard"
 import ResultsCardWrapper from "./ResultsCardWrapper"
 import { Alert } from "@/src/app/components/Alert"
-import {
-  type StudyWithMinimalRelations,
-  isSetupComplete,
-  studySetupStepPath,
-} from "@/src/features/studies"
+import { isSetupComplete } from "../../domain/setup/setupStatus"
+import { studySetupStepPath } from "../../domain/setup/setupRoutes"
 import { StudyWithRelations } from "@/src/features/studies/queries/getStudy"
 import { ResearcherFeedbackData } from "@/src/features/feedback"
 import StudyInformationCard from "../shared/StudyInformationCard"
 import { NavigationButton } from "@/src/app/components/NavigationButton"
-import { StudyLifecycleActions } from "@/src/features/studies"
+import StudyLifecycleActions from "../shared/StudyLifecycleActions"
 import { hasParticipantResponses as hasParticipantResponsesInResults } from "@/src/lib/jatos/utils/studyHasParticipantResponses"
-import { ARCHIVED_STUDY_CANNOT_EDIT_MESSAGE } from "@/src/features/studies"
+import { ARCHIVED_STUDY_CANNOT_EDIT_MESSAGE } from "../../domain/studyEditability"
 
 interface ResearcherDataProps {
   studyId: number

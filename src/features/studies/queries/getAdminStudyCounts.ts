@@ -2,7 +2,7 @@ import { AuthorizationError } from "blitz"
 import { resolver } from "@blitzjs/rpc"
 import { getAuthorizedSession } from "@/src/app/(auth)/utils/getAuthorizedSession"
 import { isStaffAdmin } from "@/src/lib/auth/roles"
-import { getStudySummaryCounts, type StudySummaryCounts } from "@/src/features/studies"
+import { getStudySummaryCounts, type StudySummaryCounts } from "../domain/studySummaryCounts"
 
 export type { StudySummaryCounts }
 

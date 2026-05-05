@@ -3,7 +3,7 @@
 import type { Route } from "next"
 import { NavigationButton } from "@/src/app/components/NavigationButton"
 
-import { studyPath } from "@/src/features/studies"
+import { studyPath } from "../../../domain/setup/setupRoutes"
 
 /**
  * Navigates to the study overview. Does not submit or persist setup forms.

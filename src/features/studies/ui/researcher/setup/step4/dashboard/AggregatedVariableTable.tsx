@@ -1,5 +1,5 @@
 import { useMemo } from "react"
-import type { ExtractedVariable } from "@/src/features/studies"
+import type { ExtractedVariable } from "../../../../../domain/variables/types"
 import {
   CodeBracketIcon,
   EyeIcon,

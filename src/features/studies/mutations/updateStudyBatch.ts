@@ -1,6 +1,6 @@
 import { resolver } from "@blitzjs/rpc"
 import db from "db"
-import { assertStudyNotArchived } from "@/src/features/studies"
+import { assertStudyNotArchived } from "../domain/studyLifecycle"
 import { verifyResearcherStudyAccess } from "@/src/features/studies/server/verifyResearcherStudyAccess"
 import { UpdateStudyBatch } from "@/src/features/studies/validations"
 

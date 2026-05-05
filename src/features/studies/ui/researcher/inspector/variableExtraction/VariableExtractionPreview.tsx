@@ -1,11 +1,9 @@
 "use client"
 
 import type { EnrichedJatosStudyResult } from "@/src/types/jatos"
-import {
-  DEFAULT_EXTRACTION_CONFIG,
-  extractVariableBundle,
-  createExtractionIndexStore,
-} from "@/src/features/studies"
+import { extractVariableBundle } from "../../../../domain/variables/utils/extractVariable"
+import { DEFAULT_EXTRACTION_CONFIG } from "../../../../domain/variables/types"
+import { createExtractionIndexStore } from "../../../../domain/variables/utils/extractionIndexStore"
 import Card from "@/src/app/components/Card"
 import StructureAnalysisCard from "../structureAnalysis/StructureAnalysisCard"
 import StructureDiagnostics from "../structureAnalysis/StructureDiagnostics"

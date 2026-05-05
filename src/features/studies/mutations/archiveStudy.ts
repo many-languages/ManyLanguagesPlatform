@@ -1,7 +1,7 @@
 import { resolver } from "@blitzjs/rpc"
 import db from "db"
 import { ArchiveStudy } from "@/src/features/studies/validations"
-import { assertStudyArchiveAllowed } from "@/src/features/studies"
+import { assertStudyArchiveAllowed } from "../domain/studyLifecycle"
 import type { UserRole } from "@/db"
 
 /** Shared logic for PI and ADMIN archive paths. */

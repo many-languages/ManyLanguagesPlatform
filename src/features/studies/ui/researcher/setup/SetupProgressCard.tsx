@@ -6,14 +6,14 @@ import Card from "@/src/app/components/Card"
 import StepIndicator from "./StepIndicator"
 import { Alert } from "@/src/app/components/Alert"
 import { NavigationButton } from "@/src/app/components/NavigationButton"
-import type { StudyWithMinimalRelations } from "@/src/features/studies"
 import {
   getNextSetupStepUrl,
   getSetupProgress,
   step6NeedsRevision,
-  studySetupStepPath,
-} from "@/src/features/studies"
-import { ARCHIVED_STUDY_CANNOT_EDIT_MESSAGE } from "@/src/features/studies"
+  type StudyWithMinimalRelations,
+} from "../../../domain/setup/setupStatus"
+import { studySetupStepPath } from "../../../domain/setup/setupRoutes"
+import { ARCHIVED_STUDY_CANNOT_EDIT_MESSAGE } from "../../../domain/studyEditability"
 
 interface SetupProgressCardProps {
   study: StudyWithMinimalRelations

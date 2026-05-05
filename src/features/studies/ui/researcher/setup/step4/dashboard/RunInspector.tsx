@@ -2,11 +2,9 @@ import { useState, useMemo } from "react"
 import { EnrichedJatosStudyResult } from "@/src/types/jatos"
 import StructureAnalysisCard from "../../../inspector/structureAnalysis/StructureAnalysisCard"
 import { ExclamationCircleIcon } from "@heroicons/react/24/outline"
-import {
-  createExtractionIndexStore,
-  type SerializedExtractionBundle,
-  type ExtractionObservation,
-} from "@/src/features/studies"
+import { createExtractionIndexStore } from "../../../../../domain/variables/utils/extractionIndexStore"
+import type { SerializedExtractionBundle } from "../../../../../domain/setup/serializeExtractionBundle"
+import type { ExtractionObservation } from "../../../../../domain/variables/types"
 
 interface RunInspectorProps {
   runs: EnrichedJatosStudyResult[]

@@ -1,5 +1,5 @@
 import { TYPE_BADGE_CLASSES } from "./constants"
-import type { VariableType } from "@/src/features/studies"
+import type { VariableType } from "../variables/types"
 
 /**
  * Maps a variable type to its corresponding badge class

@@ -1,9 +1,6 @@
 import { EnrichedJatosStudyResult } from "@/src/types/jatos"
-import type {
-  ExtractedVariable,
-  ExtractionObservation,
-  ExtractionIndexStore,
-} from "@/src/features/studies"
+import type { ExtractedVariable, ExtractionObservation } from "../variables/types"
+import type { ExtractionIndexStore } from "../variables/utils/extractionIndexStore"
 import { ComponentExplorerModel, ComponentExplorerItem, ComponentBadge } from "./types"
 import { computeComponentStats } from "./componentStats"
 import { formatJson } from "@/src/lib/utils/formatJson"

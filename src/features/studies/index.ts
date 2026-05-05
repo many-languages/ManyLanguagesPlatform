@@ -106,10 +106,7 @@ export { getStudiesRsc } from "./queries/getAdminStudies"
 export { getAdminStudyCounts } from "./queries/getAdminStudyCounts"
 export { getPendingAdminApprovalStudiesForDashboardRsc } from "./queries/getPendingAdminApprovalStudies"
 
-/**
- * Shared UI exports first — `ResearcherData` imports `StudyLifecycleActions` from this barrel,
- * so those bindings must initialise before `./ui/researcher/ResearcherData` is evaluated.
- */
+/** Shared UI */
 export { default as StudyHeader } from "./ui/shared/StudyHeader"
 export { default as StudyList } from "./ui/shared/StudyList"
 export { default as StudyItem } from "./ui/shared/StudyItem"

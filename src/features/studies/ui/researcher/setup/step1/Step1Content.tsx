@@ -8,7 +8,8 @@ import toast from "react-hot-toast"
 
 import updateStudy from "@/src/features/studies/mutations/updateStudy"
 import StudyInformationForm from "./StudyInformationForm"
-import { getPostStepNavigationUrl, studyPath } from "@/src/features/studies"
+import { getPostStepNavigationUrl } from "../../../../domain/setup/setupStatus"
+import { studyPath } from "../../../../domain/setup/setupRoutes"
 
 import { StudyWithRelations } from "@/src/features/studies/queries/getStudy"
 

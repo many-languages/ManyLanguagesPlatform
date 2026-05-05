@@ -18,8 +18,7 @@ import {
 import MDEditor from "@uiw/react-md-editor"
 import type { AdminStudyWithLatestUpload } from "@/src/features/studies/queries/getAdminStudies"
 import type { UserRole } from "@/db"
-import { getSetupStatusLabel } from "@/src/features/studies"
-import type { StudyWithMinimalRelations } from "@/src/features/studies"
+import { getSetupStatusLabel, type StudyWithMinimalRelations } from "../../domain/setup/setupStatus"
 import StudyActions from "./StudyActions"
 import toast from "react-hot-toast"
 

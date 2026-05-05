@@ -1,6 +1,6 @@
 "use client"
 
-import type { Diagnostic } from "@/src/features/studies"
+import type { Diagnostic } from "../../../../domain/variables/types"
 
 interface StructureDiagnosticsProps {
   diagnostics: {

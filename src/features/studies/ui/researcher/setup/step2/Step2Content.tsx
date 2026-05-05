@@ -20,7 +20,7 @@ import { FORM_ERROR } from "@/src/app/components/Form"
 import { createResearcherPilotUrlAndSaveAction } from "@/src/features/studies/actions/createResearcherPilotUrl"
 
 import { StudyWithRelations } from "@/src/features/studies/queries/getStudy"
-import { studySetupStepPath } from "@/src/features/studies"
+import { studySetupStepPath } from "../../../../domain/setup/setupRoutes"
 
 interface Step2ContentProps {
   study: StudyWithRelations

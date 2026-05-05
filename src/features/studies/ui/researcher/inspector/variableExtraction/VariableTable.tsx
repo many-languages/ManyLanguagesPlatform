@@ -1,11 +1,8 @@
 "use client"
 
 import { useCallback, useMemo, useState } from "react"
-import type {
-  ExtractedVariable,
-  ExtractionObservation,
-  ExtractionIndexStore,
-} from "@/src/features/studies"
+import type { ExtractedVariable, ExtractionObservation } from "../../../../domain/variables/types"
+import type { ExtractionIndexStore } from "../../../../domain/variables/utils/extractionIndexStore"
 import type { ColumnDef } from "@tanstack/react-table"
 import Table from "@/src/app/components/Table"
 import VariableValuesModal from "./VariableValuesModal"

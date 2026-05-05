@@ -4,11 +4,11 @@ import { useRef, useState } from "react"
 import { useRouter } from "next/navigation"
 import type { Route } from "next"
 import {
-  CodebookContent,
+  default as CodebookContent,
   type CodebookContentRef,
   type CodebookContentProps,
   type CodebookStepState,
-} from "@/src/features/codebook"
+} from "@/src/features/codebook/ui/CodebookContent"
 import StepNavigation from "../StepNavigation"
 import { studySetupStepPath } from "../../../../domain/setup/setupRoutes"
 

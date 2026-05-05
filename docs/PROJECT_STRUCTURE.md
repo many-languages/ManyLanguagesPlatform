@@ -1,581 +1,223 @@
-# Project Structure Guidelines
+# Project structure
 
-This document outlines the recommended project structure for organizing business logic, data fetching, mutations, server actions, and related code in a scalable and maintainable way.
+This document is the **canonical guide** for where code lives in **ManyLanguagesPlatform**. Use it when adding or moving files so the codebase stays consistent and easy to navigate.
 
-## Overview
+**Naming note.** We use top-level **`src/features/`** for product modules. A folder named **`domain/`** means **`features/<feature>/domain/`** (pure rules for that feature), not a separate top-level `domains/` tree.
 
-The current project structure works well for:
+---
 
-- ✅ **Components, layouts, routes, and pages** (Next.js App Router structure)
+## Goals
 
-However, we need better organization for:
+- **Predictable placement** — apply the same rules without debating every file.
+- **Thin routes** — `src/app/**` is for the App Router: layouts, pages, and thin composition. Business logic does not live in route files.
+- **Cohesive features** — each product surface owns its UI, data access, validations, and types in one place.
+- **`lib/` stays generic** — infrastructure and reusable utilities without product meaning.
+- **Admin and portal** share data and patterns, not duplicated implementations — variant UI, shared queries.
 
-- ❌ **Business logic** (currently scattered in component handlers)
-- ❌ **Data fetchers** (queries)
-- ❌ **Mutations** (write operations)
-- ❌ **Server actions** (complex workflows)
-- ❌ **Reusable logic** (currently embedded in components)
+---
 
-## Recommended Structure
+## The three-question rule
 
-```
+When you add or move a file, ask in this order:
+
+1. **Is it generic UI with no business meaning?**  
+   (Primitives: buttons, cards, alerts, tables, form fields.)  
+   → **`src/components/ui/`** (design system).
+
+2. **Does it belong to exactly one product feature?**  
+   (Dashboard, studies, feedback, codebook, notifications, profile, admin invitations, auth helpers, shell, …)  
+   → **`src/features/<feature>/`** — typically `ui/`, `queries/`, `mutations/`, `actions/`, `validations.ts` (or `validations/`), optional `domain/`, `server/`, `context/`, `hooks/`, `types.ts`, `index.ts`.
+
+3. **Is it cross-cutting infrastructure or a pure utility?**  
+   (Auth guards, DB client, JATOS, email, logging, date formatting.)  
+   → **`src/lib/`**.
+
+If nothing fits cleanly, default to **a feature** — even a small one.
+
+**Route folders** (`src/app/**`) should contain:
+
+- `page.tsx`, `layout.tsx`, `loading.tsx`, `error.tsx`, `not-found.tsx`, `route.ts`, and similar App Router files.
+- **Thin** composition: import from `@/src/features/...`, `@/src/components/ui/...`, and `@/src/lib/...`.
+- **Route-only** snippets that are not reused elsewhere. If it grows or is imported from multiple routes, move it into the right feature or the design system.
+
+---
+
+## Target layout (reference)
+
+```text
 src/
-├── app/                          # Next.js App Router (routes, pages, layouts)
-│   ├── (app)/
-│   │   └── studies/
-│   │       └── [studyId]/
-│   │           ├── components/   # ✅ UI components only
-│   │           ├── page.tsx       # ✅ Thin route handlers
-│   │           └── ...
-│   └── api/                       # ✅ API routes (keep as-is)
+├─ app/                            # Next.js App Router — routes only
+│  ├─ (app)/                       # Portal (researcher + participant)
+│  ├─ admin/                         # Staff admin
+│  ├─ (auth)/                        # Login, signup, password flows
+│  └─ api/                           # Route handlers, webhooks, cron
 │
-├── domains/                       # 🆕 Domain-driven structure
-│   └── studies/
-│       ├── services/              # Business logic & orchestration
-│       │   ├── participant.ts
-│       │   ├── feedback.ts
-│       │   └── results.ts
-│       │
-│       ├── queries/               # Data fetching (read operations)
-│       │   ├── participant.ts
-│       │   ├── study.ts
-│       │   └── results.ts
-│       │
-│       ├── mutations/             # Data mutations (write operations)
-│       │   ├── participant.ts
-│       │   └── study.ts
-│       │
-│       ├── actions/                # Server actions (complex workflows)
-│       │   ├── feedback.ts
-│       │   └── results.ts
-│       │
-│       ├── hooks/                  # 🆕 Custom React hooks
-│       │   ├── useParticipant.ts
-│       │   ├── useStudy.ts
-│       │   └── useFeedback.ts
-│       │
-│       ├── validations/            # 🆕 Domain-specific schemas
-│       │   ├── participant.ts
-│       │   ├── study.ts
-│       │   └── feedback.ts
-│       │
-│       ├── types/                  # 🆕 Domain-specific types
-│       │   ├── participant.ts
-│       │   ├── study.ts
-│       │   └── index.ts
-│       │
-│       ├── errors/                 # 🆕 Domain-specific errors
-│       │   ├── participant.errors.ts
-│       │   └── study.errors.ts
-│       │
-│       └── utils/                  # Domain-specific utilities
-│           ├── calculateStudySummary.ts
-│           └── enrichResults.ts
+├─ features/                         # Product modules
+│  ├─ shared/types.ts                # Cross-feature domain types (sparingly)
+│  ├─ dashboard/
+│  ├─ studies/
+│  ├─ feedback/
+│  ├─ codebook/
+│  ├─ notifications/
+│  ├─ profile/
+│  ├─ admin-invitations/
+│  ├─ auth/                          # e.g. current-user query, auth hooks
+│  ├─ shell/                         # App chrome (e.g. navbar)
+│  └─ …
 │
-├── lib/                           # Shared libraries
-│   ├── jatos/                     # ✅ External API clients
-│   └── utils/                     # ✅ Pure utilities
+├─ components/
+│  └─ ui/                            # Design system (target location)
 │
-└── types/                         # ✅ Shared types (keep as-is)
+├─ lib/                              # Infrastructure & generic utilities
+│  ├─ auth/
+│  ├─ jatos/
+│  ├─ email/
+│  ├─ logger/
+│  ├─ validation/                    # Zod primitives (no product meaning)
+│  └─ utils/
+│
+└─ types/                            # Global TS types (rare)
 ```
 
-## Naming Conventions
-
-**Important:** Follow the existing codebase pattern where the **folder name indicates the type**, and the **filename is just the feature/entity name**.
-
-### ✅ Correct (Current Pattern)
-
-```
-domains/studies/
-├── services/
-│   ├── participant.ts          # ✅ Not participant.service.ts
-│   └── feedback.ts
-├── queries/
-│   ├── study.ts                # ✅ Not study.queries.ts
-│   └── participant.ts
-├── mutations/
-│   ├── participant.ts          # ✅ Not participant.mutations.ts
-│   └── study.ts
-└── actions/
-    ├── feedback.ts              # ✅ Not feedback.actions.ts
-    └── results.ts
-```
-
-### ❌ Avoid
-
-- `participant.service.ts` (redundant - folder already indicates type)
-- `study.queries.ts` (redundant - folder already indicates type)
-- `feedback.actions.ts` (redundant - folder already indicates type)
-
-**Exception:** Hooks can keep the `use` prefix (e.g., `useParticipant.ts`) as it's a React convention.
-
-## Layer Responsibilities
-
-### 1. Services (Business Logic Layer)
-
-Services orchestrate multiple operations and contain reusable business logic. They should:
-
-- Combine multiple queries/mutations
-- Contain business rules and validation logic
-- Transform data between layers
-- Handle error transformation
-
-**Example:**
-
-```typescript
-// domains/studies/services/participant.service.ts
-"use server"
-
-import { calculateParticipantProgress } from "../utils/participantCalculations"
-import { matchJatosResultsToParticipants } from "../utils/matchJatosToParticipants"
-import { getParticipants } from "../queries/participant"
-
-export async function getParticipantsWithProgress(studyId: number) {
-  const participants = await getParticipants(studyId)
-  const metadata = await getJatosMetadata(studyId)
-
-  return participants.map((participant) => ({
-    ...participant,
-    progress: calculateParticipantProgress(participant, metadata),
-    jatosResult: matchJatosResultsToParticipants(participant, metadata),
-  }))
-}
-
-export async function toggleParticipantStatus(
-  participantIds: number[],
-  action: "active" | "payed"
-) {
-  // Business logic: determine new state
-  const participants = await getParticipantsByIds(participantIds)
-  const newState = determineNewState(participants, action)
-
-  // Delegate to mutation
-  return action === "active"
-    ? await toggleActiveMutation({ participantIds, makeActive: newState })
-    : await togglePayedMutation({ participantIds, makePayed: newState })
-}
-```
-
-### 2. Queries (Read Operations)
-
-Pure data fetching with no business logic. Should:
-
-- Use `cache()` for React Server Components
-- Use `unstable_cache()` for API routes with revalidation tags
-- Be simple, focused functions
-- Return raw data (transformations happen in services)
-
-**Example:**
-
-```typescript
-// domains/studies/queries/participant.ts
-import db from "db"
-import { cache } from "react"
-import { unstable_cache } from "next/cache"
-
-// For RSC (React Server Components)
-export const getParticipants = cache(async (studyId: number) => {
-  return db.participantStudy.findMany({
-    where: { studyId },
-    include: { user: true },
-  })
-})
-
-// For API routes with revalidation
-export const getParticipantsCached = unstable_cache(
-  async (studyId: number) => {
-    return db.participantStudy.findMany({
-      where: { studyId },
-      include: { user: true },
-    })
-  },
-  ["participants"],
-  {
-    tags: [`study-${studyId}-participants`],
-    revalidate: 3600, // 1 hour
-  }
-)
-```
-
-### 3. Mutations (Write Operations)
-
-Simple database writes with authorization. Should:
-
-- Use Blitz resolver pattern
-- Include authorization checks
-- Be focused on single operations
-- Return updated data
-
-**Example:**
-
-```typescript
-// domains/studies/mutations/participant.ts
-import { resolver } from "@blitzjs/rpc"
-import db from "db"
-import { ToggleParticipantActiveSchema } from "../validations/participant"
-
-export const toggleParticipantActive = resolver.pipe(
-  resolver.zod(ToggleParticipantActiveSchema),
-  resolver.authorize("RESEARCHER"),
-  async ({ participantIds, makeActive }, ctx) => {
-    if (!ctx.session.userId) throw new Error("Not authenticated")
-
-    return db.participantStudy.updateMany({
-      where: { id: { in: participantIds } },
-      data: { active: makeActive },
-    })
-  }
-)
-```
-
-### 4. Server Actions (Complex Workflows)
-
-For multi-step operations, form actions, and workflows. Should:
-
-- Use React 19 `useActionState` pattern
-- Handle complex workflows
-- Combine multiple operations
-- Return state objects for form handling
-
-**Example:**
-
-```typescript
-// domains/studies/actions/feedback.ts
-"use server"
-
-import { z } from "zod"
-import { renderTemplate } from "../utils/feedbackRenderer"
-
-const PreviewSchema = z.object({
-  template: z.string().min(1),
-  enrichedResult: z.any(),
-})
-
-export async function previewFeedbackAction(
-  prevState: { rendered: string; error: string | null },
-  formData: FormData
-) {
-  try {
-    const template = String(formData.get("template") || "")
-    const enrichedResultRaw = String(formData.get("enrichedResult") || "{}")
-    const parsed = PreviewSchema.parse({
-      template,
-      enrichedResult: JSON.parse(enrichedResultRaw),
-    })
-
-    const rendered = renderTemplate(parsed.template, {
-      enrichedResult: parsed.enrichedResult,
-    })
-
-    return { rendered, error: null }
-  } catch (e: any) {
-    return { rendered: "", error: e?.message || "Failed to render" }
-  }
-}
-```
-
-### 5. Hooks (Client-Side State & Data Fetching)
-
-Custom React hooks for client components. Should:
-
-- Use React 19 features (`useOptimistic`, `useActionState`)
-- Encapsulate data fetching logic
-- Provide clean APIs for components
-- Handle loading/error states
-
-**Example:**
-
-```typescript
-// domains/studies/hooks/useParticipant.ts
-"use client"
-
-import { useQuery, useMutation } from "@blitzjs/rpc"
-import { useOptimistic } from "react" // React 19
-import { getParticipants } from "../queries/participant"
-import { toggleParticipantActive } from "../mutations/participant"
-
-export function useParticipants(studyId: number) {
-  const [participants, { refetch }] = useQuery(getParticipants, { studyId }, { staleTime: 30000 })
-
-  return { participants, refetch }
-}
-
-export function useToggleParticipantStatus() {
-  const [toggleActive] = useMutation(toggleParticipantActive)
-  const [optimisticParticipants, setOptimisticParticipants] = useOptimistic(
-    [],
-    (state, { participantIds, makeActive }) => {
-      return state.map((p) => (participantIds.includes(p.id) ? { ...p, active: makeActive } : p))
-    }
-  )
-
-  const toggle = async (participantIds: number[], makeActive: boolean) => {
-    setOptimisticParticipants({ participantIds, makeActive })
-    await toggleActive({ participantIds, makeActive })
-  }
-
-  return { toggle, optimisticParticipants }
-}
-```
-
-### 6. Validations (Schema Definitions)
-
-Domain-specific Zod schemas. Should:
-
-- Be co-located with domain logic
-- Export both schemas and inferred types
-- Group related validations together
-
-**Example:**
-
-```typescript
-// domains/studies/validations/participant.ts
-import { z } from "zod"
-
-export const ToggleParticipantActiveSchema = z.object({
-  participantIds: z.array(z.number().int().positive()).min(1),
-  makeActive: z.boolean(),
-})
-
-export type ToggleParticipantActiveInput = z.infer<typeof ToggleParticipantActiveSchema>
-
-export const GetParticipantsSchema = z.object({
-  studyId: z.number().int().positive(),
-})
-
-export type GetParticipantsInput = z.infer<typeof GetParticipantsSchema>
-```
-
-### 7. Types (Domain-Specific Types)
-
-TypeScript types specific to the domain. Should:
-
-- Export domain-specific types
-- Re-export Prisma types with modifications
-- Provide clean type exports via index
-
-**Example:**
-
-```typescript
-// domains/studies/types/participant.ts
-import type { ParticipantStudy, User } from "@prisma/client"
-
-export type ParticipantWithEmail = ParticipantStudy & {
-  user: Pick<User, "id" | "email" | "firstname" | "lastname">
-}
-
-export type ParticipantProgress = {
-  participantId: number
-  finished: boolean
-  progress: number
-  lastSeen: Date | null
-}
-
-// domains/studies/types/index.ts
-export * from "./participant"
-export * from "./study"
-export * from "./feedback"
-```
-
-### 8. Errors (Domain-Specific Errors)
-
-Custom error classes for better error handling. Should:
-
-- Extend base Error class
-- Provide context-specific information
-- Be catchable and type-safe
-
-**Example:**
-
-```typescript
-// domains/studies/errors/participant.errors.ts
-export class ParticipantNotFoundError extends Error {
-  constructor(participantId: number) {
-    super(`Participant ${participantId} not found`)
-    this.name = "ParticipantNotFoundError"
-  }
-}
-
-export class UnauthorizedParticipantActionError extends Error {
-  constructor(action: string) {
-    super(`Unauthorized to perform ${action} on participant`)
-    this.name = "UnauthorizedParticipantActionError"
-  }
-}
-```
-
-### 9. Utils (Pure Functions)
-
-Domain-specific utility functions. Should:
-
-- Be pure functions (no side effects)
-- Be easily testable
-- Focus on calculations and transformations
-
-**Example:**
-
-```typescript
-// domains/studies/utils/participantCalculations.ts
-import type { ParticipantStudy } from "@prisma/client"
-import type { JatosMetadata } from "@/src/types/jatos"
-
-export function calculateParticipantProgress(
-  participant: ParticipantStudy,
-  metadata: JatosMetadata
-): number {
-  const jatosResult = metadata.data?.[0]?.studyResults.find(
-    (r) => r.comment === participant.pseudonym
-  )
-
-  const finishedComponents =
-    jatosResult?.componentResults.filter((c) => c.componentState === "FINISHED").length ?? 0
-
-  const totalComponents = jatosResult?.componentResults.length || 1
-  return Math.round((finishedComponents / totalComponents) * 100)
-}
-```
-
-## Refactoring Client Components
-
-### Before (Logic in Component)
-
-```typescript
-// ❌ Current: ParticipantManagementCard.tsx
-const handleClick = async () => {
-  const selectedIds = watch("selectedParticipantIds")
-  const isValid = await trigger("selectedParticipantIds")
-
-  if (!isValid || selectedIds.length === 0) return
-
-  setIsSubmitting(true)
-  try {
-    if (action === "TOGGLE_ACTIVE") {
-      const areAllActive = participants
-        .filter((p) => selectedIds.includes(p.id))
-        .every((p) => p.active)
-
-      await toggleActiveMutation({
-        participantIds: selectedIds,
-        makeActive: !areAllActive,
-      })
-      toast.success(areAllActive ? "Participants deactivated" : "Participants activated")
-    }
-    // ... more logic
-  } catch (error) {
-    // ... error handling
-  }
-}
-```
-
-### After (Logic Extracted)
-
-```typescript
-// ✅ Component becomes thin:
-const handleClick = async () => {
-  const selectedIds = watch("selectedParticipantIds")
-  if (!(await trigger("selectedParticipantIds")) || selectedIds.length === 0) return
-
-  setIsSubmitting(true)
-  try {
-    const result = await toggleParticipantStatus(selectedIds, action)
-    toast.success(getSuccessMessage(action, result.newState))
-    setValue("selectedParticipantIds", [])
-    router.refresh()
-  } catch (error) {
-    toast.error(error?.message || "An error occurred")
-  } finally {
-    setIsSubmitting(false)
-  }
-}
-```
-
-## Migration Strategy
-
-1. **Create domain structure** alongside existing code (no breaking changes)
-2. **Move validations first** (low risk, high impact)
-3. **Extract hooks** from components
-4. **Move business logic** to services
-5. **Update imports incrementally**
-6. **Keep route-level folders** as thin wrappers during transition:
-
-```typescript
-// app/(app)/studies/mutations/toggleParticipantActive.ts
-// During migration - re-export from domain
-export { toggleParticipantActive } from "@/domains/studies/mutations/participant"
-```
-
-## Benefits
-
-- ✅ **Separation of Concerns**: UI, data fetching, business logic, and mutations are clearly separated
-- ✅ **Reusability**: Services can be used across components and server actions
-- ✅ **Testability**: Business logic is easy to unit test in isolation
-- ✅ **Maintainability**: Clear structure makes it easy to find and modify code
-- ✅ **Scalability**: New features follow a consistent pattern
-- ✅ **React 19 Ready**: Uses `useOptimistic`, `useActionState`, proper server/client boundaries
-- ✅ **Next.js 15 Ready**: Proper caching with `unstable_cache` and revalidation tags
-- ✅ **Type Safety**: Domain-specific types prevent cross-domain coupling
-- ✅ **Error Handling**: Domain errors with clear boundaries
-
-## Testing Structure
-
-Tests should be co-located with the code they test:
-
-```
-domains/
-└── studies/
-    ├── services/
-    │   ├── participant.ts
-    │   └── participant.test.ts      # 🆕 Co-located tests
-    ├── queries/
-    │   ├── participant.ts
-    │   └── participant.test.ts      # 🆕
-    └── utils/
-        ├── calculateStudySummary.ts
-        └── calculateStudySummary.test.ts    # 🆕
-```
-
-## Public API (Index Files)
-
-Create index files for clean imports:
-
-```typescript
-// domains/studies/index.ts
-// Public API - only export what's needed
-export * from "./queries"
-export * from "./mutations"
-export * from "./services"
-export * from "./actions"
-export * from "./hooks"
-export * from "./types"
-export * from "./validations"
-
-// Usage: import { getStudy, useParticipants } from "@/domains/studies"
-```
-
-## Next.js 15 & React 19 Best Practices
-
-### Caching Strategy
-
-- Use `cache()` from React for RSC
-- Use `unstable_cache()` from Next.js for API routes
-- Use revalidation tags for cache invalidation
-- Set appropriate `staleTime` for client queries
-
-### Server Actions
-
-- Use `useActionState` for form actions
-- Return state objects for better UX
-- Handle errors gracefully
-
-### Optimistic Updates
-
-- Use `useOptimistic` for instant UI feedback
-- Rollback on error
-- Keep UI in sync with server state
-
-## References
-
-- [Next.js 15 Documentation](https://nextjs.org/docs)
-- [React 19 Documentation](https://react.dev)
-- [Blitz.js Documentation](https://blitzjs.com)
-- Existing codebase patterns in `src/app/(app)/studies/`
+**Today:** many design-system-style components still live under **`src/app/components/`** (historical). New generic UI should follow **`src/components/ui/`**, and existing files should **migrate over time** when you touch them or in a dedicated drain PR.
+
+---
+
+## Naming conventions
+
+- **Feature folders** are **nouns**: `dashboard`, `studies`, `notifications`, …
+- **Standard subfolders** (use when you have enough files to justify them):
+
+  | Folder                             | Role                                                                             |
+  | ---------------------------------- | -------------------------------------------------------------------------------- |
+  | `ui/`                              | Components — Server Components by default                                        |
+  | `ui/client/` or nested `client/`   | Client-only files; each file should start with `"use client"`                    |
+  | `context/`                         | Feature-owned React context                                                      |
+  | `queries/`                         | Blitz **read** RPC — each file must `export default` a resolver (see below)      |
+  | `mutations/`                       | Blitz **write** RPC — same default-export rule                                   |
+  | `actions/`                         | Blitz **actions** / workflows — same default-export rule                         |
+  | `domain/`                          | **Pure** logic: no React, no Prisma, no JATOS in the same module                 |
+  | `server/`                          | Private server implementation: DB, JATOS, RSC loaders, orchestration             |
+  | `services/`                        | Optional: stable **server** APIs **other features** may call (export via barrel) |
+  | `hooks/`                           | Feature hooks                                                                    |
+  | `validations.ts` or `validations/` | Zod DTOs — prefer one file until ≥2 modules are needed                           |
+  | `types.ts`                         | Feature-public TypeScript types                                                  |
+  | `index.ts`                         | **Public** exports for routes and other features                                 |
+
+- **`features/shared/`** — cross-feature **domain** pieces that are not generic enough for `lib/`. Prefer **`features/shared/types.ts`** for shared types; do not turn `shared/` into a junk drawer.
+
+---
+
+## Admin vs portal inside one feature
+
+When both **admin** and **portal** use the same product area (e.g. studies):
+
+- **Shared data** — `queries/`, `mutations/`, `domain/`; authorisation inside resolvers or guards.
+- **Separate UI** — e.g. `ui/admin/`, `ui/researcher/`, `ui/participant/`, `ui/shared/`. Prefer **different files** over one huge component full of `if (role)` branches.
+- **Imports** — admin pages must not import implementation from portal route folders, or vice versa. Both import **`features/<feature>/`**.
+
+---
+
+## Cross-feature dependencies
+
+- Prefer **loose coupling**. Features may import **`components/ui/`** and **`lib/`** freely.
+- **Avoid feature → feature** imports when possible. For shared **non-UI** symbols, use **`features/shared/types.ts`** or promote generic pieces to **`lib/validation/`** / **`lib/utils/`**.
+- **Orchestration** at the boundary: **`page.tsx`** may compose multiple features.
+- **`lib/` must not depend on `features/`** in the general case: `lib/` is a lower layer.  
+  **Documented exceptions** (unavoidable integration): e.g. cron or JATOS code that must call study lifecycle APIs may import from **`@/src/features/studies`**. Prefer a **narrow import** (specific module) over pulling in wide barrels unless necessary. Some **`lib/jatos`** code may import **`features/feedback/domain`** for cohort statistics — treat as a deliberate edge and avoid widening the dependency.
+
+**`services/` vs `server/`** (inside a feature):
+
+- **`server/`** — private helpers used by this feature’s queries, mutations, actions, and routes.
+- **`services/`** — entrypoints **other features’ server code** is expected to call (e.g. sending a notification). Export only what is stable from **`index.ts`**.
+
+---
+
+## Types and validation
+
+| Kind                                                    | Where                                                   |
+| ------------------------------------------------------- | ------------------------------------------------------- |
+| Zod **primitives** (email, password, trimmed string, …) | `src/lib/validation/`                                   |
+| Generic TS helpers (`Result`, `Maybe`, …)               | `src/lib/utils/` (or next to single use)                |
+| Feature **forms / DTOs**                                | `features/<feature>/validations.ts` (or `validations/`) |
+| Types owned by one feature                              | `features/<feature>/types.ts`                           |
+| Cross-feature domain types                              | `features/shared/types.ts` (≥2 real consumers)          |
+| Must be importable from `lib/`                          | `lib/` or `src/types/` — **not** under `features/`      |
+| Database shapes                                         | `@prisma/client` — do not duplicate                     |
+
+Promote a Zod field to **`lib/validation/`** when a **second** feature needs the same primitive.
+
+Do not put Zod schemas in **`src/types/`** — that folder is for **TypeScript** declarations; Zod is runtime validation.
+
+---
+
+## Design system vs feature UI
+
+| Location                     | Use for                                                               |
+| ---------------------------- | --------------------------------------------------------------------- |
+| **`src/components/ui/`**     | Generic building blocks: no domain types, no product-specific rules.  |
+| **`features/<feature>/ui/`** | Screens and components that **know** domain shapes and product flows. |
+
+If a file under **`src/app/components/`** imports **features**, **routes**, or **domain** logic, it probably belongs in a **feature**, not the design system.
+
+---
+
+## Feature UI: server vs client, and context
+
+- **Default:** components under **`features/<feature>/ui/`** are **Server Components** unless they use **`"use client"`** or only exist for client behaviour.
+- **`ui/client/`** (or `ui/<role>/client/`) — hooks, Blitz `useMutation`, browser APIs. Keep **`"use client"`** at the top of every file in those client-only trees.
+- **`context/`** — providers and hooks that **only** make sense with that feature’s tree. **App-wide** chrome may live in **`features/shell/`** instead.
+
+Prefer loading data in Server Components and passing props into small client islands.
+
+---
+
+## Layering inside a feature
+
+### `domain/`
+
+Pure business rules: in-memory testable, **no React**, **no Prisma**, **no JATOS** in the same module. Subfolders such as **`domain/setup/`**, **`domain/variables/`** group pure logic by topic.
+
+### `server/`
+
+Server-only code that **does** IO: Prisma, JATOS, RSC loaders, orchestration **behind** resolvers or pages. Not a Blitz RPC folder.
+
+### `queries/`, `mutations/`, `actions/` (Blitz)
+
+- **`queries/`** — reads; **`mutations/`** — writes; **`actions/`** — multi-step or workflow RPC today, aligned with a future move toward Next.js **server actions** under the same naming.
+- **`actions/`** holds **public** entrypoints (default export callable from the client via Blitz).
+- **`server/`** holds **private** helpers used only on the server.
+
+|                 | `actions/` (and mutations/queries as RPC)     | `server/`                     |
+| --------------- | --------------------------------------------- | ----------------------------- |
+| **Role**        | Public RPC (or future `"use server"` exports) | Private implementation        |
+| **Called from** | Client / Blitz                                | **Only** other server modules |
+
+---
+
+## Blitz RPC: scanner rules and gotchas
+
+Blitz scans **`features/*/queries/*`**, **`mutations/*`**, and **`actions/*`** and wraps each file’s **default export** as an RPC handler.
+
+1. **Every file** in those folders must **`export default`** something Blitz accepts as a resolver (e.g. `resolver.pipe(...)`). If there is no default or it is not resolver-shaped, the app can fail **at runtime** when the route loads — TypeScript may not warn you.
+
+2. **Do not put non-resolver modules** (shared Prisma selects, plain constants-only files, RSC-only helpers) **inside** `queries/`, `mutations/`, or `actions/`. Place them at the **feature root** (e.g. `inviteSelect.ts`), in **`domain/`**, or in **`server/`**, depending on purity and IO.
+
+3. **`"use server"`** — Next only allows certain exports from server action modules. Do not re-export **plain values** (numbers, objects) from `"use server"` files through the feature **`index.ts`** unless they are async callable functions. Keep constants in a non–`"use server"` sibling module if needed.
+
+---
+
+## What exists where (quick map)
+
+| Concern                                                                       | Typical location                                                    |
+| ----------------------------------------------------------------------------- | ------------------------------------------------------------------- |
+| Portal routes                                                                 | `src/app/(app)/` — thin `page.tsx` / `layout.tsx`                   |
+| Admin routes                                                                  | `src/app/admin/`                                                    |
+| Auth pages                                                                    | `src/app/(auth)/`                                                   |
+| Dashboard, studies, feedback, codebook, notifications, profile, admin invites | `src/features/<name>/`                                              |
+| Navbar / shell pieces                                                         | `src/features/shell/` (and related)                                 |
+| Current user session query                                                    | `src/features/auth/queries/getCurrentUser.ts` (and hooks alongside) |
+| JATOS, email, generic auth routing                                            | `src/lib/`                                                          |
+| Database (Prisma)                                                             | Project `db/` module (Blitz / Next convention)                      |
+
+This map is indicative; **`src/features/`** is the source of truth for module boundaries.

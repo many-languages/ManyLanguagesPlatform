@@ -9,8 +9,8 @@ import { EmptyState } from "@/src/components/ui/EmptyState"
 import RefreshFeedbackButton from "./RefreshFeedbackButton"
 import type { FeedbackCardProps, FeedbackCardTone } from "@/src/features/feedback/types"
 import { mdEditorStyles, mdEditorClassName } from "@/src/features/feedback/styles/feedbackStyles"
-import { studySetupStepPath } from "@/src/features/studies"
-import { ARCHIVED_STUDY_CANNOT_EDIT_MESSAGE } from "@/src/features/studies"
+import { studySetupStepPath } from "@/src/features/studies/domain/setup/setupRoutes"
+import { ARCHIVED_STUDY_CANNOT_EDIT_MESSAGE } from "@/src/features/studies/domain/studyEditability"
 
 const TONE_BG: Record<FeedbackCardTone, string> = {
   default: "bg-base-200",

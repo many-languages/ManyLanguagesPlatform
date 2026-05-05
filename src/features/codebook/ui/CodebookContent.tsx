@@ -16,8 +16,8 @@ import { Textarea } from "@/src/components/ui/fields"
 import {
   ARCHIVED_STUDY_CANNOT_EDIT_MESSAGE,
   canEditStudySetup,
-  type StudyWithRelations,
-} from "@/src/features/studies"
+} from "@/src/features/studies/domain/studyEditability"
+import type { StudyWithRelations } from "@/src/features/studies/types"
 
 interface VariableCodebookEntry {
   id: number

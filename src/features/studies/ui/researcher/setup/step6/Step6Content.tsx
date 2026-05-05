@@ -7,13 +7,15 @@ import { useRef, useState } from "react"
 import { toast } from "react-hot-toast"
 import StepNavigation from "../StepNavigation"
 import {
-  FeedbackStepEditor,
-  type FeedbackPreviewContextClientDto,
+  default as FeedbackStepEditor,
   type FeedbackStepEditorState,
-  type FeedbackFormEditorRef,
-  type FeedbackTemplateEditorInitial,
-  type FeedbackTemplateValidation,
-} from "@/src/features/feedback"
+} from "@/src/features/feedback/ui/FeedbackStepEditor"
+import type {
+  FeedbackPreviewContextClientDto,
+  FeedbackFormEditorRef,
+  FeedbackTemplateEditorInitial,
+  FeedbackTemplateValidation,
+} from "@/src/features/feedback/types"
 import { useNotificationMenuContext } from "@/src/features/notifications"
 import { studyPath } from "../../../../domain/setup/setupRoutes"
 import { getSetupCompletionAction } from "../../../../actions/getSetupCompletionAction"

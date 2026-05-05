@@ -10,7 +10,7 @@ import { useMutation } from "@blitzjs/rpc"
 import { useSearchParams } from "next/navigation"
 import { useRouter } from "next/navigation"
 import type { Route } from "next"
-import { usePendingNavigation } from "@/src/app/hooks/usePendingNavigation"
+import { usePendingNavigation } from "@/src/features/auth/hooks/usePendingNavigation"
 import { getDefaultAuthenticatedPath } from "@/src/lib/auth/routing"
 
 export const LoginForm = () => {

@@ -9,10 +9,10 @@ import { useMutation, useQuery } from "@blitzjs/rpc"
 import updateSetupCompletion from "@/src/features/studies/mutations/updateSetupCompletion"
 import { checkPilotStatusAction } from "@/src/features/studies/actions/checkPilotStatus"
 import getResearcherRunUrl from "@/src/features/studies/queries/getResearcherRunUrl"
+import { useWindowResumeCheck } from "@/src/lib/utils/useWindowResumeCheck"
 import Step3Instructions from "./Step3Instructions"
 import Step3Actions from "./Step3Actions"
 import StepNavigation from "../StepNavigation"
-import { useWindowResumeCheck } from "@/src/app/hooks/useWindowResumeCheck"
 
 import type { StudyWithRelations } from "../../../../types"
 

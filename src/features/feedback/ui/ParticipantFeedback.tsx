@@ -12,7 +12,7 @@ import {
   PARTICIPANT_FEEDBACK_RSC_NOT_ENROLLED,
   PARTICIPANT_FEEDBACK_RSC_SIGN_IN,
 } from "@/src/features/feedback/domain/participantFeedbackRscMessages"
-import { useWindowResumeCheck } from "@/src/app/hooks/useWindowResumeCheck"
+import { useWindowResumeCheck } from "@/src/lib/utils/useWindowResumeCheck"
 
 interface ParticipantFeedbackProps {
   studyId: number

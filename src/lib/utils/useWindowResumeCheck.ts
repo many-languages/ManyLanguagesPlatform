@@ -8,10 +8,6 @@ interface UseWindowResumeCheckOptions {
   includeVisibilityChange?: boolean
 }
 
-/**
- * Registers focus and optional visibility listeners that invoke the supplied
- * callback whenever the window regains focus or becomes visible again.
- */
 export function useWindowResumeCheck({
   enabled = true,
   onResume,

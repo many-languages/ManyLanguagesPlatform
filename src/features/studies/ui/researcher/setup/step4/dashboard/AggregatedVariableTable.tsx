@@ -7,7 +7,7 @@ import {
   ChevronDownIcon,
   ChevronUpIcon,
 } from "@heroicons/react/24/outline"
-import Table from "@/src/app/components/Table"
+import Table from "@/src/components/ui/Table"
 import { ColumnDef, Row } from "@tanstack/react-table"
 
 interface AggregatedVariableTableProps {

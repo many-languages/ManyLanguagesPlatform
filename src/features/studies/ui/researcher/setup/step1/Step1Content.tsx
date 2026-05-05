@@ -3,7 +3,7 @@
 import { Route } from "next"
 import { useRouter } from "next/navigation"
 import { useMutation } from "@blitzjs/rpc"
-import { FORM_ERROR } from "@/src/app/components/Form"
+import { FORM_ERROR } from "@/src/components/ui/Form"
 import toast from "react-hot-toast"
 
 import updateStudy from "@/src/features/studies/mutations/updateStudy"

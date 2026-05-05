@@ -1,7 +1,7 @@
 import type { StudyWithLatestUpload } from "../../types"
 import CollapseCard from "./CollapseCard"
 import JoinStudyButton from "../participant/JoinStudyButton"
-import { NavigationButton } from "@/src/app/components/NavigationButton"
+import { NavigationButton } from "@/src/components/ui/NavigationButton"
 import { ArchiveBoxIcon } from "@heroicons/react/24/outline"
 
 interface StudyItemProps {

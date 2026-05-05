@@ -1,7 +1,7 @@
 "use client"
 
 import Card from "@/src/components/ui/Card"
-import { NavigationButton } from "@/src/app/components/NavigationButton"
+import { NavigationButton } from "@/src/components/ui/NavigationButton"
 
 interface StudyHeaderProps {
   study: {

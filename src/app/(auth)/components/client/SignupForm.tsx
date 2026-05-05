@@ -7,8 +7,8 @@ import {
   SelectField,
   FormSubmitButton,
   FormErrorDisplay,
-} from "@/src/app/components/fields"
-import { Form, FORM_ERROR } from "@/src/app/components/Form"
+} from "@/src/components/ui/fields"
+import { Form, FORM_ERROR } from "@/src/components/ui/Form"
 import signup from "../../mutations/signup"
 import { Signup } from "../../validations"
 import { useMutation, useQuery } from "@blitzjs/rpc"

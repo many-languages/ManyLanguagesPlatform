@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation"
 import { useMutation } from "@blitzjs/rpc"
 import toast from "react-hot-toast"
-import { ConfirmButton } from "@/src/app/components/ConfirmButton"
+import { ConfirmButton } from "@/src/components/ui/ConfirmButton"
 import archiveStudy from "@/src/features/studies/mutations/archiveStudy"
 import deleteResearcherStudy from "@/src/features/studies/mutations/deleteResearcherStudy"
 import unarchiveStudy from "@/src/features/studies/mutations/unarchiveStudy"

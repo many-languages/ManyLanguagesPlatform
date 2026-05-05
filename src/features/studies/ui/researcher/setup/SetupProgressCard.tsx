@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation"
 import Card from "@/src/components/ui/Card"
 import StepIndicator from "./StepIndicator"
 import { Alert } from "@/src/components/ui/Alert"
-import { NavigationButton } from "@/src/app/components/NavigationButton"
+import { NavigationButton } from "@/src/components/ui/NavigationButton"
 import {
   getNextSetupStepUrl,
   getSetupProgress,

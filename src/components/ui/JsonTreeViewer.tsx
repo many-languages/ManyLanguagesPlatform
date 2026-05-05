@@ -118,13 +118,13 @@ export default function JsonTreeViewer({
         labelRenderer={(keyPath) => {
           const key = String(keyPath[0])
           const matchPath = isHighlightedPath(keyPath)
-          const className = matchPath ? "bg-warning/30 rounded px-1" : undefined
-          return <span className={className}>{key}</span>
+          const labelClassName = matchPath ? "bg-warning/30 rounded px-1" : undefined
+          return <span className={labelClassName}>{key}</span>
         }}
         valueRenderer={(raw, _value, ...keyPath) => {
           const matchPath = isHighlightedPath(keyPath)
-          const className = matchPath ? "bg-warning/20 rounded px-1" : undefined
-          return <span className={className}>{String(raw)}</span>
+          const valueClassName = matchPath ? "bg-warning/20 rounded px-1" : undefined
+          return <span className={valueClassName}>{String(raw)}</span>
         }}
       />
     </div>

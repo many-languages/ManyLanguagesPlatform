@@ -8,7 +8,6 @@ import { FieldLabel, fieldAriaDescribedBy } from "./FieldLabel"
 interface TextFieldProps extends React.InputHTMLAttributes<HTMLInputElement> {
   name: string
   label: string
-  /** Extra context shown next to the label (info icon + tooltip, screen reader text). */
   labelHint?: string
   error?: string
 }
@@ -28,7 +27,6 @@ export const TextField = ({
   } = useFormContext()
   const [isPasswordVisible, setIsPasswordVisible] = useState(false)
 
-  // Prioritize form errors over custom error prop
   const fieldError = (errors[name]?.message as string) || error
   const isPasswordField = type === "password"
   const inputType = isPasswordField && isPasswordVisible ? "text" : type

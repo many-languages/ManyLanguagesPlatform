@@ -8,9 +8,7 @@ export type FieldLabelProps = {
   hint?: string
 }
 
-/** Optional hint id suffix for aria-describedby on inputs */
 export const fieldHintId = (fieldId: string) => `${fieldId}-hint`
-
 export const fieldErrorId = (fieldId: string) => `${fieldId}-error`
 
 export function fieldAriaDescribedBy(fieldId: string, opts: { hint?: boolean; error?: boolean }) {

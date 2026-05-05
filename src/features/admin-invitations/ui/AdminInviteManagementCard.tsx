@@ -2,9 +2,9 @@
 
 import { useMemo, useState } from "react"
 import Card from "@/src/components/ui/Card"
-import Form from "@/src/app/components/Form"
-import CheckboxFieldTable from "@/src/app/components/CheckboxFieldTable"
-import { FormErrorDisplay } from "@/src/app/components/FormErrorDisplay"
+import Form from "@/src/components/ui/Form"
+import CheckboxFieldTable from "@/src/components/ui/CheckboxFieldTable"
+import { FormErrorDisplay } from "@/src/components/ui/FormErrorDisplay"
 import { AdminInviteSchema, AdminInviteFormValues } from "../validations"
 import revokeAdminInvites from "../mutations/revokeAdminInvites"
 import sendAdminInviteReminders from "../mutations/sendAdminInviteReminders"

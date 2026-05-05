@@ -2,13 +2,13 @@
 
 import { useMemo, type MouseEvent } from "react"
 import Card from "@/src/components/ui/Card"
-import Form from "@/src/app/components/Form"
-import CheckboxFieldTable from "@/src/app/components/CheckboxFieldTable"
-import { FormErrorDisplay } from "@/src/app/components/FormErrorDisplay"
+import Form from "@/src/components/ui/Form"
+import CheckboxFieldTable from "@/src/components/ui/CheckboxFieldTable"
+import { FormErrorDisplay } from "@/src/components/ui/FormErrorDisplay"
 import { AdminStudySchema } from "../../validations"
 import { Codebook, CodebookEntry, FeedbackTemplate } from "db"
 import Modal from "@/src/components/ui/Modal"
-import ViewDetailsButton from "@/src/app/components/ViewDetailsButton"
+import ViewDetailsButton from "@/src/components/ui/ViewDetailsButton"
 import StatusBadge, { type StatusBadgeVariant } from "@/src/components/ui/StatusBadge"
 import {
   getAdminApprovalVariant,

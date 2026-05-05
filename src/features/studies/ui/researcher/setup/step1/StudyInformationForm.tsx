@@ -1,14 +1,14 @@
 "use client"
 
 import { useMemo } from "react"
-import { Form } from "@/src/app/components/Form"
+import { Form } from "@/src/components/ui/Form"
 import {
   TextField,
   FormTextAreaField,
   DateField,
   FormSubmitButton,
   FormErrorDisplay,
-} from "@/src/app/components/fields"
+} from "@/src/components/ui/fields"
 import { StudyInformationFormSchema } from "@/src/features/studies/validations"
 import { z } from "zod"
 

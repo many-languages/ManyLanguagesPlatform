@@ -5,7 +5,6 @@ import { FieldLabel, fieldAriaDescribedBy } from "./FieldLabel"
 
 interface TextareaProps extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {
   label?: string
-  /** Extra context shown next to the label (info icon + tooltip, screen reader text). */
   labelHint?: string
   error?: string
 }

@@ -16,7 +16,7 @@ import { getBatchIdAction } from "@/src/features/studies/actions/getBatchId"
 import { uploadStudyFile } from "@/src/lib/jatos/browser/uploadStudyFile"
 import { extractJatosStudyUuidFromJzip } from "@/src/lib/jatos/parsers/extractJatosStudyUuid"
 import { Alert } from "@/src/components/ui/Alert"
-import { FORM_ERROR } from "@/src/app/components/Form"
+import { FORM_ERROR } from "@/src/components/ui/Form"
 import { createResearcherPilotUrlAndSaveAction } from "@/src/features/studies/actions/createResearcherPilotUrl"
 
 import type { StudyWithRelations } from "../../../../types"

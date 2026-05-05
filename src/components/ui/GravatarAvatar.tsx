@@ -16,7 +16,6 @@ export default function GravatarAvatar({ email, size = 40 }: GravatarAvatarProps
   }, [])
 
   if (!mounted) {
-    // Return placeholder during SSR to prevent hydration mismatch
     return <div className="w-10 h-10 rounded-full bg-base-300" />
   }
 

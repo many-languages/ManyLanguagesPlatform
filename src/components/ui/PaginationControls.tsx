@@ -19,7 +19,6 @@ const PaginationControls: React.FC<PaginationControlsProps> = ({ page, hasMore, 
   const buildHref = (nextPage: number) => {
     const params = new URLSearchParams(searchParams.toString())
 
-    // apply/override extraQuery
     if (extraQuery) {
       for (const [k, v] of Object.entries(extraQuery)) {
         if (v === undefined || v === null) params.delete(k)

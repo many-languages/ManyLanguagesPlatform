@@ -3,13 +3,9 @@
 import { useState } from "react"
 
 type ViewDetailsButtonProps = {
-  /** Whether the details are available to view */
   hasData: boolean
-  /** Button label when data is available */
   buttonLabel: string
-  /** Fallback text when data is not available */
   unavailableLabel?: string
-  /** Modal content - receives open state and close handler */
   children: (props: { open: boolean; onClose: () => void }) => React.ReactNode
 }
 

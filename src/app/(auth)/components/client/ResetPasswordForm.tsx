@@ -1,8 +1,8 @@
 "use client"
 
 import { useMemo } from "react"
-import { TextField, FormSubmitButton, FormErrorDisplay } from "@/src/app/components/fields"
-import { Form, FORM_ERROR } from "@/src/app/components/Form"
+import { TextField, FormSubmitButton, FormErrorDisplay } from "@/src/components/ui/fields"
+import { Form, FORM_ERROR } from "@/src/components/ui/Form"
 import { ResetPassword } from "../../validations"
 import resetPassword from "../../mutations/resetPassword"
 import { useMutation } from "@blitzjs/rpc"

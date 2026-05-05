@@ -11,9 +11,7 @@ export interface FormProps<T extends z.ZodType<any, any>> {
   onSubmit: (values: z.infer<T>) => Promise<void | { FORM_ERROR?: string }>
   defaultValues?: Partial<z.infer<T>>
   className?: string
-  /** Optional callback called after successful submission (before form reset) */
   onSuccess?: () => void
-  /** Whether to reset form after successful submission. Defaults to false. */
   resetOnSuccess?: boolean
 }
 
@@ -45,7 +43,6 @@ export function Form<T extends z.ZodType<any, any>>({
             if (result && result.FORM_ERROR) {
               form.setError("root", { message: result.FORM_ERROR })
             } else {
-              // Successful submission
               if (onSuccess) {
                 onSuccess()
               }

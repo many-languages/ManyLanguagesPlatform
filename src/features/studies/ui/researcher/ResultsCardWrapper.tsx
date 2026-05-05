@@ -5,7 +5,7 @@ import type {
   EnrichedJatosStudyResult,
 } from "@/src/types/jatos"
 import ResultsCard from "./ResultsCard"
-import { LoadingMessage } from "@/src/app/components/LoadingStates"
+import { LoadingMessage } from "@/src/components/ui/LoadingStates"
 
 interface ResultsCardWrapperProps {
   jatosStudyId: number

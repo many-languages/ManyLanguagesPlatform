@@ -12,11 +12,9 @@ export default function ThemeToggle() {
     setMounted(true)
   }, [])
 
-  // Use resolvedTheme which is the actual theme value after hydration
   const currentTheme = resolvedTheme || theme || "light"
 
   if (!mounted) {
-    // Return placeholder matching the blocking script's default
     return (
       <button className="btn btn-ghost btn-circle" aria-label="Toggle theme">
         <MoonIcon className="h-5 w-5" />

@@ -14,6 +14,5 @@ export type CurrentUser = {
 export type NavItem = {
   href: string
   label: string
-  /** Admin shell: only show for SUPERADMIN */
   superAdminOnly?: boolean
 }

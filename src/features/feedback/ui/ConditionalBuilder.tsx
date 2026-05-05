@@ -5,7 +5,7 @@ import VariableSelector from "./VariableSelector"
 import StatsSelector from "./StatsSelector"
 import { SelectField, FilterButtonWithDisplay, SyntaxPreview } from "./shared"
 import type { FeedbackVariable } from "@/src/features/feedback/types"
-import { Textarea } from "@/src/app/components/fields"
+import { Textarea } from "@/src/components/ui/fields"
 
 interface ConditionalBuilderProps {
   variables: FeedbackVariable[]

@@ -6,12 +6,12 @@ import { useMemo } from "react"
 import { useMutation } from "@blitzjs/rpc"
 import { useRouter } from "next/navigation"
 import md5 from "md5"
-import logout from "../../(auth)/mutations/logout"
+import logout from "@/src/app/(auth)/mutations/logout"
 import {
   NotificationMenu as NotificationsMenu,
   NotificationMenuProvider,
 } from "@/src/features/notifications"
-import ThemeToggle from "../ThemeToggle"
+import ThemeToggle from "../ui/ThemeToggle"
 import { adminNavItems, portalNavItems } from "./navConfig"
 import type { CurrentUser, NavbarVariant } from "./types"
 

@@ -12,15 +12,14 @@ import {
 } from "@tanstack/react-table"
 import type { SortingState, ExpandedState, Row } from "@tanstack/react-table"
 import React from "react"
-
 import { ChevronUpIcon, ChevronDownIcon, ChevronUpDownIcon } from "@heroicons/react/24/outline"
 import Filter from "./Filter"
-import { EmptyState } from "@/src/components/ui/EmptyState"
+import { EmptyState } from "./EmptyState"
 
 type TableProps<TData> = {
   columns: ColumnDef<TData, any>[]
   data: TData[]
-  filters?: {} //pass object with the type of filter for a given colunm based on colunm id
+  filters?: {}
   enableSorting?: boolean
   enableFilters?: boolean
   addPagination?: boolean
@@ -59,8 +58,8 @@ const Table = <TData extends unknown>({
   const table = useReactTable({
     data,
     columns,
-    enableSorting: enableSorting,
-    enableFilters: enableFilters,
+    enableSorting,
+    enableFilters,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
@@ -70,13 +69,12 @@ const Table = <TData extends unknown>({
     ...(addPagination ? { getPaginationRowModel: getPaginationRowModel() } : {}),
     getFacetedMinMaxValues: getFacetedMinMaxValues(),
     state: {
-      sorting: sorting,
-      expanded: expanded,
+      sorting,
+      expanded,
     },
     onExpandedChange: setExpanded,
     initialState: {
       pagination: {
-        // When pagination is disabled, set page size to show all rows
         pageSize: addPagination ? 5 : Number.MAX_SAFE_INTEGER,
       },
     },
@@ -172,81 +170,75 @@ const Table = <TData extends unknown>({
         </table>
       </div>
       {addPagination && table.getRowModel().rows.length > 0 && pageCount > 1 && (
-        <>
-          {/* Pagination buttons */}
-          <div className="flex items-center gap-2">
-            <button
-              className={`btn btn-secondary ${classNames?.paginationButton || ""}`}
-              onClick={() => table.setPageIndex(0)}
-              disabled={!table.getCanPreviousPage()}
-              type="button"
-            >
-              {"<<"}
-            </button>
-            <button
-              className={`btn btn-secondary ${classNames?.paginationButton || ""}`}
-              onClick={() => table.previousPage()}
-              disabled={!table.getCanPreviousPage()}
-              type="button"
-            >
-              {"<"}
-            </button>
-            <button
-              className={`btn btn-secondary ${classNames?.paginationButton || ""}`}
-              onClick={() => table.nextPage()}
-              disabled={!table.getCanNextPage()}
-              type="button"
-            >
-              {">"}
-            </button>
-            <button
-              className={`btn btn-secondary ${classNames?.paginationButton || ""}`}
-              onClick={() => table.setPageIndex(table.getPageCount() - 1)}
-              disabled={!table.getCanNextPage()}
-              type="button"
-            >
-              {">>"}
-            </button>
-            {/* Curent page info */}
-            <span className={`flex items-center gap-1 ${classNames?.pageInfo || ""}`}>
-              <div>Page</div>
-              <strong>
-                {currentPage} of {pageCount}
-              </strong>
-            </span>
-            {/* Go to page input */}
-            <span className={`flex items-center gap-1 ${classNames?.goToPageInput || ""}`}>
-              | Go to:
-              <input
-                type="number"
-                defaultValue={table.getState().pagination.pageIndex + 1}
-                onChange={(e) => {
-                  const page = e.target.value ? Number(e.target.value) - 1 : 0
-                  table.setPageIndex(page)
-                }}
-                className="text-secondary input-secondary input-bordered border-2 bg-base-300 rounded input-sm w-20 mt-0"
-                min={1}
-                max={table.getPageCount()}
-              />
-            </span>
-            {/* Select page size input */}
-            <select
-              value={table.getState().pagination.pageSize}
+        <div className="flex items-center gap-2">
+          <button
+            className={`btn btn-secondary ${classNames?.paginationButton || ""}`}
+            onClick={() => table.setPageIndex(0)}
+            disabled={!table.getCanPreviousPage()}
+            type="button"
+          >
+            {"<<"}
+          </button>
+          <button
+            className={`btn btn-secondary ${classNames?.paginationButton || ""}`}
+            onClick={() => table.previousPage()}
+            disabled={!table.getCanPreviousPage()}
+            type="button"
+          >
+            {"<"}
+          </button>
+          <button
+            className={`btn btn-secondary ${classNames?.paginationButton || ""}`}
+            onClick={() => table.nextPage()}
+            disabled={!table.getCanNextPage()}
+            type="button"
+          >
+            {">"}
+          </button>
+          <button
+            className={`btn btn-secondary ${classNames?.paginationButton || ""}`}
+            onClick={() => table.setPageIndex(table.getPageCount() - 1)}
+            disabled={!table.getCanNextPage()}
+            type="button"
+          >
+            {">>"}
+          </button>
+          <span className={`flex items-center gap-1 ${classNames?.pageInfo || ""}`}>
+            <div>Page</div>
+            <strong>
+              {currentPage} of {pageCount}
+            </strong>
+          </span>
+          <span className={`flex items-center gap-1 ${classNames?.goToPageInput || ""}`}>
+            | Go to:
+            <input
+              type="number"
+              defaultValue={table.getState().pagination.pageIndex + 1}
               onChange={(e) => {
-                table.setPageSize(Number(e.target.value))
+                const page = e.target.value ? Number(e.target.value) - 1 : 0
+                table.setPageIndex(page)
               }}
-              className={`text-secondary input-secondary input-bordered border-2 bg-base-300 rounded input-sm leading-normal mt-0 ${
-                classNames?.pageSizeSelect || ""
-              }`}
-            >
-              {[5, 10, 20, 30, 40, 50].map((pageSize) => (
-                <option key={pageSize} value={pageSize}>
-                  Show {pageSize}
-                </option>
-              ))}
-            </select>
-          </div>
-        </>
+              className="text-secondary input-secondary input-bordered border-2 bg-base-300 rounded input-sm w-20 mt-0"
+              min={1}
+              max={table.getPageCount()}
+            />
+          </span>
+          <select
+            value={table.getState().pagination.pageSize}
+            onChange={(e) => {
+              table.setPageSize(Number(e.target.value))
+            }}
+            className={`text-secondary input-secondary input-bordered border-2 bg-base-300 rounded input-sm leading-normal mt-0 ${
+              classNames?.pageSizeSelect || ""
+            }`}
+          >
+            {[5, 10, 20, 30, 40, 50].map((pageSize) => (
+              <option key={pageSize} value={pageSize}>
+                Show {pageSize}
+              </option>
+            ))}
+          </select>
+        </div>
       )}
     </>
   )

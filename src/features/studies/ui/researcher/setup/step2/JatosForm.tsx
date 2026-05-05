@@ -2,7 +2,7 @@
 
 import { useMemo } from "react"
 import { useFormContext } from "react-hook-form"
-import { Form } from "@/src/app/components/Form"
+import { Form } from "@/src/components/ui/Form"
 import { JatosFormSchema } from "@/src/features/studies/validations"
 import { z } from "zod"
 import {
@@ -10,7 +10,7 @@ import {
   FileField,
   FormSubmitButton,
   FormErrorDisplay,
-} from "@/src/app/components/fields"
+} from "@/src/components/ui/fields"
 
 type JatosFormValues = z.infer<typeof JatosFormSchema>
 

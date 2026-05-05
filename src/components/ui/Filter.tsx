@@ -65,7 +65,6 @@ function Filter({ column }: { column: Column<any, unknown> }) {
     >
       <option value="">All</option>
       {sortedUniqueValues.map((value, index) => (
-        // dynamically generated select options from faceted values feature
         <option
           value={value}
           key={getUniqueKey(value, index)}
@@ -114,7 +113,6 @@ function Filter({ column }: { column: Column<any, unknown> }) {
     </div>
   ) : (
     <>
-      {/* Autocomplete suggestions from faceted values feature */}
       <datalist id={column.id + "list"}>
         {sortedUniqueValues.map((value: any, index: number) => (
           <option value={value} key={getUniqueKey(value, index)} />
@@ -124,7 +122,6 @@ function Filter({ column }: { column: Column<any, unknown> }) {
         type="text"
         value={(columnFilterValue ?? "") as string}
         onChange={onChangeCallback}
-        // placeholder={`Search... (${column.getFacetedUniqueValues().size})`}
         placeholder="Search..."
         className={sharedInputStyles}
         list={column.id + "list"}

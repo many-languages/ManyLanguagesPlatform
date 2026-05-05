@@ -12,7 +12,7 @@ import { CODEBOOK_SAVE_FEEDBACK_PERSONAL_DATA_HINT } from "../domain/codebookSav
 import { Alert } from "@/src/components/ui/Alert"
 import { AsyncButton } from "@/src/components/ui/AsyncButton"
 import Card from "@/src/components/ui/Card"
-import { Textarea } from "@/src/app/components/fields"
+import { Textarea } from "@/src/components/ui/fields"
 import {
   ARCHIVED_STUDY_CANNOT_EDIT_MESSAGE,
   canEditStudySetup,

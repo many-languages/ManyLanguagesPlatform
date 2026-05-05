@@ -1,24 +1,5 @@
 "use client"
 
-/**
- * LoadingStates Components
- *
- * Reusable loading components for consistent loading displays throughout the application.
- * Includes spinner, overlay, and inline message variants.
- *
- * @example
- * ```tsx
- * // Simple spinner
- * <LoadingSpinner />
- *
- * // Overlay with message
- * <LoadingOverlay message="Loading data..." />
- *
- * // Inline loading message
- * <LoadingMessage message="Processing..." />
- * ```
- */
-
 interface LoadingSpinnerProps {
   /**
    * Size of the spinner
@@ -31,9 +12,6 @@ interface LoadingSpinnerProps {
   className?: string
 }
 
-/**
- * Loading spinner component
- */
 export function LoadingSpinner({ size = "lg", className }: LoadingSpinnerProps) {
   return (
     <span className={`loading loading-spinner loading-${size} text-secondary ${className || ""}`} />
@@ -56,9 +34,6 @@ interface LoadingOverlayProps {
   className?: string
 }
 
-/**
- * Loading overlay component - centers spinner and optional message
- */
 export function LoadingOverlay({ message, minHeight = "200px", className }: LoadingOverlayProps) {
   return (
     <div className={`flex items-center justify-center ${className || ""}`} style={{ minHeight }}>
@@ -81,9 +56,6 @@ interface LoadingMessageProps {
   className?: string
 }
 
-/**
- * Inline loading message component
- */
 export function LoadingMessage({ message, className }: LoadingMessageProps) {
   return <div className={`text-center text-sm p-3 ${className || ""}`}>{message}</div>
 }

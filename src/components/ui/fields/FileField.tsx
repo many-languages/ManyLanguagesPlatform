@@ -6,7 +6,6 @@ import { FieldLabel, fieldAriaDescribedBy } from "./FieldLabel"
 interface FileFieldProps {
   name: string
   label: string
-  /** Extra context shown next to the label (info icon + tooltip, screen reader text). */
   labelHint?: string
   accept?: string
   error?: string
@@ -26,7 +25,6 @@ export const FileField = ({
     formState: { isSubmitting, errors },
   } = useFormContext()
 
-  // Prioritize form errors over custom error prop
   const fieldError = (errors[name]?.message as string) || error
 
   return (

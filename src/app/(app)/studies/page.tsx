@@ -1,4 +1,4 @@
-import PaginationControls from "@/src/app/components/PaginationControls"
+import PaginationControls from "@/src/components/ui/PaginationControls"
 import { redirect } from "next/navigation"
 import {
   StudyList,

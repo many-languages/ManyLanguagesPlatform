@@ -2,7 +2,7 @@
 
 import React, { useCallback, useMemo, useRef, useEffect } from "react"
 import { useFormContext } from "react-hook-form"
-import Table from "@/src/app/components/Table"
+import Table from "./Table"
 
 interface CheckboxFieldTableProps<T> {
   name: string
@@ -29,7 +29,6 @@ const CheckboxFieldTable = <T,>({
   const selectedIds = watch(name) || []
   const error = errors[name]
 
-  // ✅ Toggle one
   const toggleSelection = useCallback(
     (id: number) => {
       if (selectionDisabled) return
@@ -43,22 +42,20 @@ const CheckboxFieldTable = <T,>({
     [watch, setValue, name, selectionDisabled]
   )
 
-  // ✅ Toggle all
   const toggleAll = useCallback(() => {
     if (selectionDisabled) return
     const currentIds = watch(name) || []
     if (currentIds.length === options.length) {
-      setValue(name, [], { shouldValidate: true, shouldDirty: true }) // deselect all
+      setValue(name, [], { shouldValidate: true, shouldDirty: true })
     } else {
       setValue(
         name,
         options.map((o) => o.id),
         { shouldValidate: true, shouldDirty: true }
-      ) // select all
+      )
     }
   }, [watch, setValue, name, options, selectionDisabled])
 
-  // ✅ Ref for indeterminate checkbox
   const headerCheckboxRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {

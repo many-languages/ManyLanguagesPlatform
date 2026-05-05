@@ -8,7 +8,6 @@ interface FormTextAreaFieldProps
   extends Omit<React.TextareaHTMLAttributes<HTMLTextAreaElement>, "name"> {
   name: string
   label: string
-  /** Extra context shown next to the label (info icon + tooltip, screen reader text). */
   labelHint?: string
   error?: string
 }

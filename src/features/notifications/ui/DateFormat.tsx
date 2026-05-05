@@ -1,4 +1,4 @@
-import { useCurrentUser } from "../users/hooks/useCurrentUser"
+import { useCurrentUser } from "@/src/app/users/hooks/useCurrentUser"
 
 interface DateFormatProps {
   date?: Date | null
@@ -19,7 +19,7 @@ export default function DateFormat({ date }: DateFormatProps) {
             hour: "2-digit",
             minute: "2-digit",
             second: "2-digit",
-            hour12: false, // Use 24-hour format
+            hour12: false,
           })
         : ""}
     </>

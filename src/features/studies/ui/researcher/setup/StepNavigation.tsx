@@ -1,6 +1,6 @@
 "use client"
 
-import { NavigationButton } from "@/src/app/components/NavigationButton"
+import { NavigationButton } from "@/src/components/ui/NavigationButton"
 import { AsyncButton } from "@/src/components/ui/AsyncButton"
 import type { Route } from "next"
 

@@ -1,5 +1,5 @@
 import { ArchiveBoxIcon } from "@heroicons/react/24/outline"
-import { StudyWithRelations } from "@/src/features/studies/queries/getStudy"
+import type { StudyWithRelations } from "../../types"
 
 interface StudyHeaderProps {
   study: StudyWithRelations

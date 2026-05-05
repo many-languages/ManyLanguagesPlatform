@@ -16,7 +16,7 @@ import {
   getDataCollectionProps,
 } from "@/src/lib/utils/statusBadgePresets"
 import MDEditor from "@uiw/react-md-editor"
-import type { AdminStudyWithLatestUpload } from "@/src/features/studies/queries/getAdminStudies"
+import type { AdminStudyWithLatestUpload } from "../../types"
 import type { UserRole } from "@/db"
 import { getSetupStatusLabel, type StudyWithMinimalRelations } from "../../domain/setup/setupStatus"
 import StudyActions from "./StudyActions"

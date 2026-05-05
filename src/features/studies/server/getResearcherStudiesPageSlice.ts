@@ -1,7 +1,7 @@
 import { Prisma } from "db"
 import type { StudyView } from "../domain/studyView"
 import { getStudies } from "../queries/getStudies"
-import type { StudyWithLatestUpload } from "../queries/getStudies"
+import type { StudyWithLatestUpload } from "../types"
 import { isSetupComplete } from "../domain/setup/setupStatus"
 
 /** Shared page size for `/studies` researcher + participant lists. */
@@ -50,7 +50,7 @@ export async function getResearcherStudiesPageSlice(options: {
       skip: 0,
       take: RESEARCHER_STUDIES_MAX_SETUP_FILTER,
     })
-    const filtered = result.studies.filter((s) => !isSetupComplete(s as StudyWithLatestUpload))
+    const filtered = result.studies.filter((s) => !isSetupComplete(s))
     const start = page * STUDIES_LIST_PAGE_SIZE
     return {
       studies: filtered.slice(start, start + STUDIES_LIST_PAGE_SIZE),

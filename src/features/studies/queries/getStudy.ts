@@ -4,52 +4,29 @@ import { cache } from "react"
 import { GetStudy, IdInput } from "@/src/features/studies/validations"
 import { resolver } from "@blitzjs/rpc"
 import { getBlitzContext } from "@/src/app/blitz-server"
+import { studyWithRelationsArgs } from "../studySelects"
+import type { StudyWithRelations } from "../types"
 
-// Single-source DB access function
-export async function findStudyById(id: number) {
-  const study = await db.study.findUnique({
-    where: { id },
-    include: {
-      jatosStudyUploads: {
-        orderBy: { createdAt: "desc" },
-        take: 1,
-        include: {
-          pilotLinks: {
-            select: { markerToken: true },
-          },
-          approvedExtraction: {
-            select: {
-              id: true,
-              approvedAt: true,
-              pilotDatasetSnapshot: {
-                select: { pilotRunIds: true },
-              },
-            },
-          },
-        },
-      },
-      researchers: {
-        select: { id: true, userId: true, role: true },
-      },
-      participations: {
-        select: { userId: true },
-      },
-      FeedbackTemplate: {
-        select: { id: true },
-      },
-    },
-  })
-
-  if (!study) throw new NotFoundError()
-
+function attachLatestJatosStudyUpload(
+  study: Omit<StudyWithRelations, "latestJatosStudyUpload">
+): StudyWithRelations {
   return {
     ...study,
     latestJatosStudyUpload: study.jatosStudyUploads[0] ?? null,
   }
 }
 
-// Export the return type of the helper function
-export type StudyWithRelations = Awaited<ReturnType<typeof findStudyById>>
+// Single-source DB access function
+export async function findStudyById(id: number): Promise<StudyWithRelations> {
+  const study = await db.study.findUnique({
+    where: { id },
+    ...studyWithRelationsArgs,
+  })
+
+  if (!study) throw new NotFoundError()
+
+  return attachLatestJatosStudyUpload(study)
+}
 
 // Server-side helper for RSCs
 export const getStudyRsc = cache(async (id: IdInput) => {

@@ -11,7 +11,7 @@ import StudyInformationForm from "./StudyInformationForm"
 import { getPostStepNavigationUrl } from "../../../../domain/setup/setupStatus"
 import { studyPath } from "../../../../domain/setup/setupRoutes"
 
-import { StudyWithRelations } from "@/src/features/studies/queries/getStudy"
+import type { StudyWithRelations } from "../../../../types"
 
 interface Step1ContentProps {
   study: StudyWithRelations

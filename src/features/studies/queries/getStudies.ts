@@ -3,38 +3,44 @@ import { cache } from "react"
 import { resolver } from "@blitzjs/rpc"
 import { getBlitzContext } from "@/src/app/blitz-server"
 import { GetStudiesInput } from "@/src/features/studies/validations"
+import { studyWithLatestUploadSelect } from "../studySelects"
+import type { StudyWithLatestUpload } from "../types"
 
 interface GetStudiesInputType
-  extends Pick<Prisma.StudyFindManyArgs, "where" | "orderBy" | "skip" | "take" | "include"> {}
+  extends Pick<Prisma.StudyFindManyArgs, "where" | "orderBy" | "skip" | "take"> {}
+
+type GetStudiesResult = {
+  studies: StudyWithLatestUpload[]
+  nextPage: Pick<Prisma.StudyFindManyArgs, "take" | "skip"> | null
+  hasMore: boolean
+  count: number
+}
+
+function attachLatestJatosStudyUpload(
+  study: Omit<StudyWithLatestUpload, "latestJatosStudyUpload">
+): StudyWithLatestUpload {
+  return {
+    ...study,
+    latestJatosStudyUpload: study.jatosStudyUploads[0] ?? null,
+  }
+}
 
 // Shared DB helper
 async function findStudies(
-  args: Pick<Prisma.StudyFindManyArgs, "where" | "orderBy" | "skip" | "take" | "include">
-) {
-  const include = {
-    ...(args.include ?? {}),
-    jatosStudyUploads: {
-      orderBy: { createdAt: "desc" },
-      take: 1,
-    },
-  }
+  args: Pick<Prisma.StudyFindManyArgs, "where" | "orderBy" | "skip" | "take">
+): Promise<GetStudiesResult> {
   const [studies, count] = await Promise.all([
-    db.study.findMany({ ...args, include }),
+    db.study.findMany({ ...args, select: studyWithLatestUploadSelect }),
     db.study.count({ where: args.where }),
   ])
 
-  const studiesWithLatestUpload = studies.map((study) => ({
-    ...study,
-    latestJatosStudyUpload: study.jatosStudyUploads[0] ?? null,
-  }))
+  const studiesWithLatestUpload = studies.map(attachLatestJatosStudyUpload)
 
   const hasMore = (args.skip ?? 0) + (args.take ?? 100) < count
   const nextPage = hasMore ? { take: args.take, skip: (args.skip ?? 0) + (args.take ?? 100) } : null
 
   return { studies: studiesWithLatestUpload, nextPage, hasMore, count }
 }
-
-export type StudyWithLatestUpload = Awaited<ReturnType<typeof findStudies>>["studies"][number]
 
 // Server helper (RSC use)
 export const getStudies = cache(async (args: GetStudiesInputType) => {

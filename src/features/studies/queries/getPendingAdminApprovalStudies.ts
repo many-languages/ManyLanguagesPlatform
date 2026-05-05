@@ -6,44 +6,63 @@ import db from "db"
 import { getAuthorizedSession } from "@/src/app/(auth)/utils/getAuthorizedSession"
 import { isStaffAdmin } from "@/src/lib/auth/roles"
 import { isSetupComplete, type StudyWithMinimalRelations } from "../domain/setup/setupStatus"
+import { pendingAdminApprovalStudySelect } from "../studySelects"
+import type { PendingAdminApprovalStudyRow } from "../types"
 
 const DASHBOARD_LIMIT = 3
 
-async function findPendingAdminApprovalStudiesForDashboard() {
+type PendingAdminApprovalStudyCandidate = {
+  id: number
+  title: string
+  description: string
+  FeedbackTemplate: { createdAt: Date } | null
+  researchers: Array<{ userId: number; role: string; id: number }>
+  jatosStudyUploads: Array<{
+    id: number
+    step1Completed: boolean
+    step2Completed: boolean
+    step3Completed: boolean
+    step4Completed: boolean
+    step5Completed: boolean
+    step6Completed: boolean
+    jatosWorkerType: string
+    jatosFileName: string
+  }>
+  latestJatosStudyUpload: {
+    id: number
+    step1Completed: boolean
+    step2Completed: boolean
+    step3Completed: boolean
+    step4Completed: boolean
+    step5Completed: boolean
+    step6Completed: boolean
+    jatosWorkerType: string
+    jatosFileName: string
+  } | null
+}
+
+function attachLatestJatosStudyUpload(
+  study: Omit<PendingAdminApprovalStudyCandidate, "latestJatosStudyUpload">
+): PendingAdminApprovalStudyCandidate {
+  return {
+    ...study,
+    latestJatosStudyUpload: study.jatosStudyUploads[0] ?? null,
+  }
+}
+
+async function findPendingAdminApprovalStudiesForDashboard(): Promise<
+  PendingAdminApprovalStudyRow[]
+> {
   const studies = await db.study.findMany({
     where: {
       adminApproved: null,
       archived: false,
       FeedbackTemplate: { isNot: null },
     },
-    select: {
-      id: true,
-      title: true,
-      description: true,
-      FeedbackTemplate: { select: { createdAt: true } },
-      researchers: { select: { userId: true, role: true, id: true } },
-      jatosStudyUploads: {
-        orderBy: { createdAt: "desc" },
-        take: 1,
-        select: {
-          id: true,
-          step1Completed: true,
-          step2Completed: true,
-          step3Completed: true,
-          step4Completed: true,
-          step5Completed: true,
-          step6Completed: true,
-          jatosWorkerType: true,
-          jatosFileName: true,
-        },
-      },
-    },
+    select: pendingAdminApprovalStudySelect,
   })
 
-  const mapped = studies.map((s) => ({
-    ...s,
-    latestJatosStudyUpload: s.jatosStudyUploads[0] ?? null,
-  }))
+  const mapped = studies.map(attachLatestJatosStudyUpload)
 
   const ready = mapped.filter((s) => isSetupComplete(s as StudyWithMinimalRelations))
 
@@ -79,7 +98,3 @@ const getPendingAdminApprovalStudies = resolver.pipe(
 )
 
 export default getPendingAdminApprovalStudies
-
-export type PendingAdminApprovalStudyRow = Awaited<
-  ReturnType<typeof getPendingAdminApprovalStudiesForDashboardRsc>
->[number]

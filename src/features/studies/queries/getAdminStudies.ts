@@ -6,30 +6,25 @@ import db from "db"
 import { getAuthorizedSession } from "@/src/app/(auth)/utils/getAuthorizedSession"
 import { isStaffAdmin } from "@/src/lib/auth/roles"
 import { studyHasParticipantResponsesSafe } from "../server/participantResponses"
+import { adminStudyWithLatestUploadArgs } from "../studySelects"
+import type { AdminStudyWithLatestUpload } from "../types"
 
-async function findAdminStudies() {
+function attachLatestJatosStudyUpload(
+  study: Omit<AdminStudyWithLatestUpload, "latestJatosStudyUpload" | "hasParticipantResponses">
+): Omit<AdminStudyWithLatestUpload, "hasParticipantResponses"> {
+  return {
+    ...study,
+    latestJatosStudyUpload: study.jatosStudyUploads[0] ?? null,
+  }
+}
+
+async function findAdminStudies(): Promise<AdminStudyWithLatestUpload[]> {
   const studies = await db.study.findMany({
-    include: {
-      FeedbackTemplate: true,
-      codebook: {
-        include: {
-          entries: {
-            orderBy: { variableName: "asc" },
-          },
-        },
-      },
-      jatosStudyUploads: {
-        orderBy: { createdAt: "desc" },
-        take: 1,
-      },
-    },
+    ...adminStudyWithLatestUploadArgs,
     orderBy: { createdAt: "desc" },
   })
 
-  const mapped = studies.map((study) => ({
-    ...study,
-    latestJatosStudyUpload: study.jatosStudyUploads[0] ?? null,
-  }))
+  const mapped = studies.map(attachLatestJatosStudyUpload)
 
   return Promise.all(
     mapped.map(async (study) => ({
@@ -38,8 +33,6 @@ async function findAdminStudies() {
     }))
   )
 }
-
-export type AdminStudyWithLatestUpload = Awaited<ReturnType<typeof findAdminStudies>>[number]
 
 const getAdminStudies = resolver.pipe(resolver.authorize(["ADMIN", "SUPERADMIN"]), async () => {
   return findAdminStudies()

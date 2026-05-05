@@ -15,7 +15,7 @@ import unarchiveStudy from "@/src/features/studies/mutations/unarchiveStudy"
 import { AdminStudyFormValues } from "@/src/features/studies/validations"
 import { ConfirmButton } from "@/src/app/components/ConfirmButton"
 import { isSetupComplete, type StudyWithMinimalRelations } from "../../domain/setup/setupStatus"
-import type { AdminStudyWithLatestUpload } from "@/src/features/studies/queries/getAdminStudies"
+import type { AdminStudyWithLatestUpload } from "../../types"
 import type { UserRole } from "@/db"
 import { isSuperAdmin } from "@/src/lib/auth/roles"
 

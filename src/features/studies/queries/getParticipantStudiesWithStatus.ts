@@ -2,14 +2,24 @@ import { Ctx } from "blitz"
 import db from "db"
 import { getResultsMetadataForParticipantDashboard } from "@/src/lib/jatos/jatosAccessService"
 import { hasCompletedStudy } from "@/src/lib/jatos/utils/findStudyResultIdByComment"
-import type { StudyWithLatestUpload } from "./getStudies"
 import type { ParticipantStudyView } from "@/src/features/studies/domain/participantStudyView"
+import { studyWithLatestUploadSelect } from "../studySelects"
+import type { StudyWithLatestUpload } from "../types"
 
 type ParticipantStudyWithStatus = {
   study: StudyWithLatestUpload
   completed: boolean
   completedUnknown: boolean
   payed: boolean
+}
+
+function attachLatestJatosStudyUpload(
+  study: Omit<StudyWithLatestUpload, "latestJatosStudyUpload">
+): StudyWithLatestUpload {
+  return {
+    ...study,
+    latestJatosStudyUpload: study.jatosStudyUploads[0] ?? null,
+  }
 }
 
 /**
@@ -32,25 +42,7 @@ export async function getParticipantStudiesWithStatus(
       pseudonym: true,
       payed: true,
       study: {
-        select: {
-          id: true,
-          title: true,
-          description: true,
-          sampleSize: true,
-          length: true,
-          endDate: true,
-          archived: true,
-          jatosStudyUploads: {
-            orderBy: { createdAt: "desc" },
-            take: 1,
-            select: {
-              id: true,
-              jatosStudyId: true,
-              jatosBatchId: true,
-              jatosWorkerType: true,
-            },
-          },
-        },
+        select: studyWithLatestUploadSelect,
       },
     },
     orderBy: { createdAt: "desc" },
@@ -76,10 +68,7 @@ export async function getParticipantStudiesWithStatus(
     const completedUnknown = metadata === null
 
     return {
-      study: {
-        ...p.study,
-        latestJatosStudyUpload: latestUpload ?? null,
-      } as StudyWithLatestUpload,
+      study: attachLatestJatosStudyUpload(p.study),
       completed,
       completedUnknown,
       payed: p.payed,

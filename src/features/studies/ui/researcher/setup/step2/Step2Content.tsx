@@ -19,7 +19,7 @@ import { Alert } from "@/src/app/components/Alert"
 import { FORM_ERROR } from "@/src/app/components/Form"
 import { createResearcherPilotUrlAndSaveAction } from "@/src/features/studies/actions/createResearcherPilotUrl"
 
-import { StudyWithRelations } from "@/src/features/studies/queries/getStudy"
+import type { StudyWithRelations } from "../../../../types"
 import { studySetupStepPath } from "../../../../domain/setup/setupRoutes"
 
 interface Step2ContentProps {

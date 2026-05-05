@@ -9,7 +9,7 @@ import {
   UsersIcon,
 } from "@heroicons/react/24/outline"
 import { CheckCircleIcon } from "@heroicons/react/24/solid"
-import { StudyWithRelations } from "@/src/features/studies/queries/getStudy"
+import type { StudyWithRelations } from "../../types"
 import { ReactNode } from "react"
 
 interface StudyInformationCardProps {

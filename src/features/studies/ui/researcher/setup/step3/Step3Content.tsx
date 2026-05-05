@@ -14,7 +14,7 @@ import Step3Actions from "./Step3Actions"
 import StepNavigation from "../StepNavigation"
 import { useWindowResumeCheck } from "@/src/app/hooks/useWindowResumeCheck"
 
-import { StudyWithRelations } from "@/src/features/studies/queries/getStudy"
+import type { StudyWithRelations } from "../../../../types"
 
 interface Step3ContentProps {
   study: StudyWithRelations

@@ -17,7 +17,7 @@ import { studySetupStepPath } from "../../../../domain/setup/setupRoutes"
 import type { SerializedExtractionBundle } from "../../../../domain/setup/serializeExtractionBundle"
 import Step4Instructions from "./Step4Instructions"
 
-import { StudyWithRelations } from "@/src/features/studies/queries/getStudy"
+import type { StudyWithRelations } from "../../../../types"
 
 // Dashboard Components
 import SummaryDashboard from "./dashboard/SummaryDashboard"

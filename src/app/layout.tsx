@@ -34,7 +34,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         />
         <ThemeProvider attribute="data-theme" defaultTheme="light" enableSystem={false}>
           <BlitzProvider>
-            <main className="min-h-screen flex flex-col">{children}</main>
+            <div className="min-h-screen flex flex-col">{children}</div>
           </BlitzProvider>
         </ThemeProvider>
       </body>

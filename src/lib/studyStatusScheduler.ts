@@ -3,8 +3,8 @@
  * Used by the cron API route and can be called from external schedulers.
  */
 import db from "db"
-import { isSetupComplete } from "@/src/app/(app)/studies/[studyId]/setup/utils/setupStatus"
-import type { StudyWithMinimalRelations } from "@/src/app/(app)/studies/[studyId]/setup/utils/setupStatus"
+import { isSetupComplete } from "@/src/features/studies"
+import type { StudyWithMinimalRelations } from "@/src/features/studies"
 
 export interface StudyStatusSchedulerResult {
   opened: number

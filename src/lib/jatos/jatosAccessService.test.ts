@@ -32,19 +32,25 @@ const mockParticipantStudyFindUnique = vi.fn()
 const mockJatosStudyUploadFindFirst = vi.fn()
 const mockStudyFindUnique = vi.fn()
 
-vi.mock("db", () => ({
-  default: {
-    studyResearcher: {
-      findFirst: (...args: unknown[]) => mockStudyResearcherFindFirst(...args),
-      findMany: (...args: unknown[]) => mockStudyResearcherFindMany(...args),
+vi.mock("db", async () => {
+  const { Prisma } = await import("@prisma/client")
+  return {
+    Prisma,
+    default: {
+      studyResearcher: {
+        findFirst: (...args: unknown[]) => mockStudyResearcherFindFirst(...args),
+        findMany: (...args: unknown[]) => mockStudyResearcherFindMany(...args),
+      },
+      participantStudy: {
+        findUnique: (...args: unknown[]) => mockParticipantStudyFindUnique(...args),
+      },
+      jatosStudyUpload: {
+        findFirst: (...args: unknown[]) => mockJatosStudyUploadFindFirst(...args),
+      },
+      study: { findUnique: (...args: unknown[]) => mockStudyFindUnique(...args) },
     },
-    participantStudy: {
-      findUnique: (...args: unknown[]) => mockParticipantStudyFindUnique(...args),
-    },
-    jatosStudyUpload: { findFirst: (...args: unknown[]) => mockJatosStudyUploadFindFirst(...args) },
-    study: { findUnique: (...args: unknown[]) => mockStudyFindUnique(...args) },
-  },
-}))
+  }
+})
 
 const SAMPLE_METADATA = {
   data: [

@@ -7,15 +7,17 @@ import {
   SelectField,
   FormSubmitButton,
   FormErrorDisplay,
-} from "@/src/app/components/fields"
-import { Form, FORM_ERROR } from "@/src/app/components/Form"
+} from "@/src/components/ui/fields"
+import { Form, FORM_ERROR } from "@/src/components/ui/Form"
 import signup from "../../mutations/signup"
 import { Signup } from "../../validations"
 import { useMutation, useQuery } from "@blitzjs/rpc"
 import { useRouter } from "next/navigation"
+import type { Route } from "next"
 import { UserRole } from "db"
 import Link from "next/link"
-import validateAdminInviteToken from "@/src/app/(admin)/admin/invitations/queries/validateAdminInviteToken"
+import validateAdminInviteToken from "@/src/features/admin-invitations/queries/validateAdminInviteToken"
+import { getDefaultAuthenticatedPath } from "@/src/lib/auth/routing"
 
 export const RoleOptions = [
   { value: UserRole.RESEARCHER, label: "Researcher" },
@@ -109,8 +111,12 @@ export const SignupForm = () => {
               return { [FORM_ERROR]: result.error }
             }
 
+            if (!result.user) {
+              return { [FORM_ERROR]: "Signup succeeded but user data was missing." }
+            }
+
             router.refresh()
-            router.push(isAdminInvite ? "/admin" : "/dashboard")
+            router.push(getDefaultAuthenticatedPath(result.user.role) as Route)
           } catch (error: any) {
             const errorMessage = error?.message || "An unexpected error occurred. Please try again."
             return { [FORM_ERROR]: errorMessage }

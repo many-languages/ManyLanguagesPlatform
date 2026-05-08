@@ -1,7 +1,12 @@
 import { redirect } from "next/navigation"
 import { getBlitzContext } from "../../blitz-server"
-import { getCurrentUserRsc } from "../../users/queries/getCurrentUser"
-import ProfileContent from "./components/ProfileContent"
+import { getCurrentUserRsc } from "@/src/features/auth/queries/getCurrentUser"
+import { ProfileContent, type ProfilePaths } from "@/src/features/profile"
+
+const portalProfilePaths: ProfilePaths = {
+  root: "/profile",
+  edit: "/profile/edit",
+}
 
 export default async function ProfilePage() {
   const { session } = await getBlitzContext()
@@ -19,7 +24,7 @@ export default async function ProfilePage() {
 
   return (
     <main>
-      <ProfileContent currentUser={currentUser} />
+      <ProfileContent currentUser={currentUser} profilePaths={portalProfilePaths} />
     </main>
   )
 }

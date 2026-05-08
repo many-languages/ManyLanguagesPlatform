@@ -1,13 +1,15 @@
 import { Suspense } from "react"
 import { notFound } from "next/navigation"
-import { getStudyRsc } from "../queries/getStudy"
+import {
+  getStudyRsc,
+  canEditStudySetup,
+  ResearcherData,
+  ParticipantData,
+  SetupProgressCard,
+  StudyHeader,
+  StudyStatusControl,
+} from "@/src/features/studies"
 import { getBlitzContext } from "@/src/app/blitz-server"
-import { canEditStudySetup } from "@/src/lib/studies/studyEditability"
-import ResearcherData from "./components/ResearcherData"
-import ParticipantData from "./components/ParticipantData"
-import SetupProgressCard from "./setup/components/client/SetupProgressCard"
-import StudyHeader from "./components/StudyHeader"
-import StudyStatusControl from "./components/client/StudyStatusControl"
 
 export default async function StudyPage({ params }: { params: Promise<{ studyId: string }> }) {
   const { studyId: studyIdRaw } = await params
@@ -23,38 +25,31 @@ export default async function StudyPage({ params }: { params: Promise<{ studyId:
       throw new Error("Not authenticated")
     }
 
-    // Fetch core study data first (always needed for progressive loading)
     const study = await getStudyRsc(studyId)
     const canEditSetup = canEditStudySetup(study)
 
-    // Ensure role is defined (should be after authentication check)
     const userRole = session.role as "RESEARCHER" | "PARTICIPANT"
 
     return (
       <main>
-        {/* Study header */}
         <StudyHeader study={study} />
 
-        {/* Review status and launch/pause for researchers */}
         {userRole === "RESEARCHER" && (
           <div className="mt-4 flex justify-center">
             <StudyStatusControl study={study} />
           </div>
         )}
 
-        {/* Setup Progress Card for researchers */}
         {userRole === "RESEARCHER" && (
           <SetupProgressCard study={study} canEditStudySetup={canEditSetup} />
         )}
 
-        {/* Researcher-specific data - progressive loading via Suspense */}
         {userRole === "RESEARCHER" && (
           <Suspense fallback={<div className="skeleton h-32 w-full mt-4" />}>
             <ResearcherData studyId={studyId} study={study} canEditStudySetup={canEditSetup} />
           </Suspense>
         )}
 
-        {/* Participant-specific data - progressive loading via Suspense */}
         {userRole === "PARTICIPANT" && (
           <Suspense fallback={<div className="skeleton h-16 w-full mt-4" />}>
             <ParticipantData studyId={studyId} study={study} />

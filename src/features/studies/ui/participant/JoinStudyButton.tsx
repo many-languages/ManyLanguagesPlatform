@@ -1,0 +1,58 @@
+"use client"
+
+import { useMutation, useQuery } from "@blitzjs/rpc"
+import joinStudy from "@/src/features/studies/mutations/joinStudy"
+import toast from "react-hot-toast"
+import isParticipantInStudy from "@/src/features/studies/queries/isParticipantInStudy"
+import { createParticipantStudyCodeAndSaveAction } from "@/src/features/studies/actions/createParticipantStudyCode"
+import { AsyncButton } from "@/src/components/ui/AsyncButton"
+import { useRouter } from "next/navigation"
+
+interface JoinStudyButtonProps {
+  studyId: number
+  jatosStudyId: number
+  jatosBatchId: number
+  jatosWorkerType: "SINGLE" | "MULTIPLE"
+}
+
+export default function JoinStudyButton({
+  studyId,
+  jatosStudyId,
+  jatosBatchId,
+  jatosWorkerType,
+}: JoinStudyButtonProps) {
+  const router = useRouter()
+  const [{ joined } = { joined: false }] = useQuery(isParticipantInStudy, { studyId })
+  const [joinStudyMutation] = useMutation(joinStudy)
+
+  const handleJoin = async () => {
+    // 1) Join the study (creates ParticipantStudy entry)
+    const participant = await joinStudyMutation({ studyId })
+    const { id: participantStudyId, pseudonym } = participant
+
+    // 2) Create personal study code and save run URL
+    const type = jatosWorkerType === "MULTIPLE" ? "pm" : "ps"
+    await createParticipantStudyCodeAndSaveAction({
+      studyId,
+      jatosStudyId,
+      jatosBatchId,
+      type,
+      comment: pseudonym,
+      participantStudyId,
+    })
+
+    toast.success("You have joined the study!")
+    router.push(`/studies/${studyId}`)
+  }
+
+  return (
+    <AsyncButton
+      onClick={handleJoin}
+      loadingText="Joining"
+      disabled={joined}
+      className={`${joined ? "btn-disabled" : "btn-primary"}`}
+    >
+      {joined ? "Already Joined" : "Join Study"}
+    </AsyncButton>
+  )
+}

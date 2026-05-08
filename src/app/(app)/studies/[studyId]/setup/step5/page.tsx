@@ -1,8 +1,10 @@
-import CodebookContent from "../../codebook/components/client/CodebookContent"
-import SetupStepHeader from "../components/client/SetupStepHeader"
-import { getCodebookDataRsc } from "../../codebook/queries/getCodebookData"
-import { loadStudySetupPage } from "../utils/loadStudySetupPage"
-import type { StudyWithRelations } from "@/src/app/(app)/studies/queries/getStudy"
+import {
+  Step5Content,
+  SetupStepHeader,
+  loadStudySetupPage,
+  type StudyWithRelations,
+} from "@/src/features/studies"
+import { getCodebookDataRsc } from "@/src/features/codebook"
 
 async function Step5ContentWrapper({ study }: { study: StudyWithRelations }) {
   const studyId = study.id
@@ -12,7 +14,7 @@ async function Step5ContentWrapper({ study }: { study: StudyWithRelations }) {
   return (
     <>
       <SetupStepHeader studyId={studyId} title="Step 5 – Codebook" />
-      <CodebookContent
+      <Step5Content
         study={study}
         initialVariables={variables.map((v) => ({
           ...v,

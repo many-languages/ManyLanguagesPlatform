@@ -1,6 +1,6 @@
 "use client"
 
-import { Alert } from "@/src/app/components/Alert"
+import { Alert } from "@/src/components/ui/Alert"
 
 export default function Error({ error, reset }: { error: Error; reset: () => void }) {
   return (

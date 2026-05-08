@@ -1,9 +1,11 @@
 import { notFound, redirect } from "next/navigation"
-import StepIndicator from "./components/client/StepIndicator"
-import { getStudyRsc } from "../../queries/getStudy"
-import { canEditStudySetup } from "@/src/lib/studies/studyEditability"
-import { studyPath } from "./utils/setupRoutes"
-import { getCompletedSteps } from "./utils/setupStatus"
+import {
+  StepIndicator,
+  getStudyRsc,
+  canEditStudySetup,
+  studyPath,
+  getCompletedSteps,
+} from "@/src/features/studies"
 
 export default async function StudySetupLayout({
   children,

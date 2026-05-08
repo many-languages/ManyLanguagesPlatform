@@ -2,8 +2,8 @@
 
 import { useMemo } from "react"
 import Link from "next/link"
-import { TextField, FormSubmitButton, FormErrorDisplay } from "@/src/app/components/fields"
-import { Form, FORM_ERROR } from "@/src/app/components/Form"
+import { TextField, FormSubmitButton, FormErrorDisplay } from "@/src/components/ui/fields"
+import { Form, FORM_ERROR } from "@/src/components/ui/Form"
 import { ForgotPassword } from "../../validations"
 import forgotPassword from "../../mutations/forgotPassword"
 import { useMutation } from "@blitzjs/rpc"

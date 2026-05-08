@@ -1,11 +1,11 @@
-import Step6Content from "./components/client/Step6Content"
-import SetupStepHeader from "../components/client/SetupStepHeader"
-import { getFeedbackTemplateRsc } from "../../feedback/queries/getFeedbackTemplate"
-import { loadFeedbackPreviewContext } from "../../feedback/utils/loadFeedbackPreviewContext"
-import { computeFeedbackTemplateValidation } from "../../feedback/utils/computeFeedbackTemplateValidation"
-import { loadStudySetupPage } from "../utils/loadStudySetupPage"
-import type { StudyWithRelations } from "@/src/app/(app)/studies/queries/getStudy"
-import { Alert } from "@/src/app/components/Alert"
+import { Alert } from "@/src/components/ui/Alert"
+import {
+  Step6Content,
+  SetupStepHeader,
+  loadStudySetupPage,
+  type StudyWithRelations,
+} from "@/src/features/studies"
+import { getFeedbackStep6DataRsc } from "@/src/features/feedback"
 
 async function Step6ContentWrapper({
   studyId,
@@ -14,21 +14,17 @@ async function Step6ContentWrapper({
   studyId: number
   study: StudyWithRelations
 }) {
-  const previewLoad = await loadFeedbackPreviewContext(studyId)
-
-  if (previewLoad.kind === "error") {
+  const feedbackStepData = await getFeedbackStep6DataRsc(studyId)
+  if (feedbackStepData.kind === "error") {
     return (
       <>
         <SetupStepHeader studyId={studyId} title="Step 6 – Feedback" />
         <Alert variant="error" className="mt-4" title="Could not load feedback preview">
-          <p>{previewLoad.message}</p>
+          <p>{feedbackStepData.message}</p>
         </Alert>
       </>
     )
   }
-
-  const feedbackTemplate = await getFeedbackTemplateRsc(studyId)
-  const templateValidation = await computeFeedbackTemplateValidation(studyId)
 
   const latestUploadWithExtraction = study.latestJatosStudyUpload
   const approvedExtraction = latestUploadWithExtraction?.approvedExtraction ?? null
@@ -38,12 +34,12 @@ async function Step6ContentWrapper({
       <SetupStepHeader studyId={studyId} title="Step 6 – Feedback" />
       <Step6Content
         study={study}
-        initialFeedbackTemplate={feedbackTemplate}
-        validation={templateValidation}
+        initialFeedbackTemplate={feedbackStepData.initialFeedbackTemplate}
+        validation={feedbackStepData.validation}
         approvedExtractionId={approvedExtraction?.id ?? null}
         approvedExtractionApprovedAt={approvedExtraction?.approvedAt ?? null}
-        previewClient={previewLoad.client}
-        feedbackPreviewContextKey={previewLoad.contextKey}
+        previewClient={feedbackStepData.previewClient}
+        feedbackPreviewContextKey={feedbackStepData.feedbackPreviewContextKey}
       />
     </>
   )

@@ -2,7 +2,7 @@
 
 import { getBlitzContext } from "@/src/app/blitz-server"
 import { createPersonalStudyCodeForResearcher } from "@/src/lib/jatos/jatosAccessService"
-import { createResearcherPilotLink } from "@/src/features/studies/mutations/createResearcherPilotLink"
+import { createResearcherPilotLink } from "@/src/features/studies/server/studySetupWrites"
 
 function generateMarkerToken(): string {
   const cryptoObj = globalThis.crypto
@@ -45,13 +45,12 @@ export async function createResearcherPilotUrlAndSaveAction({
     type: "pm",
     comment: `pilot:${markerToken}`,
     onSave: (url) =>
-      createResearcherPilotLink(
+      createResearcherPilotLink({
         studyId,
         studyResearcherId,
         jatosStudyUploadId,
-        url,
+        jatosRunUrl: url,
         markerToken,
-        userId
-      ).then(() => {}),
+      }).then(() => {}),
   })
 }

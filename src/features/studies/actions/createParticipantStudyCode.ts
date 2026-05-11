@@ -2,7 +2,7 @@
 
 import { getBlitzContext } from "@/src/app/blitz-server"
 import { createPersonalStudyCodeForParticipant } from "@/src/lib/jatos/jatosAccessService"
-import { saveParticipantRunUrl } from "@/src/features/studies/mutations/saveParticipantRunUrl"
+import { saveParticipantRunUrl } from "@/src/features/studies/server/studyParticipationWrites"
 
 export async function createParticipantStudyCodeAndSaveAction({
   studyId,
@@ -33,7 +33,7 @@ export async function createParticipantStudyCodeAndSaveAction({
     type,
     comment,
     onSave: async (runUrl) => {
-      await saveParticipantRunUrl(participantStudyId, runUrl)
+      await saveParticipantRunUrl({ participantStudyId, jatosRunUrl: runUrl })
     },
   })
 }

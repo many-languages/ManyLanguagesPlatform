@@ -1,30 +1,11 @@
 import { resolver } from "@blitzjs/rpc"
-import db from "db"
-import { assertStudyNotArchived } from "../server/studyLifecycle"
 import { UpdateJatosUploadWorkerType } from "@/src/features/studies/validations"
-import { verifyResearcherStudyAccess } from "@/src/features/studies/server/verifyResearcherStudyAccess"
+import { updateJatosUploadWorkerType } from "../server/studySetupWrites"
 
 export default resolver.pipe(
   resolver.zod(UpdateJatosUploadWorkerType),
   resolver.authorize(),
-  async ({ studyId, jatosWorkerType }, ctx) => {
-    await verifyResearcherStudyAccess(studyId, ctx.session.userId!)
-    await assertStudyNotArchived(studyId)
-
-    const latestUpload = await db.jatosStudyUpload.findFirst({
-      where: { studyId },
-      orderBy: { createdAt: "desc" },
-      select: { id: true },
-    })
-
-    if (!latestUpload) {
-      throw new Error("No JATOS upload found for this study")
-    }
-
-    return db.jatosStudyUpload.update({
-      where: { id: latestUpload.id },
-      data: { jatosWorkerType },
-      select: { id: true, jatosWorkerType: true, studyId: true },
-    })
+  async ({ studyId, jatosWorkerType }) => {
+    return updateJatosUploadWorkerType({ studyId, jatosWorkerType })
   }
 )

@@ -1,6 +1,6 @@
 import { Suspense } from "react"
 import { getBlitzContext } from "../../blitz-server"
-import { getCurrentUserRsc } from "@/src/features/auth/queries/getCurrentUser"
+import { getCurrentUserRsc } from "@/src/features/auth/server/getCurrentUser"
 import {
   DashboardSkeleton,
   PortalDashboard,

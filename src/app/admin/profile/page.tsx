@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation"
 import { getBlitzContext } from "@/src/app/blitz-server"
-import { getCurrentUserRsc } from "@/src/features/auth/queries/getCurrentUser"
+import { getCurrentUserRsc } from "@/src/features/auth/server/getCurrentUser"
 import { ProfileContent, type ProfilePaths } from "@/src/features/profile"
 
 const adminProfilePaths: ProfilePaths = {

@@ -10,7 +10,7 @@
     "validate-setup": "tsx scripts/validate-setup.ts",
     "validate:jatos-architecture": "tsx scripts/validate-jatos-architecture.ts",
     "studio": "blitz prisma studio",
-    "lint": "eslint . --ext .js,.ts,.tsx",
+    "lint": "next lint --dir src --dir db --dir mailers --dir scripts --file next.config.js --file instrumentation.ts --file types.ts",
     "test": "vitest run --passWithNoTests",
     "test:watch": "vitest",
     "prepare": "husky install"
@@ -24,7 +24,7 @@
   },
   "lint-staged": {
     "*.{js,ts,tsx}": [
-      "eslint --fix"
+      "node scripts/next-lint-files.js"
     ]
   },
   "dependencies": {

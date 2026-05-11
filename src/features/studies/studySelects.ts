@@ -128,3 +128,7 @@ export const pendingAdminApprovalStudySelect = Prisma.validator<Prisma.StudySele
     },
   },
 })
+
+export const participantWithEmailArgs = Prisma.validator<Prisma.ParticipantStudyDefaultArgs>()({
+  include: { user: { select: { email: true } } },
+})

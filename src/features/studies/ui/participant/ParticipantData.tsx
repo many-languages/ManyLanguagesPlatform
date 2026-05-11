@@ -1,4 +1,3 @@
-import { getStudyParticipantRsc } from "@/src/features/studies/queries/getStudyParticipant"
 import { Alert } from "@/src/components/ui/Alert"
 import { isSetupComplete } from "../../domain/setup/setupStatus"
 import type { StudyWithRelations } from "../../types"
@@ -6,6 +5,7 @@ import { ParticipantFeedbackData, checkParticipantCompletionAction } from "@/src
 import { CheckCircleIcon } from "@heroicons/react/24/solid"
 import StudyInformationCard from "../shared/StudyInformationCard"
 import RunStudyButton from "../shared/RunStudyButton"
+import { getStudyParticipantRsc } from "../../server/getStudyParticipant"
 
 interface ParticipantDataProps {
   studyId: number
@@ -31,8 +31,8 @@ export default async function ParticipantData({ studyId, study }: ParticipantDat
 
     if (!participant) {
       return (
-        <Alert variant="error" className="mt-4">
-          <p>Unable to load participant information. Please try refreshing the page.</p>
+        <Alert variant="info" className="mt-4">
+          <p>You have not joined this study yet.</p>
         </Alert>
       )
     }

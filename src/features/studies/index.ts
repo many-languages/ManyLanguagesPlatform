@@ -6,6 +6,7 @@
 export type {
   AdminStudyWithLatestUpload,
   ParticipantStudyView,
+  ParticipantWithEmail,
   PendingAdminApprovalStudyRow,
   SetupStepFlags,
   StudySummaryCounts,
@@ -48,7 +49,7 @@ export {
   createExtractionIndexStore,
 } from "./domain/variables/utils/extractionIndexStore"
 export { observationsToLongCsv } from "./domain/variables/utils/observationsLongCsv"
-export { getStudyVariablesRsc } from "./queries/getStudyVariables"
+export { getStudyVariablesRsc } from "./server/getStudyVariables"
 
 /** Setup wizard — pure domain + in-memory caches (Phase 4). */
 export {
@@ -99,9 +100,9 @@ export { STUDY_VIEWS, parseStudyView } from "./domain/studyView"
 export { PARTICIPANT_STUDY_VIEWS, parseParticipantStudyView } from "./domain/participantStudyView"
 
 /** RSC helpers for routes & cross-feature callers */
-export { getStudyRsc } from "./queries/getStudy"
-export { getStudies } from "./queries/getStudies"
-export { getParticipantStudiesWithStatus } from "./queries/getParticipantStudiesWithStatus"
+export { getStudyRsc } from "./server/getStudy"
+export { getStudies } from "./server/getStudies"
+export { getParticipantStudiesWithStatus } from "./server/getParticipantStudiesWithStatus"
 export {
   getResearcherStudiesPageSlice,
   STUDIES_LIST_PAGE_SIZE,
@@ -111,9 +112,9 @@ export { loadStudySetupPage } from "./server/loadStudySetupPage"
 export type { StudySetupPageContext } from "./server/loadStudySetupPage"
 export { getValidationDataRsc } from "./server/getValidationData"
 export type { ValidationData } from "./server/getValidationData"
-export { getStudiesRsc } from "./queries/getAdminStudies"
-export { getAdminStudyCounts } from "./queries/getAdminStudyCounts"
-export { getPendingAdminApprovalStudiesForDashboardRsc } from "./queries/getPendingAdminApprovalStudies"
+export { getStudiesRsc } from "./server/getAdminStudies"
+export { getAdminStudyCounts } from "./server/getAdminStudyCounts"
+export { getPendingAdminApprovalStudiesForDashboardRsc } from "./server/getPendingAdminApprovalStudies"
 
 /** Shared UI */
 export { default as StudyHeader } from "./ui/shared/StudyHeader"

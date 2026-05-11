@@ -7,13 +7,15 @@ import UpcomingDeadlinesCard from "./cards/UpcomingDeadlinesCard"
 import ParticipantIncompleteStudiesCard from "./cards/ParticipantIncompleteStudiesCard"
 import ParticipantSummaryCard from "./cards/ParticipantSummaryCard"
 import ParticipantCompletedNotPaidCard from "./cards/ParticipantCompletedNotPaidCard"
-import type { ResearcherStudyCounts } from "../queries/getResearcherStudyCounts"
-import type { ParticipantStudyCounts } from "../queries/getParticipantStudyCounts"
-import type { ActiveStudyWithResponseCount } from "../queries/getActiveStudiesWithResponseCounts"
-import type { UpcomingDeadlines } from "../queries/getUpcomingDeadlines"
-import type { ParticipantIncompleteStudies } from "../queries/getParticipantIncompleteStudies"
-import type { ParticipantCompletedNotPaidStudy } from "../queries/getParticipantCompletedNotPaidStudies"
-import type { DashboardCurrentUser } from "../types"
+import type {
+  ActiveStudyWithResponseCount,
+  DashboardCurrentUser,
+  ParticipantCompletedNotPaidStudy,
+  ParticipantIncompleteStudies,
+  ParticipantStudyCounts,
+  ResearcherStudyCounts,
+  UpcomingDeadlines,
+} from "../types"
 
 interface PortalDashboardProps {
   currentUser: DashboardCurrentUser

@@ -1,6 +1,6 @@
 import Link from "next/link"
 import Card from "@/src/components/ui/Card"
-import type { DeadlineStudy, UpcomingDeadlines } from "../../queries/getUpcomingDeadlines"
+import type { DeadlineStudy, UpcomingDeadlines } from "../../types"
 
 /** Urgency: ≤3 days = error (urgent), ≤7 days = warning (soon), ≤14 days = info (upcoming) */
 function getUrgencyClasses(daysOffset: number): string {

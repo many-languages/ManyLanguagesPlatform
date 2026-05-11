@@ -1,3 +1,4 @@
+import type { UserRole } from "@/db"
 import { getBlitzContext } from "@/src/app/blitz-server"
 import {
   AdminDashboard,
@@ -14,18 +15,19 @@ export const metadata = {
 
 export default async function AdminHomePage() {
   const { session } = await getBlitzContext()
+  const role = session.role as UserRole
   const studyCounts = await getAdminStudyCounts()
 
   const staleAdminInvites =
-    session.role === "SUPERADMIN" ? await getStalePendingAdminInvitesRsc().catch(() => []) : []
+    role === "SUPERADMIN" ? await getStalePendingAdminInvitesRsc().catch(() => []) : []
 
-  const pendingAdminApprovalStudies = isStaffAdmin(session.role)
+  const pendingAdminApprovalStudies = isStaffAdmin(role)
     ? await getPendingAdminApprovalStudiesForDashboardRsc().catch(() => [])
     : []
 
   return (
     <AdminDashboard
-      role={session.role}
+      role={role}
       studyCounts={studyCounts}
       staleAdminInvites={staleAdminInvites}
       pendingAdminApprovalStudies={pendingAdminApprovalStudies}

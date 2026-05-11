@@ -1,5 +1,4 @@
 import { Suspense } from "react"
-import { getBlitzContext } from "../../blitz-server"
 import { getCurrentUserRsc } from "@/src/features/auth/server/getCurrentUser"
 import {
   DashboardSkeleton,
@@ -27,25 +26,23 @@ const emptyParticipantStudies: ParticipantIncompleteStudies = {
 }
 
 export default async function DashboardPage() {
-  const { session } = await getBlitzContext()
-
-  const currentUser = session.userId ? await getCurrentUserRsc().catch(() => null) : null
+  const currentUser = await getCurrentUserRsc().catch(() => null)
 
   const [researcherCounts, activeStudiesWithResponses, upcomingDeadlines] =
-    currentUser?.role === "RESEARCHER" && session.userId
+    currentUser?.role === "RESEARCHER"
       ? await Promise.all([
-          getResearcherStudyCounts(session.userId).catch(() => null),
-          getActiveStudiesWithResponseCounts(session.userId).catch(() => []),
-          getUpcomingDeadlines(session.userId).catch(() => emptyDeadlines),
+          getResearcherStudyCounts().catch(() => null),
+          getActiveStudiesWithResponseCounts().catch(() => []),
+          getUpcomingDeadlines().catch(() => emptyDeadlines),
         ])
       : [null, [], emptyDeadlines]
 
   const [participantIncompleteStudies, participantCounts, participantCompletedNotPaid] =
-    currentUser?.role === "PARTICIPANT" && session.userId
+    currentUser?.role === "PARTICIPANT"
       ? await Promise.all([
-          getParticipantIncompleteStudies(session.userId).catch(() => emptyParticipantStudies),
-          getParticipantStudyCounts(session.userId).catch(() => null),
-          getParticipantCompletedNotPaidStudies(session.userId).catch(
+          getParticipantIncompleteStudies().catch(() => emptyParticipantStudies),
+          getParticipantStudyCounts().catch(() => null),
+          getParticipantCompletedNotPaidStudies().catch(
             () => [] as ParticipantCompletedNotPaidStudy[]
           ),
         ])

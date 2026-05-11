@@ -1,6 +1,6 @@
 import { getParticipantFeedback } from "@/src/lib/jatos/jatosAccessService"
 import { mapJatosErrorToUserMessage } from "@/src/lib/jatos/errors"
-import { getFeedbackTemplateForParticipantRsc } from "../queries/getFeedbackTemplate"
+import { getFeedbackTemplateForParticipantRsc } from "./getFeedbackTemplate"
 import type {
   LoadParticipantFeedbackPipelineResult,
   ParticipantFeedbackMarkdownLoadResult,

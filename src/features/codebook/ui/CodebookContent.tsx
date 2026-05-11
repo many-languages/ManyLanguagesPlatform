@@ -5,9 +5,8 @@ import { useRouter } from "next/navigation"
 import { useMutation } from "@blitzjs/rpc"
 import { toast } from "react-hot-toast"
 
-import updateVariableCodebook, {
-  type UpdateVariableCodebookResult,
-} from "../mutations/updateVariableCodebook"
+import updateVariableCodebook from "../mutations/updateVariableCodebook"
+import type { UpdateVariableCodebookResult } from "../server/updateVariableCodebook"
 import { CODEBOOK_SAVE_FEEDBACK_PERSONAL_DATA_HINT } from "../domain/codebookSaveMessages"
 import { Alert } from "@/src/components/ui/Alert"
 import { AsyncButton } from "@/src/components/ui/AsyncButton"

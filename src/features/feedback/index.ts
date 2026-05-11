@@ -14,7 +14,7 @@ export { default as FeedbackFormEditor } from "./ui/FeedbackFormEditor"
 export { default as FeedbackStepEditor } from "./ui/FeedbackStepEditor"
 export type { FeedbackStepEditorProps, FeedbackStepEditorState } from "./ui/FeedbackStepEditor"
 
-export { getFeedbackTemplateRsc } from "./queries/getFeedbackTemplate"
+export { getFeedbackTemplateRsc } from "./server/getFeedbackTemplate"
 export { getFeedbackStep6DataRsc } from "./server/loadFeedbackStep6Data"
 export type { FeedbackStep6Data } from "./server/loadFeedbackStep6Data"
 export { computeFeedbackTemplateValidation } from "./server/computeFeedbackTemplateValidation"

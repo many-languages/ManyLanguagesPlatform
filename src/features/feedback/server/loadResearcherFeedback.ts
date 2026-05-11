@@ -4,7 +4,7 @@ import type {
   LoadResearcherFeedbackPipelineResult,
   ResearcherFeedbackMarkdownLoadResult,
 } from "@/src/features/feedback/types"
-import { getFeedbackTemplateForResearcherRsc } from "../queries/getFeedbackTemplate"
+import { getFeedbackTemplateForResearcherRsc } from "./getFeedbackTemplate"
 import { getPersonalDataViolationsForPersistedTemplate } from "./feedbackTemplatePersonalDataViolations"
 import { resolvePersistedFeedbackTemplateVariables } from "./resolvePersistedFeedbackTemplateVariables"
 import { renderStaticFeedbackMarkdownForPersistedTemplate } from "./renderFeedbackServer"

@@ -9,6 +9,7 @@
 	dev-host-app dev-host-app-https \
 	dev-fullstack dev-fullstack-https \
 	prod-up prod-up-letsencrypt \
+	test-db-up test-db-down test-db-logs test-db-ps \
 	jatos-conf-dev-jatos-only jatos-conf-dev-host-app \
 	jatos-conf-dev-fullstack jatos-conf-prod \
 	down logs ps restart clean build \
@@ -51,6 +52,10 @@ help:
 	@echo "  make certs                   Generate mkcert certificates"
 	@echo "  make validate-token          Validate JATOS token (host-based)"
 	@echo "  make validate-setup          Validate full setup"
+	@echo "  make test-db-up             Start dedicated test Postgres"
+	@echo "  make test-db-down           Stop dedicated test Postgres"
+	@echo "  make test-db-logs           Tail dedicated test Postgres logs"
+	@echo "  make test-db-ps             Show dedicated test Postgres status"
 	@echo "  make prune                   Prune unused Docker resources"
 	@echo ""
 	@echo "  Flags (pass via environment):"
@@ -217,6 +222,18 @@ validate-token:
 
 validate-setup:
 	@npx tsx scripts/validate-setup.ts
+
+test-db-up:
+	@bash scripts/test-db.sh up -d
+
+test-db-down:
+	@bash scripts/test-db.sh down -v
+
+test-db-logs:
+	@bash scripts/test-db.sh logs -f
+
+test-db-ps:
+	@bash scripts/test-db.sh ps
 
 prune:
 	@echo "Pruning unused Docker resources (stopped containers, dangling images, build cache)..."

@@ -12,6 +12,10 @@
     "studio": "blitz prisma studio",
     "lint": "next lint --dir src --dir db --dir mailers --dir scripts --file next.config.js --file instrumentation.ts --file types.ts",
     "test": "vitest run --passWithNoTests",
+    "test:db:up": "bash scripts/test-db.sh up -d",
+    "test:db:down": "bash scripts/test-db.sh down -v",
+    "test:db:logs": "bash scripts/test-db.sh logs -f",
+    "test:db:ps": "bash scripts/test-db.sh ps",
     "test:watch": "vitest",
     "prepare": "husky install"
   },

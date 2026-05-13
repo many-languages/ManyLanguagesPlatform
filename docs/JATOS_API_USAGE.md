@@ -77,6 +77,11 @@ Participant authentication is validated at the app layer. Participant flows spli
 
 VIEWER is used only for participant-facing read flows in our app. Study code creation uses a researcher token because JATOS requires USER for `POST /studyCodes`. This is intentional delegated researcher authority — do not merge these paths.
 
+The service account is also used by narrow platform lifecycle/admin checks such
+as `checkStudyParticipantResponsePresence`, where there is no researcher or
+participant actor and destructive operations must fail closed if JATOS cannot
+be checked.
+
 **Researcher selection** (for study code creation): PI first, then COLLABORATOR, then VIEWER (ResearcherRole), then earliest `createdAt`, then smallest `userId`.
 
 ---
@@ -186,6 +191,7 @@ export async function downloadResultsAction(studyId: number) {
 | `getResultsMetadataForResearcher`           | Fetch results metadata                                                                 |
 | `getResultsMetadataForParticipantDashboard` | Fetch participant-dashboard result metadata without exposing tokens                    |
 | `getResultsMetadataForResearcherDashboard`  | Fetch researcher-dashboard response metadata                                           |
+| `checkStudyParticipantResponsePresence`     | Check participant response presence for platform lifecycle/admin decisions             |
 | `checkParticipantCompletionForParticipant`  | Check participant completion from metadata                                             |
 | `getStudyPropertiesForResearcher`           | Fetch study properties                                                                 |
 | `getBatchIdForResearcher`                   | Get first batch ID from properties                                                     |

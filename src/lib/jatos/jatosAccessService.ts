@@ -34,6 +34,7 @@ import db from "db"
 import { getTokenForResearcher, getTokenForStudyService } from "./tokenBroker"
 import { logJatosError } from "./logger"
 import {
+  JatosTransportError,
   mapJatosErrorToUserMessage,
   USER_MESSAGE_PARTICIPANT_FEEDBACK_ENRICHMENT_MISSING,
 } from "./errors"
@@ -124,6 +125,30 @@ async function getStudyJatosInfo(studyId: number): Promise<{
   })
   if (!upload || !study?.jatosStudyUUID) return null
   return { jatosStudyId: upload.jatosStudyId, jatosStudyUUID: study.jatosStudyUUID }
+}
+
+async function getLatestStudyJatosInfo(studyId: number): Promise<{
+  jatosStudyId: number
+  jatosStudyUUID: string
+} | null> {
+  const upload = await db.jatosStudyUpload.findFirst({
+    where: { studyId },
+    orderBy: { versionNumber: "desc" },
+    select: { jatosStudyId: true },
+  })
+  const study = await db.study.findUnique({
+    where: { id: studyId },
+    select: { jatosStudyUUID: true },
+  })
+  const jatosStudyUUID = study?.jatosStudyUUID?.trim()
+  if (!upload || !jatosStudyUUID) return null
+  return { jatosStudyId: upload.jatosStudyId, jatosStudyUUID }
+}
+
+function getJatosResponseCheckErrorDetail(error: unknown): string {
+  if (error instanceof JatosTransportError) return error.message
+  if (error instanceof Error) return error.message
+  return "Unknown error"
 }
 
 async function withResearcherToken<T>(
@@ -366,6 +391,37 @@ export async function getResultsMetadataForResearcherDashboard({
       error,
     })
     return null
+  }
+}
+
+/**
+ * Platform lifecycle/admin check: whether a study has any non-pilot FINISHED JATOS results.
+ *
+ * Uses the study service account token because archive/delete safety checks are platform-level
+ * decisions and do not naturally belong to a researcher or participant session. Throws when
+ * JATOS cannot be checked so destructive lifecycle paths can fail closed.
+ */
+export async function checkStudyParticipantResponsePresence({
+  studyId,
+}: {
+  studyId: number
+}): Promise<boolean> {
+  const info = await getLatestStudyJatosInfo(studyId)
+  if (!info) {
+    return false
+  }
+
+  try {
+    const token = await getTokenForStudyService(info.jatosStudyId)
+    const metadata = await getResultsMetadata({ studyIds: [info.jatosStudyId] }, { token })
+    const entry =
+      metadata.data?.find((data) => data.studyUuid === info.jatosStudyUUID) ??
+      metadata.data?.[0] ??
+      null
+    return hasParticipantResponses(entry?.studyResults ?? [])
+  } catch (error) {
+    const detail = getJatosResponseCheckErrorDetail(error)
+    throw new Error(`Could not verify participant responses. JATOS may be unavailable: ${detail}`)
   }
 }
 

@@ -4,7 +4,6 @@ import {
   getStudyPropertiesForResearcher,
   getEnrichedResultsForResearcher,
 } from "@/src/lib/jatos/jatosAccessService"
-import { getStudyParticipantsRsc } from "@/src/features/studies/queries/getStudyParticipants"
 import StudySummary from "./StudySummary"
 import ParticipantManagementCard from "./ParticipantManagementCard"
 import ResultsCardWrapper from "./ResultsCardWrapper"
@@ -18,6 +17,7 @@ import { NavigationButton } from "@/src/components/ui/NavigationButton"
 import StudyLifecycleActions from "../shared/StudyLifecycleActions"
 import { hasParticipantResponses as hasParticipantResponsesInResults } from "@/src/lib/jatos/utils/studyHasParticipantResponses"
 import { ARCHIVED_STUDY_CANNOT_EDIT_MESSAGE } from "../../domain/studyEditability"
+import { getStudyParticipantsRsc } from "../../server/getStudyParticipants"
 
 interface ResearcherDataProps {
   studyId: number

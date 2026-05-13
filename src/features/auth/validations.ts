@@ -1,0 +1,53 @@
+import { z } from "zod"
+
+export const email = z
+  .string()
+  .email()
+  .transform((str) => str.toLowerCase().trim())
+
+export const password = z
+  .string()
+  .min(10)
+  .max(100)
+  .transform((str) => str.trim())
+
+export const role = z.enum(["RESEARCHER", "PARTICIPANT", "ADMIN"])
+
+export const Signup = z.object({
+  email,
+  password,
+  role,
+})
+
+export const SignupWithAdminInvite = Signup.extend({
+  adminInviteToken: z.string().optional(),
+})
+
+export const Login = z.object({
+  email: z
+    .string()
+    .min(1, "Email is required")
+    .email("Please enter a valid email")
+    .transform((str) => str.toLowerCase().trim()),
+  password: z.string().min(1, "Password is required"),
+})
+
+export const ForgotPassword = z.object({
+  email,
+})
+
+export const ResetPassword = z
+  .object({
+    password,
+    passwordConfirmation: password,
+    token: z.string().optional(),
+  })
+  .refine((data) => data.password === data.passwordConfirmation, {
+    message: "Passwords don't match",
+    path: ["passwordConfirmation"],
+  })
+
+export const ChangePassword = z.object({
+  currentPassword: z.string(),
+  newPassword: password,
+})

@@ -1,5 +1,5 @@
 import { cache } from "react"
-import { getFeedbackTemplateRsc } from "../queries/getFeedbackTemplate"
+import { getFeedbackTemplateRsc } from "./getFeedbackTemplate"
 import { computeFeedbackTemplateValidation } from "./computeFeedbackTemplateValidation"
 import { loadFeedbackPreviewContext } from "./loadFeedbackPreviewContext"
 import type {

@@ -20,22 +20,13 @@ export const metadata = {
   title: "My Studies",
 }
 
-async function ResearcherStudiesContent({
-  page,
-  userId,
-  view,
-}: {
-  page: number
-  userId: number
-  view: StudyView
-}) {
+async function ResearcherStudiesContent({ page, view }: { page: number; view: StudyView }) {
   const {
     studies: paginatedStudies,
     hasMore,
     extraQuery,
   } = await getResearcherStudiesPageSlice({
     page,
-    userId,
     view,
   })
   return (
@@ -48,15 +39,12 @@ async function ResearcherStudiesContent({
 
 async function ParticipantStudiesContent({
   page,
-  userId,
   view,
 }: {
   page: number
-  userId: number
   view: ParticipantStudyView
 }) {
   const { studies, hasMore } = await getParticipantStudiesWithStatus(
-    userId,
     view,
     page,
     STUDIES_LIST_PAGE_SIZE
@@ -103,9 +91,9 @@ export default async function StudiesPage({
         </div>
       )}
       {canManageStudies ? (
-        <ResearcherStudiesContent page={page} userId={session.userId} view={researcherView} />
+        <ResearcherStudiesContent page={page} view={researcherView} />
       ) : (
-        <ParticipantStudiesContent page={page} userId={session.userId} view={participantView} />
+        <ParticipantStudiesContent page={page} view={participantView} />
       )}
     </main>
   )

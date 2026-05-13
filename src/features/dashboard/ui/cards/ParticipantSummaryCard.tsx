@@ -7,7 +7,7 @@ import {
   MagnifyingGlassIcon,
 } from "@heroicons/react/24/outline"
 import Card from "@/src/components/ui/Card"
-import type { ParticipantStudyCounts } from "../../queries/getParticipantStudyCounts"
+import type { ParticipantStudyCounts } from "../../types"
 
 interface StatItemProps {
   href: string

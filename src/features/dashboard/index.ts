@@ -4,26 +4,25 @@ export { default as AdminDashboard } from "./ui/AdminDashboard"
 export { default as DashboardSkeleton } from "./ui/DashboardSkeleton"
 
 // Shared types
-export type { DashboardCurrentUser } from "./types"
+export type {
+  ActiveStudyWithResponseCount,
+  DashboardCurrentUser,
+  DeadlineStudy,
+  ParticipantCompletedNotPaidStudy,
+  ParticipantIncompleteStudies,
+  ParticipantIncompleteStudy,
+  ParticipantStudyCounts,
+  ResearcherStudyCounts,
+  UpcomingDeadlines,
+} from "./types"
 
-// Portal queries (called directly as server functions from `/dashboard`)
-export { getResearcherStudyCounts } from "./queries/getResearcherStudyCounts"
-export type { ResearcherStudyCounts } from "./queries/getResearcherStudyCounts"
-
-export { getActiveStudiesWithResponseCounts } from "./queries/getActiveStudiesWithResponseCounts"
-export type { ActiveStudyWithResponseCount } from "./queries/getActiveStudiesWithResponseCounts"
-
-export { getUpcomingDeadlines } from "./queries/getUpcomingDeadlines"
-export type { UpcomingDeadlines } from "./queries/getUpcomingDeadlines"
-
-export { getParticipantIncompleteStudies } from "./queries/getParticipantIncompleteStudies"
-export type { ParticipantIncompleteStudies } from "./queries/getParticipantIncompleteStudies"
-
-export { getParticipantStudyCounts } from "./queries/getParticipantStudyCounts"
-export type { ParticipantStudyCounts } from "./queries/getParticipantStudyCounts"
-
-export { getParticipantCompletedNotPaidStudies } from "./queries/getParticipantCompletedNotPaidStudies"
-export type { ParticipantCompletedNotPaidStudy } from "./queries/getParticipantCompletedNotPaidStudies"
+// Portal server loaders (called directly from `/dashboard`)
+export { getResearcherStudyCounts } from "./server/getResearcherStudyCounts"
+export { getActiveStudiesWithResponseCounts } from "./server/getActiveStudiesWithResponseCounts"
+export { getUpcomingDeadlines } from "./server/getUpcomingDeadlines"
+export { getParticipantIncompleteStudies } from "./server/getParticipantIncompleteStudies"
+export { getParticipantStudyCounts } from "./server/getParticipantStudyCounts"
+export { getParticipantCompletedNotPaidStudies } from "./server/getParticipantCompletedNotPaidStudies"
 
 // Admin queries (called from `/admin/dashboard`)
 // `getStalePendingAdminInvitesRsc` was promoted to `features/admin-invitations/` (ADR-003).

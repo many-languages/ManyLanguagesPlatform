@@ -1,6 +1,7 @@
 import { Prisma } from "db"
+import { getAuthorizedSession } from "@/src/lib/auth/session"
 import type { StudyView } from "../domain/studyView"
-import { getStudies } from "../queries/getStudies"
+import { getStudies } from "./getStudies"
 import type { StudyWithLatestUpload } from "../types"
 import { isSetupComplete } from "../domain/setup/setupStatus"
 
@@ -13,14 +14,15 @@ export const RESEARCHER_STUDIES_MAX_SETUP_FILTER = 500
  */
 export async function getResearcherStudiesPageSlice(options: {
   page: number
-  userId: number
   view: StudyView
 }): Promise<{
   studies: StudyWithLatestUpload[]
   hasMore: boolean
   extraQuery?: Record<string, string>
 }> {
-  const { page, userId, view } = options
+  const { page, view } = options
+  const session = await getAuthorizedSession()
+  const userId = session.userId!
 
   const baseWhere: Prisma.StudyWhereInput = {
     OR: [{ researchers: { some: { userId } } }, { participations: { some: { userId } } }],

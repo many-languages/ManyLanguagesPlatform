@@ -1,9 +1,6 @@
 import Link from "next/link"
 import Card from "@/src/components/ui/Card"
-import type {
-  ParticipantIncompleteStudy,
-  ParticipantIncompleteStudies,
-} from "../../queries/getParticipantIncompleteStudies"
+import type { ParticipantIncompleteStudy, ParticipantIncompleteStudies } from "../../types"
 
 /** Urgency for nearing: ≤3 days = error, ≤7 days = warning, else info */
 function getNearingUrgencyClasses(daysUntilDeadline: number): string {

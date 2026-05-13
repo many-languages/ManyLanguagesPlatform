@@ -1,0 +1,91 @@
+"use client"
+
+import { useMemo } from "react"
+import Link from "next/link"
+import type { Route } from "next"
+import { useMutation } from "@blitzjs/rpc"
+import { useRouter, useSearchParams } from "next/navigation"
+import { TextField, FormSubmitButton, FormErrorDisplay } from "@/src/components/ui/fields"
+import { Form, FORM_ERROR } from "@/src/components/ui/Form"
+import { getDefaultAuthenticatedPath } from "@/src/lib/auth/routing"
+import login from "../../mutations/login"
+import { usePendingNavigation } from "../../hooks/usePendingNavigation"
+import { Login } from "../../validations"
+
+export const LoginForm = () => {
+  const [loginMutation] = useMutation(login)
+  const router = useRouter()
+  const next = useSearchParams()?.get("next")
+  const { isPending: isNavigating, startNavigation } = usePendingNavigation()
+
+  const defaultValues = useMemo(() => ({ email: "", password: "" }), [])
+
+  return (
+    <div className="space-y-4">
+      <h1 className="font-black text-3xl">Login</h1>
+
+      <Form
+        schema={Login}
+        defaultValues={defaultValues}
+        onSubmit={async (values) => {
+          try {
+            const result = await loginMutation(values)
+
+            if (result.error) {
+              return { [FORM_ERROR]: result.error }
+            }
+
+            if (!result.user) {
+              return { [FORM_ERROR]: "Login succeeded but user data was missing." }
+            }
+
+            startNavigation(() => {
+              router.refresh()
+              if (next) {
+                router.push(next as Route)
+              } else {
+                router.push(getDefaultAuthenticatedPath(result.user.role) as Route)
+              }
+            })
+          } catch (error: any) {
+            const errorMessage = error?.message || "An unexpected error occurred. Please try again."
+            return { [FORM_ERROR]: errorMessage }
+          }
+        }}
+        className="space-y-4"
+      >
+        <div className="fieldset bg-base-200 border-base-300 rounded-box w-md border p-4">
+          <TextField
+            name="email"
+            label="Email"
+            placeholder="Email"
+            type="email"
+            className="w-full"
+          />
+          <TextField
+            name="password"
+            label="Password"
+            placeholder="Password"
+            type="password"
+            className="w-full"
+          />
+          <Link href="/forgot-password" className="mt-2 mb-6 block">
+            Forgot your password?
+          </Link>
+          <FormSubmitButton
+            submitText="Login"
+            loadingText="Logging in"
+            className="btn btn-primary"
+            isPending={isNavigating}
+          />
+
+          <FormErrorDisplay />
+        </div>
+      </Form>
+
+      <div>
+        Or <Link href="/signup">Sign Up</Link>
+      </div>
+    </div>
+  )
+}

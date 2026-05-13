@@ -5,6 +5,7 @@
 import type { Prisma } from "db"
 import {
   adminStudyWithLatestUploadArgs,
+  participantWithEmailArgs,
   studyWithRelationsArgs,
   studyWithLatestUploadSelect,
 } from "./studySelects"
@@ -20,6 +21,7 @@ type StudyWithLatestUploadRecord = Prisma.StudyGetPayload<{
 type AdminStudyWithLatestUploadRecord = Prisma.StudyGetPayload<
   typeof adminStudyWithLatestUploadArgs
 >
+type ParticipantWithEmailRecord = Prisma.ParticipantStudyGetPayload<typeof participantWithEmailArgs>
 
 export type StudyWithRelations = WithLatestJatosStudyUpload<StudyWithRelationsRecord>
 export type StudyWithLatestUpload = WithLatestJatosStudyUpload<StudyWithLatestUploadRecord>
@@ -27,6 +29,7 @@ export type AdminStudyWithLatestUpload =
   WithLatestJatosStudyUpload<AdminStudyWithLatestUploadRecord> & {
     hasParticipantResponses: boolean | null
   }
+export type ParticipantWithEmail = ParticipantWithEmailRecord
 export type { StudySummaryCounts } from "./server/studySummaryCounts"
 export type { StudyView } from "./domain/studyView"
 export type { ParticipantStudyView } from "./domain/participantStudyView"

@@ -1,5 +1,5 @@
 import { StudySummaryCard, RESEARCHER_STUDY_SUMMARY_LINKS } from "@/src/features/studies"
-import type { ResearcherStudyCounts } from "../../queries/getResearcherStudyCounts"
+import type { ResearcherStudyCounts } from "../../types"
 
 interface ResearcherSummaryCardProps {
   counts: ResearcherStudyCounts

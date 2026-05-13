@@ -1,8 +1,8 @@
 import { notFound, redirect } from "next/navigation"
 import {
   StepIndicator,
-  getStudyRsc,
   canEditStudySetup,
+  loadStudySetupPage,
   studyPath,
   getCompletedSteps,
 } from "@/src/features/studies"
@@ -21,15 +21,7 @@ export default async function StudySetupLayout({
     notFound()
   }
 
-  let study: Awaited<ReturnType<typeof getStudyRsc>>
-  try {
-    study = await getStudyRsc(studyId)
-  } catch (error: unknown) {
-    if ((error as { name?: string })?.name === "NotFoundError") {
-      notFound()
-    }
-    throw error
-  }
+  const { study } = await loadStudySetupPage(params)
 
   if (!canEditStudySetup(study)) {
     redirect(studyPath(studyId))

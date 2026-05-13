@@ -1,6 +1,6 @@
 import { resolver } from "@blitzjs/rpc"
 import { z } from "zod"
-import { checkJatosStudyUuidForSetup } from "@/src/lib/jatos/jatosAccessService"
+import { checkJatosStudyUuid } from "../server/studySetupWrites"
 
 const CheckJatosStudyUuid = z.object({
   studyId: z.number().int().positive(),
@@ -11,13 +11,7 @@ const CheckJatosStudyUuid = z.object({
 export default resolver.pipe(
   resolver.zod(CheckJatosStudyUuid),
   resolver.authorize("RESEARCHER"),
-  async ({ studyId, jatosStudyUUID, mode }, ctx) => {
-    const userId = ctx.session.userId!
-    return checkJatosStudyUuidForSetup({
-      studyId,
-      userId,
-      jatosStudyUuid: jatosStudyUUID,
-      mode,
-    })
+  async ({ studyId, jatosStudyUUID, mode }) => {
+    return checkJatosStudyUuid({ studyId, jatosStudyUUID, mode })
   }
 )

@@ -1,6 +1,6 @@
 import db from "db"
 import { withStudyAccess, getAllPilotResultsRsc } from "@/src/features/studies/services"
-import { getCodebookDataRsc } from "@/src/features/codebook"
+import { getCodebookDataRsc } from "@/src/features/codebook/server/getCodebookData"
 import {
   hashPilotResultIds,
   putFeedbackPreviewContext,

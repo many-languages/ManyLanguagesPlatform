@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation"
-import { getStudyRsc } from "@/src/features/studies/queries/getStudy"
+import { getResearcherStudyRsc } from "./getStudy"
 import type { StudyWithRelations } from "../types"
 
 export type StudySetupPageContext = {
@@ -22,7 +22,7 @@ export async function loadStudySetupPage(
   }
 
   try {
-    const study = await getStudyRsc(studyId)
+    const study = await getResearcherStudyRsc(studyId)
     return { studyId, study }
   } catch (error: unknown) {
     if ((error as { name?: string })?.name === "NotFoundError") {

@@ -8,8 +8,8 @@ import {
   isSetupCompleteFromFlags,
   type SetupStepFlags,
 } from "@/src/features/studies/services"
-import { createFeedbackTemplateRsc } from "../mutations/createFeedbackTemplate"
-import { updateFeedbackTemplateRsc } from "../mutations/updateFeedbackTemplate"
+import { createFeedbackTemplateRsc } from "../server/createFeedbackTemplate"
+import { updateFeedbackTemplateRsc } from "../server/updateFeedbackTemplate"
 import type { FeedbackTemplate, FeedbackTemplateEditorInitial } from "@/src/features/feedback/types"
 import { extractRequiredVariableNames } from "@/src/features/feedback/domain/requiredVariableNames"
 import { mapFeedbackTemplateSaveErrorToUserMessage } from "@/src/features/feedback/domain/mapFeedbackTemplateSaveErrorToUserMessage"

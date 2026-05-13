@@ -13,7 +13,7 @@ import toast from "react-hot-toast"
 import { useMutation } from "@blitzjs/rpc"
 import toggleParticipantActive from "@/src/features/studies/mutations/toggleParticipantActive"
 import toggleParticipantPayed from "@/src/features/studies/mutations/toggleParticipantPayed"
-import { ParticipantWithEmail } from "@/src/features/studies/queries/getStudyParticipants"
+import type { ParticipantWithEmail } from "../../types"
 import { ARCHIVED_STUDY_CANNOT_EDIT_MESSAGE } from "../../domain/studyEditability"
 
 interface ParticipantManagementCardProps {

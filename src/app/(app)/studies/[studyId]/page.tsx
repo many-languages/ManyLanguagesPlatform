@@ -27,30 +27,31 @@ export default async function StudyPage({ params }: { params: Promise<{ studyId:
 
     const study = await getStudyRsc(studyId)
     const canEditSetup = canEditStudySetup(study)
-
-    const userRole = session.role as "RESEARCHER" | "PARTICIPANT"
+    const isResearcherOnStudy = study.researchers.some(
+      (researcher) => researcher.userId === session.userId
+    )
 
     return (
       <main>
         <StudyHeader study={study} />
 
-        {userRole === "RESEARCHER" && (
+        {isResearcherOnStudy && (
           <div className="mt-4 flex justify-center">
             <StudyStatusControl study={study} />
           </div>
         )}
 
-        {userRole === "RESEARCHER" && (
+        {isResearcherOnStudy && (
           <SetupProgressCard study={study} canEditStudySetup={canEditSetup} />
         )}
 
-        {userRole === "RESEARCHER" && (
+        {isResearcherOnStudy && (
           <Suspense fallback={<div className="skeleton h-32 w-full mt-4" />}>
             <ResearcherData studyId={studyId} study={study} canEditStudySetup={canEditSetup} />
           </Suspense>
         )}
 
-        {userRole === "PARTICIPANT" && (
+        {!isResearcherOnStudy && (
           <Suspense fallback={<div className="skeleton h-16 w-full mt-4" />}>
             <ParticipantData studyId={studyId} study={study} />
           </Suspense>

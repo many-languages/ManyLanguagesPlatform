@@ -9,7 +9,7 @@ export {
   getCodebookDataRsc,
   fetchCodebookMergedVariablesForStudy,
   type CodebookMergedVariablesPayload,
-} from "./queries/getCodebookData"
+} from "./server/getCodebookData"
 
 export { computeCodebookValidation } from "./domain/computeCodebookValidation"
 

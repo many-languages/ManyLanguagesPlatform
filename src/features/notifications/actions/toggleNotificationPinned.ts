@@ -3,7 +3,7 @@
 import { revalidateTag } from "next/cache"
 import db from "db"
 
-import { getAuthorizedSession } from "@/src/app/(auth)/utils/getAuthorizedSession"
+import { getAuthorizedSession } from "@/src/lib/auth/session"
 import { NOTIFICATIONS_MENU_TAG, NOTIFICATIONS_TABLE_TAG } from "../constants"
 
 type ToggleNotificationPinnedInput = {

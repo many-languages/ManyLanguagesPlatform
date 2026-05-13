@@ -72,30 +72,31 @@ server-only exports and should not be moved into RPC folders.
 
 ## Studies
 
-| Server helper                                   | Location                                                          | Primary use                                    |
-| ----------------------------------------------- | ----------------------------------------------------------------- | ---------------------------------------------- |
-| `getStudyRsc`                                   | `src/features/studies/server/getStudy.ts`                         | Study detail route                             |
-| `getResearcherStudyRsc`                         | `src/features/studies/server/getStudy.ts`                         | Setup route loader                             |
-| `getStudies`                                    | `src/features/studies/server/getStudies.ts`                       | Researcher/explore study lists and RPC wrapper |
-| `getStudiesRsc`                                 | `src/features/studies/server/getAdminStudies.ts`                  | Admin studies page                             |
-| `getParticipantStudiesWithStatus`               | `src/features/studies/server/getParticipantStudiesWithStatus.ts`  | Participant study list                         |
-| `getAdminStudyCounts`                           | `src/features/studies/server/getAdminStudyCounts.ts`              | Admin dashboard/studies surfaces               |
-| `getPendingAdminApprovalStudiesForDashboardRsc` | `src/features/studies/server/getPendingAdminApprovalStudies.ts`   | Admin dashboard                                |
-| `loadStudySetupPage`                            | `src/features/studies/server/loadStudySetupPage.ts`               | Setup step pages/layout                        |
-| `getValidationDataRsc`                          | `src/features/studies/server/getValidationData.ts`                | Setup step 4                                   |
-| `getCachedExtractionBundleRsc`                  | `src/features/studies/server/getCachedExtractionBundle.ts`        | Setup step 4 client RPC wrapper                |
-| `getStudyDataByCommentRsc`                      | `src/features/studies/server/getStudyDataByComment.ts`            | Pilot data lookup                              |
-| `getAllPilotResultsRsc`                         | `src/features/studies/server/getAllPilotResults.ts` / `services/` | Feedback preview and validation                |
-| `getPilotResultByIdRsc`                         | `src/features/studies/server/getPilotResultById.ts`               | Pilot result lookup                            |
-| `getResearcherRunUrlRsc`                        | `src/features/studies/server/getResearcherRunUrl.ts`              | Setup step 3 RPC wrapper                       |
-| `getSetupCompletionRsc`                         | `src/features/studies/services/setup.ts`                          | Setup actions and feedback submission          |
-| `getStudyMetadataRsc`                           | `src/features/studies/server/getStudyMetadata.ts`                 | Study metadata RPC wrapper                     |
-| `getStudyVariablesRsc`                          | `src/features/studies/server/getStudyVariables.ts`                | Study variables RPC wrapper                    |
-| `getStudyParticipantsRsc`                       | `src/features/studies/server/getStudyParticipants.ts`             | Researcher study data                          |
-| `getStudyParticipantRsc`                        | `src/features/studies/server/getStudyParticipant.ts`              | Participant study data                         |
-| `getStudyResearcherRsc`                         | `src/features/studies/server/getStudyResearcher.ts`               | Setup step 2 imports                           |
-| `getParticipantPseudonymRsc`                    | `src/features/studies/server/getParticipantPseudonym.ts`          | Participant run URL flows                      |
-| `isParticipantInStudyRsc`                       | `src/features/studies/server/isParticipantInStudy.ts`             | Join-study client RPC wrapper                  |
+| Server helper                                   | Location                                                          | Primary use                                          |
+| ----------------------------------------------- | ----------------------------------------------------------------- | ---------------------------------------------------- |
+| `getStudyRsc`                                   | `src/features/studies/server/getStudy.ts`                         | Study detail route                                   |
+| `getResearcherStudyRsc`                         | `src/features/studies/server/getStudy.ts`                         | Setup route loader                                   |
+| `getStudies`                                    | `src/features/studies/server/getStudies.ts`                       | Researcher/explore study lists and RPC wrapper       |
+| `getStudiesRsc`                                 | `src/features/studies/server/getAdminStudies.ts`                  | Admin studies page                                   |
+| `getParticipantStudiesWithStatus`               | `src/features/studies/server/getParticipantStudiesWithStatus.ts`  | Participant study list                               |
+| `getAdminStudyCounts`                           | `src/features/studies/server/getAdminStudyCounts.ts`              | Admin dashboard/studies surfaces                     |
+| `getPendingAdminApprovalStudiesForDashboardRsc` | `src/features/studies/server/getPendingAdminApprovalStudies.ts`   | Admin dashboard                                      |
+| `loadStudySetupPage`                            | `src/features/studies/server/loadStudySetupPage.ts`               | Setup step pages/layout                              |
+| `loadResearcherStudyData`                       | `src/features/studies/server/loadResearcherStudyData.ts`          | Researcher study detail JATOS/participant view model |
+| `getValidationDataRsc`                          | `src/features/studies/server/getValidationData.ts`                | Setup step 4                                         |
+| `getCachedExtractionBundleRsc`                  | `src/features/studies/server/getCachedExtractionBundle.ts`        | Setup step 4 client RPC wrapper                      |
+| `getStudyDataByCommentRsc`                      | `src/features/studies/server/getStudyDataByComment.ts`            | Pilot data lookup                                    |
+| `getAllPilotResultsRsc`                         | `src/features/studies/server/getAllPilotResults.ts` / `services/` | Feedback preview and validation                      |
+| `getPilotResultByIdRsc`                         | `src/features/studies/server/getPilotResultById.ts`               | Pilot result lookup                                  |
+| `getResearcherRunUrlRsc`                        | `src/features/studies/server/getResearcherRunUrl.ts`              | Setup step 3 RPC wrapper                             |
+| `getSetupCompletionRsc`                         | `src/features/studies/services/setup.ts`                          | Setup actions and feedback submission                |
+| `getStudyMetadataRsc`                           | `src/features/studies/server/getStudyMetadata.ts`                 | Study metadata RPC wrapper                           |
+| `getStudyVariablesRsc`                          | `src/features/studies/server/getStudyVariables.ts`                | Study variables RPC wrapper                          |
+| `getStudyParticipantsRsc`                       | `src/features/studies/server/getStudyParticipants.ts`             | Researcher study data                                |
+| `getStudyParticipantRsc`                        | `src/features/studies/server/getStudyParticipant.ts`              | Participant study data                               |
+| `getStudyResearcherRsc`                         | `src/features/studies/server/getStudyResearcher.ts`               | Setup step 2 imports                                 |
+| `getParticipantPseudonymRsc`                    | `src/features/studies/server/getParticipantPseudonym.ts`          | Participant run URL flows                            |
+| `isParticipantInStudyRsc`                       | `src/features/studies/server/isParticipantInStudy.ts`             | Join-study client RPC wrapper                        |
 
 ## Route Usage Snapshot
 

@@ -3,7 +3,6 @@
 import { useMemo, useState, useEffect, type Dispatch, type SetStateAction } from "react"
 import Link from "next/link"
 import type { Route } from "next"
-import { UserRole } from "db"
 import { useMutation, useQuery } from "@blitzjs/rpc"
 import { useRouter, useSearchParams } from "next/navigation"
 import type { UseFormReturn } from "react-hook-form"
@@ -19,13 +18,11 @@ import validateAdminInviteToken from "@/src/features/admin-invitations/queries/v
 import { getDefaultAuthenticatedPath } from "@/src/lib/auth/routing"
 import signup from "../../mutations/signup"
 import { Signup } from "../../validations"
-
-export const RoleOptions = [
-  { value: UserRole.RESEARCHER, label: "Researcher" },
-  { value: UserRole.PARTICIPANT, label: "Participant" },
-]
-
-export const AdminRoleOptions = [{ value: UserRole.ADMIN, label: "Administrator" }]
+import {
+  ADMIN_SIGNUP_ROLE_OPTIONS,
+  SIGNUP_ROLE_OPTIONS,
+  SIGNUP_USER_ROLE,
+} from "../../domain/userRoles"
 
 interface AdminInviteValidation {
   valid: boolean
@@ -55,9 +52,9 @@ function SignupFormFields({
   useEffect(() => {
     if (tokenValidation?.valid && tokenValidation.inviteEmail) {
       form.setValue("email", tokenValidation.inviteEmail)
-      form.setValue("role", UserRole.ADMIN)
+      form.setValue("role", SIGNUP_USER_ROLE.ADMIN)
     } else if (!adminInviteToken) {
-      form.setValue("role", UserRole.PARTICIPANT)
+      form.setValue("role", SIGNUP_USER_ROLE.PARTICIPANT)
     }
   }, [adminInviteToken, form, tokenValidation])
 
@@ -83,7 +80,7 @@ function SignupFormFields({
         <SelectField
           name="role"
           label="Role"
-          options={RoleOptions}
+          options={SIGNUP_ROLE_OPTIONS}
           placeholder="Select your role"
           className="w-full"
         />
@@ -93,7 +90,7 @@ function SignupFormFields({
         <SelectField
           name="role"
           label="Role"
-          options={AdminRoleOptions}
+          options={ADMIN_SIGNUP_ROLE_OPTIONS}
           placeholder="Administrator"
           className="w-full"
           disabled
@@ -195,7 +192,7 @@ export const SignupForm = () => {
     () => ({
       email: "",
       password: "",
-      role: UserRole.PARTICIPANT,
+      role: SIGNUP_USER_ROLE.PARTICIPANT,
     }),
     []
   )

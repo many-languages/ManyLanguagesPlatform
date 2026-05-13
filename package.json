@@ -9,6 +9,8 @@
     "ensure-service-account": "tsx scripts/ensure-service-account.ts",
     "validate-setup": "tsx scripts/validate-setup.ts",
     "validate:jatos-architecture": "tsx scripts/validate-jatos-architecture.ts",
+    "validate:project-structure": "tsx scripts/validate-project-structure.ts",
+    "validate:architecture": "npm run validate:jatos-architecture && npm run validate:project-structure",
     "studio": "blitz prisma studio",
     "lint": "next lint --dir src --dir db --dir mailers --dir scripts --file next.config.js --file instrumentation.ts --file types.ts",
     "test": "vitest run --passWithNoTests",

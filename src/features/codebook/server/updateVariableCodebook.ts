@@ -1,6 +1,6 @@
 import db from "db"
 import { withStudyWriteAccess } from "@/src/features/studies/services"
-import { computeCodebookValidation } from "../domain/computeCodebookValidation"
+import { computeCodebookValidation } from "./computeCodebookValidation"
 import { getPersonalDataViolationsForPersistedTemplate } from "@/src/features/feedback"
 
 export type UpdateVariableCodebookInput = {

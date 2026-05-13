@@ -1,7 +1,7 @@
 import db from "db"
 import { cache } from "react"
 import { withStudyAccess } from "@/src/features/studies/services"
-import { computeCodebookValidation } from "../domain/computeCodebookValidation"
+import { computeCodebookValidation } from "./computeCodebookValidation"
 
 export const fetchCodebookMergedVariablesForStudy = cache(async (studyId: number) => {
   const study = await db.study.findUnique({

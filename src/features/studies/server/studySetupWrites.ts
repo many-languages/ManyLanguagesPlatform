@@ -1,7 +1,7 @@
 import { AuthenticationError } from "blitz"
 import db from "db"
 import type { JatosWorkerType } from "@/db"
-import { getAuthorizedSession } from "@/src/app/(auth)/utils/getAuthorizedSession"
+import { getAuthorizedSession } from "@/src/lib/auth/session"
 import { checkJatosStudyUuidForSetup } from "@/src/lib/jatos/jatosAccessService"
 import { withStudyWriteAccess } from "./withStudyWriteAccess"
 

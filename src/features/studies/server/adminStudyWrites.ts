@@ -1,7 +1,7 @@
 import { AuthorizationError } from "blitz"
 import db from "db"
 import type { UserRole } from "@/db"
-import { getAuthorizedSession } from "@/src/app/(auth)/utils/getAuthorizedSession"
+import { getAuthorizedSession } from "@/src/lib/auth/session"
 import { sendNotification } from "@/src/features/notifications"
 import { deleteStudyAsAdmin } from "@/src/lib/jatos/admin/deleteStudyWorkflow"
 import { isStaffAdmin, isSuperAdmin } from "@/src/lib/auth/roles"

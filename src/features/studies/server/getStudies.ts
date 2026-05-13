@@ -1,6 +1,6 @@
 import { Prisma } from "db"
 import db from "db"
-import { getAuthorizedSession } from "@/src/app/(auth)/utils/getAuthorizedSession"
+import { getAuthorizedSession } from "@/src/lib/auth/session"
 import { studyWithLatestUploadSelect } from "../studySelects"
 import type { StudyWithLatestUpload } from "../types"
 

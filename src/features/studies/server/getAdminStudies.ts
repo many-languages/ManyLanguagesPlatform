@@ -2,7 +2,7 @@
 
 import { AuthorizationError } from "blitz"
 import db from "db"
-import { getAuthorizedSession } from "@/src/app/(auth)/utils/getAuthorizedSession"
+import { getAuthorizedSession } from "@/src/lib/auth/session"
 import { isStaffAdmin } from "@/src/lib/auth/roles"
 import { studyHasParticipantResponsesSafe } from "./participantResponses"
 import { adminStudyWithLatestUploadArgs } from "../studySelects"

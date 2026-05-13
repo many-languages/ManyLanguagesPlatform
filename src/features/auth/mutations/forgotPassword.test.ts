@@ -26,13 +26,11 @@ describe("forgotPassword mutation", () => {
   })
 
   it("works correctly", async () => {
-    // Create test user
     const user = await db.user.create({
       data: {
         email: "user@example.com",
         role: UserRole.PARTICIPANT,
         tokens: {
-          // Create old token to ensure it's deleted
           create: {
             type: "RESET_PASSWORD",
             hashedToken: "token",
@@ -44,7 +42,6 @@ describe("forgotPassword mutation", () => {
       include: { tokens: true },
     })
 
-    // Invoke the mutation
     await forgotPassword({ email: user.email }, {} as Ctx)
 
     const tokens = await db.token.findMany({ where: { userId: user.id } })
@@ -52,9 +49,7 @@ describe("forgotPassword mutation", () => {
     if (!user.tokens[0]) throw new Error("Missing user token")
     if (!token) throw new Error("Missing token")
 
-    // delete's existing tokens
     expect(tokens.length).toBe(1)
-
     expect(token.id).not.toBe(user.tokens[0].id)
     expect(token.type).toBe("RESET_PASSWORD")
     expect(token.sentTo).toBe(user.email)

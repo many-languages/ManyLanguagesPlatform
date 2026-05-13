@@ -1,6 +1,6 @@
 import db from "db"
 import type { UserRole } from "@/db"
-import { getAuthorizedSession } from "@/src/app/(auth)/utils/getAuthorizedSession"
+import { getAuthorizedSession } from "@/src/lib/auth/session"
 import { sendNotification } from "@/src/features/notifications"
 import { deletePlatformStudyFromJatos } from "@/src/lib/jatos/admin/deleteStudyWorkflow"
 import {

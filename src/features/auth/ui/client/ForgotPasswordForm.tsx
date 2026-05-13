@@ -2,12 +2,12 @@
 
 import { useMemo } from "react"
 import Link from "next/link"
-import { TextField, FormSubmitButton, FormErrorDisplay } from "@/src/components/ui/fields"
-import { Form, FORM_ERROR } from "@/src/components/ui/Form"
-import { ForgotPassword } from "../../validations"
-import forgotPassword from "../../mutations/forgotPassword"
 import { useMutation } from "@blitzjs/rpc"
 import toast from "react-hot-toast"
+import { TextField, FormSubmitButton, FormErrorDisplay } from "@/src/components/ui/fields"
+import { Form, FORM_ERROR } from "@/src/components/ui/Form"
+import forgotPassword from "../../mutations/forgotPassword"
+import { ForgotPassword } from "../../validations"
 
 export function ForgotPasswordForm() {
   const [forgotPasswordMutation, { isSuccess }] = useMutation(forgotPassword)
@@ -56,7 +56,7 @@ export function ForgotPasswordForm() {
               <FormSubmitButton
                 submitText="Send Reset Password"
                 loadingText="Sending"
-                className="btn btn-primary w-full mt-6"
+                className="btn btn-primary mt-6 w-full"
               />
 
               <FormErrorDisplay />

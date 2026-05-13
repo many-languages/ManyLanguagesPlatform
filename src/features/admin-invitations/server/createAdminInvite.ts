@@ -2,7 +2,7 @@
 
 import { createHash, randomBytes } from "crypto"
 import db from "db"
-import { getAuthorizedSession } from "@/src/app/(auth)/utils/getAuthorizedSession"
+import { getAuthorizedSession } from "@/src/lib/auth/session"
 import { adminInvitationMailer } from "mailers/adminInvitationMailer"
 import type { CreateAdminInviteInput } from "../validations"
 

@@ -19,6 +19,10 @@ export const Signup = z.object({
   role,
 })
 
+export const SignupWithAdminInvite = Signup.extend({
+  adminInviteToken: z.string().optional(),
+})
+
 export const Login = z.object({
   email: z
     .string()
@@ -34,13 +38,13 @@ export const ForgotPassword = z.object({
 
 export const ResetPassword = z
   .object({
-    password: password,
+    password,
     passwordConfirmation: password,
     token: z.string().optional(),
   })
   .refine((data) => data.password === data.passwordConfirmation, {
     message: "Passwords don't match",
-    path: ["passwordConfirmation"], // set the path of the error
+    path: ["passwordConfirmation"],
   })
 
 export const ChangePassword = z.object({

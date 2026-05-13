@@ -1,6 +1,6 @@
 import { cache } from "react"
 import db from "db"
-import { getAuthorizedSession } from "@/src/app/(auth)/utils/getAuthorizedSession"
+import { getAuthorizedSession } from "@/src/lib/auth/session"
 
 async function checkParticipantInStudy(studyId: number, userId: number) {
   const participant = await db.participantStudy.findUnique({

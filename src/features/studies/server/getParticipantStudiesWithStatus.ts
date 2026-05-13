@@ -1,5 +1,5 @@
 import db from "db"
-import { getAuthorizedSession } from "@/src/app/(auth)/utils/getAuthorizedSession"
+import { getAuthorizedSession } from "@/src/lib/auth/session"
 import { getResultsMetadataForParticipantDashboard } from "@/src/lib/jatos/jatosAccessService"
 import { hasCompletedStudy } from "@/src/lib/jatos/utils/findStudyResultIdByComment"
 import type { ParticipantStudyView } from "../domain/participantStudyView"

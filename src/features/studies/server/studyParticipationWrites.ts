@@ -1,6 +1,6 @@
 import { AuthenticationError } from "blitz"
 import db from "db"
-import { getAuthorizedSession } from "@/src/app/(auth)/utils/getAuthorizedSession"
+import { getAuthorizedSession } from "@/src/lib/auth/session"
 import { assertStudyNotArchived } from "./studyLifecycle"
 import { verifyResearcherStudyAccess } from "./verifyResearcherStudyAccess"
 

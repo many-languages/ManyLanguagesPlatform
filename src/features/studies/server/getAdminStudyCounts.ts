@@ -1,5 +1,5 @@
 import { AuthorizationError } from "blitz"
-import { getAuthorizedSession } from "@/src/app/(auth)/utils/getAuthorizedSession"
+import { getAuthorizedSession } from "@/src/lib/auth/session"
 import { isStaffAdmin } from "@/src/lib/auth/roles"
 import { getStudySummaryCounts, type StudySummaryCounts } from "./studySummaryCounts"
 

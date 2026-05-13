@@ -2,16 +2,15 @@
 
 import { useMemo } from "react"
 import Link from "next/link"
+import type { Route } from "next"
+import { useMutation } from "@blitzjs/rpc"
+import { useRouter, useSearchParams } from "next/navigation"
 import { TextField, FormSubmitButton, FormErrorDisplay } from "@/src/components/ui/fields"
 import { Form, FORM_ERROR } from "@/src/components/ui/Form"
-import login from "../../mutations/login"
-import { Login } from "../../validations"
-import { useMutation } from "@blitzjs/rpc"
-import { useSearchParams } from "next/navigation"
-import { useRouter } from "next/navigation"
-import type { Route } from "next"
-import { usePendingNavigation } from "@/src/features/auth/hooks/usePendingNavigation"
 import { getDefaultAuthenticatedPath } from "@/src/lib/auth/routing"
+import login from "../../mutations/login"
+import { usePendingNavigation } from "../../hooks/usePendingNavigation"
+import { Login } from "../../validations"
 
 export const LoginForm = () => {
   const [loginMutation] = useMutation(login)
@@ -70,7 +69,7 @@ export const LoginForm = () => {
             type="password"
             className="w-full"
           />
-          <Link href={"/forgot-password"} className="mt-2 mb-6 block">
+          <Link href="/forgot-password" className="mt-2 mb-6 block">
             Forgot your password?
           </Link>
           <FormSubmitButton

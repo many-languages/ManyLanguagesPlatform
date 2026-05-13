@@ -1,9 +1,8 @@
 import { vi, describe, it, beforeEach, expect } from "vitest"
-import resetPassword from "./resetPassword"
-import db from "db"
+import db, { UserRole } from "db"
 import { hash256 } from "@blitzjs/auth"
 import { SecurePassword } from "@blitzjs/auth/secure-password"
-import { UserRole } from "db"
+import resetPassword from "./resetPassword"
 
 beforeEach(async () => {
   await db.$reset()
@@ -19,7 +18,6 @@ describe("resetPassword mutation", () => {
   it("works correctly", async () => {
     expect(true).toBe(true)
 
-    // Create test user
     const goodToken = "randomPasswordResetToken"
     const expiredToken = "expiredRandomPasswordResetToken"
     const future = new Date()
@@ -32,7 +30,6 @@ describe("resetPassword mutation", () => {
         email: "user@example.com",
         role: UserRole.PARTICIPANT,
         tokens: {
-          // Create old token to ensure it's deleted
           create: [
             {
               type: "RESET_PASSWORD",
@@ -54,12 +51,10 @@ describe("resetPassword mutation", () => {
 
     const newPassword = "newPassword"
 
-    // Non-existent token
     await expect(
       resetPassword({ token: "no-token", password: "", passwordConfirmation: "" }, mockCtx)
     ).rejects.toThrowError()
 
-    // Expired token
     await expect(
       resetPassword(
         { token: expiredToken, password: newPassword, passwordConfirmation: newPassword },
@@ -67,17 +62,14 @@ describe("resetPassword mutation", () => {
       )
     ).rejects.toThrowError()
 
-    // Good token
     await resetPassword(
       { token: goodToken, password: newPassword, passwordConfirmation: newPassword },
       mockCtx
     )
 
-    // Delete's the token
     const numberOfTokens = await db.token.count({ where: { userId: user.id } })
     expect(numberOfTokens).toBe(0)
 
-    // Updates user's password
     const updatedUser = await db.user.findFirst({ where: { id: user.id } })
     expect(await SecurePassword.verify(updatedUser!.hashedPassword, newPassword)).toBe(
       SecurePassword.VALID

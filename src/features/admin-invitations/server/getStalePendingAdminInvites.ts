@@ -2,11 +2,11 @@
 
 import { AuthorizationError } from "blitz"
 import db from "db"
-import { getAuthorizedSession } from "@/src/app/(auth)/utils/getAuthorizedSession"
+import { getAuthorizedSession } from "@/src/lib/auth/session"
 import { isSuperAdmin } from "@/src/lib/auth/roles"
 import { inviteSelect } from "../inviteSelect"
 
-export const STALE_ADMIN_INVITE_MIN_AGE_MS = 3 * 24 * 60 * 60 * 1000
+const DEFAULT_STALE_ADMIN_INVITE_MIN_AGE_MS = 3 * 24 * 60 * 60 * 1000
 
 async function findStalePendingAdminInvites(minAgeMs: number) {
   const now = new Date()
@@ -25,7 +25,9 @@ async function findStalePendingAdminInvites(minAgeMs: number) {
 }
 
 /** Pending admin invites that are still valid but older than `minAgeMs` (default: 3 days). */
-export async function getStalePendingAdminInvitesRsc(minAgeMs = STALE_ADMIN_INVITE_MIN_AGE_MS) {
+export async function getStalePendingAdminInvitesRsc(
+  minAgeMs = DEFAULT_STALE_ADMIN_INVITE_MIN_AGE_MS
+) {
   const session = await getAuthorizedSession()
   if (!isSuperAdmin(session.role)) {
     throw new AuthorizationError()

@@ -6,7 +6,7 @@ import { useMemo } from "react"
 import { useMutation } from "@blitzjs/rpc"
 import { useRouter } from "next/navigation"
 import md5 from "md5"
-import logout from "@/src/app/(auth)/mutations/logout"
+import logout from "@/src/features/auth/mutations/logout"
 import {
   NotificationMenu as NotificationsMenu,
   NotificationMenuProvider,

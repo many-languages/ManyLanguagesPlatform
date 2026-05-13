@@ -2,7 +2,7 @@
 
 import { AuthorizationError } from "blitz"
 import type { UserRole } from "@/db"
-import { getAuthorizedSession } from "@/src/app/(auth)/utils/getAuthorizedSession"
+import { getAuthorizedSession } from "@/src/lib/auth/session"
 
 export async function requireDashboardUser(role: UserRole): Promise<number> {
   const session = await getAuthorizedSession()

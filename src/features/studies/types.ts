@@ -4,7 +4,6 @@
 
 import type { Prisma } from "db"
 import {
-  adminStudyWithLatestUploadArgs,
   participantWithEmailArgs,
   studyWithRelationsArgs,
   studyWithLatestUploadSelect,
@@ -18,22 +17,55 @@ type StudyWithRelationsRecord = Prisma.StudyGetPayload<typeof studyWithRelations
 type StudyWithLatestUploadRecord = Prisma.StudyGetPayload<{
   select: typeof studyWithLatestUploadSelect
 }>
-type AdminStudyWithLatestUploadRecord = Prisma.StudyGetPayload<
-  typeof adminStudyWithLatestUploadArgs
->
 type ParticipantWithEmailRecord = Prisma.ParticipantStudyGetPayload<typeof participantWithEmailArgs>
 
 export type StudyWithRelations = WithLatestJatosStudyUpload<StudyWithRelationsRecord>
 export type StudyWithLatestUpload = WithLatestJatosStudyUpload<StudyWithLatestUploadRecord>
-export type AdminStudyWithLatestUpload =
-  WithLatestJatosStudyUpload<AdminStudyWithLatestUploadRecord> & {
-    hasParticipantResponses: boolean | null
-  }
 export type ParticipantWithEmail = ParticipantWithEmailRecord
 export type { StudySummaryCounts } from "./server/studySummaryCounts"
 export type { StudyView } from "./domain/studyView"
 export type { ParticipantStudyView } from "./domain/participantStudyView"
 export type { StudyWithMinimalRelations, SetupStepFlags } from "./domain/setup/setupStatus"
+
+export interface AdminStudyLatestUploadDto {
+  id: number
+  step1Completed: boolean
+  step2Completed: boolean
+  step3Completed: boolean
+  step4Completed: boolean
+  step5Completed: boolean
+  step6Completed: boolean
+  jatosWorkerType: string
+  jatosFileName: string | null
+}
+
+export interface AdminStudyCodebookEntryDto {
+  variableKey: string
+  variableName: string
+  description: string | null
+  personalData: boolean
+}
+
+export interface AdminStudyListItemDto {
+  id: number
+  createdAt: Date
+  title: string | null
+  description: string | null
+  status: string
+  jatosStudyUUID: string | null
+  adminApproved: boolean | null
+  archived: boolean
+  hasParticipantResponses: boolean | null
+  latestJatosStudyUpload: AdminStudyLatestUploadDto | null
+  feedbackTemplate: {
+    id: number
+    content: string
+  } | null
+  codebook: {
+    entries: AdminStudyCodebookEntryDto[]
+  } | null
+}
+
 export interface PendingAdminApprovalStudyRow {
   id: number
   title: string

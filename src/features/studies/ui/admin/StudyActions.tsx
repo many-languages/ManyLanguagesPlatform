@@ -15,11 +15,9 @@ import unarchiveStudy from "@/src/features/studies/mutations/unarchiveStudy"
 import { AdminStudyFormValues } from "@/src/features/studies/validations"
 import { ConfirmButton } from "@/src/components/ui/ConfirmButton"
 import { isSetupComplete, type StudyWithMinimalRelations } from "../../domain/setup/setupStatus"
-import type { AdminStudyWithLatestUpload } from "../../types"
+import type { AdminStudyListItemDto } from "../../types"
 import type { UserRole } from "@/db"
 import { isSuperAdmin } from "@/src/lib/auth/roles"
-
-type StudyWithFeedbackTemplate = AdminStudyWithLatestUpload
 
 type WithStudyActionOptions = {
   action: (ids: number[]) => Promise<{ updated: number } | null>
@@ -57,7 +55,7 @@ export default function StudyActions({
   studies,
   viewerRole,
 }: {
-  studies: StudyWithFeedbackTemplate[]
+  studies: AdminStudyListItemDto[]
   viewerRole: UserRole
 }) {
   const router = useRouter()
@@ -89,10 +87,23 @@ export default function StudyActions({
 
   const selectedIds = watch("selectedStudyIds")
   const selectedStudies = studies.filter((s) => selectedIds.includes(s.id))
+  const toSetupStatusStudy = (study: AdminStudyListItemDto): StudyWithMinimalRelations => ({
+    id: study.id,
+    archived: study.archived,
+    title: study.title,
+    description: study.description,
+    FeedbackTemplate: study.feedbackTemplate ? { id: study.feedbackTemplate.id } : null,
+    latestJatosStudyUpload: study.latestJatosStudyUpload
+      ? {
+          ...study.latestJatosStudyUpload,
+          jatosFileName: study.latestJatosStudyUpload.jatosFileName ?? undefined,
+        }
+      : null,
+  })
 
   const hasPending = selectedStudies.some((s) => s.adminApproved === null)
   const hasPendingWithSetupComplete = selectedStudies.some(
-    (s) => s.adminApproved === null && isSetupComplete(s as StudyWithMinimalRelations)
+    (s) => s.adminApproved === null && isSetupComplete(toSetupStatusStudy(s))
   )
   const allApproved =
     selectedStudies.length > 0 && selectedStudies.every((s) => s.adminApproved === true)
@@ -141,7 +152,7 @@ export default function StudyActions({
       action: async (ids) => {
         const selectedStudiesToEnable = studies.filter((s) => ids.includes(s.id))
         const invalidStudies = selectedStudiesToEnable.filter(
-          (s) => s.adminApproved !== true || !isSetupComplete(s as StudyWithMinimalRelations)
+          (s) => s.adminApproved !== true || !isSetupComplete(toSetupStatusStudy(s))
         )
         if (invalidStudies.length > 0) {
           const titles = invalidStudies.map((s) => s.title?.trim() || `Study #${s.id}`).join(", ")
@@ -166,7 +177,7 @@ export default function StudyActions({
             (s) =>
               ids.includes(s.id) &&
               s.adminApproved === null &&
-              isSetupComplete(s as StudyWithMinimalRelations)
+              isSetupComplete(toSetupStatusStudy(s))
           )
           .map((s) => s.id)
         if (idsToApprove.length === 0) return null

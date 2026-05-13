@@ -4,7 +4,9 @@
  */
 
 export type {
-  AdminStudyWithLatestUpload,
+  AdminStudyCodebookEntryDto,
+  AdminStudyLatestUploadDto,
+  AdminStudyListItemDto,
   ParticipantStudyView,
   ParticipantWithEmail,
   PendingAdminApprovalStudyRow,

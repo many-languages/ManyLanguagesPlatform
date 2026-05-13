@@ -6,30 +6,43 @@ import { getAuthorizedSession } from "@/src/lib/auth/session"
 import { isStaffAdmin } from "@/src/lib/auth/roles"
 import { studyHasParticipantResponsesSafe } from "./participantResponses"
 import { adminStudyWithLatestUploadArgs } from "../studySelects"
-import type { AdminStudyWithLatestUpload } from "../types"
+import type { AdminStudyListItemDto } from "../types"
 
-function attachLatestJatosStudyUpload(
-  study: Omit<AdminStudyWithLatestUpload, "latestJatosStudyUpload" | "hasParticipantResponses">
-): Omit<AdminStudyWithLatestUpload, "hasParticipantResponses"> {
-  return {
-    ...study,
-    latestJatosStudyUpload: study.jatosStudyUploads[0] ?? null,
-  }
-}
+type AdminStudyRow = Awaited<ReturnType<typeof findAdminStudyRows>>[number]
 
-async function findAdminStudies(): Promise<AdminStudyWithLatestUpload[]> {
-  const studies = await db.study.findMany({
+async function findAdminStudyRows() {
+  return db.study.findMany({
     ...adminStudyWithLatestUploadArgs,
     orderBy: { createdAt: "desc" },
   })
+}
 
-  const mapped = studies.map(attachLatestJatosStudyUpload)
+function toAdminStudyListItem(
+  study: AdminStudyRow,
+  hasParticipantResponses: boolean | null
+): AdminStudyListItemDto {
+  return {
+    id: study.id,
+    createdAt: study.createdAt,
+    title: study.title,
+    description: study.description,
+    status: study.status,
+    jatosStudyUUID: study.jatosStudyUUID,
+    adminApproved: study.adminApproved,
+    archived: study.archived,
+    latestJatosStudyUpload: study.jatosStudyUploads[0] ?? null,
+    hasParticipantResponses,
+    feedbackTemplate: study.FeedbackTemplate,
+    codebook: study.codebook,
+  }
+}
 
+async function findAdminStudies(): Promise<AdminStudyListItemDto[]> {
+  const studies = await findAdminStudyRows()
   return Promise.all(
-    mapped.map(async (study) => ({
-      ...study,
-      hasParticipantResponses: await studyHasParticipantResponsesSafe(study.id),
-    }))
+    studies.map(async (study) =>
+      toAdminStudyListItem(study, await studyHasParticipantResponsesSafe(study.id))
+    )
   )
 }
 

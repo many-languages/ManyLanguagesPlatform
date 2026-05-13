@@ -95,6 +95,7 @@ Set in `deploy/env/prod.env`:
 EMAIL_ENABLED=true
 EMAIL_PROVIDER=postmark
 EMAIL_FROM_ADDRESS="ManyLanguages Platform <noreply@your-domain.com>"
+APP_ORIGIN=https://app.your-domain.com
 POSTMARK_SERVER_TOKEN=your-postmark-token
 POSTMARK_MESSAGE_STREAM=outbound
 ```
@@ -102,6 +103,8 @@ POSTMARK_MESSAGE_STREAM=outbound
 The app uses the Postmark API when `EMAIL_PROVIDER=postmark`. Generic SMTP
 is also supported — set `EMAIL_PROVIDER=smtp` with `SMTP_HOST`, `SMTP_PORT`,
 `SMTP_USER`, `SMTP_PASSWORD`, and `SMTP_SECURE`.
+`APP_ORIGIN` must be the public app origin because password reset and admin
+invitation emails build absolute links from it.
 
 ---
 

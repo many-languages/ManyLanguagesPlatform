@@ -38,6 +38,7 @@ services:
       PORT: 3000
       NODE_OPTIONS: --max-old-space-size=3072
       SESSION_SECRET_KEY: ${SESSION_SECRET_KEY:-dev-secret-key-change-in-production}
+      APP_ORIGIN: ${APP_ORIGIN:-http://${APP_DOMAIN:-app.localhost}}
       EMAIL_ENABLED: ${EMAIL_ENABLED:-false}
       EMAIL_PROVIDER: ${EMAIL_PROVIDER:-mailhog}
       EMAIL_FROM_ADDRESS: ${EMAIL_FROM_ADDRESS:-}

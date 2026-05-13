@@ -91,22 +91,28 @@ When the **app runs on the host** (**dev-host-app**, or **dev-jatos-only**
 with `npm run dev`), set these in the **repository root** `.env` instead.
 See [Two layers of configuration](#two-layers-of-configuration).
 
-| Variable                 | Default                  | Required  | Description                             |
-| ------------------------ | ------------------------ | --------- | --------------------------------------- |
-| `DATABASE_URL`           | _(auto-constructed)_     | host only | PostgreSQL connection string            |
-| `JATOS_BASE`             | `http://jatos:9000`      | host only | Server-side JATOS URL                   |
-| `NEXT_PUBLIC_JATOS_BASE` | `http://jatos.localhost` | yes       | Browser-side JATOS URL                  |
-| `SESSION_SECRET_KEY`     | `dev-secret-key...`      | prod      | Blitz session encryption key            |
-| `NODE_ENV`               | `development`            | —         | `development` or `production`           |
-| `PORT`                   | `3000`                   | —         | App listen port                         |
-| `APP_DOMAIN`             | `app.localhost`          | prod      | Domain for Traefik routing              |
-| `CRON_SECRET`            | _(empty)_                | prod      | Secret for cron endpoint authentication |
+| Variable                 | Default                  | Required   | Description                             |
+| ------------------------ | ------------------------ | ---------- | --------------------------------------- |
+| `DATABASE_URL`           | _(auto-constructed)_     | host only  | PostgreSQL connection string            |
+| `JATOS_BASE`             | `http://jatos:9000`      | host only  | Server-side JATOS URL                   |
+| `NEXT_PUBLIC_JATOS_BASE` | `http://jatos.localhost` | yes        | Browser-side JATOS URL                  |
+| `SESSION_SECRET_KEY`     | `dev-secret-key...`      | prod       | Blitz session encryption key            |
+| `NODE_ENV`               | `development`            | —          | `development` or `production`           |
+| `PORT`                   | `3000`                   | —          | App listen port                         |
+| `APP_DOMAIN`             | `app.localhost`          | prod       | Domain for Traefik routing              |
+| `APP_ORIGIN`             | _(derived from domain)_  | prod email | Absolute app origin used in email links |
+| `CRON_SECRET`            | _(empty)_                | prod       | Secret for cron endpoint authentication |
 
 > `DATABASE_URL` is constructed automatically in Docker modes from the
 > `POSTGRES_*` variables. Set it manually only when the app runs on the host.
 
 > `JATOS_BASE` is `http://jatos:9000` inside Docker (internal hostname) and
 > `http://jatos.localhost` (or `https://...`) when the app runs on the host.
+
+> `APP_ORIGIN` should be a full origin such as `https://app.your-domain.com`.
+> Mailers use it for password reset and admin invitation links. Blitz may set
+> `BLITZ_DEV_SERVER_ORIGIN` during local development, but production should set
+> `APP_ORIGIN` explicitly.
 
 ---
 
@@ -154,6 +160,7 @@ constructed in Compose from `POSTGRES_*` or defaults in `app.yml`.
 | `NEXT_PUBLIC_JATOS_BASE` |       —        | host `.env`  |      yes      |      yes      |
 | `SESSION_SECRET_KEY`     |       —        | host `.env`  |      yes      |      yes      |
 | `APP_DOMAIN`             |       —        |      —       |      yes      |      yes      |
+| `APP_ORIGIN`             |       —        | host `.env`  |      yes      |      yes      |
 | `CRON_SECRET`            |       —        |      —       |   optional    |      yes      |
 | `EMAIL_*`                |       —        |   optional   |   optional    |      yes      |
 | `TLS_EMAIL`              |       —        |      —       |       —       | Let's Encrypt |

@@ -181,22 +181,27 @@ export async function downloadResultsAction(studyId: number) {
 
 ## Available Service Methods
 
-| Method                                  | Use Case                                                                               |
-| --------------------------------------- | -------------------------------------------------------------------------------------- |
-| `getResultsMetadataForResearcher`       | Fetch results metadata                                                                 |
-| `getStudyPropertiesForResearcher`       | Fetch study properties                                                                 |
-| `getBatchIdForResearcher`               | Get first batch ID from properties                                                     |
-| `downloadAllResultsForResearcher`       | Download all results as `DownloadPayload`                                              |
-| `getParticipantFeedback`                | Participant feedback (viewer token); template-driven cohort aggregates in-service only |
-| `createPersonalStudyCodeForParticipant` | Join study (participant; uses researcher token)                                        |
-| `createPersonalStudyCodeForResearcher`  | Pilot link (researcher)                                                                |
-| `getGeneralLinksForResearcher`          | General links for participants                                                         |
-| `getHtmlFilesForResearcher`             | HTML files from asset structure                                                        |
-| `getEnrichedResultsForResearcher`       | Enriched results for display                                                           |
-| `getStudyDataByCommentForResearcher`    | Study data by comment (e.g. "test")                                                    |
-| `getAllPilotResultsForResearcher`       | All pilot results                                                                      |
-| `getPilotResultByIdForResearcher`       | Single pilot result by ID                                                              |
-| `checkPilotStatusForResearcher`         | Pilot completion status                                                                |
+| Method                                      | Use Case                                                                               |
+| ------------------------------------------- | -------------------------------------------------------------------------------------- |
+| `getResultsMetadataForResearcher`           | Fetch results metadata                                                                 |
+| `getResultsMetadataForParticipantDashboard` | Fetch participant-dashboard result metadata without exposing tokens                    |
+| `getResultsMetadataForResearcherDashboard`  | Fetch researcher-dashboard response metadata                                           |
+| `checkParticipantCompletionForParticipant`  | Check participant completion from metadata                                             |
+| `getStudyPropertiesForResearcher`           | Fetch study properties                                                                 |
+| `getBatchIdForResearcher`                   | Get first batch ID from properties                                                     |
+| `checkJatosStudyUuidForSetup`               | Validate a setup-time JATOS study UUID                                                 |
+| `ensureResearcherStudyMembership`           | Ensure a researcher is provisioned as a JATOS study member                             |
+| `downloadAllResultsForResearcher`           | Download all results as `DownloadPayload`                                              |
+| `getParticipantFeedback`                    | Participant feedback (viewer token); template-driven cohort aggregates in-service only |
+| `createPersonalStudyCodeForParticipant`     | Join study (participant; uses researcher token)                                        |
+| `createPersonalStudyCodeForResearcher`      | Pilot link (researcher)                                                                |
+| `getGeneralLinksForResearcher`              | General links for participants                                                         |
+| `getEnrichedResultsForResearcher`           | Enriched results for researcher display                                                |
+| `getHtmlFilesForResearcher`                 | HTML files from asset structure                                                        |
+| `getStudyDataByCommentForResearcher`        | Study data by comment (e.g. "test")                                                    |
+| `getAllPilotResultsForResearcher`           | All pilot results                                                                      |
+| `getPilotResultByIdForResearcher`           | Single pilot result by ID                                                              |
+| `checkPilotStatusForResearcher`             | Pilot completion status                                                                |
 
 ---
 
@@ -246,6 +251,6 @@ App admins can delete studies from both the database and JATOS. This is a **priv
 
 ## Related Documentation
 
-- [JATOS Refactor Plan](./JATOS_REFACTOR_PLAN.md) — Architecture and migration details
-- [JATOS User-Scoped Tokens](./JATOS_USER_SCOPED_TOKENS_IMPLEMENTATION_PLAN.md) — Token types and provisioning
-- [Feedback rendering (server-side)](./FEEDBACK_RENDERING_SERVER_SIDE_PLAN.md) — Markdown pipeline, `aggregatedAcrossStats`, `src/features/feedback/domain`
+- [Project structure](./PROJECT_STRUCTURE.md) — feature/server/domain boundaries and documented `lib/` exceptions.
+- [Server component patterns](./SERVER_COMPONENT_PATTERNS.md) — route-facing server helper pattern.
+- [MVP pre-ship checklist](./refactor/mvp-pre-ship-checklist.md) — release audit and JATOS hardening checks.

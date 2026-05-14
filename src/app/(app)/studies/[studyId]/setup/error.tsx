@@ -1,24 +1,22 @@
 "use client"
 
-import { Alert } from "@/src/components/ui/Alert"
-import { AsyncButton } from "@/src/components/ui/AsyncButton"
 import Link from "next/link"
+import SegmentRouteError from "@/src/components/ui/SegmentRouteError"
 
-export default function Error({ error, reset }: { error: Error; reset: () => void }) {
+export default function Error(props: { error: Error & { digest?: string }; reset: () => void }) {
   return (
-    <div className="max-w-4xl mx-auto mt-10">
+    <div className="mx-auto mt-10 max-w-4xl">
       <div className="card bg-base-200 p-6 shadow-md">
-        <Alert variant="error" title="Something went wrong">
-          <p>{error.message}</p>
-          <div className="flex gap-2 mt-4">
-            <AsyncButton onClick={reset} className="btn btn-primary">
-              Try again
-            </AsyncButton>
+        <SegmentRouteError
+          {...props}
+          logLabel="[Study setup error]"
+          description="Something went wrong in study setup. Please try again."
+          extraActions={
             <Link href="/studies" className="btn btn-ghost">
               Back to Studies
             </Link>
-          </div>
-        </Alert>
+          }
+        />
       </div>
     </div>
   )

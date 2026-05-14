@@ -60,8 +60,9 @@ Do **not** `catch` and ignore without logging unless the case is intentionally b
 
 - Must be a **Client Component** (Next.js requirement).
 - **Production:** generic title/body; **no** unconditional **`error.message`**.
-- **Development:** optional monospace / secondary line showing **`error.message`** (see **`src/app/(app)/studies/[studyId]/error.tsx`**).
-- **`useEffect`:** always **`console.error(error)`** (or project logger) so failures are visible in server/client logs.
+- **Development:** optional monospace / secondary line showing **`error.message`**.
+- **`useEffect`:** always **`console.error`** (with a stable label) so failures are visible in logs.
+- **Implementation:** use shared [`SegmentRouteError`](../src/components/ui/SegmentRouteError.tsx) from segment `error.tsx` files (see `src/app/(app)/**/error.tsx`) for a single dev-gated pattern and optional **`extraActions`** (e.g. “Back to Dashboard”). Root `src/app/error.tsx` remains a minimal standalone boundary.
 
 ### 3.3 `not-found.tsx` vs errors
 
@@ -147,9 +148,9 @@ Pending UI (**`loading.tsx`**, **Suspense** fallbacks) is part of the same **asy
 
 ## 9. Cleanup backlog (from audit)
 
-Track detailed file-level gaps in **[refactor/errors.md](./refactor/errors.md)**. Policy-level items to close for MVP:
+Track detailed file-level gaps in **[refactor/errors.md](./refactor/errors.md)**. Remaining policy-level items for MVP:
 
-1. Unify segment **`error.tsx`** on the dev-gated detail pattern.
+1. ~~Unify segment **`error.tsx`**~~ — Done via [`SegmentRouteError`](../src/components/ui/SegmentRouteError.tsx).
 2. Harden **`POST /api/jatos/import`** 500 body (no raw `Error.message`).
 3. Remove or gate **RSC** `error.message` in production alerts.
 4. Ensure **catch-all** server actions log unexpected failures.

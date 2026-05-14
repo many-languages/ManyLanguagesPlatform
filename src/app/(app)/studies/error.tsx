@@ -1,16 +1,11 @@
 "use client"
 
-import { Alert } from "@/src/components/ui/Alert"
+import SegmentRouteError from "@/src/components/ui/SegmentRouteError"
 
-export default function Error({ error, reset }: { error: Error; reset: () => void }) {
+export default function Error(props: { error: Error & { digest?: string }; reset: () => void }) {
   return (
     <main className="p-6">
-      <Alert variant="error" title="Something went wrong">
-        <p>{error.message}</p>
-        <button className="btn btn-primary mt-4" onClick={reset}>
-          Try again
-        </button>
-      </Alert>
+      <SegmentRouteError {...props} logLabel="[Studies list error]" />
     </main>
   )
 }

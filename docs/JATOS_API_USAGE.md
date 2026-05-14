@@ -47,13 +47,35 @@ Feedback template rendering and cohort aggregation for `stat:…:across` live un
 - **No direct `client/*` imports** — App code must not import from `src/lib/jatos/client/*`. Use `jatosAccessService` for all JATOS operations. The sole exception is `browser/uploadStudyFile` for FormData uploads.
 - **Use-case API** — Call `jatosAccessService.*ForResearcher` or `*ForParticipant`, not low-level client methods.
 - **Narrow inputs** — Pass `userId`, `studyId`, `pseudonym`, etc., not session objects.
+- **Bind JATOS IDs to app studies** — If a caller supplies `jatosStudyId`, `jatosStudyUploadId`, or `jatosStudyUUID`, the service must verify it belongs to the authorized app `studyId` before resolving a token or making a JATOS call.
 - **Token separation** — `getAdminToken()` is never called by jatosAccessService; only provisioning uses it.
 
 ### App vs JATOS Separation
 
 - **withStudyAccess** — App-level access helper. Handles session + researcher DB access. Does NOT resolve tokens or call JATOS. Use for DB-only flows and for mixed flows when early app-level authorization is needed.
-- **jatosAccessService** — JATOS integration layer. Resolves tokens, calls JATOS. App code must not bypass it.
+- **jatosAccessService** — JATOS integration layer. Resolves tokens, binds JATOS identifiers back to app studies, then calls JATOS. App code must not bypass it.
 - **Mixed flows** — A mutation may use `withStudyAccess` for app-level auth, do DB work, then call `jatosAccessService` for JATOS. This is acceptable. Duplicated access checks (in both layers) preserve clean responsibility boundaries.
+
+### App Study / JATOS Study Binding
+
+Authorization must be checked against the app model before JATOS calls:
+
+1. Authenticate the actor (`userId` from the session).
+2. Authorize the actor against the app `studyId` or `ParticipantStudy`.
+3. Verify any supplied JATOS identifier belongs to that same app study:
+   - `jatosStudyId` -> `JatosStudyUpload.studyId`
+   - `jatosStudyUploadId` -> `JatosStudyUpload.studyId`
+   - `jatosStudyUUID` -> `Study.jatosStudyUUID`
+4. Resolve the JATOS token and call JATOS only after those checks pass.
+
+Prefer resolving `jatosStudyId` from `studyId` server-side. If a client surface
+passes a JATOS identifier for UI convenience, treat it as untrusted input and
+re-bind it in `jatosAccessService` or a feature server helper before use.
+
+The setup UUID validation flow is the narrow exception: it may query JATOS for a
+candidate UUID before that UUID is linked to the app study. Keep that exception
+inside `checkJatosStudyUuidForSetup`; do not generalize it to normal researcher
+or participant reads.
 
 ### Architecture Violations (avoid)
 
@@ -76,6 +98,16 @@ Participant authentication is validated at the app layer. Participant flows spli
 | Write | `withParticipantAccessAndResearcherToken` | Researcher (USER)        | Study code creation only             |
 
 VIEWER is used only for participant-facing read flows in our app. Study code creation uses a researcher token because JATOS requires USER for `POST /studyCodes`. This is intentional delegated researcher authority — do not merge these paths.
+
+Both participant token paths verify:
+
+- the authenticated `userId` owns the `ParticipantStudy` for the app `studyId`,
+- the supplied `pseudonym` matches that participant row,
+- the supplied `jatosStudyId` belongs to the same app `studyId`,
+- and, when present, `participantStudyId` matches the same authenticated row.
+
+This prevents a caller from combining an authorized app study with a different
+imported JATOS study or saving a generated run URL onto another participant row.
 
 The service account is also used by narrow platform lifecycle/admin checks such
 as `checkStudyParticipantResponsePresence`, where there is no researcher or
@@ -155,12 +187,17 @@ const result = await getParticipantFeedback({
   studyId,
   pseudonym,
   jatosStudyId,
+  participantStudyId,
   userId,
   templateContent,
   requiredVariableKeyList,
 })
 // result.data: { enrichedResult, aggregatedAcrossStats? } — never raw cohort arrays
 ```
+
+`participantStudyId` is optional for compatibility, but pass it when available.
+It gives the service one more deterministic check before any participant JATOS
+read/write path runs.
 
 ### Server Actions
 

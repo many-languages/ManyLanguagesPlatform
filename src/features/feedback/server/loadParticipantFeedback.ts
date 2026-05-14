@@ -27,7 +27,7 @@ export async function loadParticipantFeedbackViewModel(
     return { kind: "not_enrolled" }
   }
 
-  const { template, userId } = access
+  const { template, userId, participantStudyId } = access
   if (!template) {
     return { kind: "no_template" }
   }
@@ -52,6 +52,7 @@ export async function loadParticipantFeedbackViewModel(
       studyId,
       pseudonym,
       jatosStudyId,
+      participantStudyId,
       userId,
       templateContent: template.content,
       requiredVariableNames,
@@ -72,6 +73,7 @@ export async function loadParticipantFeedbackRenderedMarkdown(input: {
   studyId: number
   pseudonym: string
   jatosStudyId: number
+  participantStudyId?: number
   userId: number
   templateContent: string
   requiredVariableNames?: string[] | null
@@ -81,6 +83,7 @@ export async function loadParticipantFeedbackRenderedMarkdown(input: {
     studyId: input.studyId,
     pseudonym: input.pseudonym,
     jatosStudyId: input.jatosStudyId,
+    participantStudyId: input.participantStudyId,
     userId: input.userId,
     templateContent: input.templateContent,
     variableKeysAllowlist: input.variableKeysAllowlist,

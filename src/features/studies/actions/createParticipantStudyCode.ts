@@ -32,8 +32,9 @@ export async function createParticipantStudyCodeAndSaveAction({
     jatosBatchId,
     type,
     comment,
+    participantStudyId,
     onSave: async (runUrl) => {
-      await saveParticipantRunUrl({ participantStudyId, jatosRunUrl: runUrl })
+      await saveParticipantRunUrl({ participantStudyId, studyId, jatosRunUrl: runUrl })
     },
   })
 }

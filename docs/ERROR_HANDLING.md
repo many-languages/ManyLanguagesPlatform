@@ -152,7 +152,7 @@ Track detailed file-level gaps in **[refactor/errors.md](./refactor/errors.md)**
 
 1. ~~Unify segment **`error.tsx`**~~ — Done via [`SegmentRouteError`](../src/components/ui/SegmentRouteError.tsx).
 2. ~~Harden **`POST /api/jatos/import`**~~ — Done: [`mapJatosErrorToUserMessage`](../src/lib/jatos/errors.ts), status from **`JatosApiError`** when applicable.
-3. Remove or gate **RSC** `error.message` in production alerts.
+3. ~~Remove or gate **RSC** `error.message` in production alerts.~~ — Done in [`ParticipantData`](../../src/features/studies/ui/participant/ParticipantData.tsx): dev-only detail, aligned with **`SegmentRouteError`**.
 4. Ensure **catch-all** server actions log unexpected failures.
 
 ---

@@ -151,7 +151,7 @@ Pending UI (**`loading.tsx`**, **Suspense** fallbacks) is part of the same **asy
 Track detailed file-level gaps in **[refactor/errors.md](./refactor/errors.md)**. Remaining policy-level items for MVP:
 
 1. ~~Unify segment **`error.tsx`**~~ — Done via [`SegmentRouteError`](../src/components/ui/SegmentRouteError.tsx).
-2. Harden **`POST /api/jatos/import`** 500 body (no raw `Error.message`).
+2. ~~Harden **`POST /api/jatos/import`**~~ — Done: [`mapJatosErrorToUserMessage`](../src/lib/jatos/errors.ts), status from **`JatosApiError`** when applicable.
 3. Remove or gate **RSC** `error.message` in production alerts.
 4. Ensure **catch-all** server actions log unexpected failures.
 

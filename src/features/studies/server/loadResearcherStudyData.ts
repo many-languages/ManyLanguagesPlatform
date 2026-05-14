@@ -9,8 +9,16 @@ import type {
   EnrichedJatosStudyResult,
   JatosMetadata,
   JatosStudyProperties,
+  JatosStudyResult,
 } from "@/src/types/jatos"
-import type { ParticipantWithEmail, StudyWithRelations } from "../types"
+import { calculateStudySummary } from "../domain/inspector/calculateStudySummary"
+import type { StudySummaryResult } from "../domain/inspector/calculateStudySummary"
+import type {
+  ParticipantWithEmail,
+  ResearcherParticipantStatusRow,
+  ResearcherResultComponentOption,
+  StudyWithRelations,
+} from "../types"
 import { getStudyParticipantsRsc } from "./getStudyParticipants"
 
 export type ResearcherStudyDataLoad =
@@ -20,12 +28,74 @@ export type ResearcherStudyDataLoad =
   | {
       kind: "loaded"
       isPi: boolean
-      participants: ParticipantWithEmail[]
-      metadata: JatosMetadata | null
-      properties: JatosStudyProperties
-      enrichedResults: EnrichedJatosStudyResult[]
+      participantRows: ResearcherParticipantStatusRow[]
+      summary: StudySummaryResult | null
+      resultComponents: ResearcherResultComponentOption[]
+      rawResultInspectorPayload: ResearcherRawResultInspectorPayload
+      hasResults: boolean
       lifecycleHasResponses: boolean | null
     }
+
+export type ResearcherRawResultInspectorPayload = {
+  /**
+   * Raw participant JATOS result data for the authorized researcher results card.
+   * Keep this payload out of summary/participant-management DTOs.
+   */
+  enrichedResults: EnrichedJatosStudyResult[]
+}
+
+function getStudyResultsForStudy(metadata: JatosMetadata | null, studyUuid?: string | null) {
+  const normalizedStudyUuid = studyUuid?.trim()
+  const study =
+    metadata?.data?.find((entry) => entry.studyUuid === normalizedStudyUuid) ??
+    metadata?.data?.[0] ??
+    null
+
+  return study?.studyResults ?? []
+}
+
+function toParticipantStatusRows(
+  participants: ParticipantWithEmail[],
+  studyResults: JatosStudyResult[]
+): ResearcherParticipantStatusRow[] {
+  return participants.map((participant) => {
+    const jatosResult = studyResults.find(
+      (result) =>
+        result.comment === participant.pseudonym || result.comment === participant.user.email
+    )
+
+    const componentResults = jatosResult?.componentResults ?? []
+    const finishedComponents = componentResults.filter(
+      (component) => component.componentState === "FINISHED"
+    ).length
+    const totalComponents = componentResults.length || 1
+    const progress = Math.round((finishedComponents / totalComponents) * 100)
+
+    return {
+      id: participant.id,
+      label: participant.user.email,
+      finished: jatosResult?.studyState === "FINISHED",
+      lastSeen: jatosResult?.lastSeenDate
+        ? new Date(jatosResult.lastSeenDate).toLocaleString()
+        : "-",
+      active: participant.active,
+      progress,
+      duration: jatosResult?.duration ?? "-",
+      payed: participant.payed,
+    }
+  })
+}
+
+function toResultComponentOptions(
+  properties: JatosStudyProperties
+): ResearcherResultComponentOption[] {
+  return (
+    properties.components?.map((component) => ({
+      uuid: component.uuid,
+      title: component.title,
+    })) ?? []
+  )
+}
 
 export async function loadResearcherStudyData(input: {
   studyId: number
@@ -92,14 +162,19 @@ export async function loadResearcherStudyData(input: {
     return { kind: "unexpected_error" }
   }
 
-  const jatosUuid = study.jatosStudyUUID?.trim()
+  const studyResults = getStudyResultsForStudy(metadata, study.jatosStudyUUID)
   let lifecycleHasResponses: boolean | null = null
   if (metadata) {
-    const entry =
-      metadata.data?.find((d) => d.studyUuid === jatosUuid) ?? metadata.data?.[0] ?? null
-    lifecycleHasResponses = entry
-      ? hasParticipantResponsesInResults(entry.studyResults ?? [])
-      : false
+    lifecycleHasResponses = hasParticipantResponsesInResults(studyResults)
+  }
+
+  let summary: StudySummaryResult | null = null
+  if (metadata) {
+    try {
+      summary = calculateStudySummary(metadata)
+    } catch (error) {
+      console.error("Failed to calculate study summary", error)
+    }
   }
 
   return {
@@ -107,10 +182,11 @@ export async function loadResearcherStudyData(input: {
     isPi: study.researchers.some(
       (researcher) => researcher.userId === userId && researcher.role === "PI"
     ),
-    participants,
-    metadata,
-    properties,
-    enrichedResults,
+    participantRows: toParticipantStatusRows(participants, studyResults),
+    summary,
+    resultComponents: toResultComponentOptions(properties),
+    rawResultInspectorPayload: { enrichedResults },
+    hasResults: studyResults.length > 0 || enrichedResults.length > 0,
     lifecycleHasResponses,
   }
 }

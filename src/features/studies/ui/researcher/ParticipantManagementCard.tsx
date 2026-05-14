@@ -2,7 +2,6 @@
 
 import React, { useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
-import type { JatosMetadata } from "@/src/types/jatos"
 import Card from "@/src/components/ui/Card"
 import CheckboxFieldTable from "@/src/components/ui/CheckboxFieldTable"
 import { Form } from "@/src/components/ui/Form"
@@ -13,12 +12,11 @@ import toast from "react-hot-toast"
 import { useMutation } from "@blitzjs/rpc"
 import toggleParticipantActive from "@/src/features/studies/mutations/toggleParticipantActive"
 import toggleParticipantPayed from "@/src/features/studies/mutations/toggleParticipantPayed"
-import type { ParticipantWithEmail } from "../../types"
+import type { ResearcherParticipantStatusRow } from "../../types"
 import { ARCHIVED_STUDY_CANNOT_EDIT_MESSAGE } from "../../domain/studyEditability"
 
 interface ParticipantManagementCardProps {
-  participants: ParticipantWithEmail[]
-  metadata: JatosMetadata
+  participantRows: ResearcherParticipantStatusRow[]
   /** When false, participant toggles and selection are disabled (e.g. archived study). */
   canEditStudySetup?: boolean
 }
@@ -34,13 +32,13 @@ function ActionButton({
   action,
   label,
   className,
-  participants,
+  participantRows,
   canEditStudySetup,
 }: {
   action: "TOGGLE_ACTIVE" | "TOGGLE_PAYED"
   label: string
   className: string
-  participants: ParticipantWithEmail[]
+  participantRows: ResearcherParticipantStatusRow[]
   canEditStudySetup: boolean
 }) {
   const { watch, setValue, formState, trigger } = useFormContext<ParticipantFormData>()
@@ -65,7 +63,7 @@ function ActionButton({
     setIsSubmitting(true)
     try {
       if (action === "TOGGLE_ACTIVE") {
-        const areAllActive = participants
+        const areAllActive = participantRows
           .filter((p) => selectedIds.includes(p.id))
           .every((p) => p.active)
 
@@ -76,7 +74,7 @@ function ActionButton({
 
         toast.success(areAllActive ? "Participants deactivated" : "Participants activated")
       } else {
-        const areAllPayed = participants
+        const areAllPayed = participantRows
           .filter((p) => selectedIds.includes(p.id))
           .every((p) => p.payed)
 
@@ -119,44 +117,10 @@ function ActionButton({
 }
 
 export default function ParticipantManagementCard({
-  participants,
-  metadata,
+  participantRows,
   canEditStudySetup = true,
 }: ParticipantManagementCardProps) {
   const router = useRouter()
-
-  // Get studyResults from metadata
-  const studyResults = useMemo(() => metadata?.data?.[0]?.studyResults ?? [], [metadata])
-
-  // Match JATOS results to participants (using pseudonym/comment or user.email)
-  // And calculate values for the table
-  const participantRows = useMemo(() => {
-    return participants.map((p) => {
-      const jatosResult = studyResults.find(
-        (r) => r.comment === p.pseudonym || r.comment === p.user.email
-      )
-
-      const componentResults = jatosResult?.componentResults ?? []
-      const finishedComponents = componentResults.filter(
-        (c) => c.componentState === "FINISHED"
-      ).length
-      const totalComponents = componentResults.length || 1
-      const progress = Math.round((finishedComponents / totalComponents) * 100)
-
-      return {
-        id: p.id,
-        label: p.user.email,
-        finished: jatosResult?.studyState === "FINISHED",
-        lastSeen: jatosResult?.lastSeenDate
-          ? new Date(jatosResult.lastSeenDate).toLocaleString()
-          : "—",
-        active: p.active,
-        progress,
-        duration: jatosResult?.duration ?? "—",
-        payed: p.payed,
-      }
-    })
-  }, [participants, studyResults])
 
   // Table column definitions
   const columns = useMemo(
@@ -248,14 +212,14 @@ export default function ParticipantManagementCard({
               action="TOGGLE_ACTIVE"
               label="Toggle Active"
               className="btn btn-secondary"
-              participants={participants}
+              participantRows={participantRows}
               canEditStudySetup={canEditStudySetup}
             />
             <ActionButton
               action="TOGGLE_PAYED"
               label="Toggle Payed"
               className="btn btn-accent"
-              participants={participants}
+              participantRows={participantRows}
               canEditStudySetup={canEditStudySetup}
             />
           </div>

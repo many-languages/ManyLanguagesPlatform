@@ -27,6 +27,22 @@ export type { StudyView } from "./domain/studyView"
 export type { ParticipantStudyView } from "./domain/participantStudyView"
 export type { StudyWithMinimalRelations, SetupStepFlags } from "./domain/setup/setupStatus"
 
+export interface ResearcherParticipantStatusRow {
+  id: number
+  label: string
+  finished: boolean
+  lastSeen: string
+  active: boolean
+  progress: number
+  duration: string
+  payed: boolean
+}
+
+export interface ResearcherResultComponentOption {
+  uuid: string
+  title: string
+}
+
 export interface AdminStudyLatestUploadDto {
   id: number
   step1Completed: boolean

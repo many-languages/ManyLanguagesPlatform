@@ -99,28 +99,23 @@ export default async function ResearcherData({
       <StudyInformationCard study={study} userRole="RESEARCHER" actions={researcherActions} />
 
       {/* Summary statistics of the study */}
-      {loaded.metadata && <StudySummary metadata={loaded.metadata} />}
+      <StudySummary summary={loaded.summary} />
 
       {/* Manage participants for the study */}
-      {loaded.metadata && (
-        <ParticipantManagementCard
-          participants={loaded.participants}
-          metadata={loaded.metadata}
-          canEditStudySetup={canEditStudySetup}
-        />
-      )}
+      <ParticipantManagementCard
+        participantRows={loaded.participantRows}
+        canEditStudySetup={canEditStudySetup}
+      />
 
       {/* Showing detailed results */}
-      {loaded.metadata && (
-        <ResultsCardWrapper
-          jatosStudyId={jatosStudyId}
-          metadata={loaded.metadata}
-          properties={loaded.properties}
-          studyId={studyId}
-          initialEnrichedResults={loaded.enrichedResults}
-          hasApprovedExtraction={Boolean(latestUpload?.approvedExtractionId)}
-        />
-      )}
+      <ResultsCardWrapper
+        jatosStudyId={jatosStudyId}
+        resultComponents={loaded.resultComponents}
+        rawResultInspectorPayload={loaded.rawResultInspectorPayload}
+        studyId={studyId}
+        hasApprovedExtraction={Boolean(latestUpload?.approvedExtractionId)}
+        hasResults={loaded.hasResults}
+      />
 
       {/* Feedback preview with pilot results */}
       <ResearcherFeedbackData studyId={studyId} canEditStudySetup={canEditStudySetup} />

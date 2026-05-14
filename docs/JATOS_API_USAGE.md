@@ -250,21 +250,56 @@ export async function downloadResultsAction(studyId: number) {
 
 ## Error Handling
 
-**jatosAccessService** throws on authorization failure or JATOS errors. Wrap in try/catch:
+**`jatosAccessService`** throws when app-level authorization fails or when a JATOS call fails after a token is resolved. Callers must not assume success without `try/catch` (or equivalent) at boundaries that return data to the UI, HTTP clients, or server actions.
+
+### Typed errors (HTTP & transport)
+
+Low-level JATOS HTTP helpers under `src/lib/jatos/client/*` use **`throwIfJatosError`** ([`throwIfJatosError.ts`](../src/lib/jatos/client/throwIfJatosError.ts)): failed responses become subclasses of **`JatosApiError`** ([`errors.ts`](../src/lib/jatos/errors.ts)) — e.g. **`JatosUnauthorizedError`**, **`JatosForbiddenError`**, **`JatosNotFoundError`**, **`JatosBadRequestError`**, or a generic **`JatosApiError`** for other status codes. Network and parse failures surface as **`JatosTransportError`** (includes an `operation` string for correlation).
+
+App code must **not** import `client/*` directly (except the documented browser upload helper); this typing still applies because **`jatosAccessService`** ultimately uses those clients.
+
+### User-facing messages (safe)
+
+**Do not** return **`error.message`** (or raw JATOS body text) to browsers, toast copy, or public JSON as a default. Those strings can leak operational detail or inconsistent vendor wording.
+
+For participant- and researcher-facing surfaces, use **`mapJatosErrorToUserMessage(error)`** from [`src/lib/jatos/errors.ts`](../src/lib/jatos/errors.ts). It maps typed JATOS errors to **stable, generic** copy and falls back to a safe default for unknown errors. Feature server actions and loaders (e.g. participant feedback, pilot status, cleaned download) follow this pattern.
 
 ```typescript
+import { mapJatosErrorToUserMessage } from "@/src/lib/jatos/errors"
+
 try {
   const data = await getResultsMetadataForResearcher({ studyId, userId })
   return { success: true, data }
-} catch (error: any) {
-  return { success: false, error: error.message }
+} catch (error: unknown) {
+  return { success: false, error: mapJatosErrorToUserMessage(error) }
 }
 ```
+
+**Blitz** errors (e.g. **`AuthorizationError`**, **`NotFoundError`**) from app guards are **not** JATOS types: they are handled per route conventions (see [Server component patterns](./SERVER_COMPONENT_PATTERNS.md)). If a catch block might see both, map JATOS failures for the client and **rethrow** — or translate — Blitz errors according to that layer’s contract.
+
+### Server-only logging and debugging
+
+For operator visibility, prefer **`logJatosError`** / **`sanitizeJatosLogContext`** from [`src/lib/jatos/logger.ts`](../src/lib/jatos/logger.ts): structured, **sanitized** context (category, status, code, operation) without treating client responses as a log sink.
+
+Full internal messages remain on the **`Error`** objects thrown inside the server; keep them in **logs**, not in user-facing payloads.
+
+### Anti-pattern (avoid)
+
+```typescript
+// Bad for user-visible `error` fields — can leak internal/JATOS text
+catch (error: unknown) {
+  const msg = error instanceof Error ? error.message : "Failed"
+  return { success: false, error: msg }
+}
+```
+
+Use **`mapJatosErrorToUserMessage`** for JATOS-related failures at trust boundaries, or fixed strings you control. See also [Error handling audit (pre-MVP)](./refactor/errors.md).
 
 ---
 
 ## Types
 
+- **`JatosApiError`** hierarchy and **`JatosTransportError`** — typed failures from JATOS HTTP/transport; see [Error handling](#error-handling) and [`src/lib/jatos/errors.ts`](../src/lib/jatos/errors.ts).
 - `JatosAuth` — `{ token: string }` for client methods.
 - `DownloadPayload` — `{ filename, mimeType, base64 }` for download results.
 - `JatosImportResponse` — Import route response (from `@/src/types/jatos-api`).
@@ -294,6 +329,7 @@ App admins can delete studies from both the database and JATOS. This is a **priv
 
 ## Related Documentation
 
+- [Error handling](./ERROR_HANDLING.md) — app-wide policy (user-facing copy, logging, layers); JATOS § supplements it.
 - [Project structure](./PROJECT_STRUCTURE.md) — feature/server/domain boundaries and documented `lib/` exceptions.
 - [Server component patterns](./SERVER_COMPONENT_PATTERNS.md) — route-facing server helper pattern.
 - [MVP pre-ship checklist](./refactor/mvp-pre-ship-checklist.md) — release audit and JATOS hardening checks.

@@ -139,6 +139,8 @@ if (study.jatosStudyId) {
 
 ### Error Handling
 
+Full policy (RSC, `error.tsx`, server actions, JATOS): [Error handling](./ERROR_HANDLING.md).
+
 ```tsx
 try {
   const data = await getDataRsc(id)

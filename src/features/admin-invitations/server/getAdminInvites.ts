@@ -1,16 +1,11 @@
 "use server"
 
-import { AuthorizationError } from "blitz"
 import db from "db"
-import { getAuthorizedSession } from "@/src/lib/auth/session"
-import { isSuperAdmin } from "@/src/lib/auth/roles"
 import { inviteSelect } from "../inviteSelect"
+import { requireSuperAdminSession } from "./authorization"
 
 export async function getAdminInvitesRsc() {
-  const session = await getAuthorizedSession()
-  if (!isSuperAdmin(session.role)) {
-    throw new AuthorizationError()
-  }
+  await requireSuperAdminSession()
 
   return db.adminInvite.findMany({
     select: inviteSelect,

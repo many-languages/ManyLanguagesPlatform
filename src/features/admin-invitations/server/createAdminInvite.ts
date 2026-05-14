@@ -2,14 +2,14 @@
 
 import { createHash, randomBytes } from "crypto"
 import db from "db"
-import { getAuthorizedSession } from "@/src/lib/auth/session"
 import { adminInvitationMailer } from "mailers/adminInvitationMailer"
 import type { CreateAdminInviteInput } from "../validations"
+import { requireSuperAdminSession } from "./authorization"
 
 const hashToken = (token: string) => createHash("sha256").update(token).digest("hex")
 
 export async function createAdminInvite(input: CreateAdminInviteInput) {
-  const session = await getAuthorizedSession()
+  const session = await requireSuperAdminSession()
   const expiresAt = new Date(Date.now() + input.expiresInHours * 60 * 60 * 1000)
 
   const plainToken = randomBytes(32).toString("base64url")

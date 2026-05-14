@@ -104,6 +104,14 @@ export function mapJatosErrorToUserMessage(error: unknown): string {
   return "Something went wrong. Please try again."
 }
 
+/**
+ * Typed JATOS/API or transport failures that {@link mapJatosErrorToUserMessage} already maps for users.
+ * Server actions may omit an extra duplicate log line for these when the access layer logged the failure.
+ */
+export function isJatosMappedError(error: unknown): boolean {
+  return error instanceof JatosApiError || error instanceof JatosTransportError
+}
+
 /** Session missing when a server action requires an authenticated user. */
 export const USER_MESSAGE_NOT_AUTHENTICATED = "Not authenticated"
 

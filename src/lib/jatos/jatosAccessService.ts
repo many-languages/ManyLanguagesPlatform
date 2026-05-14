@@ -35,6 +35,7 @@ import { getTokenForResearcher, getTokenForStudyService } from "./tokenBroker"
 import { logJatosError } from "./logger"
 import {
   JatosTransportError,
+  isJatosMappedError,
   mapJatosErrorToUserMessage,
   USER_MESSAGE_PARTICIPANT_FEEDBACK_ENRICHMENT_MISSING,
 } from "./errors"
@@ -610,6 +611,13 @@ export async function checkParticipantCompletionForParticipant({
       }
     )
   } catch (error) {
+    if (!isJatosMappedError(error)) {
+      console.error("[checkParticipantCompletionForParticipant]", {
+        studyId,
+        jatosStudyId,
+        error,
+      })
+    }
     return {
       success: false,
       completed: false,

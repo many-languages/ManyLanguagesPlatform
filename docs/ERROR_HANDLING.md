@@ -1,46 +1,42 @@
 # Error handling policy (ManyLanguagesPlatform)
 
-This document is the **canonical policy** for how errors are classified, surfaced to users, logged, and tested. Use it when adding features or cleaning up existing code.
+This document is the **canonical policy** for how errors are classified, surfaced to users, and logged. Use it when adding features or changing existing behavior.
 
-**Related:**
+**See also:**
 
-- **[MVP checklist §3](./refactor/mvp-pre-ship-checklist.md#3-error-handling)** — release bar.
-- **[Pre-MVP audit](./refactor/errors.md)** — as-built gaps vs this policy (cleanup backlog).
-- **[JATOS API usage](./JATOS_API_USAGE.md#error-handling)** — JATOS-specific types and `mapJatosErrorToUserMessage`.
+- **[JATOS API usage](./JATOS_API_USAGE.md#error-handling)** — JATOS-specific types, `mapJatosErrorToUserMessage`, logging helpers.
 - **[Server component patterns](./SERVER_COMPONENT_PATTERNS.md#error-handling)** — `NotFoundError` → `notFound()` snippet.
 
-If this policy disagrees with behavior in production, **update code** or **explicitly document** the exception here first.
+When production behavior deliberately differs from this document, either **change the code** or **document the exception in a short “Policy exceptions” subsection at the bottom of this file** so the divergence is intentional and visible.
 
 ---
 
 ## 1. Goals
 
-| Goal             | Meaning                                                                                                                                                                                                                                   |
-| ---------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Safe**         | User-visible copy must not expose stack traces, raw DB/JATOS text, tokens, or internal paths in **production**.                                                                                                                           |
-| **Robust**       | Expected failures are handled explicitly; unexpected failures are **logged** before becoming a generic message.                                                                                                                           |
-| **Maintainable** | One set of conventions per **layer** (RSC, client boundary, server actions, HTTP routes); avoid ad hoc `error.message` in HTML/JSON.                                                                                                      |
-| **DRY**          | Reuse **`mapJatosErrorToUserMessage`** for JATOS; reuse **Blitz semantic errors** for app auth/not-found until a post-Blitz migration; add a small **`logAndReturnSafeMessage`** (or equivalent) for generic catches if copy-paste grows. |
+| Goal             | Meaning                                                                                                                                                                                                                                                    |
+| ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Safe**         | User-visible copy must not expose stack traces, raw DB/JATOS text, tokens, internal paths, or payloads in **production**.                                                                                                                                  |
+| **Robust**       | Expected failures are handled explicitly; unexpected failures are **logged** server-side before the user sees a generic message.                                                                                                                           |
+| **Maintainable** | One set of conventions per **layer** (RSC, client boundary, server actions, HTTP routes); avoid ad hoc `error.message` in HTML/JSON.                                                                                                                       |
+| **DRY**          | Reuse **`mapJatosErrorToUserMessage`** at JATOS trust boundaries; reuse **Blitz semantic errors** (`NotFoundError`, `AuthorizationError`, …) for resolver/auth semantics until migration; factor repeated “log + safe string” helpers if copy-paste grows. |
 
 ---
 
 ## 2. Expected vs unexpected errors
 
-Use the same mental model as the MVP checklist:
-
-**Expected (handle explicitly, often no “scary” UX):**
+**Expected** (handle explicitly; UX can stay calm):
 
 - Invalid input (Zod / validation — clear field or summary message).
 - Forbidden access (`AuthorizationError` or equivalent).
 - Missing resource (`NotFoundError` → `notFound()` or 404 semantics).
-- Duplicate / conflict (e.g. 409 with a **fixed** message — no raw DB text).
-- JATOS unavailable or HTTP error (typed **`JatosApiError`** / **`JatosTransportError`** — user copy via **`mapJatosErrorToUserMessage`**).
+- Duplicate / conflict (e.g. **409** with a **fixed** message — no raw DB text).
+- JATOS HTTP or transport failures (typed **`JatosApiError`** / **`JatosTransportError`**) → user-facing string via **`mapJatosErrorToUserMessage`** (never raw `error.message` by default).
 
-**Unexpected (bug, invariant broken, unknown `Error`):**
+**Unexpected** (bug, invariant broken, unknown **`Error`**):
 
-- Log **full** detail server-side (`console.error` today; error reporting later).
-- Surface **generic** copy to users in production (`Something went wrong` + retry/support).
-- Optional **developer detail** only when `process.env.NODE_ENV === "development"` (see §5).
+- Log **full** detail server-side (`console.error` for now; a reporting SDK may supplement later).
+- User sees **generic** copy in production (retry / generic failure wording).
+- **Developer-only** detail: optional `error.message` only when gated on **`process.env.NODE_ENV === "development"`** (§5).
 
 Do **not** `catch` and ignore without logging unless the case is intentionally best-effort (e.g. `localStorage` in a theme bootstrap script).
 
@@ -50,117 +46,104 @@ Do **not** `catch` and ignore without logging unless the case is intentionally b
 
 ### 3.1 Server Components & RSC loaders
 
-- Prefer **throwing** semantic errors from **`features/*/server`** helpers (e.g. Blitz **`NotFoundError`**, **`AuthorizationError`**) when the page should abort or map to **`notFound()`**.
+- Prefer **throwing** semantic errors from **`features/*/server`** helpers (Blitz **`NotFoundError`**, **`AuthorizationError`**, …) when the page should abort or map to **`notFound()`**.
 - In the **page** (or thin orchestration), use **`try/catch`** to:
-  - **`if (error.name === "NotFoundError") notFound()`** (or `instanceof` if you migrate away from `name` checks).
-  - **Re-throw** other errors **or** render a fatality UI with **safe** copy — do not render raw **`error.message`** in production (see §5).
-- **`catch` that returns UI:** log **`console.error`** with context (studyId, route) before returning a generic **`Alert`**.
+  - **`if (error.name === "NotFoundError") notFound()`** (or **`instanceof`** if you migrate away from **`name`** checks).
+  - **Re-throw** other errors **or** render a recovery UI with **safe** fixed copy — do not render raw **`error.message`** in production (§5).
+- **`catch` that returns UI:** log **`console.error`** with route/study identifiers (nothing sensitive to participants or third parties) before returning a generic **`Alert`**.
 
 ### 3.2 Route `error.tsx` (Client)
 
 - Must be a **Client Component** (Next.js requirement).
 - **Production:** generic title/body; **no** unconditional **`error.message`**.
-- **Development:** optional monospace / secondary line showing **`error.message`**.
-- **`useEffect`:** always **`console.error`** (with a stable label) so failures are visible in logs.
-- **Implementation:** use shared [`SegmentRouteError`](../src/components/ui/SegmentRouteError.tsx) from segment `error.tsx` files (see `src/app/(app)/**/error.tsx`) for a single dev-gated pattern and optional **`extraActions`** (e.g. “Back to Dashboard”). Root `src/app/error.tsx` remains a minimal standalone boundary.
+- **Development:** optional secondary line showing **`error.message`**.
+- **`useEffect`:** always **`console.error`** (prefer a stable label + the error).
+- Prefer shared [`SegmentRouteError`](../src/components/ui/SegmentRouteError.tsx) in segment **`error.tsx`** files for one dev-gated pattern and optional **`extraActions`**. Root [`src/app/error.tsx`](../src/app/error.tsx) stays a minimal standalone boundary.
 
 ### 3.3 `not-found.tsx` vs errors
 
-- **`notFound()`** / **`not-found.tsx`**: user expected “this thing isn’t here” (and/or **privacy-preserving** combined copy for “no access”).
-- **Uncaught throw / boundary**: **`error.tsx`** — “something failed” — keep copy distinct from 404 where possible.
+- **`notFound()`** / **`not-found.tsx`:** “this URL resource isn’t available” — may use **privacy-preserving** wording that avoids distinguishing “wrong id” vs “no access”.
+- Uncaught failures: **`error.tsx`** — distinct “something failed” copy vs 404 where product allows it.
 
 ### 3.4 Server Actions (`"use server"`)
 
-Two valid patterns — **choose per call site**, do not mandate one globally:
+Choose per call site; both patterns are valid:
 
-| Pattern                                                                 | When                                                                                                                                                                                           |
-| ----------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Return `{ success: false, error: string }`** (or discriminated union) | Client invokes the action for a **single interaction** (form submit, button); UI shows toast / inline error. Prefer **safe** strings; use **`mapJatosErrorToUserMessage`** for JATOS failures. |
-| **Throw**                                                               | Rare for actions; use when aligning with a framework convention or you want the error to propagate to a boundary (unusual for typical mutations).                                              |
+| Pattern                                                                 | When                                                                                                                                                                      |
+| ----------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Return `{ success: false, error: string }`** (or discriminated union) | Single interaction from the client; UI shows toast/inline feedback. Prefer **fixed** safe strings at trust boundaries; JATOS failures → **`mapJatosErrorToUserMessage`**. |
+| **Throw**                                                               | Rare; align with framework behavior or deliberate propagation to a boundary.                                                                                              |
 
-**Rule:** Broad **`catch`** that swallows must **`console.error`** unless the failure is fully expected and already represented in the return value (e.g. validated branch).
+Broad **`catch`** that maps to user-safe payloads must **`console.error`** when the thrown value is **not** fully expected operational noise (**§6**).
+
+For actions that **`catch`**, **`mapJatosErrorToUserMessage`**, and return **`{ success: false }`**: **`JatosApiError`** and **`JatosTransportError`** are treated as typed operational failures (**`isJatosMappedError`** in [`errors.ts`](../src/lib/jatos/errors.ts)); **omit** redundant **`console.error`** for those **only where** deeper layers already log or where duplicate noise would hide signal. Always log **`console.error`** for other thrown values (unexpected bugs, infra, Prisma, etc.) before returning generic copy.
+
+Validated branches that return **`{ ok: false }`** without throwing do not need logging.
 
 ### 3.5 HTTP Route Handlers (`route.ts`)
 
-- **4xx:** stable, intentional messages (validation, auth). Avoid echoing raw upstream text.
-- **5xx:** **generic** JSON message to the client; **`console.error`** full error server-side. **Never** return raw **`Error.message`** for unauthenticated or broad clients (see import route hardening in **[refactor/errors.md](./refactor/errors.md)**).
+- **4xx:** stable, deliberate messages (validation, auth). Do not echo arbitrary upstream/JATOS/DB strings to clients.
+- **5xx:** **generic** JSON body for the client; **`console.error`** the full failure server-side. **Never** put raw **`Error.message`** in JSON for broad or unauthenticated consumers.
+- JATOS-related routes: map failures with **`mapJatosErrorToUserMessage`** (and appropriate status when using **`JatosApiError`**) so client bodies stay safe.
 
 ### 3.6 JATOS integration
 
-- App code uses **`jatosAccessService`** (not raw **`client/*`** except the documented browser upload).
+- App code uses **`jatosAccessService`** (not raw **`client/*`** except the documented browser upload path).
 - HTTP failures are typed via **`throwIfJatosError`** → **`JatosApiError`** subclasses and **`JatosTransportError`** ([`src/lib/jatos/errors.ts`](../src/lib/jatos/errors.ts)).
-- **User-facing:** **`mapJatosErrorToUserMessage(unknown)`** — do **not** default to **`error.message`** for browser/toast/API JSON.
-- **Operator-facing:** **`logJatosError`** / **`sanitizeJatosLogContext`** ([`src/lib/jatos/logger.ts`](../src/lib/jatos/logger.ts)) when logging JATOS operations.
+- **User-facing:** **`mapJatosErrorToUserMessage(unknown)`** — do **not** default to **`error.message`** for browser, toast, or API JSON.
+- **Operator / server logs:** **`logJatosError`** / **`sanitizeJatosLogContext`** ([`src/lib/jatos/logger.ts`](../src/lib/jatos/logger.ts)) when logging JATOS-shaped failures.
 
 ### 3.7 Blitz RPC (`queries/` / `mutations/`)
 
-- **`NotFoundError`**, **`AuthorizationError`**, **`AuthenticationError`** remain the **standard** semantic throws for resolvers until Blitz is removed.
-- Client handling of RPC errors should not surface **raw** server messages to end users in production.
-- **Future (post-Blitz):** replace with app-owned error classes **same semantics** (404/401/403) at resolver boundaries — no need to introduce a parallel hierarchy before migration unless the team prefers it.
+- **`NotFoundError`**, **`AuthorizationError`**, **`AuthenticationError`** are the **standard** semantic throws for resolvers while Blitz is in use.
+- Client handling of RPC errors must not surface **raw** server messages to end users in production.
+- After Blitz removal, keep the **same semantics** (404/401/403) at resolver boundaries with app-owned error types if needed.
 
 ---
 
 ## 4. `try/catch` vs return objects
 
-- **`try/catch`** is **recommended** wherever code **throws** (including `await` on throwing helpers). It is not an anti-pattern.
-- **`{ success: false, error }`** is **recommended** for **server actions** that return structured outcomes to the client **without** relying on an error boundary for every click.
-- **Do not** migrate the whole codebase to **Result / railway** types for MVP; hybrid is normal.
+- **`try/catch`** is appropriate wherever code **throws** (including **`await`** on throwing helpers).
+- **`{ success: false, error }`** (or similar) fits **server actions** that report outcomes per interaction without using an error boundary for every click.
+- A full **Result / railway** style across the codebase is **not** required; a hybrid is normal.
 
 ---
 
 ## 5. Production vs development user-visible detail
 
-| Environment     | User-visible error detail                                                                                                     |
-| --------------- | ----------------------------------------------------------------------------------------------------------------------------- |
-| **Production**  | Fixed or **`mapJatosErrorToUserMessage`** / validation summaries only.                                                        |
-| **Development** | Optional **`error.message`** (or digest) in **`error.tsx`** / debug UI **only if** gated on **`NODE_ENV === "development"`**. |
+| Environment     | User-visible error detail                                                                                         |
+| --------------- | ----------------------------------------------------------------------------------------------------------------- |
+| **Production**  | Fixed copy, **`mapJatosErrorToUserMessage`**, or validation summaries only.                                       |
+| **Development** | Optional **`error.message`** in **`error.tsx`** or similar **only if** gated on **`NODE_ENV === "development"`**. |
 
-**Never** send tokens, pseudonyms of other users, or full JATOS payloads in error messages.
+**Never** put tokens, other users’ pseudonyms, or full JATOS payloads in user-visible error strings.
 
 ---
 
 ## 6. Logging minimum
 
-Until a centralized service (e.g. Sentry) is adopted:
+Until consolidated error reporting (e.g. Sentry) is standard:
 
-1. **`error.tsx`:** `useEffect` → `console.error(error)`.
-2. **`catch` in RSC / actions / routes:** `console.error` with a short label and ids (studyId, userId when safe).
-3. **JATOS:** prefer **`logJatosError`** when the failure is JATOS-shaped.
+1. **`error.tsx`:** `useEffect` → **`console.error`** (label + error).
+2. **`catch` in RSC, server actions, and routes:** **`console.error`** with a short stable label and safe correlation ids (e.g. **studyId**; omit participant pseudonyms unless a controlled internal diagnostic).
+3. **JATOS-shaped failures:** prefer **`logJatosError`** where the codebase already attaches operation context.
 
 ---
 
 ## 7. Root `global-error.tsx`
 
-**Implemented:** [`src/app/global-error.tsx`](../src/app/global-error.tsx). It handles failures in the **root** `layout.tsx` (when a normal `error.tsx` cannot render because the layout itself failed). Per Next.js, it defines its own `<html>` / `<body>`, imports **`global.css`**, and uses the same **production-safe** copy + **dev-only** `error.message` detail as segment boundaries. Logs with **`useEffect` → `console.error`**.
+Failures in **root** `layout.tsx` use [`src/app/global-error.tsx`](../src/app/global-error.tsx) — a normal **`error.tsx`** cannot render if the layout failed. Per Next.js, it supplies its own **`<html>` / `<body>`** and imports **`global.css`**. Use **production-safe** copy, **development-only** `error.message`, and **`useEffect` → `console.error`** on the boundary.
 
-### Optional later
-
-- **Central helper** (e.g. `logUnexpectedError` + `getSafePublicMessage`) for non-JATOS unknowns.
-- **Error reporting SDK** (Sentry, etc.) alongside `console.error`.
+**Optional later:** a small **`logUnexpectedError`** + **`getSafePublicMessage`** helper for non-JATOS unknowns at scale; pairing **`console.error`** with an external reporting SDK.
 
 ---
 
 ## 8. Loading states (sibling concern)
 
-Pending UI (**`loading.tsx`**, **Suspense** fallbacks) is part of the same **async UX** story as errors but uses **different** mechanisms. See MVP checklist §3 and existing **`loading.tsx`** files. Do not merge loading and error helpers into one module unless the team explicitly wants a shared “async state” abstraction.
+**`loading.tsx`** and **Suspense** fallbacks belong to async UX alongside errors but **not** to the error module: keep loaders separate unless the team explicitly adds a shared “async state” abstraction.
 
 ---
 
-## 9. Cleanup backlog (from audit)
+## 9. Policy exceptions
 
-Track detailed file-level gaps in **[refactor/errors.md](./refactor/errors.md)**. Remaining policy-level items for MVP:
-
-1. ~~Unify segment **`error.tsx`**~~ — Done via [`SegmentRouteError`](../src/components/ui/SegmentRouteError.tsx).
-2. ~~Harden **`POST /api/jatos/import`**~~ — Done: [`mapJatosErrorToUserMessage`](../src/lib/jatos/errors.ts), status from **`JatosApiError`** when applicable.
-3. ~~Remove or gate **RSC** `error.message` in production alerts.~~ — Done in [`ParticipantData`](../../src/features/studies/ui/participant/ParticipantData.tsx): dev-only detail, aligned with **`SegmentRouteError`**.
-4. Ensure **catch-all** server actions log unexpected failures.
-
----
-
-## 10. Review checklist (new code)
-
-- [ ] User-visible strings are **safe** in production (no raw `Error.message` / Prisma / JATOS body).
-- [ ] JATOS path uses **`mapJatosErrorToUserMessage`** (or fixed copy) at trust boundaries.
-- [ ] **`catch`** paths log unexpected errors.
-- [ ] **`NotFoundError`** is handled with **`notFound()`** where the product expects a 404 UX.
-- [ ] HTTP **5xx** responses use **generic** client bodies; detail stays server-only.
+Document here any deliberate, long-lived divergence from this file (what differs, why, when to reconsider). **None at present.**

@@ -1,6 +1,6 @@
 "use server"
 
-import { mapJatosErrorToUserMessage } from "@/src/lib/jatos/errors"
+import { isJatosMappedError, mapJatosErrorToUserMessage } from "@/src/lib/jatos/errors"
 import type { FetchParticipantFeedbackActionResult } from "@/src/features/feedback/types"
 import { loadParticipantFeedbackViewModel } from "@/src/features/feedback/server/loadParticipantFeedback"
 
@@ -16,6 +16,9 @@ export async function fetchParticipantFeedbackAction(
   try {
     return await loadParticipantFeedbackViewModel(studyId, pseudonym, jatosStudyId)
   } catch (error) {
+    if (!isJatosMappedError(error)) {
+      console.error("[fetchParticipantFeedbackAction]", { studyId, jatosStudyId, error })
+    }
     return {
       kind: "done",
       loaded: { kind: "failed", error: mapJatosErrorToUserMessage(error) },

@@ -42,7 +42,6 @@ export type ParticipantIncompleteStudy = {
   endDate: Date
   daysUntilDeadline: number
   participationId: number
-  jatosRunUrl: string | null
   completionStatus: "incomplete" | "unknown"
   isPastDeadline: boolean
 }

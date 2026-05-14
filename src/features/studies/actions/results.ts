@@ -8,7 +8,7 @@ import {
   type DownloadPayload,
 } from "@/src/lib/jatos/jatosAccessService"
 import { mapJatosErrorToUserMessage } from "@/src/lib/jatos/errors"
-import type { ResearcherRawResultInspectorPayload } from "../server/loadResearcherStudyData"
+import type { ResearcherRawResultInspectorPayload } from "../types"
 
 export async function downloadResultsAction(
   studyId: number

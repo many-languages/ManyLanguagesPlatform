@@ -9,6 +9,8 @@ import {
   studyWithRelationsArgs,
   studyWithLatestUploadSelect,
 } from "./studySelects"
+import type { EnrichedJatosStudyResult } from "@/src/types/jatos"
+import type { StudySummaryResult } from "./domain/inspector/calculateStudySummary"
 
 type WithLatestJatosStudyUpload<T extends { jatosStudyUploads: readonly unknown[] }> = T & {
   latestJatosStudyUpload: T["jatosStudyUploads"][number] | null
@@ -30,6 +32,11 @@ export type { StudyView } from "./domain/studyView"
 export type { ParticipantStudyView } from "./domain/participantStudyView"
 export type { StudyWithMinimalRelations, SetupStepFlags } from "./domain/setup/setupStatus"
 
+/** Props for researcher `StudySummary` (RSC). */
+export interface StudySummaryProps {
+  summary: StudySummaryResult | null
+}
+
 export interface ResearcherParticipantStatusRow {
   id: number
   label: string
@@ -41,9 +48,33 @@ export interface ResearcherParticipantStatusRow {
   payed: boolean
 }
 
+/** Props for `ParticipantManagementCard` (RSC + client). */
+export interface ParticipantManagementCardProps {
+  participantRows: ResearcherParticipantStatusRow[]
+  /** When false, participant toggles and selection are disabled (e.g. archived study). */
+  canEditStudySetup?: boolean
+}
+
 export interface ResearcherResultComponentOption {
   uuid: string
   title: string
+}
+
+/** Raw participant JATOS payloads for the researcher results card (no ZIP download). */
+export type ResearcherRawResultInspectorPayload = {
+  enrichedResults: EnrichedJatosStudyResult[]
+}
+
+/** Props for `ResultsCard` / `ResultsCardWrapper` (RSC loaders + client card). */
+export interface ResultsCardProps {
+  jatosStudyId: number
+  resultComponents: ResearcherResultComponentOption[]
+  rawResultInspectorPayload: ResearcherRawResultInspectorPayload
+  studyId: number
+  /** True when the latest upload has an approved extraction (step 4). */
+  hasApprovedExtraction: boolean
+  /** True when JATOS metadata reports at least one result without exposing raw result data. */
+  hasResults: boolean
 }
 
 export interface AdminStudyLatestUploadDto {

@@ -14,20 +14,10 @@ import FilterComponent from "./FilterComponent"
 import DownloadResultsButton from "./DownloadResultsButton"
 import DownloadCleanedResultsButton from "./DownloadCleanedResultsButton"
 
-import type { ResearcherResultComponentOption } from "../../types"
-import type { ResearcherRawResultInspectorPayload } from "../../server/loadResearcherStudyData"
+import type { ResultsCardProps } from "../../types"
 import { refetchEnrichedResultsAction } from "@/src/features/studies/actions/results"
 
-interface ResultsCardProps {
-  jatosStudyId: number
-  resultComponents: ResearcherResultComponentOption[]
-  rawResultInspectorPayload: ResearcherRawResultInspectorPayload
-  studyId: number
-  /** True when the latest upload has an approved extraction (step 4). */
-  hasApprovedExtraction: boolean
-  /** True when JATOS metadata reports at least one result without exposing raw result data. */
-  hasResults: boolean
-}
+export type { ResultsCardProps } from "../../types"
 
 export default function ResultsCard({
   jatosStudyId,

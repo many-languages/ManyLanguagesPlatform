@@ -17,6 +17,7 @@ import type {
   ParticipantWithEmail,
   ResearcherParticipantStatusRow,
   ResearcherResultComponentOption,
+  ResearcherRawResultInspectorPayload,
   StudyWithRelations,
 } from "../types"
 import { getStudyParticipantsRsc } from "./getStudyParticipants"
@@ -35,14 +36,6 @@ export type ResearcherStudyDataLoad =
       hasResults: boolean
       lifecycleHasResponses: boolean | null
     }
-
-export type ResearcherRawResultInspectorPayload = {
-  /**
-   * Raw participant JATOS result data for the authorized researcher results card.
-   * Keep this payload out of summary/participant-management DTOs.
-   */
-  enrichedResults: EnrichedJatosStudyResult[]
-}
 
 function getStudyResultsForStudy(metadata: JatosMetadata | null, studyUuid?: string | null) {
   const normalizedStudyUuid = studyUuid?.trim()

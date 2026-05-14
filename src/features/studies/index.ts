@@ -99,8 +99,14 @@ export {
 export type { PilotResultsContext } from "./services"
 
 /** Study views — parsers + enums (minimal relations come from `./types`). */
-export { STUDY_VIEWS, parseStudyView } from "./domain/studyView"
-export { PARTICIPANT_STUDY_VIEWS, parseParticipantStudyView } from "./domain/participantStudyView"
+export { STUDY_VIEWS, studyViewQuerySchema, parseStudyViewQueryParam } from "./domain/studyView"
+export type { StudyViewQueryParseResult } from "./domain/studyView"
+export {
+  PARTICIPANT_STUDY_VIEWS,
+  participantStudyViewQuerySchema,
+  parseParticipantStudyViewQueryParam,
+} from "./domain/participantStudyView"
+export type { ParticipantStudyViewQueryParseResult } from "./domain/participantStudyView"
 
 /** RSC helpers for routes & cross-feature callers */
 export { getParticipantStudyOverviewRsc, getStudyPageRsc, getStudyRsc } from "./server/getStudy"

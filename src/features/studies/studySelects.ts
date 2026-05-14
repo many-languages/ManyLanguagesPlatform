@@ -79,6 +79,35 @@ export const studyWithRelationsArgs = Prisma.validator<Prisma.StudyDefaultArgs>(
   },
 })
 
+export const participantStudyOverviewArgs = Prisma.validator<Prisma.StudyDefaultArgs>()({
+  select: {
+    id: true,
+    title: true,
+    description: true,
+    status: true,
+    startDate: true,
+    endDate: true,
+    sampleSize: true,
+    payment: true,
+    length: true,
+    archived: true,
+    jatosStudyUploads: {
+      orderBy: { createdAt: "desc" },
+      take: 1,
+      select: {
+        jatosStudyId: true,
+        jatosWorkerType: true,
+        step1Completed: true,
+        step2Completed: true,
+        step3Completed: true,
+        step4Completed: true,
+        step5Completed: true,
+        step6Completed: true,
+      },
+    },
+  },
+})
+
 export const studyWithLatestUploadSelect = Prisma.validator<Prisma.StudySelect>()({
   ...studyScalarSelect,
   jatosStudyUploads: {

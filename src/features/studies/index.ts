@@ -11,6 +11,7 @@ export type {
   ParticipantWithEmail,
   PendingAdminApprovalStudyRow,
   SetupStepFlags,
+  ParticipantStudyOverview,
   StudySummaryCounts,
   StudyView,
   StudyWithLatestUpload,
@@ -102,7 +103,7 @@ export { STUDY_VIEWS, parseStudyView } from "./domain/studyView"
 export { PARTICIPANT_STUDY_VIEWS, parseParticipantStudyView } from "./domain/participantStudyView"
 
 /** RSC helpers for routes & cross-feature callers */
-export { getStudyRsc } from "./server/getStudy"
+export { getParticipantStudyOverviewRsc, getStudyPageRsc, getStudyRsc } from "./server/getStudy"
 export { getStudies } from "./server/getStudies"
 export { getParticipantStudiesWithStatus } from "./server/getParticipantStudiesWithStatus"
 export {

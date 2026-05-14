@@ -4,6 +4,7 @@
 
 import type { Prisma } from "db"
 import {
+  participantStudyOverviewArgs,
   participantWithEmailArgs,
   studyWithRelationsArgs,
   studyWithLatestUploadSelect,
@@ -14,12 +15,14 @@ type WithLatestJatosStudyUpload<T extends { jatosStudyUploads: readonly unknown[
 }
 
 type StudyWithRelationsRecord = Prisma.StudyGetPayload<typeof studyWithRelationsArgs>
+type ParticipantStudyOverviewRecord = Prisma.StudyGetPayload<typeof participantStudyOverviewArgs>
 type StudyWithLatestUploadRecord = Prisma.StudyGetPayload<{
   select: typeof studyWithLatestUploadSelect
 }>
 type ParticipantWithEmailRecord = Prisma.ParticipantStudyGetPayload<typeof participantWithEmailArgs>
 
 export type StudyWithRelations = WithLatestJatosStudyUpload<StudyWithRelationsRecord>
+export type ParticipantStudyOverview = WithLatestJatosStudyUpload<ParticipantStudyOverviewRecord>
 export type StudyWithLatestUpload = WithLatestJatosStudyUpload<StudyWithLatestUploadRecord>
 export type ParticipantWithEmail = ParticipantWithEmailRecord
 export type { StudySummaryCounts } from "./server/studySummaryCounts"

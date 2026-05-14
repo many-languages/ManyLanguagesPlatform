@@ -1,6 +1,6 @@
 import { Alert } from "@/src/components/ui/Alert"
 import { isSetupComplete } from "../../domain/setup/setupStatus"
-import type { StudyWithRelations } from "../../types"
+import type { ParticipantStudyOverview } from "../../types"
 import { ParticipantFeedbackData, checkParticipantCompletionAction } from "@/src/features/feedback"
 import { CheckCircleIcon } from "@heroicons/react/24/solid"
 import StudyInformationCard from "../shared/StudyInformationCard"
@@ -9,7 +9,7 @@ import { getStudyParticipantRsc } from "../../server/getStudyParticipant"
 
 interface ParticipantDataProps {
   studyId: number
-  study: StudyWithRelations
+  study: ParticipantStudyOverview
 }
 
 export default async function ParticipantData({ studyId, study }: ParticipantDataProps) {

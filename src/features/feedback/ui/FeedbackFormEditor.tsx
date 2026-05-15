@@ -24,7 +24,7 @@ import type {
   SaveTemplateResult,
 } from "@/src/features/feedback/types"
 import { templateUsesStatAcross } from "@/src/features/feedback/domain/statAcrossKeys"
-import { renderFeedbackPreviewAction } from "../actions/renderFeedbackPreviewAction"
+import { useTemplatePreview } from "@/src/features/feedback/hooks/useTemplatePreview"
 import { mdEditorStyles, mdEditorClassName } from "@/src/features/feedback/styles/feedbackStyles"
 
 const DEFAULT_MARKDOWN = "## Feedback Form\nWrite your feedback message here..."
@@ -55,11 +55,6 @@ const FeedbackFormEditor = forwardRef<FeedbackFormEditorRef, FeedbackFormEditorP
     ref
   ) => {
     const [markdown, setMarkdown] = useState(() => initialTemplate?.content ?? DEFAULT_MARKDOWN)
-    const [previewMarkdown, setPreviewMarkdown] = useState(
-      () => initialTemplate?.content ?? DEFAULT_MARKDOWN
-    )
-    /** Server preview failed; do not show raw template as if it were rendered output. */
-    const [previewError, setPreviewError] = useState<string | null>(null)
     const [showConditionalBuilder, setShowConditionalBuilder] = useState(false)
     const [dslErrors, setDslErrors] = useState<DSLError[]>([])
     const [showErrors, setShowErrors] = useState(false)
@@ -169,34 +164,13 @@ const FeedbackFormEditor = forwardRef<FeedbackFormEditorRef, FeedbackFormEditorP
 
     const usesAcrossScope = useMemo(() => templateUsesStatAcross(markdown), [markdown])
 
-    const previewRequestSeq = useRef(0)
-
-    useEffect(() => {
-      const seq = ++previewRequestSeq.current
-      void renderFeedbackPreviewAction({
-        studyId,
-        contextKey: feedbackPreviewContextKey,
-        templateContent: debouncedMarkdown,
-        withinStudyResultId,
-      })
-        .then((result) => {
-          if (seq !== previewRequestSeq.current) return
-          if (result.ok) {
-            setPreviewMarkdown(result.markdown)
-            setPreviewError(null)
-          } else {
-            setPreviewError(result.error)
-            toast.error(result.error)
-          }
-        })
-        .catch((err: unknown) => {
-          if (seq !== previewRequestSeq.current) return
-          const message =
-            err instanceof Error ? err.message : typeof err === "string" ? err : "Preview failed."
-          setPreviewError(message)
-          toast.error(message)
-        })
-    }, [debouncedMarkdown, studyId, feedbackPreviewContextKey, withinStudyResultId])
+    const { previewMarkdown, previewError } = useTemplatePreview({
+      debouncedMarkdown,
+      studyId,
+      feedbackPreviewContextKey,
+      withinStudyResultId,
+      initialMarkdown: initialTemplate?.content ?? DEFAULT_MARKDOWN,
+    })
 
     return (
       <>

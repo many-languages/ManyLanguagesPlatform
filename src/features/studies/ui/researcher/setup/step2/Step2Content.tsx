@@ -3,21 +3,17 @@
 import { useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
 import type { Route } from "next"
-import { useSession } from "@blitzjs/auth"
 
 import JatosForm from "./JatosForm"
 import toast from "react-hot-toast"
 import { useMutation } from "@blitzjs/rpc"
 import checkJatosStudyUuid from "@/src/features/studies/mutations/checkJatosStudyUuid"
-import updateStudyBatch from "@/src/features/studies/mutations/updateStudyBatch"
 import updateJatosUploadWorkerType from "@/src/features/studies/mutations/updateJatosUploadWorkerType"
-import updateSetupCompletion from "@/src/features/studies/mutations/updateSetupCompletion"
-import { getBatchIdAction } from "@/src/features/studies/actions/getBatchId"
+import { completeStep2ImportAction } from "@/src/features/studies/actions/completeStep2Import"
 import { uploadStudyFile } from "@/src/lib/jatos/browser/uploadStudyFile"
 import { extractJatosStudyUuidFromJzip } from "@/src/lib/jatos/parsers/extractJatosStudyUuid"
 import { Alert } from "@/src/components/ui/Alert"
 import { FORM_ERROR } from "@/src/components/ui/Form"
-import { createResearcherPilotUrlAndSaveAction } from "@/src/features/studies/actions/createResearcherPilotUrl"
 
 import type { StudyWithRelations } from "../../../../types"
 import { studySetupStepPath } from "../../../../domain/setup/setupRoutes"
@@ -28,12 +24,8 @@ interface Step2ContentProps {
 
 export default function Step2Content({ study }: Step2ContentProps) {
   const router = useRouter()
-  // const { study } = useStudySetup()
-  const { userId } = useSession()
   const [checkJatosStudyUuidMutation] = useMutation(checkJatosStudyUuid)
-  const [updateStudyBatchMutation] = useMutation(updateStudyBatch)
   const [updateJatosUploadWorkerTypeMutation] = useMutation(updateJatosUploadWorkerType)
-  const [updateSetupCompletionMutation] = useMutation(updateSetupCompletion)
   const latestUpload = study.latestJatosStudyUpload
 
   const [updateAlert, setUpdateAlert] = useState<{
@@ -43,8 +35,7 @@ export default function Step2Content({ study }: Step2ContentProps) {
   } | null>(null)
   const [loading, setLoading] = useState(false)
 
-  // Helper function to complete the import after upload
-  // Route already did JATOS upload + DB + membership sync; we just need batch ID, setup completion, pilot link
+  // Route already did JATOS upload + DB + membership sync; finalise batch ID, step flag, and pilot link server-side.
   async function completeImport(
     uploadResult: {
       jatosStudyId: number
@@ -52,53 +43,22 @@ export default function Step2Content({ study }: Step2ContentProps) {
       latestUpload?: { id: number }
     },
     options?: { successToast?: string }
-  ) {
-    const latestUploadId = uploadResult.latestUpload?.id ?? null
+  ): Promise<boolean> {
+    const result = await completeStep2ImportAction({
+      studyId: study.id,
+      jatosStudyId: uploadResult.jatosStudyId,
+      jatosStudyUUID: uploadResult.jatosStudyUUID,
+      latestUploadId: uploadResult.latestUpload?.id ?? null,
+    })
 
-    // 1️⃣ Get batch ID
-    const jatosBatchId = await getBatchIdAction(study.id, uploadResult.jatosStudyUUID)
-    if (jatosBatchId) {
-      await updateStudyBatchMutation({ studyId: study.id, jatosBatchId } as any)
-    } else {
-      toast.error("No JATOS batch found for this study")
+    if (!result.ok) {
+      toast.error(result.error)
       setLoading(false)
       return false
     }
 
-    // 2️⃣ Mark step 2 as complete
-    try {
-      await updateSetupCompletionMutation({
-        studyId: study.id,
-        step2Completed: true,
-      })
-      router.refresh() // Refresh to get updated study data
-    } catch (err) {
-      console.error("Failed to update step 2 completion:", err)
-      // Don't fail the whole import if this fails, but log it
-    }
-
-    // 3️⃣ Auto-generate pilot link for the current researcher
-    try {
-      const researcher = study.researchers?.find((r) => r.userId === userId)
-      if (researcher?.id && jatosBatchId && latestUploadId) {
-        await createResearcherPilotUrlAndSaveAction({
-          studyId: study.id,
-          studyResearcherId: researcher.id,
-          jatosStudyUploadId: latestUploadId,
-          jatosStudyId: uploadResult.jatosStudyId,
-          jatosBatchId: jatosBatchId,
-        })
-        // Silent success - test link generated automatically
-      }
-    } catch (err) {
-      console.error("Failed to auto-generate pilot link:", err)
-      // Don't fail the import if pilot link generation fails - user can generate it manually in Step 3
-    }
-
-    // 4️⃣ Success
     toast.success(options?.successToast ?? "JATOS instance created")
     router.push(studySetupStepPath(study.id, 3) as Route)
-    // Refresh after navigation to ensure fresh data is loaded
     router.refresh()
     return true
   }

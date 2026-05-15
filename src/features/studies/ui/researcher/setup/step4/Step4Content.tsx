@@ -15,6 +15,7 @@ import { AsyncButton } from "@/src/components/ui/AsyncButton"
 import Card from "@/src/components/ui/Card"
 import { studySetupStepPath } from "../../../../domain/setup/setupRoutes"
 import type { SerializedExtractionBundle } from "../../../../domain/setup/serializeExtractionBundle"
+import { aggregateExtractionStats } from "../../../../domain/inspector/aggregateExtractionStats"
 import Step4Instructions from "./Step4Instructions"
 
 import type { StudyWithRelations } from "../../../../types"
@@ -94,41 +95,17 @@ export default function Step4Content({ validationData, study }: Step4ContentProp
     }
   }
 
-  // Compute Summary Stats
-  const dashboardStats = useMemo(() => {
-    if (!activeBundle) return null
-
-    const diag = activeBundle.diagnostics
-    // Combine all diagnostic sources
-    const allVariableDiags = Array.from(diag.variable || []).flatMap(([_, v]) => v.diagnostics)
-    const allComponentDiags = Array.from(diag.component || []).flatMap(([_, d]) => d)
-    const allRunDiags = diag.run || []
-    const allCrossRunDiags = diag.crossRun
-      ? [
-          ...diag.crossRun.run,
-          ...Array.from(diag.crossRun.component).flatMap(([_, d]) => d),
-          ...Array.from(diag.crossRun.variable).flatMap(([_, v]) => v.diagnostics),
-        ]
-      : []
-
-    const allExtractionDiags = [...allVariableDiags, ...allComponentDiags, ...allRunDiags]
-    const variableErrorCount = allExtractionDiags.filter((d) => d.severity === "error").length
-    const variableWarningCount = allExtractionDiags.filter((d) => d.severity === "warning").length
-
-    const structuralErrorCount = allCrossRunDiags.filter((d) => d.severity === "error").length
-    const structuralWarningCount = allCrossRunDiags.filter((d) => d.severity === "warning").length
-
-    return {
-      runCount: validationData.pilotResults.length,
-      variableCount: activeBundle.variables.length,
-      variableIssueCount: allExtractionDiags.length,
-      variableErrorCount,
-      variableWarningCount,
-      structuralIssueCount: allCrossRunDiags.length,
-      structuralErrorCount,
-      structuralWarningCount,
-    }
-  }, [activeBundle, validationData.pilotResults.length])
+  const dashboardStats = useMemo(
+    () =>
+      activeBundle
+        ? aggregateExtractionStats(
+            activeBundle.diagnostics,
+            activeBundle.variables.length,
+            validationData.pilotResults.length
+          )
+        : null,
+    [activeBundle, validationData.pilotResults.length]
+  )
 
   if (!hasPilotResults) {
     return (

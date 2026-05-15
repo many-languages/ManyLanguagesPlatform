@@ -14,10 +14,12 @@ import archiveStudy from "@/src/features/studies/mutations/archiveStudy"
 import unarchiveStudy from "@/src/features/studies/mutations/unarchiveStudy"
 import { AdminStudyFormValues } from "@/src/features/studies/validations"
 import { ConfirmButton } from "@/src/components/ui/ConfirmButton"
-import { isSetupComplete, type StudyWithMinimalRelations } from "../../domain/setup/setupStatus"
+import { isSetupComplete, toSetupStatusStudy } from "../../domain/setup/setupStatus"
 import type { AdminStudyListItemDto } from "../../types"
 import type { UserRole } from "@/db"
 import { isSuperAdmin } from "@/src/lib/auth/roles"
+
+type ActionKey = "enable" | "disable" | "approve" | "reject" | "delete" | "archive" | "unarchive"
 
 type WithStudyActionOptions = {
   action: (ids: number[]) => Promise<{ updated: number } | null>
@@ -77,29 +79,10 @@ export default function StudyActions({
   const [deleteMutation] = useMutation(deleteStudy)
   const [archiveMutation] = useMutation(archiveStudy)
   const [unarchiveMutation] = useMutation(unarchiveStudy)
-  const [isEnabling, setIsEnabling] = useState(false)
-  const [isDisabling, setIsDisabling] = useState(false)
-  const [isApproving, setIsApproving] = useState(false)
-  const [isRejecting, setIsRejecting] = useState(false)
-  const [isDeleting, setIsDeleting] = useState(false)
-  const [isArchiving, setIsArchiving] = useState(false)
-  const [isUnarchiving, setIsUnarchiving] = useState(false)
+  const [activeAction, setActiveAction] = useState<ActionKey | null>(null)
 
   const selectedIds = watch("selectedStudyIds")
   const selectedStudies = studies.filter((s) => selectedIds.includes(s.id))
-  const toSetupStatusStudy = (study: AdminStudyListItemDto): StudyWithMinimalRelations => ({
-    id: study.id,
-    archived: study.archived,
-    title: study.title,
-    description: study.description,
-    FeedbackTemplate: study.feedbackTemplate ? { id: study.feedbackTemplate.id } : null,
-    latestJatosStudyUpload: study.latestJatosStudyUpload
-      ? {
-          ...study.latestJatosStudyUpload,
-          jatosFileName: study.latestJatosStudyUpload.jatosFileName ?? undefined,
-        }
-      : null,
-  })
 
   const hasPending = selectedStudies.some((s) => s.adminApproved === null)
   const hasPendingWithSetupComplete = selectedStudies.some(
@@ -166,7 +149,7 @@ export default function StudyActions({
       },
       successMessage: (count) => `Enabled data collection for ${count} study/studies`,
       errorMessage: "Failed to enable data collection.",
-      setLoading: setIsEnabling,
+      setLoading: (v) => setActiveAction(v ? "enable" : null),
     })
 
   const handleApprove = () =>
@@ -185,7 +168,7 @@ export default function StudyActions({
       },
       successMessage: (count) => `Approved ${count} study/studies`,
       errorMessage: "Failed to approve studies.",
-      setLoading: setIsApproving,
+      setLoading: (v) => setActiveAction(v ? "approve" : null),
     })
 
   const handleReject = () =>
@@ -199,7 +182,7 @@ export default function StudyActions({
       },
       successMessage: (count) => `Rejected ${count} study/studies`,
       errorMessage: "Failed to reject studies.",
-      setLoading: setIsRejecting,
+      setLoading: (v) => setActiveAction(v ? "reject" : null),
     })
 
   const handleDisable = () =>
@@ -207,7 +190,7 @@ export default function StudyActions({
       action: async (ids) => disableMutation({ studyIds: ids }),
       successMessage: (count) => `Disabled data collection for ${count} study/studies`,
       errorMessage: "Failed to disable data collection.",
-      setLoading: setIsDisabling,
+      setLoading: (v) => setActiveAction(v ? "disable" : null),
     })
 
   const handleDelete = () =>
@@ -216,7 +199,7 @@ export default function StudyActions({
         deleteMutation({ studyIds: ids, reason: "Admin deletion from dashboard" }),
       successMessage: (count) => `Deleted ${count} study/studies`,
       errorMessage: "Failed to delete studies.",
-      setLoading: setIsDeleting,
+      setLoading: (v) => setActiveAction(v ? "delete" : null),
     })
 
   const handleArchive = () =>
@@ -231,7 +214,7 @@ export default function StudyActions({
       },
       successMessage: (count) => `Archived ${count} study/studies`,
       errorMessage: "Failed to archive studies.",
-      setLoading: setIsArchiving,
+      setLoading: (v) => setActiveAction(v ? "archive" : null),
     })
 
   const handleUnarchive = () =>
@@ -246,17 +229,10 @@ export default function StudyActions({
       },
       successMessage: (count) => `Unarchived ${count} study/studies`,
       errorMessage: "Failed to unarchive studies.",
-      setLoading: setIsUnarchiving,
+      setLoading: (v) => setActiveAction(v ? "unarchive" : null),
     })
 
-  const isSubmitting =
-    isEnabling ||
-    isDisabling ||
-    isApproving ||
-    isRejecting ||
-    isDeleting ||
-    isArchiving ||
-    isUnarchiving
+  const isSubmitting = activeAction !== null
 
   if (selectedIds.length === 0) {
     return null
@@ -271,7 +247,7 @@ export default function StudyActions({
           disabled={isSubmitting}
           onClick={handleApprove}
         >
-          {isApproving ? "Approving..." : "Approve"}
+          {activeAction === "approve" ? "Approving..." : "Approve"}
         </button>
       )}
       {showRejectButton && (
@@ -281,7 +257,7 @@ export default function StudyActions({
           disabled={isSubmitting}
           onClick={handleReject}
         >
-          {isRejecting ? "Rejecting..." : "Reject"}
+          {activeAction === "reject" ? "Rejecting..." : "Reject"}
         </button>
       )}
       {showDisableButton && (
@@ -291,7 +267,7 @@ export default function StudyActions({
           disabled={isSubmitting}
           onClick={handleDisable}
         >
-          {isDisabling ? "Disabling..." : "Disable data collection"}
+          {activeAction === "disable" ? "Disabling..." : "Disable data collection"}
         </button>
       )}
       {showEnableButton && (
@@ -301,7 +277,7 @@ export default function StudyActions({
           disabled={isSubmitting}
           onClick={handleEnable}
         >
-          {isEnabling ? "Enabling..." : "Enable data collection"}
+          {activeAction === "enable" ? "Enabling..." : "Enable data collection"}
         </button>
       )}
       {showArchiveButton && (

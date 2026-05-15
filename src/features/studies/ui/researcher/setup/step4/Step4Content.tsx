@@ -1,22 +1,19 @@
 "use client"
 
+import { useState } from "react"
 import { useRouter } from "next/navigation"
 import type { Route } from "next"
+import { useMutation } from "@blitzjs/rpc"
 
-import { useMutation, useQuery } from "@blitzjs/rpc"
 import approveExtraction from "@/src/features/studies/mutations/approveExtraction"
-import runExtraction from "@/src/features/studies/mutations/runExtraction"
-import getCachedExtractionBundle from "@/src/features/studies/queries/getCachedExtractionBundle"
 import StepNavigation from "../StepNavigation"
 import type { ValidationData } from "@/src/features/studies/server/getValidationData"
-import { useEffect, useMemo, useState } from "react"
 import { Alert } from "@/src/components/ui/Alert"
 import { AsyncButton } from "@/src/components/ui/AsyncButton"
 import Card from "@/src/components/ui/Card"
 import { studySetupStepPath } from "../../../../domain/setup/setupRoutes"
-import type { SerializedExtractionBundle } from "../../../../domain/setup/serializeExtractionBundle"
-import { aggregateExtractionStats } from "../../../../domain/inspector/aggregateExtractionStats"
 import Step4Instructions from "./Step4Instructions"
+import { useExtractionBundle } from "./useExtractionBundle"
 
 import type { StudyWithRelations } from "../../../../types"
 
@@ -25,59 +22,28 @@ import SummaryDashboard from "./dashboard/SummaryDashboard"
 import AggregatedVariableTable from "./dashboard/AggregatedVariableTable"
 import CrossRunDiagnosticsList from "./dashboard/CrossRunDiagnosticsList"
 import RunInspector from "./dashboard/RunInspector"
-import { PlayIcon } from "@heroicons/react/24/solid"
 
 interface Step4ContentProps {
   validationData: ValidationData
   study: StudyWithRelations
 }
 
-// Stats limiters
 const MAX_DIAGNOSTICS_SUMMARY = 99
 
 export default function Step4Content({ validationData, study }: Step4ContentProps) {
   const router = useRouter()
   const studyId = study.id
   const [approveExtractionMutation] = useMutation(approveExtraction)
-  const [runExtractionMutation] = useMutation(runExtraction)
   const latestUpload = study.latestJatosStudyUpload
   const step4Completed = latestUpload?.step4Completed ?? false
 
   const hasPilotResults = validationData.pilotResults.length > 0
-  const [extractionBundle, setExtractionBundle] = useState<SerializedExtractionBundle | null>(null)
-
-  // Dashboard State
   const [activeTab, setActiveTab] = useState<
     "overview" | "variables" | "diagnostics" | "inspector"
   >("overview")
 
-  useEffect(() => {
-    setExtractionBundle(null)
-  }, [hasPilotResults])
-
-  const [cachedBundleResult] = useQuery(
-    getCachedExtractionBundle,
-    {
-      studyId,
-      includeDiagnostics: true,
-    },
-    { enabled: hasPilotResults }
-  )
-
-  const activeBundle = extractionBundle ?? cachedBundleResult?.bundle ?? null
-  const hasExtractedVariables = (activeBundle?.variables.length ?? 0) > 0
-
-  const handleRunExtraction = async () => {
-    try {
-      const result = await runExtractionMutation({
-        studyId,
-        includeDiagnostics: true,
-      })
-      setExtractionBundle(result.bundle)
-    } catch (error) {
-      console.error("Failed to run extraction:", error)
-    }
-  }
+  const { activeBundle, hasExtractedVariables, dashboardStats, handleRunExtraction } =
+    useExtractionBundle({ studyId, validationData })
 
   const handleComplete = async () => {
     try {
@@ -85,27 +51,13 @@ export default function Step4Content({ validationData, study }: Step4ContentProp
         router.push(studySetupStepPath(studyId, 5) as Route)
         return
       }
-      await approveExtractionMutation({
-        studyId: study.id,
-      })
+      await approveExtractionMutation({ studyId: study.id })
       router.refresh()
       router.push(studySetupStepPath(studyId, 5) as Route)
     } catch (err) {
       console.error("Failed to update step 4 completion:", err)
     }
   }
-
-  const dashboardStats = useMemo(
-    () =>
-      activeBundle
-        ? aggregateExtractionStats(
-            activeBundle.diagnostics,
-            activeBundle.variables.length,
-            validationData.pilotResults.length
-          )
-        : null,
-    [activeBundle, validationData.pilotResults.length]
-  )
 
   if (!hasPilotResults) {
     return (
@@ -134,7 +86,6 @@ export default function Step4Content({ validationData, study }: Step4ContentProp
 
   return (
     <div className="space-y-6">
-      {/* Main Content Area */}
       {!activeBundle && (
         <div className="p-12 text-center bg-base-100 rounded-lg border border-dashed border-base-300">
           <h3 className="text-lg font-semibold mb-2">No Extraction Data</h3>
@@ -151,7 +102,6 @@ export default function Step4Content({ validationData, study }: Step4ContentProp
 
       {activeBundle && dashboardStats && (
         <>
-          {/* Tabs Navigation */}
           <div className="tabs tabs-boxed bg-base-100 p-1 mb-4 shadow-sm" role="tablist">
             <button
               role="tab"
@@ -215,19 +165,16 @@ export default function Step4Content({ validationData, study }: Step4ContentProp
             </button>
           </div>
 
-          {/* Tab Panels */}
           <div className="min-h-[400px]">
             {activeTab === "overview" && (
               <SummaryDashboard stats={dashboardStats} onNavigate={(tab) => setActiveTab(tab)} />
             )}
-
             {activeTab === "variables" && (
               <AggregatedVariableTable
                 variables={activeBundle.variables}
                 totalRuns={validationData.pilotResults.length}
               />
             )}
-
             {activeTab === "diagnostics" && (
               <div className="bg-base-100 p-6 rounded-lg shadow">
                 <h2 className="text-xl font-bold mb-6">Cross-Run Diagnostics</h2>
@@ -244,7 +191,6 @@ export default function Step4Content({ validationData, study }: Step4ContentProp
                 />
               </div>
             )}
-
             {activeTab === "inspector" && (
               <RunInspector runs={validationData.pilotResults} activeBundle={activeBundle} />
             )}
@@ -252,7 +198,6 @@ export default function Step4Content({ validationData, study }: Step4ContentProp
         </>
       )}
 
-      {/* Footer / Navigation */}
       <StepNavigation
         studyId={studyId}
         prev="step3"

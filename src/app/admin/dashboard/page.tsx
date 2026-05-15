@@ -16,14 +16,14 @@ export const metadata = {
 export default async function AdminHomePage() {
   const { session } = await getBlitzContext()
   const role = session.role as UserRole
-  const studyCounts = await getAdminStudyCounts()
 
-  const staleAdminInvites =
-    role === "SUPERADMIN" ? await getStalePendingAdminInvitesRsc().catch(() => []) : []
-
-  const pendingAdminApprovalStudies = isStaffAdmin(role)
-    ? await getPendingAdminApprovalStudiesForDashboardRsc().catch(() => [])
-    : []
+  const [studyCounts, staleAdminInvites, pendingAdminApprovalStudies] = await Promise.all([
+    getAdminStudyCounts(),
+    role === "SUPERADMIN" ? getStalePendingAdminInvitesRsc().catch(() => []) : Promise.resolve([]),
+    isStaffAdmin(role)
+      ? getPendingAdminApprovalStudiesForDashboardRsc().catch(() => [])
+      : Promise.resolve([]),
+  ])
 
   return (
     <AdminDashboard

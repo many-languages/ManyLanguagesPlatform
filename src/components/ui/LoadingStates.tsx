@@ -1,5 +1,3 @@
-"use client"
-
 interface LoadingSpinnerProps {
   /**
    * Size of the spinner

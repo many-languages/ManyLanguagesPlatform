@@ -142,6 +142,8 @@ Failures in **root** `layout.tsx` use [`src/app/global-error.tsx`](../src/app/gl
 
 **`loading.tsx`** and **Suspense** fallbacks belong to async UX alongside errors but **not** to the error module: keep loaders separate unless the team explicitly adds a shared “async state” abstraction.
 
+**Detailed inventory:** [Loading UX audit](./refactor/loading.md) (`docs/refactor/loading.md`) — route loaders, Suspense effectiveness, navbar, accessibility notes.
+
 ---
 
 ## 9. Policy exceptions

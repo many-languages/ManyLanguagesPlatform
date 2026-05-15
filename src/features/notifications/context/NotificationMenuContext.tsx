@@ -4,8 +4,7 @@ import { createContext, useContext, useMemo } from "react"
 import { useRouter } from "next/navigation"
 import { useQuery } from "@blitzjs/rpc"
 
-import getUnreadNotificationCount from "../queries/getUnreadNotificationCount"
-import getLatestUnreadNotifications from "../queries/getLatestUnreadNotifications"
+import getNotificationMenuData from "../queries/getNotificationMenuData"
 import { parseRouteData } from "../utils/parseRouteData"
 import type { RouteData } from "../types"
 
@@ -25,23 +24,22 @@ const NotificationMenuContext = createContext<NotificationMenuContextValue | nul
 
 export const NotificationMenuProvider = ({ children }: { children: React.ReactNode }) => {
   const router = useRouter()
-  const [unreadCount = 0, { refetch: refetchUnread }] = useQuery(getUnreadNotificationCount, {})
-  const [latestUnread = [], { refetch: refetchLatest }] = useQuery(getLatestUnreadNotifications, {})
+  const [data, { refetch }] = useQuery(getNotificationMenuData, {})
 
   const value = useMemo<NotificationMenuContextValue>(
     () => ({
-      unreadCount,
-      latestNotifications: latestUnread.map((recipient) => ({
+      unreadCount: data?.unreadCount ?? 0,
+      latestNotifications: (data?.latestUnread ?? []).map((recipient) => ({
         id: recipient.notificationId,
         message: recipient.notification.message,
         routeData: parseRouteData(recipient.notification.routeData),
       })),
       refetch: async () => {
-        await Promise.all([refetchUnread(), refetchLatest()])
+        await refetch()
         router.refresh()
       },
     }),
-    [unreadCount, latestUnread, refetchUnread, refetchLatest, router]
+    [data, refetch, router]
   )
 
   return (

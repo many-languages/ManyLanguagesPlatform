@@ -245,6 +245,7 @@ export default function StudyActions({
           type="button"
           className="btn btn-success btn-outline"
           disabled={isSubmitting}
+          aria-busy={activeAction === "approve"}
           onClick={handleApprove}
         >
           {activeAction === "approve" ? "Approving..." : "Approve"}
@@ -255,6 +256,7 @@ export default function StudyActions({
           type="button"
           className="btn btn-error btn-outline"
           disabled={isSubmitting}
+          aria-busy={activeAction === "reject"}
           onClick={handleReject}
         >
           {activeAction === "reject" ? "Rejecting..." : "Reject"}
@@ -265,6 +267,7 @@ export default function StudyActions({
           type="button"
           className="btn btn-error btn-outline"
           disabled={isSubmitting}
+          aria-busy={activeAction === "disable"}
           onClick={handleDisable}
         >
           {activeAction === "disable" ? "Disabling..." : "Disable data collection"}
@@ -275,6 +278,7 @@ export default function StudyActions({
           type="button"
           className="btn btn-success btn-outline"
           disabled={isSubmitting}
+          aria-busy={activeAction === "enable"}
           onClick={handleEnable}
         >
           {activeAction === "enable" ? "Enabling..." : "Enable data collection"}

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback, useMemo } from "react"
+import { useState, useCallback, useMemo } from "react"
 import VariableSelector from "./VariableSelector"
 import StatsSelector from "./StatsSelector"
 import { SelectField, FilterButtonWithDisplay, SyntaxPreview } from "./shared"
@@ -136,25 +136,15 @@ export default function ConditionalBuilder({
     }))
   }, [getCurrentVariableType, getAvailableOperators])
 
-  // Reset operator when variable type changes
-  useEffect(() => {
-    const currentType = getCurrentVariableType()
-    const availableOps = getAvailableOperators(currentType)
-
-    // If current operator is not available for this type, reset to first available
-    if (!availableOps.some((op) => op.key === operator)) {
-      if (availableOps.length > 0) {
+  const resetOperatorForType = useCallback(
+    (variableType: string) => {
+      const availableOps = getAvailableOperators(variableType)
+      if (!availableOps.some((op) => op.key === operator) && availableOps.length > 0) {
         setOperator(availableOps[0].key)
       }
-    }
-  }, [
-    selectedVariable,
-    conditionType,
-    selectedMetric,
-    operator,
-    getCurrentVariableType,
-    getAvailableOperators,
-  ])
+    },
+    [getAvailableOperators, operator]
+  )
 
   // Handle variable insertion for condition
   const handleInsertVariable = (variableSyntax: string) => {
@@ -232,7 +222,14 @@ export default function ConditionalBuilder({
                     name="conditionType"
                     className="radio"
                     checked={conditionType === "variable"}
-                    onChange={() => setConditionType("variable")}
+                    onChange={() => {
+                      setConditionType("variable")
+                      const newType = selectedVariable
+                        ? getAvailableVariables().find((v) => v.name === selectedVariable)?.type ??
+                          "string"
+                        : "string"
+                      resetOperatorForType(newType)
+                    }}
                   />
                   <span className="label-text ml-2">Variable Value</span>
                 </label>
@@ -242,7 +239,10 @@ export default function ConditionalBuilder({
                     name="conditionType"
                     className="radio"
                     checked={conditionType === "statistic"}
-                    onChange={() => setConditionType("statistic")}
+                    onChange={() => {
+                      setConditionType("statistic")
+                      resetOperatorForType("number")
+                    }}
                   />
                   <span className="label-text ml-2">Statistical Value</span>
                 </label>
@@ -260,6 +260,10 @@ export default function ConditionalBuilder({
                       onChange={(value) => {
                         setSelectedVariable(value)
                         setSelectedModifier("all")
+                        const newType = value
+                          ? getAvailableVariables().find((v) => v.name === value)?.type ?? "string"
+                          : "string"
+                        resetOperatorForType(newType)
                       }}
                       options={variableOptions}
                       placeholder="Select variable..."

@@ -1,8 +1,7 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useRef, useState } from "react"
 import { useMutation } from "@blitzjs/rpc"
-import { useFormContext } from "react-hook-form"
 import { useRouter } from "next/navigation"
 import Form from "@/src/components/ui/Form"
 import TextField from "@/src/components/ui/fields/TextField"
@@ -15,20 +14,10 @@ const defaultValues = {
   token: "",
 }
 
-// Component to handle setting token value when it changes
-function TokenSetter({ lastToken }: { lastToken: string }) {
-  const form = useFormContext()
-  useEffect(() => {
-    if (lastToken) {
-      form.setValue("token", lastToken, { shouldDirty: false })
-    }
-  }, [form, lastToken])
-  return null
-}
-
 export function AdminInviteForm() {
   const router = useRouter()
   const [createInviteMutation] = useMutation(createAdminInvite)
+  const setTokenField = useRef<((token: string) => void) | null>(null)
   const [lastToken, setLastToken] = useState("")
   const [lastEmail, setLastEmail] = useState("")
   const [inviteLink, setInviteLink] = useState("")
@@ -49,6 +38,7 @@ export function AdminInviteForm() {
             expiresInHours: values.expiresInHours,
           })
           setLastToken(result.token)
+          setTokenField.current?.(result.token)
           setLastEmail(result.email)
           setEmailSent(true)
           if (typeof window !== "undefined") {
@@ -64,10 +54,10 @@ export function AdminInviteForm() {
         setIsSubmitting(false)
       }}
     >
-      {() => {
+      {(form) => {
+        setTokenField.current = (token) => form.setValue("token", token, { shouldDirty: false })
         return (
           <>
-            <TokenSetter lastToken={lastToken} />
             <div className="flex flex-col gap-6 md:flex-row md:items-start">
               <div className="flex-1 space-y-4">
                 <TextField

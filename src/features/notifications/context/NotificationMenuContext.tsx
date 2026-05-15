@@ -1,6 +1,7 @@
 "use client"
 
 import { createContext, useContext, useMemo } from "react"
+import { useRouter } from "next/navigation"
 import { useQuery } from "@blitzjs/rpc"
 
 import getUnreadNotificationCount from "../queries/getUnreadNotificationCount"
@@ -23,6 +24,7 @@ type NotificationMenuContextValue = {
 const NotificationMenuContext = createContext<NotificationMenuContextValue | null>(null)
 
 export const NotificationMenuProvider = ({ children }: { children: React.ReactNode }) => {
+  const router = useRouter()
   const [unreadCount = 0, { refetch: refetchUnread }] = useQuery(getUnreadNotificationCount, {})
   const [latestUnread = [], { refetch: refetchLatest }] = useQuery(getLatestUnreadNotifications, {})
 
@@ -36,9 +38,10 @@ export const NotificationMenuProvider = ({ children }: { children: React.ReactNo
       })),
       refetch: async () => {
         await Promise.all([refetchUnread(), refetchLatest()])
+        router.refresh()
       },
     }),
-    [unreadCount, latestUnread, refetchUnread, refetchLatest]
+    [unreadCount, latestUnread, refetchUnread, refetchLatest, router]
   )
 
   return (

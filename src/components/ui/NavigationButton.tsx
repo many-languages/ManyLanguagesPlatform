@@ -1,10 +1,11 @@
 "use client"
 
-import { useEffect, useMemo, useTransition } from "react"
+import { useEffect, useMemo } from "react"
 import type React from "react"
 import { useRouter } from "next/navigation"
 import type { Route } from "next"
 import clsx from "clsx"
+import { usePendingNavigation } from "@/src/lib/hooks/usePendingNavigation"
 
 interface NavigationButtonProps
   extends Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, "onClick"> {
@@ -30,7 +31,7 @@ export function NavigationButton({
   ...props
 }: NavigationButtonProps) {
   const router = useRouter()
-  const [isPending, startTransition] = useTransition()
+  const { isPending, push } = usePendingNavigation()
   const targetHref = useMemo(() => href as Route, [href])
 
   useEffect(() => {
@@ -40,10 +41,7 @@ export function NavigationButton({
 
   const handleClick = () => {
     if (isPending || disabled) return
-
-    startTransition(() => {
-      router.push(targetHref)
-    })
+    push(targetHref)
   }
 
   return (

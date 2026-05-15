@@ -9,7 +9,7 @@ import { TextField, FormSubmitButton, FormErrorDisplay } from "@/src/components/
 import { Form, FORM_ERROR } from "@/src/components/ui/Form"
 import { getDefaultAuthenticatedPath } from "@/src/lib/auth/routing"
 import login from "../../mutations/login"
-import { usePendingNavigation } from "../../hooks/usePendingNavigation"
+import { usePendingNavigation } from "@/src/lib/hooks/usePendingNavigation"
 import { Login } from "../../validations"
 
 export const LoginForm = () => {

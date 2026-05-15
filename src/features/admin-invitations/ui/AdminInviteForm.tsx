@@ -21,7 +21,6 @@ export function AdminInviteForm() {
   const [lastToken, setLastToken] = useState("")
   const [lastEmail, setLastEmail] = useState("")
   const [inviteLink, setInviteLink] = useState("")
-  const [isSubmitting, setIsSubmitting] = useState(false)
   const [emailSent, setEmailSent] = useState(false)
 
   return (
@@ -31,7 +30,6 @@ export function AdminInviteForm() {
       resetOnSuccess={false}
       onSubmit={async ({ token, ...values }) => {
         try {
-          setIsSubmitting(true)
           setEmailSent(false)
           const result = await createInviteMutation({
             email: values.email,
@@ -47,11 +45,9 @@ export function AdminInviteForm() {
           router.refresh()
         } catch (error) {
           const message = error instanceof Error ? error.message : "Failed to create admin invite."
-          setIsSubmitting(false)
           setEmailSent(false)
           return { FORM_ERROR: message }
         }
-        setIsSubmitting(false)
       }}
     >
       {(form) => {
@@ -77,8 +73,13 @@ export function AdminInviteForm() {
                   inputMode="numeric"
                 />
                 <div className="flex gap-2 items-end">
-                  <button type="submit" className="btn btn-primary" disabled={isSubmitting}>
-                    {isSubmitting ? "Generating..." : "Generate invite"}
+                  <button
+                    type="submit"
+                    className="btn btn-primary"
+                    disabled={form.formState.isSubmitting}
+                    aria-busy={form.formState.isSubmitting}
+                  >
+                    {form.formState.isSubmitting ? "Generating..." : "Generate invite"}
                   </button>
                 </div>
               </div>

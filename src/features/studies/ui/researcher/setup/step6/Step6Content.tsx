@@ -16,7 +16,6 @@ import type {
   FeedbackTemplateEditorInitial,
   FeedbackTemplateValidation,
 } from "@/src/features/feedback/types"
-import { useNotificationMenuContext } from "@/src/features/notifications"
 import { studyPath } from "../../../../domain/setup/setupRoutes"
 import { getSetupCompletionAction } from "../../../../actions/getSetupCompletionAction"
 import type { StudyWithRelations } from "../../../../types"
@@ -45,7 +44,6 @@ export default function Step6Content({
   const router = useRouter()
   const studyId = study.id
   const feedbackEditorRef = useRef<FeedbackFormEditorRef>(null)
-  const { refetch: refetchNotifications } = useNotificationMenuContext()
   const [stepState, setStepState] = useState<FeedbackStepEditorState>({
     disableNext: !previewClient.hasPilotData,
     nextTooltip: previewClient.hasPilotData ? undefined : "No pilot data found.",
@@ -73,7 +71,6 @@ export default function Step6Content({
       setupCompleteFromServer = setupComplete
     }
 
-    await refetchNotifications()
     router.replace(studyPath(studyId) as Route)
 
     if (setupCompleteFromServer) {

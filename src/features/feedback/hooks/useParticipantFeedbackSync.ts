@@ -129,8 +129,7 @@ export function useParticipantFeedbackSync({
 
         const fetchResult = await fetchParticipantFeedbackAction(studyId, pseudonym, jatosStudyId)
         applyResult(fetchResult)
-      } catch (error) {
-        console.error("Failed to check for new results:", error)
+      } catch {
         toast.error("Something went wrong. Please try again.")
       } finally {
         if (showLoading) {
@@ -149,8 +148,7 @@ export function useParticipantFeedbackSync({
     try {
       const result = await fetchParticipantFeedbackAction(studyId, pseudonym, jatosStudyId)
       applyResult(result)
-    } catch (error) {
-      console.error("Failed to fetch feedback data:", error)
+    } catch {
       toast.error("Something went wrong. Please try again.")
     } finally {
       isCheckingRef.current = false

@@ -39,7 +39,6 @@ export function usePilotStatusCheck({
       await updateSetupCompletionMutation({ studyId, step3Completed: true })
       router.refresh()
     } catch (err) {
-      console.error("Failed to update step 3 completion:", err)
       throw err
     }
   }, [studyId, updateSetupCompletionMutation, router])

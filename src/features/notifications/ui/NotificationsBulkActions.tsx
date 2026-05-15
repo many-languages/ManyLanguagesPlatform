@@ -51,8 +51,7 @@ export const NotificationsBulkActions = ({ notifications }: NotificationsBulkAct
         toast.success(`${count} notification${count === 1 ? "" : "s"} marked as ${verb}.`, {
           id: "notifications-bulk-action",
         })
-      } catch (error) {
-        console.error("Failed to update notifications:", error)
+      } catch {
         toast.error("Failed to update notifications.", { id: "notifications-bulk-action" })
       } finally {
         resetField("selectedIds")

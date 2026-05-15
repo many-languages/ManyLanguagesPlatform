@@ -4,6 +4,7 @@ import { useState } from "react"
 import { useRouter } from "next/navigation"
 import type { Route } from "next"
 import { useMutation } from "@blitzjs/rpc"
+import { toast } from "react-hot-toast"
 
 import approveExtraction from "@/src/features/studies/mutations/approveExtraction"
 import StepNavigation from "../StepNavigation"
@@ -54,8 +55,8 @@ export default function Step4Content({ validationData, study }: Step4ContentProp
       await approveExtractionMutation({ studyId: study.id })
       router.refresh()
       router.push(studySetupStepPath(studyId, 5) as Route)
-    } catch (err) {
-      console.error("Failed to update step 4 completion:", err)
+    } catch {
+      toast.error("Failed to save step 4 completion. Please try again.")
     }
   }
 

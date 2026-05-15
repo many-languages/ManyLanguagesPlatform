@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo } from "react"
 import { useMutation, useQuery } from "@blitzjs/rpc"
+import { toast } from "react-hot-toast"
 
 import runExtraction from "@/src/features/studies/mutations/runExtraction"
 import getCachedExtractionBundle from "@/src/features/studies/queries/getCachedExtractionBundle"
@@ -59,8 +60,8 @@ export function useExtractionBundle({
     try {
       const result = await runExtractionMutation({ studyId, includeDiagnostics: true })
       setExtractionBundle(result.bundle)
-    } catch (error) {
-      console.error("Failed to run extraction:", error)
+    } catch {
+      toast.error("Failed to run extraction. Please try again.")
     }
   }
 

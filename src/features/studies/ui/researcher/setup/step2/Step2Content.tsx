@@ -158,7 +158,6 @@ export default function Step2Content({ study }: Step2ContentProps) {
                 { successToast: "Setup saved" }
               )
             } catch (err: any) {
-              console.error("Continue without new upload:", err)
               toast.error(err?.message ?? "Failed to continue")
               setLoading(false)
             }
@@ -219,7 +218,6 @@ export default function Step2Content({ study }: Step2ContentProps) {
             // 2️⃣ Complete import (batch ID + setup completion + pilot link + navigate)
             await completeImport(uploadResult)
           } catch (err: any) {
-            console.error("Upload error:", err)
             toast.error("Failed to upload file")
             setLoading(false)
             return { [FORM_ERROR]: `Upload error: ${err.message}` }

@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState, useTransition, useCallback, useRef } from "react"
+import { useState, useTransition, useCallback, useRef } from "react"
 import toast from "react-hot-toast"
 import FeedbackCard from "./FeedbackCard"
 import { checkParticipantCompletionAction } from "../actions/checkParticipantCompletion"
@@ -45,20 +45,6 @@ export default function ParticipantFeedback({
     initialSelectedResponseEndDate
   )
   const isCheckingRef = useRef(false)
-
-  useEffect(() => {
-    setCompleted(initialCompleted)
-    setFeedbackMaintained(initialFeedbackMaintained)
-    setRenderedMarkdown(initialRenderedMarkdown)
-    setMatchingResponseCount(initialMatchingResponseCount)
-    setSelectedResponseEndDate(initialSelectedResponseEndDate)
-  }, [
-    initialCompleted,
-    initialFeedbackMaintained,
-    initialRenderedMarkdown,
-    initialMatchingResponseCount,
-    initialSelectedResponseEndDate,
-  ])
 
   const applyParticipantFeedbackPipelineResult = useCallback(
     (result: LoadParticipantFeedbackPipelineResult) => {

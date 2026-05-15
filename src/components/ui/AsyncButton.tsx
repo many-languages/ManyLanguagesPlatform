@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import type React from "react"
+import { ButtonPendingContent } from "./ButtonPendingContent"
 
 /**
  * AsyncButton Component
@@ -65,14 +66,9 @@ export function AsyncButton({
       disabled={loading || disabled}
       {...props}
     >
-      {loading ? (
-        <>
-          <span>{loadingText || "Loading"}</span>
-          <span className="loading loading-dots loading-xs ml-1"></span>
-        </>
-      ) : (
-        children
-      )}
+      <ButtonPendingContent isPending={loading} pendingText={loadingText || "Loading"}>
+        {children}
+      </ButtonPendingContent>
     </button>
   )
 }

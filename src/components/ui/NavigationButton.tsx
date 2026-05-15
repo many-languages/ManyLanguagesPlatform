@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation"
 import type { Route } from "next"
 import clsx from "clsx"
 import { usePendingNavigation } from "@/src/lib/hooks/usePendingNavigation"
+import { ButtonPendingContent } from "./ButtonPendingContent"
 
 interface NavigationButtonProps
   extends Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, "onClick"> {
@@ -57,14 +58,9 @@ export function NavigationButton({
       aria-live="polite"
       {...props}
     >
-      {isPending ? (
-        <>
-          <span>{pendingText ?? children}</span>
-          <span className="loading loading-dots loading-xs ml-1"></span>
-        </>
-      ) : (
-        children
-      )}
+      <ButtonPendingContent isPending={isPending} pendingText={pendingText ?? children}>
+        {children}
+      </ButtonPendingContent>
     </button>
   )
 }

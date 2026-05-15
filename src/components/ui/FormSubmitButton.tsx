@@ -1,6 +1,7 @@
 "use client"
 
 import { useFormContext } from "react-hook-form"
+import { ButtonPendingContent } from "./ButtonPendingContent"
 
 interface FormSubmitButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   submitText: string
@@ -28,14 +29,9 @@ export function FormSubmitButton({
       aria-busy={pending}
       {...props}
     >
-      {pending ? (
-        <>
-          <span>{loadingText || "Submitting"}</span>
-          <span className="loading loading-dots loading-xs ml-1"></span>
-        </>
-      ) : (
-        submitText
-      )}
+      <ButtonPendingContent isPending={pending} pendingText={loadingText || "Submitting"}>
+        {submitText}
+      </ButtonPendingContent>
     </button>
   )
 }

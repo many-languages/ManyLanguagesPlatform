@@ -78,7 +78,17 @@ const CodebookContent = forwardRef<CodebookContentRef, CodebookContentProps>(
     const router = useRouter()
     const studyId = study.id
     const canEditSetup = canEditStudySetup(study)
-    const [variables, setVariables] = useState<VariableCodebookEntry[]>([])
+    const [variables, setVariables] = useState<VariableCodebookEntry[]>(() =>
+      initialVariables.map((v) => ({
+        id: v.id,
+        variableKey: v.variableKey,
+        variableName: v.variableName,
+        type: v.type,
+        examples: v.examples ?? [],
+        description: v.description ?? "",
+        personalData: v.personalData ?? false,
+      }))
+    )
     const [isSaving, setIsSaving] = useState(false)
     const [updateVariableCodebookMutation] = useMutation(updateVariableCodebook)
     const [codebookSaved, setCodebookSaved] = useState(true)
@@ -100,21 +110,6 @@ const CodebookContent = forwardRef<CodebookContentRef, CodebookContentProps>(
       approvedExtractionAt !== null &&
       codebookUpdatedAt !== null &&
       codebookUpdatedAt < approvedExtractionAt
-
-    useEffect(() => {
-      setVariables(
-        initialVariables.map((v) => ({
-          id: v.id,
-          variableKey: v.variableKey,
-          variableName: v.variableName,
-          type: v.type,
-          examples: v.examples ?? [],
-          description: v.description ?? "",
-          personalData: v.personalData ?? false,
-        }))
-      )
-      setCodebookSaved(true)
-    }, [initialVariables])
 
     const updateVariable = (
       id: number,

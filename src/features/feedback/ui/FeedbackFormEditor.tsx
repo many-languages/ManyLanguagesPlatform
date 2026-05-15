@@ -54,8 +54,10 @@ const FeedbackFormEditor = forwardRef<FeedbackFormEditorRef, FeedbackFormEditorP
     },
     ref
   ) => {
-    const [markdown, setMarkdown] = useState(DEFAULT_MARKDOWN)
-    const [previewMarkdown, setPreviewMarkdown] = useState(markdown)
+    const [markdown, setMarkdown] = useState(() => initialTemplate?.content ?? DEFAULT_MARKDOWN)
+    const [previewMarkdown, setPreviewMarkdown] = useState(
+      () => initialTemplate?.content ?? DEFAULT_MARKDOWN
+    )
     /** Server preview failed; do not show raw template as if it were rendered output. */
     const [previewError, setPreviewError] = useState<string | null>(null)
     const [showConditionalBuilder, setShowConditionalBuilder] = useState(false)
@@ -64,9 +66,10 @@ const FeedbackFormEditor = forwardRef<FeedbackFormEditorRef, FeedbackFormEditorP
 
     const mdEditorRef = useRef<RefMDEditor>(null)
     /** Last known textarea selection; used when inserting from toolbars (caret may be lost on blur). */
+    const initialContentLength = (initialTemplate?.content ?? DEFAULT_MARKDOWN).length
     const lastSelectionRef = useRef({
-      start: DEFAULT_MARKDOWN.length,
-      end: DEFAULT_MARKDOWN.length,
+      start: initialContentLength,
+      end: initialContentLength,
     })
     const pendingCursorRef = useRef<number | null>(null)
 
@@ -75,18 +78,6 @@ const FeedbackFormEditor = forwardRef<FeedbackFormEditorRef, FeedbackFormEditorP
       initialTemplate,
       onSuccess: onTemplateSaved,
     })
-
-    // Load initial template if it exists
-    useEffect(() => {
-      if (initialTemplate) {
-        const content = initialTemplate.content
-        setMarkdown(content)
-        setPreviewMarkdown(content)
-        setTemplateSaved(true) // Template already exists, so it's "saved"
-        const len = content.length
-        lastSelectionRef.current = { start: len, end: len }
-      }
-    }, [initialTemplate])
 
     const [debouncedMarkdown, setDebouncedMarkdown] = useState(markdown)
 

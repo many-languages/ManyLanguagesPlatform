@@ -4,19 +4,14 @@ import { useState, useMemo } from "react"
 import FilterBuilder from "./FilterBuilder"
 import { SelectField, FilterButtonWithDisplay, SyntaxPreview } from "./shared"
 import type { FeedbackVariable } from "@/src/features/feedback/types"
+import { getMetricsForVariableType } from "@/src/features/feedback/domain/feedbackVariableMetrics"
+import { buildStatExpression } from "@/src/features/feedback/domain/buildFeedbackDslExpression"
 
 interface StatsSelectorProps {
   variables: FeedbackVariable[]
   onInsert: (statExpression: string) => void
   markdown?: string
 }
-
-const METRICS = [
-  { key: "avg", label: "Average", description: "Mean value" },
-  { key: "median", label: "Median", description: "Middle value" },
-  { key: "sd", label: "Std Dev", description: "Standard deviation" },
-  { key: "count", label: "Count", description: "Number of trials" },
-]
 
 /**
  * Component for selecting variables and their statistics
@@ -38,30 +33,17 @@ export default function StatsSelector({ variables, onInsert, markdown }: StatsSe
     [variables]
   )
 
-  const getAvailableMetrics = (variableType: string) => {
-    switch (variableType) {
-      case "number":
-        return METRICS
-      case "boolean":
-        return METRICS.filter((metric) => metric.key === "count")
-      case "string":
-      case "array":
-      case "object":
-        return METRICS.filter((metric) => metric.key === "count")
-      default:
-        return METRICS.filter((metric) => metric.key === "count")
-    }
-  }
-
-  const currentVariableType = useMemo(() => {
-    return selectedVariable
-      ? variables.find((v) => v.variableName === selectedVariable)?.type || "string"
-      : "string"
-  }, [selectedVariable, variables])
+  const currentVariableType = useMemo(
+    () =>
+      selectedVariable
+        ? variables.find((v) => v.variableName === selectedVariable)?.type ?? "string"
+        : "string",
+    [selectedVariable, variables]
+  )
 
   const metricOptions = useMemo(
     () =>
-      getAvailableMetrics(currentVariableType).map((m) => ({
+      getMetricsForVariableType(currentVariableType).map((m) => ({
         value: m.key,
         label: `${m.label} - ${m.description}`,
       })),
@@ -78,12 +60,14 @@ export default function StatsSelector({ variables, onInsert, markdown }: StatsSe
 
   const generateSyntax = useMemo(() => {
     if (!selectedVariable || !selectedMetric) return ""
-    let syntax = `{{ stat:${selectedVariable}.${selectedMetric}:${selectedScope}`
-    if (currentFilterClause) {
-      syntax += currentFilterClause
-    }
-    syntax += " }}"
-    return syntax
+    // currentFilterClause arrives from FilterBuilder with " | where: " prefix; strip it for the builder
+    const rawClause = currentFilterClause.replace(/^\s*\|\s*where:\s*/, "")
+    return buildStatExpression(
+      selectedVariable,
+      selectedMetric,
+      selectedScope,
+      rawClause || undefined
+    )
   }, [selectedVariable, selectedMetric, selectedScope, currentFilterClause])
 
   const handleInsert = () => {
@@ -116,11 +100,9 @@ export default function StatsSelector({ variables, onInsert, markdown }: StatsSe
               setSelectedVariable(value)
               if (value) {
                 const variableType =
-                  variables.find((v) => v.variableName === value)?.type || "string"
-                const availableMetrics = getAvailableMetrics(variableType)
-                if (availableMetrics.length > 0) {
-                  setSelectedMetric(availableMetrics[0].key)
-                }
+                  variables.find((v) => v.variableName === value)?.type ?? "string"
+                const availableMetrics = getMetricsForVariableType(variableType)
+                if (availableMetrics.length > 0) setSelectedMetric(availableMetrics[0].key)
               }
             }}
             options={variableOptions}

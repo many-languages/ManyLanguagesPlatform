@@ -4,6 +4,7 @@ import { useState, useMemo } from "react"
 import FilterBuilder from "./FilterBuilder"
 import { SelectField, FilterButtonWithDisplay, SyntaxPreview } from "./shared"
 import type { FeedbackVariable } from "@/src/features/feedback/types"
+import { buildVarExpression } from "@/src/features/feedback/domain/buildFeedbackDslExpression"
 
 interface VariableSelectorProps {
   variables: FeedbackVariable[]
@@ -43,15 +44,9 @@ export default function VariableSelector({ variables, onInsert, markdown }: Vari
 
   const generateSyntax = useMemo(() => {
     if (!selectedVariable) return ""
-    let syntax = `{{ var:${selectedVariable}`
-    if (selectedModifier !== "all") {
-      syntax += `:${selectedModifier}`
-    }
-    syntax += " }}"
-    if (currentFilterClause) {
-      syntax = syntax.replace(" }}", `${currentFilterClause} }}`)
-    }
-    return syntax
+    // currentFilterClause arrives from FilterBuilder with " | where: " prefix; strip it for the builder
+    const rawClause = currentFilterClause.replace(/^\s*\|\s*where:\s*/, "")
+    return buildVarExpression(selectedVariable, selectedModifier, rawClause || undefined)
   }, [selectedVariable, selectedModifier, currentFilterClause])
 
   const handleInsert = () => {

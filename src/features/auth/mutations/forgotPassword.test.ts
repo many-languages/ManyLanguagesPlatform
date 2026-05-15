@@ -1,15 +1,15 @@
-import { vi, describe, it, beforeEach } from "vitest"
+import { vi, describe, it, beforeAll, expect } from "vitest"
 import db, { UserRole } from "db"
 import { hash256 } from "@blitzjs/auth"
 import forgotPassword from "./forgotPassword"
-import previewEmail from "preview-email"
 import { Ctx } from "@blitzjs/next"
+import { PasswordResetDeliveryError } from "../server/forgotPassword"
 
-beforeEach(async () => {
+beforeAll(async () => {
   await db.$reset()
 })
 
-const generatedToken = "plain-token"
+let generatedToken = "plain-token"
 vi.mock("@blitzjs/auth", async () => {
   const auth = await vi.importActual<Record<string, unknown>>("@blitzjs/auth")!
   return {
@@ -18,14 +18,14 @@ vi.mock("@blitzjs/auth", async () => {
   }
 })
 
-vi.mock("preview-email", () => ({ default: vi.fn() }))
-
 describe("forgotPassword mutation", () => {
   it("does not throw error if user doesn't exist", async () => {
     await expect(forgotPassword({ email: "no-user@email.com" }, {} as Ctx)).resolves.not.toThrow()
   })
 
   it("works correctly", async () => {
+    generatedToken = "plain-token"
+
     const user = await db.user.create({
       data: {
         email: "user@example.com",
@@ -55,6 +55,36 @@ describe("forgotPassword mutation", () => {
     expect(token.sentTo).toBe(user.email)
     expect(token.hashedToken).toBe(hash256(generatedToken))
     expect(token.expiresAt > new Date()).toBe(true)
-    expect(previewEmail).toBeCalled()
+  })
+
+  it("deletes the reset token and throws a controlled error if email delivery fails", async () => {
+    generatedToken = "plain-token-mail-fail"
+
+    const user = await db.user.create({
+      data: {
+        email: "mail-fail@example.com",
+        role: UserRole.PARTICIPANT,
+      },
+    })
+
+    const mailerModule = await import("mailers/forgotPasswordMailer")
+    const mailerSpy = vi
+      .spyOn(mailerModule, "forgotPasswordMailer")
+      .mockReturnValue({ send: vi.fn().mockRejectedValue(new Error("SMTP down")) })
+
+    try {
+      await forgotPassword({ email: user.email }, {} as Ctx)
+      throw new Error("Expected forgotPassword to throw")
+    } catch (error) {
+      expect(error).toBeInstanceOf(PasswordResetDeliveryError)
+      expect((error as Error).message).toBe(
+        "We couldn't send the password reset email. Please reach out to the developers for help."
+      )
+    }
+
+    const tokens = await db.token.findMany({ where: { userId: user.id } })
+    expect(tokens).toHaveLength(0)
+
+    mailerSpy.mockRestore()
   })
 })

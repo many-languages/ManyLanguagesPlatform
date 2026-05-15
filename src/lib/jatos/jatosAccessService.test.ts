@@ -14,6 +14,7 @@ import {
   getParticipantFeedback,
   createPersonalStudyCodeForParticipant,
   createPersonalStudyCodeForResearcher,
+  getEnrichedResultsForResearcher,
   downloadAllResultsForResearcher,
 } from "./jatosAccessService"
 import * as tokenBrokerModule from "./tokenBroker"
@@ -29,8 +30,11 @@ import * as loggerModule from "./logger"
 const mockStudyResearcherFindFirst = vi.fn()
 const mockStudyResearcherFindMany = vi.fn()
 const mockParticipantStudyFindUnique = vi.fn()
+const mockParticipantStudyFindMany = vi.fn()
 const mockJatosStudyUploadFindFirst = vi.fn()
 const mockStudyFindUnique = vi.fn()
+const mockStudyFindFirst = vi.fn()
+const mockStudyFindMany = vi.fn()
 
 vi.mock("db", async () => {
   const { Prisma } = await import("@prisma/client")
@@ -43,11 +47,16 @@ vi.mock("db", async () => {
       },
       participantStudy: {
         findUnique: (...args: unknown[]) => mockParticipantStudyFindUnique(...args),
+        findMany: (...args: unknown[]) => mockParticipantStudyFindMany(...args),
       },
       jatosStudyUpload: {
         findFirst: (...args: unknown[]) => mockJatosStudyUploadFindFirst(...args),
       },
-      study: { findUnique: (...args: unknown[]) => mockStudyFindUnique(...args) },
+      study: {
+        findUnique: (...args: unknown[]) => mockStudyFindUnique(...args),
+        findFirst: (...args: unknown[]) => mockStudyFindFirst(...args),
+        findMany: (...args: unknown[]) => mockStudyFindMany(...args),
+      },
     },
   }
 })
@@ -84,9 +93,18 @@ describe("jatosAccessService", () => {
     mockStudyResearcherFindMany.mockResolvedValue([
       { userId: 42, role: "PI", createdAt: new Date("2024-01-01") },
     ])
-    mockParticipantStudyFindUnique.mockResolvedValue({ pseudonym: "participant-1" })
+    mockParticipantStudyFindUnique.mockResolvedValue({ id: 55, pseudonym: "participant-1" })
+    mockParticipantStudyFindMany.mockResolvedValue([
+      {
+        study: {
+          jatosStudyUploads: [{ jatosStudyId: 1 }],
+        },
+      },
+    ])
     mockJatosStudyUploadFindFirst.mockResolvedValue({ jatosStudyId: 1 })
     mockStudyFindUnique.mockResolvedValue({ jatosStudyUUID: "uuid-1" })
+    mockStudyFindFirst.mockResolvedValue({ id: 10 })
+    mockStudyFindMany.mockResolvedValue([{ jatosStudyUUID: "uuid-1" }])
   })
 
   afterEach(() => {
@@ -137,7 +155,7 @@ describe("jatosAccessService", () => {
 
       expect(mockParticipantStudyFindUnique).toHaveBeenCalledWith({
         where: { userId_studyId: { userId: 100, studyId: 10 } },
-        select: { pseudonym: true },
+        select: { id: true, pseudonym: true },
       })
       expect(getTokenSpy).toHaveBeenCalledWith(1)
       expect(getMetadataSpy).toHaveBeenCalledWith({ studyIds: [1] }, { token: "service-token-abc" })
@@ -216,6 +234,56 @@ describe("jatosAccessService", () => {
       expect(result.success).toBe(false)
       expect(result.error).toBeDefined()
     })
+
+    it("returns an error before token resolution when participant JATOS study is mismatched", async () => {
+      mockJatosStudyUploadFindFirst.mockResolvedValueOnce(null)
+      const getTokenSpy = vi.spyOn(tokenBrokerModule, "getTokenForStudyService")
+
+      const result = await checkParticipantCompletionForParticipant({
+        studyId: 10,
+        pseudonym: "participant-1",
+        jatosStudyId: 999,
+        userId: 100,
+      })
+
+      expect(result.success).toBe(false)
+      expect(getTokenSpy).not.toHaveBeenCalled()
+    })
+
+    it("rejects participant study-code creation before JATOS side effects when participantStudyId is mismatched", async () => {
+      const fetchCodesSpy = vi.spyOn(fetchStudyCodesModule, "fetchStudyCodes")
+
+      await expect(
+        createPersonalStudyCodeForParticipant({
+          studyId: 10,
+          userId: 100,
+          jatosStudyId: 1,
+          participantStudyId: 999,
+          type: "ps",
+          comment: "participant-1",
+          onSave: vi.fn().mockResolvedValue(undefined),
+        })
+      ).rejects.toThrow("Participant record does not match authenticated study membership")
+
+      expect(fetchCodesSpy).not.toHaveBeenCalled()
+    })
+
+    it("rejects researcher result reads before JATOS calls when jatosStudyId is mismatched", async () => {
+      mockJatosStudyUploadFindFirst.mockResolvedValueOnce(null)
+      const getTokenSpy = vi.spyOn(tokenBrokerModule, "getTokenForResearcher")
+      const getMetadataSpy = vi.spyOn(getResultsMetadataModule, "getResultsMetadata")
+
+      await expect(
+        getEnrichedResultsForResearcher({
+          studyId: 10,
+          userId: 42,
+          jatosStudyId: 999,
+        })
+      ).rejects.toThrow("JATOS study does not belong to this app study.")
+
+      expect(getTokenSpy).not.toHaveBeenCalled()
+      expect(getMetadataSpy).not.toHaveBeenCalled()
+    })
   })
 
   describe("5. result-enrichment flow", () => {
@@ -281,7 +349,7 @@ describe("jatosAccessService", () => {
 
       expect(mockParticipantStudyFindUnique).toHaveBeenCalledWith({
         where: { userId_studyId: { userId: 100, studyId: 10 } },
-        select: { pseudonym: true },
+        select: { id: true, pseudonym: true },
       })
       expect(mockStudyResearcherFindMany).toHaveBeenCalledWith({
         where: { studyId: 10 },
@@ -297,7 +365,7 @@ describe("jatosAccessService", () => {
     })
 
     it("calls fetchStudyCodes with expected params including batchId when provided", async () => {
-      mockParticipantStudyFindUnique.mockResolvedValueOnce({ pseudonym: "participant-2" })
+      mockParticipantStudyFindUnique.mockResolvedValueOnce({ id: 56, pseudonym: "participant-2" })
       vi.spyOn(tokenBrokerModule, "getTokenForResearcher").mockResolvedValue("researcher-token")
       const fetchCodesSpy = vi
         .spyOn(fetchStudyCodesModule, "fetchStudyCodes")

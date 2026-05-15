@@ -7,14 +7,23 @@ import {
   CreateStudyButton,
   getParticipantStudiesWithStatus,
   getResearcherStudiesPageSlice,
-  parseStudyView,
-  parseParticipantStudyView,
+  parseParticipantStudyViewQueryParam,
+  parseStudyViewQueryParam,
   STUDIES_LIST_PAGE_SIZE,
+  type ParticipantStudyView,
+  type StudyView,
 } from "@/src/features/studies"
-import type { ParticipantStudyView, StudyView } from "@/src/features/studies"
 import { getBlitzContext } from "@/src/app/blitz-server"
 
 type SessionRole = "RESEARCHER" | "PARTICIPANT" | "ADMIN" | "SUPERADMIN"
+
+/** Canonical `/studies` URL when dropping invalid query keys (preserves valid page). */
+function studiesListPath(page: number): string {
+  const sp = new URLSearchParams()
+  if (page > 0) sp.set("page", String(page))
+  const q = sp.toString()
+  return q ? `/studies?${q}` : "/studies"
+}
 
 export const metadata = {
   title: "My Studies",
@@ -65,7 +74,8 @@ export default async function StudiesPage({
   searchParams: Promise<{ page?: string; view?: string }>
 }) {
   const params = await searchParams
-  const page = Number(params.page || 0)
+  const rawPage = Number(params.page ?? 0)
+  const page = Number.isFinite(rawPage) && rawPage >= 0 ? Math.floor(rawPage) : 0
 
   const { session } = await getBlitzContext()
   if (!session.userId) redirect("/login")
@@ -73,8 +83,23 @@ export default async function StudiesPage({
   const role = (session.role ?? "PARTICIPANT") as SessionRole
   const canManageStudies = role !== "PARTICIPANT"
   const isParticipant = role === "PARTICIPANT"
-  const participantView = parseParticipantStudyView(params.view)
-  const researcherView = parseStudyView(params.view)
+
+  let researcherView!: StudyView
+  let participantView!: ParticipantStudyView
+
+  if (isParticipant) {
+    const parsed = parseParticipantStudyViewQueryParam(params.view)
+    if (!parsed.success) {
+      redirect(studiesListPath(page))
+    }
+    participantView = parsed.view
+  } else {
+    const parsed = parseStudyViewQueryParam(params.view)
+    if (!parsed.success) {
+      redirect(studiesListPath(page))
+    }
+    researcherView = parsed.view
+  }
 
   return (
     <main>

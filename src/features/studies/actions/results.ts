@@ -7,8 +7,8 @@ import {
   downloadAllResultsForResearcher,
   type DownloadPayload,
 } from "@/src/lib/jatos/jatosAccessService"
-import { mapJatosErrorToUserMessage } from "@/src/lib/jatos/errors"
-import type { EnrichedJatosStudyResult } from "@/src/types/jatos"
+import { isJatosMappedError, mapJatosErrorToUserMessage } from "@/src/lib/jatos/errors"
+import type { ResearcherRawResultInspectorPayload } from "../types"
 
 export async function downloadResultsAction(
   studyId: number
@@ -23,6 +23,9 @@ export async function downloadResultsAction(
     const payload = await downloadAllResultsForResearcher({ studyId, userId })
     return { success: true, payload }
   } catch (error) {
+    if (!isJatosMappedError(error)) {
+      console.error("[downloadResultsAction]", { studyId, error })
+    }
     return {
       success: false,
       error: mapJatosErrorToUserMessage(error),
@@ -30,14 +33,14 @@ export async function downloadResultsAction(
   }
 }
 
-export async function refetchEnrichedResultsAction(
-  jatosStudyId: number,
-  _metadata: unknown,
+export async function refetchEnrichedResultsAction(input: {
+  jatosStudyId: number
   studyId: number
-): Promise<
-  { success: true; data: EnrichedJatosStudyResult[] } | { success: false; error: string }
+}): Promise<
+  { success: true; data: ResearcherRawResultInspectorPayload } | { success: false; error: string }
 > {
   try {
+    const { jatosStudyId, studyId } = input
     const { session } = await getBlitzContext()
     const userId = session.userId
     if (userId == null) {
@@ -48,8 +51,15 @@ export async function refetchEnrichedResultsAction(
 
     revalidatePath(`/studies/${studyId}`)
 
-    return { success: true, data: enriched }
+    return { success: true, data: { enrichedResults: enriched } }
   } catch (error) {
+    if (!isJatosMappedError(error)) {
+      console.error("[refetchEnrichedResultsAction]", {
+        studyId: input.studyId,
+        jatosStudyId: input.jatosStudyId,
+        error,
+      })
+    }
     return {
       success: false,
       error: mapJatosErrorToUserMessage(error),

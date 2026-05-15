@@ -47,13 +47,35 @@ Feedback template rendering and cohort aggregation for `stat:…:across` live un
 - **No direct `client/*` imports** — App code must not import from `src/lib/jatos/client/*`. Use `jatosAccessService` for all JATOS operations. The sole exception is `browser/uploadStudyFile` for FormData uploads.
 - **Use-case API** — Call `jatosAccessService.*ForResearcher` or `*ForParticipant`, not low-level client methods.
 - **Narrow inputs** — Pass `userId`, `studyId`, `pseudonym`, etc., not session objects.
+- **Bind JATOS IDs to app studies** — If a caller supplies `jatosStudyId`, `jatosStudyUploadId`, or `jatosStudyUUID`, the service must verify it belongs to the authorized app `studyId` before resolving a token or making a JATOS call.
 - **Token separation** — `getAdminToken()` is never called by jatosAccessService; only provisioning uses it.
 
 ### App vs JATOS Separation
 
 - **withStudyAccess** — App-level access helper. Handles session + researcher DB access. Does NOT resolve tokens or call JATOS. Use for DB-only flows and for mixed flows when early app-level authorization is needed.
-- **jatosAccessService** — JATOS integration layer. Resolves tokens, calls JATOS. App code must not bypass it.
+- **jatosAccessService** — JATOS integration layer. Resolves tokens, binds JATOS identifiers back to app studies, then calls JATOS. App code must not bypass it.
 - **Mixed flows** — A mutation may use `withStudyAccess` for app-level auth, do DB work, then call `jatosAccessService` for JATOS. This is acceptable. Duplicated access checks (in both layers) preserve clean responsibility boundaries.
+
+### App Study / JATOS Study Binding
+
+Authorization must be checked against the app model before JATOS calls:
+
+1. Authenticate the actor (`userId` from the session).
+2. Authorize the actor against the app `studyId` or `ParticipantStudy`.
+3. Verify any supplied JATOS identifier belongs to that same app study:
+   - `jatosStudyId` -> `JatosStudyUpload.studyId`
+   - `jatosStudyUploadId` -> `JatosStudyUpload.studyId`
+   - `jatosStudyUUID` -> `Study.jatosStudyUUID`
+4. Resolve the JATOS token and call JATOS only after those checks pass.
+
+Prefer resolving `jatosStudyId` from `studyId` server-side. If a client surface
+passes a JATOS identifier for UI convenience, treat it as untrusted input and
+re-bind it in `jatosAccessService` or a feature server helper before use.
+
+The setup UUID validation flow is the narrow exception: it may query JATOS for a
+candidate UUID before that UUID is linked to the app study. Keep that exception
+inside `checkJatosStudyUuidForSetup`; do not generalize it to normal researcher
+or participant reads.
 
 ### Architecture Violations (avoid)
 
@@ -76,6 +98,21 @@ Participant authentication is validated at the app layer. Participant flows spli
 | Write | `withParticipantAccessAndResearcherToken` | Researcher (USER)        | Study code creation only             |
 
 VIEWER is used only for participant-facing read flows in our app. Study code creation uses a researcher token because JATOS requires USER for `POST /studyCodes`. This is intentional delegated researcher authority — do not merge these paths.
+
+Both participant token paths verify:
+
+- the authenticated `userId` owns the `ParticipantStudy` for the app `studyId`,
+- the supplied `pseudonym` matches that participant row,
+- the supplied `jatosStudyId` belongs to the same app `studyId`,
+- and, when present, `participantStudyId` matches the same authenticated row.
+
+This prevents a caller from combining an authorized app study with a different
+imported JATOS study or saving a generated run URL onto another participant row.
+
+The service account is also used by narrow platform lifecycle/admin checks such
+as `checkStudyParticipantResponsePresence`, where there is no researcher or
+participant actor and destructive operations must fail closed if JATOS cannot
+be checked.
 
 **Researcher selection** (for study code creation): PI first, then COLLABORATOR, then VIEWER (ResearcherRole), then earliest `createdAt`, then smallest `userId`.
 
@@ -150,12 +187,17 @@ const result = await getParticipantFeedback({
   studyId,
   pseudonym,
   jatosStudyId,
+  participantStudyId,
   userId,
   templateContent,
   requiredVariableKeyList,
 })
 // result.data: { enrichedResult, aggregatedAcrossStats? } — never raw cohort arrays
 ```
+
+`participantStudyId` is optional for compatibility, but pass it when available.
+It gives the service one more deterministic check before any participant JATOS
+read/write path runs.
 
 ### Server Actions
 
@@ -181,42 +223,83 @@ export async function downloadResultsAction(studyId: number) {
 
 ## Available Service Methods
 
-| Method                                  | Use Case                                                                               |
-| --------------------------------------- | -------------------------------------------------------------------------------------- |
-| `getResultsMetadataForResearcher`       | Fetch results metadata                                                                 |
-| `getStudyPropertiesForResearcher`       | Fetch study properties                                                                 |
-| `getBatchIdForResearcher`               | Get first batch ID from properties                                                     |
-| `downloadAllResultsForResearcher`       | Download all results as `DownloadPayload`                                              |
-| `getParticipantFeedback`                | Participant feedback (viewer token); template-driven cohort aggregates in-service only |
-| `createPersonalStudyCodeForParticipant` | Join study (participant; uses researcher token)                                        |
-| `createPersonalStudyCodeForResearcher`  | Pilot link (researcher)                                                                |
-| `getGeneralLinksForResearcher`          | General links for participants                                                         |
-| `getHtmlFilesForResearcher`             | HTML files from asset structure                                                        |
-| `getEnrichedResultsForResearcher`       | Enriched results for display                                                           |
-| `getStudyDataByCommentForResearcher`    | Study data by comment (e.g. "test")                                                    |
-| `getAllPilotResultsForResearcher`       | All pilot results                                                                      |
-| `getPilotResultByIdForResearcher`       | Single pilot result by ID                                                              |
-| `checkPilotStatusForResearcher`         | Pilot completion status                                                                |
+| Method                                      | Use Case                                                                               |
+| ------------------------------------------- | -------------------------------------------------------------------------------------- |
+| `getResultsMetadataForResearcher`           | Fetch results metadata                                                                 |
+| `getResultsMetadataForParticipantDashboard` | Fetch participant-dashboard result metadata without exposing tokens                    |
+| `getResultsMetadataForResearcherDashboard`  | Fetch researcher-dashboard response metadata                                           |
+| `checkStudyParticipantResponsePresence`     | Check participant response presence for platform lifecycle/admin decisions             |
+| `checkParticipantCompletionForParticipant`  | Check participant completion from metadata                                             |
+| `getStudyPropertiesForResearcher`           | Fetch study properties                                                                 |
+| `getBatchIdForResearcher`                   | Get first batch ID from properties                                                     |
+| `checkJatosStudyUuidForSetup`               | Validate a setup-time JATOS study UUID                                                 |
+| `ensureResearcherStudyMembership`           | Ensure a researcher is provisioned as a JATOS study member                             |
+| `downloadAllResultsForResearcher`           | Download all results as `DownloadPayload`                                              |
+| `getParticipantFeedback`                    | Participant feedback (viewer token); template-driven cohort aggregates in-service only |
+| `createPersonalStudyCodeForParticipant`     | Join study (participant; uses researcher token)                                        |
+| `createPersonalStudyCodeForResearcher`      | Pilot link (researcher)                                                                |
+| `getGeneralLinksForResearcher`              | General links for participants                                                         |
+| `getEnrichedResultsForResearcher`           | Enriched results for researcher display                                                |
+| `getHtmlFilesForResearcher`                 | HTML files from asset structure                                                        |
+| `getStudyDataByCommentForResearcher`        | Study data by comment (e.g. "test")                                                    |
+| `getAllPilotResultsForResearcher`           | All pilot results                                                                      |
+| `getPilotResultByIdForResearcher`           | Single pilot result by ID                                                              |
+| `checkPilotStatusForResearcher`             | Pilot completion status                                                                |
 
 ---
 
 ## Error Handling
 
-**jatosAccessService** throws on authorization failure or JATOS errors. Wrap in try/catch:
+**`jatosAccessService`** throws when app-level authorization fails or when a JATOS call fails after a token is resolved. Callers must not assume success without `try/catch` (or equivalent) at boundaries that return data to the UI, HTTP clients, or server actions.
+
+### Typed errors (HTTP & transport)
+
+Low-level JATOS HTTP helpers under `src/lib/jatos/client/*` use **`throwIfJatosError`** ([`throwIfJatosError.ts`](../src/lib/jatos/client/throwIfJatosError.ts)): failed responses become subclasses of **`JatosApiError`** ([`errors.ts`](../src/lib/jatos/errors.ts)) — e.g. **`JatosUnauthorizedError`**, **`JatosForbiddenError`**, **`JatosNotFoundError`**, **`JatosBadRequestError`**, or a generic **`JatosApiError`** for other status codes. Network and parse failures surface as **`JatosTransportError`** (includes an `operation` string for correlation).
+
+App code must **not** import `client/*` directly (except the documented browser upload helper); this typing still applies because **`jatosAccessService`** ultimately uses those clients.
+
+### User-facing messages (safe)
+
+**Do not** return **`error.message`** (or raw JATOS body text) to browsers, toast copy, or public JSON as a default. Those strings can leak operational detail or inconsistent vendor wording.
+
+For participant- and researcher-facing surfaces, use **`mapJatosErrorToUserMessage(error)`** from [`src/lib/jatos/errors.ts`](../src/lib/jatos/errors.ts). It maps typed JATOS errors to **stable, generic** copy and falls back to a safe default for unknown errors. Feature server actions and loaders (e.g. participant feedback, pilot status, cleaned download) follow this pattern.
 
 ```typescript
+import { mapJatosErrorToUserMessage } from "@/src/lib/jatos/errors"
+
 try {
   const data = await getResultsMetadataForResearcher({ studyId, userId })
   return { success: true, data }
-} catch (error: any) {
-  return { success: false, error: error.message }
+} catch (error: unknown) {
+  return { success: false, error: mapJatosErrorToUserMessage(error) }
 }
 ```
+
+**Blitz** errors (e.g. **`AuthorizationError`**, **`NotFoundError`**) from app guards are **not** JATOS types: they are handled per route conventions (see [Server component patterns](./SERVER_COMPONENT_PATTERNS.md)). If a catch block might see both, map JATOS failures for the client and **rethrow** — or translate — Blitz errors according to that layer’s contract.
+
+### Server-only logging and debugging
+
+For operator visibility, prefer **`logJatosError`** / **`sanitizeJatosLogContext`** from [`src/lib/jatos/logger.ts`](../src/lib/jatos/logger.ts): structured, **sanitized** context (category, status, code, operation) without treating client responses as a log sink.
+
+Full internal messages remain on the **`Error`** objects thrown inside the server; keep them in **logs**, not in user-facing payloads.
+
+### Anti-pattern (avoid)
+
+```typescript
+// Bad for user-visible `error` fields — can leak internal/JATOS text
+catch (error: unknown) {
+  const msg = error instanceof Error ? error.message : "Failed"
+  return { success: false, error: msg }
+}
+```
+
+Use **`mapJatosErrorToUserMessage`** for JATOS-related failures at trust boundaries, or fixed strings you control. See also [Error handling audit (pre-MVP)](./refactor/errors.md).
 
 ---
 
 ## Types
 
+- **`JatosApiError`** hierarchy and **`JatosTransportError`** — typed failures from JATOS HTTP/transport; see [Error handling](#error-handling) and [`src/lib/jatos/errors.ts`](../src/lib/jatos/errors.ts).
 - `JatosAuth` — `{ token: string }` for client methods.
 - `DownloadPayload` — `{ filename, mimeType, base64 }` for download results.
 - `JatosImportResponse` — Import route response (from `@/src/types/jatos-api`).
@@ -246,6 +329,7 @@ App admins can delete studies from both the database and JATOS. This is a **priv
 
 ## Related Documentation
 
-- [JATOS Refactor Plan](./JATOS_REFACTOR_PLAN.md) — Architecture and migration details
-- [JATOS User-Scoped Tokens](./JATOS_USER_SCOPED_TOKENS_IMPLEMENTATION_PLAN.md) — Token types and provisioning
-- [Feedback rendering (server-side)](./FEEDBACK_RENDERING_SERVER_SIDE_PLAN.md) — Markdown pipeline, `aggregatedAcrossStats`, `src/features/feedback/domain`
+- [Error handling](./ERROR_HANDLING.md) — app-wide policy (user-facing copy, logging, layers); JATOS § supplements it.
+- [Project structure](./PROJECT_STRUCTURE.md) — feature/server/domain boundaries and documented `lib/` exceptions.
+- [Server component patterns](./SERVER_COMPONENT_PATTERNS.md) — route-facing server helper pattern.
+- [MVP pre-ship checklist](./refactor/mvp-pre-ship-checklist.md) — release audit and JATOS hardening checks.

@@ -41,6 +41,7 @@ export async function createResearcherPilotUrlAndSaveAction({
     studyId,
     userId,
     jatosStudyId,
+    jatosStudyUploadId,
     jatosBatchId,
     type: "pm",
     comment: `pilot:${markerToken}`,

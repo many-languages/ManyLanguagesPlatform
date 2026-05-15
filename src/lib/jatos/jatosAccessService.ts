@@ -34,6 +34,8 @@ import db from "db"
 import { getTokenForResearcher, getTokenForStudyService } from "./tokenBroker"
 import { logJatosError } from "./logger"
 import {
+  JatosTransportError,
+  isJatosMappedError,
   mapJatosErrorToUserMessage,
   USER_MESSAGE_PARTICIPANT_FEEDBACK_ENRICHMENT_MISSING,
 } from "./errors"
@@ -92,20 +94,148 @@ async function assertParticipantCanAccessStudy({
   studyId,
   pseudonym,
   userId,
+  participantStudyId,
 }: {
   studyId: number
   pseudonym: string
   userId: number
+  participantStudyId?: number
 }): Promise<void> {
   const participant = await db.participantStudy.findUnique({
     where: { userId_studyId: { userId, studyId } },
-    select: { pseudonym: true },
+    select: { id: true, pseudonym: true },
   })
   if (!participant) {
     throw new Error("Participant not found for this study")
   }
+  if (participantStudyId != null && participant.id !== participantStudyId) {
+    throw new Error("Participant record does not match authenticated study membership")
+  }
   if (participant.pseudonym !== pseudonym) {
     throw new Error("Pseudonym does not match authenticated user")
+  }
+}
+
+async function assertJatosStudyBelongsToStudy({
+  studyId,
+  jatosStudyId,
+}: {
+  studyId: number
+  jatosStudyId: number
+}): Promise<void> {
+  const upload = await db.jatosStudyUpload.findFirst({
+    where: { studyId, jatosStudyId },
+    select: { id: true },
+  })
+  if (!upload) {
+    throw new Error("JATOS study does not belong to this app study.")
+  }
+}
+
+async function assertJatosStudyUuidBelongsToStudy({
+  studyId,
+  jatosStudyUUID,
+}: {
+  studyId: number
+  jatosStudyUUID: string
+}): Promise<void> {
+  const study = await db.study.findFirst({
+    where: { id: studyId, jatosStudyUUID },
+    select: { id: true },
+  })
+  if (!study) {
+    throw new Error("JATOS study UUID does not belong to this app study.")
+  }
+}
+
+async function assertJatosUploadBelongsToStudy({
+  studyId,
+  jatosStudyUploadId,
+  jatosStudyId,
+}: {
+  studyId: number
+  jatosStudyUploadId: number
+  jatosStudyId?: number
+}): Promise<void> {
+  const upload = await db.jatosStudyUpload.findFirst({
+    where: {
+      id: jatosStudyUploadId,
+      studyId,
+      ...(jatosStudyId == null ? {} : { jatosStudyId }),
+    },
+    select: { id: true },
+  })
+  if (!upload) {
+    throw new Error("JATOS upload does not belong to this app study.")
+  }
+}
+
+async function assertJatosStudyIdsBelongToParticipant({
+  userId,
+  jatosStudyIds,
+}: {
+  userId: number
+  jatosStudyIds: number[]
+}): Promise<void> {
+  const uniqueIds = [...new Set(jatosStudyIds)]
+  if (uniqueIds.length === 0) return
+
+  const participations = await db.participantStudy.findMany({
+    where: {
+      userId,
+      study: {
+        jatosStudyUploads: {
+          some: { jatosStudyId: { in: uniqueIds } },
+        },
+      },
+    },
+    select: {
+      study: {
+        select: {
+          jatosStudyUploads: {
+            where: { jatosStudyId: { in: uniqueIds } },
+            select: { jatosStudyId: true },
+          },
+        },
+      },
+    },
+  })
+
+  const authorizedIds = new Set(
+    participations.flatMap((participation) =>
+      participation.study.jatosStudyUploads.map((upload) => upload.jatosStudyId)
+    )
+  )
+  const unauthorizedId = uniqueIds.find((id) => !authorizedIds.has(id))
+  if (unauthorizedId != null) {
+    throw new Error("JATOS study does not belong to an authenticated participant study.")
+  }
+}
+
+async function assertStudyUuidsBelongToResearcher({
+  userId,
+  studyUuids,
+}: {
+  userId: number
+  studyUuids: string[]
+}): Promise<void> {
+  const uniqueUuids = [...new Set(studyUuids.map((uuid) => uuid.trim()).filter(Boolean))]
+  if (uniqueUuids.length === 0) return
+
+  const studies = await db.study.findMany({
+    where: {
+      jatosStudyUUID: { in: uniqueUuids },
+      researchers: { some: { userId } },
+    },
+    select: { jatosStudyUUID: true },
+  })
+
+  const authorizedUuids = new Set(
+    studies.map((study) => study.jatosStudyUUID).filter((uuid): uuid is string => Boolean(uuid))
+  )
+  const unauthorizedUuid = uniqueUuids.find((uuid) => !authorizedUuids.has(uuid))
+  if (unauthorizedUuid) {
+    throw new Error("JATOS study UUID does not belong to an authorized researcher study.")
   }
 }
 
@@ -126,13 +256,46 @@ async function getStudyJatosInfo(studyId: number): Promise<{
   return { jatosStudyId: upload.jatosStudyId, jatosStudyUUID: study.jatosStudyUUID }
 }
 
+async function getLatestStudyJatosInfo(studyId: number): Promise<{
+  jatosStudyId: number
+  jatosStudyUUID: string
+} | null> {
+  const upload = await db.jatosStudyUpload.findFirst({
+    where: { studyId },
+    orderBy: { versionNumber: "desc" },
+    select: { jatosStudyId: true },
+  })
+  const study = await db.study.findUnique({
+    where: { id: studyId },
+    select: { jatosStudyUUID: true },
+  })
+  const jatosStudyUUID = study?.jatosStudyUUID?.trim()
+  if (!upload || !jatosStudyUUID) return null
+  return { jatosStudyId: upload.jatosStudyId, jatosStudyUUID }
+}
+
+function getJatosResponseCheckErrorDetail(error: unknown): string {
+  if (error instanceof JatosTransportError) return error.message
+  if (error instanceof Error) return error.message
+  return "Unknown error"
+}
+
 async function withResearcherToken<T>(
   input: { studyId: number; userId: number },
   callback: (ctx: { studyId: number; userId: number; token: string }) => Promise<T>
 ): Promise<T> {
+  return withResearcherAccess(input, async ({ studyId, userId }) => {
+    const token = await getTokenForResearcher(userId)
+    return callback({ studyId, userId, token })
+  })
+}
+
+async function withResearcherAccess<T>(
+  input: { studyId: number; userId: number },
+  callback: (ctx: { studyId: number; userId: number }) => Promise<T>
+): Promise<T> {
   await assertResearcherCanAccessStudy(input)
-  const token = await getTokenForResearcher(input.userId)
-  return callback({ ...input, token })
+  return callback(input)
 }
 
 /**
@@ -145,6 +308,7 @@ async function withParticipantViewerToken<T>(
     pseudonym: string
     userId: number
     jatosStudyId: number
+    participantStudyId?: number
   },
   callback: (ctx: {
     studyId: number
@@ -158,6 +322,11 @@ async function withParticipantViewerToken<T>(
     studyId: input.studyId,
     pseudonym: input.pseudonym,
     userId: input.userId,
+    participantStudyId: input.participantStudyId,
+  })
+  await assertJatosStudyBelongsToStudy({
+    studyId: input.studyId,
+    jatosStudyId: input.jatosStudyId,
   })
   const token = await getTokenForStudyService(input.jatosStudyId)
   return callback({ ...input, token })
@@ -218,6 +387,7 @@ async function withParticipantAccessAndResearcherToken<T>(
     pseudonym: string
     userId: number
     jatosStudyId: number
+    participantStudyId?: number
   },
   callback: (ctx: {
     studyId: number
@@ -231,6 +401,11 @@ async function withParticipantAccessAndResearcherToken<T>(
     studyId: input.studyId,
     pseudonym: input.pseudonym,
     userId: input.userId,
+    participantStudyId: input.participantStudyId,
+  })
+  await assertJatosStudyBelongsToStudy({
+    studyId: input.studyId,
+    jatosStudyId: input.jatosStudyId,
   })
   const researcherUserId = await getEligibleResearcherForStudy(input.studyId)
   const token = await getTokenForResearcher(researcherUserId)
@@ -294,15 +469,24 @@ export async function getResultsMetadataForResearcher({
   studyIds?: number[]
   studyUuids?: string[]
 }) {
-  return withResearcherToken({ studyId, userId }, async ({ studyId, token }) => {
+  return withResearcherAccess({ studyId, userId }, async ({ studyId, userId }) => {
     const params: Record<string, unknown> = {}
-    if (studyIds?.length) params.studyIds = studyIds
-    if (studyUuids?.length) params.studyUuids = studyUuids
+    if (studyIds?.length) {
+      await Promise.all(
+        studyIds.map((jatosStudyId) => assertJatosStudyBelongsToStudy({ studyId, jatosStudyId }))
+      )
+      params.studyIds = studyIds
+    }
+    if (studyUuids?.length) {
+      await assertStudyUuidsBelongToResearcher({ userId, studyUuids })
+      params.studyUuids = studyUuids
+    }
     if (Object.keys(params).length === 0) {
       const info = await getStudyJatosInfo(studyId)
       if (!info) throw new Error("Study does not have JATOS ID")
       params.studyIds = [info.jatosStudyId]
     }
+    const token = await getTokenForResearcher(userId)
     return getResultsMetadata(params, { token })
   })
 }
@@ -314,10 +498,8 @@ export async function getResultsMetadataForResearcher({
  *
  * Best-effort: logs and returns null on failure.
  *
- * Access control: Does NOT verify that userId has access to jatosStudyIds. Caller must
- * pass jatosStudyIds derived from participations filtered by userId (e.g. from
- * participantStudy.findMany({ where: { userId } })). If caller passes IDs from studies
- * the user does not participate in, metadata for those studies will be returned.
+ * Access control: verifies every JATOS study ID against the authenticated participant's
+ * app-level participations before resolving a service token.
  */
 export async function getResultsMetadataForParticipantDashboard({
   userId,
@@ -328,6 +510,7 @@ export async function getResultsMetadataForParticipantDashboard({
 }): Promise<JatosMetadata | null> {
   if (jatosStudyIds.length === 0) return null
   try {
+    await assertJatosStudyIdsBelongToParticipant({ userId, jatosStudyIds })
     const token = await getTokenForStudyService(jatosStudyIds[0])
     return await getResultsMetadata({ studyIds: jatosStudyIds }, { token })
   } catch (error) {
@@ -357,7 +540,10 @@ export async function getResultsMetadataForResearcherDashboard({
 }): Promise<JatosMetadata | null> {
   if (studyUuids.length === 0) return null
   try {
-    return await getResultsMetadataForResearcher({ studyId, userId, studyUuids })
+    await assertResearcherCanAccessStudy({ studyId, userId })
+    await assertStudyUuidsBelongToResearcher({ userId, studyUuids })
+    const token = await getTokenForResearcher(userId)
+    return await getResultsMetadata({ studyUuids }, { token })
   } catch (error) {
     logJatosError("[getResultsMetadataForResearcherDashboard] JATOS metadata fetch failed", {
       operation: "getResultsMetadataForResearcherDashboard",
@@ -366,6 +552,37 @@ export async function getResultsMetadataForResearcherDashboard({
       error,
     })
     return null
+  }
+}
+
+/**
+ * Platform lifecycle/admin check: whether a study has any non-pilot FINISHED JATOS results.
+ *
+ * Uses the study service account token because archive/delete safety checks are platform-level
+ * decisions and do not naturally belong to a researcher or participant session. Throws when
+ * JATOS cannot be checked so destructive lifecycle paths can fail closed.
+ */
+export async function checkStudyParticipantResponsePresence({
+  studyId,
+}: {
+  studyId: number
+}): Promise<boolean> {
+  const info = await getLatestStudyJatosInfo(studyId)
+  if (!info) {
+    return false
+  }
+
+  try {
+    const token = await getTokenForStudyService(info.jatosStudyId)
+    const metadata = await getResultsMetadata({ studyIds: [info.jatosStudyId] }, { token })
+    const entry =
+      metadata.data?.find((data) => data.studyUuid === info.jatosStudyUUID) ??
+      metadata.data?.[0] ??
+      null
+    return hasParticipantResponses(entry?.studyResults ?? [])
+  } catch (error) {
+    const detail = getJatosResponseCheckErrorDetail(error)
+    throw new Error(`Could not verify participant responses. JATOS may be unavailable: ${detail}`)
   }
 }
 
@@ -394,6 +611,13 @@ export async function checkParticipantCompletionForParticipant({
       }
     )
   } catch (error) {
+    if (!isJatosMappedError(error)) {
+      console.error("[checkParticipantCompletionForParticipant]", {
+        studyId,
+        jatosStudyId,
+        error,
+      })
+    }
     return {
       success: false,
       completed: false,
@@ -411,9 +635,13 @@ export async function getStudyPropertiesForResearcher({
   userId: number
   jatosStudyUUID?: string
 }): Promise<JatosStudyProperties> {
-  return withResearcherToken({ studyId, userId }, async ({ studyId, token }) => {
+  return withResearcherAccess({ studyId, userId }, async ({ studyId, userId }) => {
     const uuid = jatosStudyUUID ?? (await getStudyJatosInfo(studyId))?.jatosStudyUUID
     if (!uuid) throw new Error("Study does not have JATOS UUID")
+    if (jatosStudyUUID) {
+      await assertJatosStudyUuidBelongsToStudy({ studyId, jatosStudyUUID })
+    }
+    const token = await getTokenForResearcher(userId)
     return getStudyProperties(uuid, { token })
   })
 }
@@ -514,11 +742,10 @@ export async function checkJatosStudyUuidForSetup({
   // Block update if study has participant responses (non-pilot, FINISHED)
   if (mode === "update" && existsOnJatos) {
     try {
-      const metadata = await getResultsMetadataForResearcher({
-        studyId,
-        userId,
-        studyUuids: [trimmed],
-      })
+      // Setup validation intentionally checks a candidate UUID before it may be
+      // linked to the app study, so it cannot use the normal UUID binding path.
+      const token = await getTokenForResearcher(userId)
+      const metadata = await getResultsMetadata({ studyUuids: [trimmed] }, { token })
       const studies =
         (metadata as { data?: Array<{ studyResults?: JatosStudyResult[] }> })?.data ?? []
       const hasResponses = studies.some((s) => hasParticipantResponses(s.studyResults ?? []))
@@ -568,6 +795,7 @@ export async function getParticipantFeedback({
   studyId,
   pseudonym,
   jatosStudyId,
+  participantStudyId,
   userId,
   templateContent,
   variableKeysAllowlist,
@@ -575,6 +803,7 @@ export async function getParticipantFeedback({
   studyId: number
   pseudonym: string
   jatosStudyId: number
+  participantStudyId?: number
   userId: number
   /** Used to decide whether cohort aggregation runs (stat:…:across) and to compute aggregates server-side only. */
   templateContent: string
@@ -582,7 +811,7 @@ export async function getParticipantFeedback({
   variableKeysAllowlist?: string[]
 }): Promise<GetParticipantFeedbackResult> {
   return withParticipantViewerToken(
-    { studyId, pseudonym, userId, jatosStudyId },
+    { studyId, pseudonym, userId, jatosStudyId, participantStudyId },
     async ({ jatosStudyId, pseudonym, token }) => {
       try {
         const metadata = await getResultsMetadata({ studyIds: [jatosStudyId] }, { token })
@@ -660,6 +889,7 @@ export async function createPersonalStudyCodeForParticipant({
   jatosBatchId,
   type,
   comment,
+  participantStudyId,
   onSave,
 }: {
   studyId: number
@@ -668,10 +898,11 @@ export async function createPersonalStudyCodeForParticipant({
   jatosBatchId?: number
   type: "ps" | "pm"
   comment: string
+  participantStudyId?: number
   onSave: (runUrl: string) => Promise<void>
 }): Promise<string> {
   return withParticipantAccessAndResearcherToken(
-    { studyId, pseudonym: comment, userId, jatosStudyId },
+    { studyId, pseudonym: comment, userId, jatosStudyId, participantStudyId },
     async ({ jatosStudyId, token }) =>
       createPersonalStudyCodeInternal({
         token,
@@ -688,6 +919,7 @@ export async function createPersonalStudyCodeForResearcher({
   studyId,
   userId,
   jatosStudyId,
+  jatosStudyUploadId,
   jatosBatchId,
   type,
   comment,
@@ -696,13 +928,21 @@ export async function createPersonalStudyCodeForResearcher({
   studyId: number
   userId: number
   jatosStudyId: number
+  jatosStudyUploadId?: number
   jatosBatchId?: number
   type: "ps" | "pm"
   comment: string
   onSave: (runUrl: string) => Promise<void>
 }): Promise<string> {
-  return withResearcherToken({ studyId, userId }, async ({ token }) =>
-    createPersonalStudyCodeInternal({
+  return withResearcherAccess({ studyId, userId }, async ({ userId }) => {
+    if (jatosStudyUploadId != null) {
+      await assertJatosUploadBelongsToStudy({ studyId, jatosStudyUploadId, jatosStudyId })
+    } else {
+      await assertJatosStudyBelongsToStudy({ studyId, jatosStudyId })
+    }
+
+    const token = await getTokenForResearcher(userId)
+    return createPersonalStudyCodeInternal({
       token,
       jatosStudyId,
       jatosBatchId,
@@ -710,7 +950,7 @@ export async function createPersonalStudyCodeForResearcher({
       comment,
       onSave,
     })
-  )
+  })
 }
 
 export type DownloadPayload = {
@@ -762,7 +1002,9 @@ export async function getGeneralLinksForResearcher({
   baseRunUrl: string
   links: { participantId: number; pseudonym: string; runUrl: string }[]
 }> {
-  return withResearcherToken({ studyId, userId }, async ({ token }) => {
+  return withResearcherAccess({ studyId, userId }, async ({ userId }) => {
+    await assertJatosStudyBelongsToStudy({ studyId, jatosStudyId })
+    const token = await getTokenForResearcher(userId)
     const codes = await fetchStudyCodes({ studyId: jatosStudyId, type, amount: 1 }, { token })
     if (codes.length === 0) throw new Error("No general study code found")
 
@@ -792,7 +1034,9 @@ export async function getEnrichedResultsForResearcher({
   userId: number
   jatosStudyId: number
 }): Promise<EnrichedJatosStudyResult[]> {
-  return withResearcherToken({ studyId, userId }, async ({ token }) => {
+  return withResearcherAccess({ studyId, userId }, async ({ userId }) => {
+    await assertJatosStudyBelongsToStudy({ studyId, jatosStudyId })
+    const token = await getTokenForResearcher(userId)
     const metadata = await getResultsMetadata({ studyIds: [jatosStudyId] }, { token })
     return fetchZipParseAndEnrich({
       metadata,
@@ -811,7 +1055,9 @@ export async function getHtmlFilesForResearcher({
   userId: number
   jatosStudyId: number
 }): Promise<{ label: string; value: string }[]> {
-  return withResearcherToken({ studyId, userId }, async ({ token }) => {
+  return withResearcherAccess({ studyId, userId }, async ({ userId }) => {
+    await assertJatosStudyBelongsToStudy({ studyId, jatosStudyId })
+    const token = await getTokenForResearcher(userId)
     const response = await getAssetStructure(jatosStudyId, { token })
     const root = (response as { data?: AssetNode })?.data ?? response
     return extractHtmlFilesFromStructure(root as AssetNode)
@@ -860,12 +1106,13 @@ export async function getAllPilotResultsForResearcher({
   userId: number
   context?: PilotResultsContext
 }): Promise<EnrichedJatosStudyResult[]> {
-  return withResearcherToken({ studyId, userId }, async ({ studyId, token }) => {
+  return withResearcherAccess({ studyId, userId }, async ({ studyId, userId }) => {
     let jatosStudyId: number
     let markerTokens: Set<string>
 
     if (context) {
       jatosStudyId = context.jatosStudyId
+      await assertJatosStudyBelongsToStudy({ studyId, jatosStudyId })
       markerTokens = new Set(context.markerTokens)
     } else {
       const study = await db.study.findUnique({
@@ -892,6 +1139,7 @@ export async function getAllPilotResultsForResearcher({
 
     if (markerTokens.size === 0) return []
 
+    const token = await getTokenForResearcher(userId)
     const metadata = await getResultsMetadata({ studyIds: [jatosStudyId] }, { token })
     const pilotResults =
       metadata.data?.[0]?.studyResults?.filter((result: JatosStudyResult) => {
@@ -928,14 +1176,17 @@ export async function getPilotResultByIdForResearcher({
   testResultId: number
   jatosStudyIdContext?: number
 }): Promise<EnrichedJatosStudyResult> {
-  return withResearcherToken({ studyId, userId }, async ({ studyId, token }) => {
+  return withResearcherAccess({ studyId, userId }, async ({ studyId, userId }) => {
     let jatosStudyId = jatosStudyIdContext
     if (!jatosStudyId) {
       const info = await getStudyJatosInfo(studyId)
       if (!info) throw new Error("Study does not have JATOS ID")
       jatosStudyId = info.jatosStudyId
+    } else {
+      await assertJatosStudyBelongsToStudy({ studyId, jatosStudyId })
     }
 
+    const token = await getTokenForResearcher(userId)
     const metadata = await getResultsMetadata({ studyIds: [jatosStudyId] }, { token })
     const testResult = metadata.data?.[0]?.studyResults?.find(
       (r: JatosStudyResult) => r.id === testResultId && isPilotComment(r.comment)
@@ -965,7 +1216,10 @@ export async function checkPilotStatusForResearcher({
   jatosStudyUUID: string
   jatosStudyUploadId: number
 }): Promise<{ success: boolean; completed: boolean | null; error?: string }> {
-  return withResearcherToken({ studyId, userId }, async ({ token }) => {
+  return withResearcherAccess({ studyId, userId }, async ({ userId }) => {
+    await assertJatosStudyUuidBelongsToStudy({ studyId, jatosStudyUUID })
+    await assertJatosUploadBelongsToStudy({ studyId, jatosStudyUploadId })
+    const token = await getTokenForResearcher(userId)
     const pilotLinks = await db.pilotLink.findMany({
       where: { jatosStudyUploadId },
       select: { markerToken: true },

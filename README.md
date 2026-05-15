@@ -12,6 +12,22 @@
 
 This work is supported by a grant from the National Science Foundation [2438627](https://www.nsf.gov/awardsearch/show-award?AWD_ID=2438627).
 
+## Testing
+
+Vitest uses the dedicated root [.env.test](./.env.test) instead of inheriting your normal dev `.env`.
+For database-backed tests, start the isolated test Postgres first:
+
+```bash
+npm run test:db:up
+npm run test
+```
+
+Stop it when you are done:
+
+```bash
+npm run test:db:down
+```
+
 ### 📖 Documentation: 
 
 👉 [Full installation and usage guide](https://many-languages.com/documentation)

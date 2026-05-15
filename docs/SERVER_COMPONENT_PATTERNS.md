@@ -41,38 +41,40 @@ This document outlines the patterns for using Server Components vs Client Compon
 
 ## Server-Side Data Fetching Pattern
 
-### Standard Query Pattern
+### Standard Feature Read Pattern
 
-All queries should follow this three-part structure:
+Feature reads that are needed from both Server Components and client-side
+Blitz hooks should follow this split:
 
 ```typescript
 // 1. Core database function (reusable, no auth/session logic)
-export async function findDataById(id: number) {
+async function findDataById(id: number) {
   const data = await db.model.findUnique({ where: { id } })
   if (!data) throw new NotFoundError()
   return data
 }
 
-// 2. Server-side helper for RSCs (uses cache() and getBlitzContext)
+// 2. Server-side helper under features/<feature>/server/
 export const getDataRsc = cache(async (id: number) => {
   const { session } = await getBlitzContext()
   if (!session.userId) throw new Error("Not authenticated")
   return findDataById(id)
 })
 
-// 3. Blitz RPC for client usage (reactive updates, real-time data)
+// 3. Thin Blitz RPC wrapper under features/<feature>/queries/
 export default resolver.pipe(resolver.zod(DataSchema), resolver.authorize(), async ({ id }) =>
-  findDataById(id)
+  getDataRsc(id)
 )
 ```
 
 ### Key Principles
 
-1. **Single Source Function**: The core `find*` function is reused by both RSC and RPC
-2. **Authentication**: RSC helpers use `getBlitzContext()` to check auth
+1. **Server Helper As Source of Truth**: Routes, server actions, and Blitz wrappers call the authorized helper under `server/` or `services/`
+2. **Authentication**: RSC helpers use `getBlitzContext()` or shared guards to check auth
 3. **Caching**: RSC helpers use React's `cache()` for automatic request deduplication
 4. **Type Safety**: Export return types for type inference
 5. **Error Handling**: Use `NotFoundError` for 404 cases, regular errors for others
+6. **RPC Separation**: Do not export named RSC helpers from `queries/` or `mutations/`; the Blitz loader preserves only default exports in client bundles
 
 ---
 
@@ -94,7 +96,7 @@ export default function EditStudy() {
 ### After (Server Component)
 
 ```tsx
-import { getStudyRsc } from "../queries/getStudy"
+import { getStudyRsc } from "@/src/features/studies"
 
 export default async function EditStudy({ params }: { params: Promise<{ studyId: string }> }) {
   const { studyId } = await params
@@ -110,9 +112,9 @@ export default async function EditStudy({ params }: { params: Promise<{ studyId:
 
 When creating a new query, ensure it has:
 
-- [ ] Core `find*` function (no session/auth logic)
-- [ ] `get*Rsc` helper using `cache()` and `getBlitzContext()`
-- [ ] BlitzJS RPC resolver for client-side usage
+- [ ] Server helper under `server/` or `services/` with application-level authorization
+- [ ] `get*Rsc` helper using `cache()` where request deduplication is useful
+- [ ] Thin BlitzJS RPC resolver only if client-side `useQuery` is needed
 - [ ] Exported return type (e.g., `export type DataWithRelations = ...`)
 - [ ] Zod validation schema
 
@@ -136,6 +138,8 @@ if (study.jatosStudyId) {
 ```
 
 ### Error Handling
+
+Full policy (RSC, `error.tsx`, server actions, JATOS): [Error handling](./ERROR_HANDLING.md).
 
 ```tsx
 try {
@@ -166,7 +170,7 @@ When converting a page from client to server component:
 
 1. Remove `"use client"` directive
 2. Change `useParams()` to `params: Promise<{...}>` prop
-3. Replace `useQuery` with RSC helper function
+3. Replace initial-load `useQuery` with a feature server helper or barrel export
 4. Add `async` to component function
 5. Extract interactive parts to separate client component
 6. Pass data as props to client component
@@ -181,7 +185,7 @@ When converting a page from client to server component:
 2. **Minimize Client Components**: Only mark components as client when absolutely necessary
 3. **Prop Drilling is Fine**: Pass data through props rather than fetching in client components
 4. **Use Suspense**: Wrap async server components in Suspense for better UX
-5. **Cache Everything**: All RSC helpers should use `cache()` for performance
+5. **Cache Request-Scoped Loads**: Use `cache()` for expensive or repeated request-scoped reads; plain async server helpers are acceptable for writes and one-off orchestration
 
 ---
 
@@ -189,7 +193,7 @@ When converting a page from client to server component:
 
 - ✅ **Good**: `src/app/(app)/studies/[studyId]/page.tsx` - Server component fetching data
 - ✅ **Good**: `src/app/(app)/studies/[studyId]/edit/page.tsx` - Server component, client form
-- ✅ **Good**: `src/app/(app)/studies/queries/getStudy.ts` - Follows three-part pattern
+- ✅ **Good**: `src/features/studies/server/getStudy.ts` - Server helper used by routes and the thin RPC wrapper
 - ❌ **Avoid**: Client components using `useQuery` for initial data load
 
 ---

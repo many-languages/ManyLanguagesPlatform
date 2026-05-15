@@ -11,6 +11,6 @@ export {
   type CodebookMergedVariablesPayload,
 } from "./server/getCodebookData"
 
-export { computeCodebookValidation } from "./domain/computeCodebookValidation"
+export { computeCodebookValidation } from "./server/computeCodebookValidation"
 
 // Blitz RPC modules (default exports) are imported from file paths for useMutation / RPC.

@@ -79,6 +79,35 @@ export const studyWithRelationsArgs = Prisma.validator<Prisma.StudyDefaultArgs>(
   },
 })
 
+export const participantStudyOverviewArgs = Prisma.validator<Prisma.StudyDefaultArgs>()({
+  select: {
+    id: true,
+    title: true,
+    description: true,
+    status: true,
+    startDate: true,
+    endDate: true,
+    sampleSize: true,
+    payment: true,
+    length: true,
+    archived: true,
+    jatosStudyUploads: {
+      orderBy: { createdAt: "desc" },
+      take: 1,
+      select: {
+        jatosStudyId: true,
+        jatosWorkerType: true,
+        step1Completed: true,
+        step2Completed: true,
+        step3Completed: true,
+        step4Completed: true,
+        step5Completed: true,
+        step6Completed: true,
+      },
+    },
+  },
+})
+
 export const studyWithLatestUploadSelect = Prisma.validator<Prisma.StudySelect>()({
   ...studyScalarSelect,
   jatosStudyUploads: {
@@ -89,19 +118,48 @@ export const studyWithLatestUploadSelect = Prisma.validator<Prisma.StudySelect>(
 })
 
 export const adminStudyWithLatestUploadArgs = Prisma.validator<Prisma.StudyDefaultArgs>()({
-  include: {
-    FeedbackTemplate: true,
+  select: {
+    id: true,
+    createdAt: true,
+    title: true,
+    description: true,
+    status: true,
+    jatosStudyUUID: true,
+    adminApproved: true,
+    archived: true,
+    FeedbackTemplate: {
+      select: {
+        id: true,
+        content: true,
+      },
+    },
     codebook: {
-      include: {
+      select: {
         entries: {
           orderBy: { variableName: "asc" },
+          select: {
+            variableKey: true,
+            variableName: true,
+            description: true,
+            personalData: true,
+          },
         },
       },
     },
     jatosStudyUploads: {
       orderBy: { createdAt: "desc" },
       take: 1,
-      select: latestJatosStudyUploadSelect,
+      select: {
+        id: true,
+        step1Completed: true,
+        step2Completed: true,
+        step3Completed: true,
+        step4Completed: true,
+        step5Completed: true,
+        step6Completed: true,
+        jatosWorkerType: true,
+        jatosFileName: true,
+      },
     },
   },
 })

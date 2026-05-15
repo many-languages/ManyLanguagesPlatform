@@ -1,10 +1,8 @@
 "use server"
 
-import { AuthorizationError } from "blitz"
 import db from "db"
-import { getAuthorizedSession } from "@/src/lib/auth/session"
-import { isSuperAdmin } from "@/src/lib/auth/roles"
 import { inviteSelect } from "../inviteSelect"
+import { requireSuperAdminSession } from "./authorization"
 
 const DEFAULT_STALE_ADMIN_INVITE_MIN_AGE_MS = 3 * 24 * 60 * 60 * 1000
 
@@ -28,10 +26,7 @@ async function findStalePendingAdminInvites(minAgeMs: number) {
 export async function getStalePendingAdminInvitesRsc(
   minAgeMs = DEFAULT_STALE_ADMIN_INVITE_MIN_AGE_MS
 ) {
-  const session = await getAuthorizedSession()
-  if (!isSuperAdmin(session.role)) {
-    throw new AuthorizationError()
-  }
+  await requireSuperAdminSession()
 
   return findStalePendingAdminInvites(minAgeMs)
 }

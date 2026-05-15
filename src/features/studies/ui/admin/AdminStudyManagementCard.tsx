@@ -6,7 +6,6 @@ import Form from "@/src/components/ui/Form"
 import CheckboxFieldTable from "@/src/components/ui/CheckboxFieldTable"
 import { FormErrorDisplay } from "@/src/components/ui/FormErrorDisplay"
 import { AdminStudySchema } from "../../validations"
-import { Codebook, CodebookEntry, FeedbackTemplate } from "db"
 import Modal from "@/src/components/ui/Modal"
 import ViewDetailsButton from "@/src/components/ui/ViewDetailsButton"
 import StatusBadge, { type StatusBadgeVariant } from "@/src/components/ui/StatusBadge"
@@ -16,7 +15,7 @@ import {
   getDataCollectionProps,
 } from "@/src/lib/utils/statusBadgePresets"
 import MDEditor from "@uiw/react-md-editor"
-import type { AdminStudyWithLatestUpload } from "../../types"
+import type { AdminStudyCodebookEntryDto, AdminStudyListItemDto } from "../../types"
 import type { UserRole } from "@/db"
 import { getSetupStatusLabel, type StudyWithMinimalRelations } from "../../domain/setup/setupStatus"
 import StudyActions from "./StudyActions"
@@ -49,21 +48,26 @@ function JatosStudyUuidCell({ uuid }: { uuid: string }) {
   )
 }
 
-type CodebookWithEntries = Codebook & { entries: CodebookEntry[] }
-
-type StudyWithFeedbackTemplate = AdminStudyWithLatestUpload & {
-  FeedbackTemplate: FeedbackTemplate | null
-  codebook: CodebookWithEntries | null
-  /** From admin studies query; null if JATOS metadata could not be loaded */
-  hasParticipantResponses?: boolean | null
+function toSetupStatusStudy(study: AdminStudyListItemDto): StudyWithMinimalRelations {
+  return {
+    id: study.id,
+    archived: study.archived,
+    title: study.title,
+    description: study.description,
+    FeedbackTemplate: study.feedbackTemplate ? { id: study.feedbackTemplate.id } : null,
+    latestJatosStudyUpload: study.latestJatosStudyUpload
+      ? {
+          ...study.latestJatosStudyUpload,
+          jatosFileName: study.latestJatosStudyUpload.jatosFileName ?? undefined,
+        }
+      : null,
+  }
 }
 
-function CodebookButton({ codebook }: { codebook: CodebookWithEntries | null }) {
+function CodebookButton({ entries }: { entries: AdminStudyCodebookEntryDto[] }) {
   return (
-    <ViewDetailsButton hasData={!!codebook?.entries?.length} buttonLabel="View Codebook">
-      {({ open, onClose }) => (
-        <CodebookModal open={open} onClose={onClose} entries={codebook!.entries} />
-      )}
+    <ViewDetailsButton hasData={entries.length > 0} buttonLabel="View Codebook">
+      {({ open, onClose }) => <CodebookModal open={open} onClose={onClose} entries={entries} />}
     </ViewDetailsButton>
   )
 }
@@ -158,7 +162,7 @@ export default function AdminStudyManagementCard({
   studies,
   viewerRole,
 }: {
-  studies: StudyWithFeedbackTemplate[]
+  studies: AdminStudyListItemDto[]
   viewerRole: UserRole
 }) {
   const rows = useMemo(() => {
@@ -178,14 +182,14 @@ export default function AdminStudyManagementCard({
         label: study.title?.trim() || "NA",
         jatosStudyUUID: study.jatosStudyUUID ?? "NA",
         createdAt: created?.toLocaleString() ?? "NA",
-        setupStatus: getSetupStatusLabel(study as StudyWithMinimalRelations),
+        setupStatus: getSetupStatusLabel(toSetupStatusStudy(study)),
         adminApproval: approvalLabel,
         dataCollectionStatus: study.status,
         archived: study.archived,
         archivedLabel: study.archived ? "Yes" : "No",
         participantResponsesLabel,
-        codebook: study.codebook ?? null,
-        feedbackTemplate: study.FeedbackTemplate ?? null,
+        codebookEntries: study.codebook?.entries ?? [],
+        feedbackTemplate: study.feedbackTemplate,
       }
     })
   }, [studies])
@@ -253,7 +257,7 @@ export default function AdminStudyManagementCard({
       {
         id: "codebook",
         header: "Codebook",
-        cell: ({ row }: any) => <CodebookButton codebook={row.original.codebook} />,
+        cell: ({ row }: any) => <CodebookButton entries={row.original.codebookEntries} />,
       },
       {
         id: "feedbackTemplate",

@@ -1,6 +1,6 @@
 import { Alert } from "@/src/components/ui/Alert"
 import { isSetupComplete } from "../../domain/setup/setupStatus"
-import type { StudyWithRelations } from "../../types"
+import type { ParticipantStudyOverview } from "../../types"
 import { ParticipantFeedbackData, checkParticipantCompletionAction } from "@/src/features/feedback"
 import { CheckCircleIcon } from "@heroicons/react/24/solid"
 import StudyInformationCard from "../shared/StudyInformationCard"
@@ -9,7 +9,7 @@ import { getStudyParticipantRsc } from "../../server/getStudyParticipant"
 
 interface ParticipantDataProps {
   studyId: number
-  study: StudyWithRelations
+  study: ParticipantStudyOverview
 }
 
 export default async function ParticipantData({ studyId, study }: ParticipantDataProps) {
@@ -92,12 +92,16 @@ export default async function ParticipantData({ studyId, study }: ParticipantDat
     )
   } catch (error: unknown) {
     console.error("Error fetching participant data:", error)
+
+    const err = error instanceof Error ? error : null
+    const showDevDetail = process.env.NODE_ENV === "development" && Boolean(err?.message.trim())
+
     return (
       <Alert variant="error" className="mt-4">
         <p>Failed to load participant information. Please try again later.</p>
-        {error instanceof Error && error.message && (
-          <p className="text-sm mt-2 opacity-75">{error.message}</p>
-        )}
+        {showDevDetail && err ? (
+          <p className="mt-2 break-all font-mono text-sm opacity-75">{err.message}</p>
+        ) : null}
       </Alert>
     )
   }

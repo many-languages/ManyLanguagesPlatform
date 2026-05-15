@@ -11,6 +11,7 @@
 import { NextResponse } from "next/server"
 import { getBlitzContext } from "@/src/app/blitz-server"
 import { importJatosStudyForResearcher } from "@/src/lib/jatos/provisioning/importJatosStudy"
+import { isJatosApiError, mapJatosErrorToUserMessage } from "@/src/lib/jatos/errors"
 import type { JatosApiError } from "@/src/types/jatos-api"
 
 export const runtime = "nodejs"
@@ -96,7 +97,11 @@ export async function POST(
       }
     }
     console.error("Error importing JATOS study:", error)
-    const message = error instanceof Error ? error.message : "Failed to import study"
-    return NextResponse.json({ error: message } as JatosApiError, { status: 500 })
+
+    const safeError = mapJatosErrorToUserMessage(error)
+    const status =
+      isJatosApiError(error) && error.status >= 400 && error.status <= 599 ? error.status : 500
+
+    return NextResponse.json({ error: safeError } as JatosApiError, { status })
   }
 }

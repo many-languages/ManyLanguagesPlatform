@@ -9,11 +9,22 @@ import {
   UsersIcon,
 } from "@heroicons/react/24/outline"
 import { CheckCircleIcon } from "@heroicons/react/24/solid"
-import type { StudyWithRelations } from "../../types"
 import { ReactNode } from "react"
 
+type StudyInformation = {
+  description?: string | null
+  sampleSize?: number | null
+  length?: string | null
+  payment?: string | null
+  startDate?: Date | null
+  endDate?: Date | null
+  latestJatosStudyUpload?: {
+    jatosWorkerType?: string | null
+  } | null
+}
+
 interface StudyInformationCardProps {
-  study: StudyWithRelations
+  study: StudyInformation
   userRole: "RESEARCHER" | "PARTICIPANT"
   isPayed?: boolean
   actions?: ReactNode

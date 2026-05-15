@@ -10,7 +10,12 @@ import {
 export type { FeedbackTemplateRscRow }
 
 export type GetFeedbackTemplateForParticipantResult =
-  | { kind: "ok"; template: FeedbackTemplateRscRow | null; userId: number }
+  | {
+      kind: "ok"
+      template: FeedbackTemplateRscRow | null
+      userId: number
+      participantStudyId: number
+    }
   | { kind: "not_authenticated" }
   | { kind: "not_enrolled" }
 
@@ -50,7 +55,7 @@ export const getFeedbackTemplateForParticipantRsc = cache(
     }
 
     const template = await findFeedbackTemplateForStudy(studyId)
-    return { kind: "ok", template, userId }
+    return { kind: "ok", template, userId, participantStudyId: participant.id }
   }
 )
 

@@ -5,4 +5,4 @@
 export {
   extractVariableBundleForRenderFromResults,
   extractVariableBundleForRender,
-} from "@/src/features/studies"
+} from "@/src/features/studies/domain/variables/utils/extractVariable"

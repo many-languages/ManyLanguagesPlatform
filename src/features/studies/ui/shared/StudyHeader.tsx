@@ -1,8 +1,10 @@
 import { ArchiveBoxIcon } from "@heroicons/react/24/outline"
-import type { StudyWithRelations } from "../../types"
 
 interface StudyHeaderProps {
-  study: StudyWithRelations
+  study: {
+    title?: string | null
+    archived?: boolean | null
+  }
 }
 
 export default function StudyHeader({ study }: StudyHeaderProps) {

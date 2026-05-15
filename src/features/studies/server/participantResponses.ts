@@ -1,8 +1,4 @@
-import db from "db"
-import { getResultsMetadata } from "@/src/lib/jatos/client/getResultsMetadata"
-import { JatosTransportError } from "@/src/lib/jatos/errors"
-import { getTokenForStudyService } from "@/src/lib/jatos/tokenBroker"
-import { hasParticipantResponses } from "@/src/lib/jatos/utils/studyHasParticipantResponses"
+import { checkStudyParticipantResponsePresence } from "@/src/lib/jatos/jatosAccessService"
 
 /**
  * Whether the study has any non-pilot FINISHED JATOS results.
@@ -12,35 +8,7 @@ import { hasParticipantResponses } from "@/src/lib/jatos/utils/studyHasParticipa
  * @throws Error with a user-facing message if JATOS metadata cannot be fetched (fail closed).
  */
 export async function studyHasParticipantResponses(studyId: number): Promise<boolean> {
-  const upload = await db.jatosStudyUpload.findFirst({
-    where: { studyId },
-    orderBy: { versionNumber: "desc" },
-    select: { jatosStudyId: true },
-  })
-  const study = await db.study.findUnique({
-    where: { id: studyId },
-    select: { jatosStudyUUID: true },
-  })
-  if (!upload || !study?.jatosStudyUUID?.trim()) {
-    return false
-  }
-
-  try {
-    const token = await getTokenForStudyService(upload.jatosStudyId)
-    const metadata = await getResultsMetadata({ studyIds: [upload.jatosStudyId] }, { token })
-    const jatosUuid = study.jatosStudyUUID.trim()
-    const entry =
-      metadata.data?.find((d) => d.studyUuid === jatosUuid) ?? metadata.data?.[0] ?? null
-    return hasParticipantResponses(entry?.studyResults ?? [])
-  } catch (e: unknown) {
-    const detail =
-      e instanceof JatosTransportError
-        ? e.message
-        : e instanceof Error
-        ? e.message
-        : "Unknown error"
-    throw new Error(`Could not verify participant responses. JATOS may be unavailable: ${detail}`)
-  }
+  return checkStudyParticipantResponsePresence({ studyId })
 }
 
 /**

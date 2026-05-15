@@ -6,7 +6,6 @@ import Link from "next/link"
 import Card from "@/src/components/ui/Card"
 import Table from "@/src/components/ui/Table"
 import { Alert } from "@/src/components/ui/Alert"
-import { getComponentMap } from "@/src/lib/jatos/utils/getComponentMap"
 import { AsyncButton } from "@/src/components/ui/AsyncButton"
 import { EmptyState } from "@/src/components/ui/EmptyState"
 import { LoadingMessage } from "@/src/components/ui/LoadingStates"
@@ -15,40 +14,28 @@ import FilterComponent from "./FilterComponent"
 import DownloadResultsButton from "./DownloadResultsButton"
 import DownloadCleanedResultsButton from "./DownloadCleanedResultsButton"
 
-import type {
-  JatosMetadata,
-  JatosStudyProperties,
-  EnrichedJatosStudyResult,
-} from "@/src/types/jatos"
+import type { ResultsCardProps } from "../../types"
 import { refetchEnrichedResultsAction } from "@/src/features/studies/actions/results"
 
-interface ResultsCardProps {
-  jatosStudyId: number
-  metadata: JatosMetadata
-  properties: JatosStudyProperties
-  initialEnrichedResults: EnrichedJatosStudyResult[]
-  studyId: number
-  /** True when the latest upload has an approved extraction (step 4). */
-  hasApprovedExtraction: boolean
-}
+export type { ResultsCardProps } from "../../types"
 
 export default function ResultsCard({
   jatosStudyId,
-  metadata,
-  properties,
-  initialEnrichedResults,
+  resultComponents,
+  rawResultInspectorPayload,
   studyId,
   hasApprovedExtraction,
+  hasResults,
 }: ResultsCardProps) {
   const router = useRouter()
-  const [enrichedResults, setEnrichedResults] = useState(initialEnrichedResults)
+  const [enrichedResults, setEnrichedResults] = useState(rawResultInspectorPayload.enrichedResults)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [selectedComponentUuids, setSelectedComponentUuids] = useState<string[]>(
-    properties.components?.map((c) => c.uuid) ?? []
+    resultComponents.map((component) => component.uuid)
   )
 
-  const cleanedDownloadEnabled = hasApprovedExtraction && enrichedResults.length > 0
+  const cleanedDownloadEnabled = hasApprovedExtraction && hasResults
 
   // ✅ Define DaisyUI colors
   const colorClasses = [
@@ -63,13 +50,12 @@ export default function ResultsCard({
 
   // ✅ Build a single unified component map with colors
   const componentsWithColors = useMemo(() => {
-    const baseMap = getComponentMap(properties)
-    return baseMap.map((c, i) => ({
+    return resultComponents.map((c, i) => ({
       uuid: c.uuid,
       title: c.title,
       colorClass: colorClasses[i % colorClasses.length],
     }))
-  }, [properties])
+  }, [resultComponents])
 
   const componentColorMap = useMemo(() => {
     return componentsWithColors.reduce(
@@ -82,7 +68,7 @@ export default function ResultsCard({
     setLoading(true)
     setError(null)
 
-    const result = await refetchEnrichedResultsAction(jatosStudyId, metadata, studyId)
+    const result = await refetchEnrichedResultsAction({ jatosStudyId, studyId })
 
     if (!result.success) {
       setError(result.error)
@@ -90,7 +76,7 @@ export default function ResultsCard({
       return
     }
 
-    setEnrichedResults(result.data)
+    setEnrichedResults(result.data.enrichedResults)
     setLoading(false)
 
     // Refresh router to update server component cache
@@ -191,7 +177,7 @@ export default function ResultsCard({
             className="btn btn-secondary w-fit"
             disabled={loading}
           >
-            Fetch Raw Results
+            Inspect Raw Results
           </AsyncButton>
           {/* Download all data */}
           <DownloadResultsButton studyId={studyId} />
@@ -218,7 +204,15 @@ export default function ResultsCard({
             <p>{error}</p>
           </Alert>
         )}
-        {!loading && !error && !enrichedResults.length && <EmptyState message="No results found" />}
+        {!loading && !error && !enrichedResults.length && (
+          <EmptyState
+            message={
+              hasResults
+                ? "No raw results could be loaded. Try fetching results again."
+                : "No results found"
+            }
+          />
+        )}
         {/* Show results in the table */}
         {!loading && !error && tableData.length > 0 && (
           <div className="flex-1 min-h-0 overflow-auto max-w-full">

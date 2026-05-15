@@ -2,6 +2,26 @@
 
 This directory contains utility scripts for the ManyLanguagesPlatform deployment.
 
+## test-db.sh
+
+Starts a dedicated PostgreSQL container for tests using values from `.env.test`.
+This keeps Vitest and Prisma reset flows separate from a developer's normal app DB.
+
+### Usage
+
+```bash
+npm run test:db:up
+npm run test:db:ps
+npm run test:db:logs
+npm run test:db:down
+```
+
+### Notes
+
+- Uses Docker Compose project name `mlp-test-db`
+- Reuses `deploy/compose/services/postgres.yml`
+- Reads connection settings from the tracked root `.env.test`
+
 ## validate-jatos-token.js
 
 Validates the JATOS API token by calling the JATOS API endpoint `/jatos/api/v1/admin/token`.
@@ -47,4 +67,3 @@ make validate-token
    6. Add token to .env file: JATOS_TOKEN=your-token-here
    7. Restart if needed: make down && make dev-jatos-only
 ```
-

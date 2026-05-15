@@ -1,8 +1,8 @@
 #!/usr/bin/env npx tsx
 /**
- * Validates JATOS architecture rules for app code.
+ * Validates JATOS architecture rules for app and feature code.
  *
- * Rules (app code = src/app/**):
+ * Rules (app/feature code = src/app/** and src/features/**):
  * 1. Must NOT import from src/lib/jatos/client/* (exception: browser/uploadStudyFile is allowed)
  * 2. Must NOT import getAdminToken from getAdminToken
  * 3. Must NOT import getTokenForResearcher, getTokenForStudyService, getServiceAccountToken from tokenBroker
@@ -16,7 +16,7 @@
 import { readdirSync, readFileSync } from "fs"
 import { join } from "path"
 
-const APP_DIR = join(process.cwd(), "src", "app")
+const SCAN_DIRS = [join(process.cwd(), "src", "app"), join(process.cwd(), "src", "features")]
 const FORBIDDEN_TOKEN_NAMES = [
   "getAdminToken",
   "getTokenForResearcher",
@@ -110,8 +110,10 @@ function checkFile(filePath: string): Violation[] {
 
 function main() {
   const violations: Violation[] = []
-  for (const filePath of walkTsFiles(APP_DIR)) {
-    violations.push(...checkFile(filePath))
+  for (const scanDir of SCAN_DIRS) {
+    for (const filePath of walkTsFiles(scanDir)) {
+      violations.push(...checkFile(filePath))
+    }
   }
 
   if (violations.length > 0) {

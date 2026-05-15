@@ -32,7 +32,6 @@ async function findParticipantIncompleteStudies(
     select: {
       id: true,
       pseudonym: true,
-      jatosRunUrl: true,
       study: {
         select: {
           id: true,
@@ -90,7 +89,6 @@ async function findParticipantIncompleteStudies(
       endDate,
       daysUntilDeadline,
       participationId: participation.id,
-      jatosRunUrl: participation.jatosRunUrl,
       completionStatus,
       isPastDeadline,
     })

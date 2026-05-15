@@ -31,14 +31,19 @@ export async function joinStudy(studyId: number) {
 export async function saveParticipantRunUrl(input: {
   participantStudyId: number
   jatosRunUrl: string
+  studyId?: number
 }) {
   const session = await getAuthorizedSession()
   const participant = await db.participantStudy.findUnique({
     where: { id: input.participantStudyId },
-    select: { userId: true },
+    select: { userId: true, studyId: true },
   })
 
-  if (!participant || participant.userId !== session.userId) {
+  if (
+    !participant ||
+    participant.userId !== session.userId ||
+    (input.studyId != null && participant.studyId !== input.studyId)
+  ) {
     throw new AuthenticationError("Unauthorized access to participant record")
   }
 

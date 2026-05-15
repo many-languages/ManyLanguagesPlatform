@@ -46,9 +46,11 @@ export const EditProfileForm = ({ profilePaths, initialValues }: EditProfileForm
             await updateProfileMutation(values)
             toast.success("Profile updated successfully")
             router.push(profilePaths.root as Route)
-          } catch (error: any) {
+          } catch (error: unknown) {
             const errorMessage =
-              error?.message || "Sorry, we had an unexpected error. Please try again."
+              error instanceof Error
+                ? error.message
+                : "Sorry, we had an unexpected error. Please try again."
             return {
               [FORM_ERROR]: errorMessage,
             }

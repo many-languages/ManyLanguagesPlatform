@@ -43,9 +43,9 @@ export function ResetPasswordForm() {
             try {
               await resetPasswordMutation({ ...values, token })
               toast.success("Password reset successfully!")
-            } catch (error: any) {
+            } catch (error: unknown) {
               const errorMessage =
-                error.name === "ResetPasswordError"
+                error instanceof Error && error.name === "ResetPasswordError"
                   ? error.message
                   : "Sorry, we had an unexpected error. Please try again."
               return {

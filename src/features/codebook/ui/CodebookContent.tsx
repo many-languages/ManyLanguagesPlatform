@@ -149,8 +149,9 @@ const CodebookContent = forwardRef<CodebookContentRef, CodebookContentProps>(
         setCodebookSaved(true)
         router.refresh()
         return true
-      } catch (error: any) {
-        toast.error(error.message || "Failed to save codebook")
+      } catch (error: unknown) {
+        console.error("[CodebookContent] Failed to save codebook:", error)
+        toast.error(error instanceof Error ? error.message : "Failed to save codebook")
         return false
       } finally {
         setIsSaving(false)

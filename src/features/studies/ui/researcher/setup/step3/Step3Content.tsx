@@ -1,10 +1,8 @@
 "use client"
 
-import { useMemo } from "react"
+import { useMemo, useState } from "react"
 import { useSession } from "@blitzjs/auth"
-import { useQuery } from "@blitzjs/rpc"
 
-import getResearcherRunUrl from "@/src/features/studies/queries/getResearcherRunUrl"
 import Step3Instructions from "./Step3Instructions"
 import Step3Actions from "./Step3Actions"
 import StepNavigation from "../StepNavigation"
@@ -14,9 +12,10 @@ import type { StudyWithRelations } from "../../../../types"
 
 interface Step3ContentProps {
   study: StudyWithRelations
+  initialRunUrl: string | null
 }
 
-export default function Step3Content({ study }: Step3ContentProps) {
+export default function Step3Content({ study, initialRunUrl }: Step3ContentProps) {
   const { userId } = useSession()
   const latestUpload = study.latestJatosStudyUpload
   const jatosStudyUploadId = latestUpload?.id ?? null
@@ -30,12 +29,7 @@ export default function Step3Content({ study }: Step3ContentProps) {
   )
   const researcherId = researcher?.id ?? null
 
-  const [researcherRunUrl, { refetch: refetchRunUrl }] = useQuery(
-    getResearcherRunUrl,
-    { studyId: study.id },
-    { enabled: Boolean(researcherId) }
-  )
-  const jatosRunUrl = researcherRunUrl?.jatosRunUrl ?? null
+  const [jatosRunUrl, setJatosRunUrl] = useState<string | null>(initialRunUrl)
 
   const { pilotCompleted, checkPilotStatus } = usePilotStatusCheck({
     studyId: study.id,
@@ -66,8 +60,8 @@ export default function Step3Content({ study }: Step3ContentProps) {
         jatosStudyId={jatosStudyId}
         jatosBatchId={jatosBatchId}
         jatosStudyUUID={study.jatosStudyUUID}
-        onPilotLinkGenerated={async (_runUrl) => {
-          await refetchRunUrl()
+        onPilotLinkGenerated={(runUrl) => {
+          setJatosRunUrl(runUrl)
         }}
         onCheckStatus={() => checkPilotStatus(true)}
       />

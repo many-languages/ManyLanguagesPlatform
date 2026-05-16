@@ -1,9 +1,9 @@
+import { SkeletonPageTitle } from "@/components/ui/SkeletonPageTitle"
+
 export default function DashboardSkeleton() {
   return (
     <main>
-      <div className="flex justify-center mb-2">
-        <div className="skeleton h-9 w-64" />
-      </div>
+      <SkeletonPageTitle width="w-64" />
     </main>
   )
 }

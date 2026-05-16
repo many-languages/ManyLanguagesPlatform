@@ -1,6 +1,7 @@
 "use client"
 
 import { useTransition } from "react"
+import { useRouter } from "next/navigation"
 import toast from "react-hot-toast"
 
 import { deleteNotifications } from "../actions"
@@ -13,6 +14,7 @@ interface DeleteNotificationButtonProps {
 export const DeleteNotificationButton = ({ ids }: DeleteNotificationButtonProps) => {
   const [isPending, startTransition] = useTransition()
   const { refetch } = useNotificationMenuContext()
+  const router = useRouter()
 
   const handleDelete = () => {
     if (ids.length === 0) return
@@ -30,6 +32,7 @@ export const DeleteNotificationButton = ({ ids }: DeleteNotificationButtonProps)
       try {
         const { deleted } = await deleteNotifications(ids)
         await refetch()
+        router.refresh()
         toast.success(`Deleted ${deleted} notification${deleted === 1 ? "" : "s"}.`)
       } catch (error) {
         console.error("Error deleting notifications:", error)

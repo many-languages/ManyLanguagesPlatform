@@ -1,6 +1,7 @@
 "use client"
 
 import { useTransition } from "react"
+import { useRouter } from "next/navigation"
 import { StarIcon as StarIconSolid } from "@heroicons/react/24/solid"
 import { StarIcon as StarIconOutline } from "@heroicons/react/24/outline"
 
@@ -15,6 +16,7 @@ type PinToggleProps = {
 export const PinToggle = ({ recipient }: PinToggleProps) => {
   const [isPending, startTransition] = useTransition()
   const { refetch } = useNotificationMenuContext()
+  const router = useRouter()
   const isPinned = recipient.pinned
 
   const handleToggle = () => {
@@ -24,6 +26,7 @@ export const PinToggle = ({ recipient }: PinToggleProps) => {
         pinned: !isPinned,
       })
       await refetch()
+      router.refresh()
     })
   }
 

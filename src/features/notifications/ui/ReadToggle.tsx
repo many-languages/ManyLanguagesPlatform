@@ -1,6 +1,7 @@
 "use client"
 
 import { useTransition } from "react"
+import { useRouter } from "next/navigation"
 import { EyeIcon, EyeSlashIcon } from "@heroicons/react/24/outline"
 
 import { markNotificationsRead, markNotificationsUnread } from "../actions"
@@ -14,6 +15,7 @@ type ReadToggleProps = {
 const ReadToggle = ({ recipient }: ReadToggleProps) => {
   const [isPending, startTransition] = useTransition()
   const { refetch } = useNotificationMenuContext()
+  const router = useRouter()
   const isRead = Boolean(recipient.readAt)
 
   const toggleReadStatus = () => {
@@ -21,6 +23,7 @@ const ReadToggle = ({ recipient }: ReadToggleProps) => {
       const action = isRead ? markNotificationsUnread : markNotificationsRead
       await action([recipient.notificationId])
       await refetch()
+      router.refresh()
     })
   }
 

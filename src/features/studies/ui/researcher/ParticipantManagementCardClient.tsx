@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useMemo, useState } from "react"
+import React, { useMemo, useState, useTransition } from "react"
 import { useRouter } from "next/navigation"
 import Card from "@/src/components/ui/Card"
 import CheckboxFieldTable from "@/src/components/ui/CheckboxFieldTable"
@@ -28,16 +28,19 @@ function ActionButton({
   className,
   participantRows,
   canEditStudySetup,
+  onRowsUpdate,
 }: {
   action: "TOGGLE_ACTIVE" | "TOGGLE_PAYED"
   label: string
   className: string
   participantRows: ResearcherParticipantStatusRow[]
   canEditStudySetup: boolean
+  onRowsUpdate: (rows: ResearcherParticipantStatusRow[]) => void
 }) {
   const { watch, setValue, formState, trigger } = useFormContext<ParticipantFormData>()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const router = useRouter()
+  const [, startTransition] = useTransition()
   const [toggleActiveMutation] = useMutation(toggleParticipantActive)
   const [togglePayedMutation] = useMutation(toggleParticipantPayed)
 
@@ -46,11 +49,8 @@ function ActionButton({
 
     const selectedIds = watch("selectedParticipantIds")
 
-    // Validate form before proceeding
     const isValid = await trigger("selectedParticipantIds")
-
     if (!isValid || selectedIds.length === 0) {
-      // Validation will show error via FormErrorDisplay
       return
     }
 
@@ -67,6 +67,11 @@ function ActionButton({
         })
 
         toast.success(areAllActive ? "Participants deactivated" : "Participants activated")
+        onRowsUpdate(
+          participantRows.map((r) =>
+            selectedIds.includes(r.id) ? { ...r, active: !areAllActive } : r
+          )
+        )
       } else {
         const areAllPayed = participantRows
           .filter((p) => selectedIds.includes(p.id))
@@ -78,11 +83,15 @@ function ActionButton({
         })
 
         toast.success(areAllPayed ? "Marked as unpaid" : "Marked as paid")
+        onRowsUpdate(
+          participantRows.map((r) =>
+            selectedIds.includes(r.id) ? { ...r, payed: !areAllPayed } : r
+          )
+        )
       }
 
-      // Clear selection after successful mutation
       setValue("selectedParticipantIds", [], { shouldValidate: false })
-      router.refresh()
+      startTransition(() => router.refresh())
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : "An unexpected error occurred"
       toast.error(message)
@@ -114,7 +123,7 @@ export default function ParticipantManagementCardClient({
   participantRows,
   canEditStudySetup = true,
 }: ParticipantManagementCardProps) {
-  const router = useRouter()
+  const [localRows, setLocalRows] = useState(participantRows)
 
   // Table column definitions
   const columns = useMemo(
@@ -192,9 +201,7 @@ export default function ParticipantManagementCardClient({
       defaultValues={{ selectedParticipantIds: [] }}
       onSubmit={async () => {
         // Form submission is handled by ActionButton components
-        // This is just for validation
       }}
-      onSuccess={() => router.refresh()}
     >
       <Card
         title="Participant Management"
@@ -206,23 +213,25 @@ export default function ParticipantManagementCardClient({
               action="TOGGLE_ACTIVE"
               label="Toggle Active"
               className="btn btn-secondary"
-              participantRows={participantRows}
+              participantRows={localRows}
               canEditStudySetup={canEditStudySetup}
+              onRowsUpdate={setLocalRows}
             />
             <ActionButton
               action="TOGGLE_PAYED"
               label="Toggle Payed"
               className="btn btn-accent"
-              participantRows={participantRows}
+              participantRows={localRows}
               canEditStudySetup={canEditStudySetup}
+              onRowsUpdate={setLocalRows}
             />
           </div>
         }
       >
         <CheckboxFieldTable
           name="selectedParticipantIds"
-          options={participantRows.map((p) => ({ id: p.id, label: p.label }))}
-          extraData={participantRows}
+          options={localRows.map((p) => ({ id: p.id, label: p.label }))}
+          extraData={localRows}
           extraColumns={columns}
           selectionDisabled={!canEditStudySetup}
         />

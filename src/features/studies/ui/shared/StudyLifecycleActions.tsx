@@ -1,5 +1,6 @@
 "use client"
 
+import { useState, useTransition } from "react"
 import { useRouter } from "next/navigation"
 import { useMutation } from "@blitzjs/rpc"
 import toast from "react-hot-toast"
@@ -31,6 +32,8 @@ export default function StudyLifecycleActions({
   const [archiveMutation] = useMutation(archiveStudy)
   const [deleteMutation] = useMutation(deleteResearcherStudy)
   const [unarchiveMutation] = useMutation(unarchiveStudy)
+  const [localIsArchived, setLocalIsArchived] = useState(isArchived)
+  const [, startTransition] = useTransition()
 
   if (!showLifecycleActions) {
     return null
@@ -45,15 +48,16 @@ export default function StudyLifecycleActions({
     )
   }
 
-  const refresh = () => router.refresh()
+  const refresh = () => startTransition(() => router.refresh())
 
-  if (isArchived) {
+  if (localIsArchived) {
     return (
       <div className="flex flex-wrap justify-end gap-2">
         <ConfirmButton
           onConfirm={async () => {
             await unarchiveMutation({ id: studyId })
             toast.success("Study unarchived")
+            setLocalIsArchived(false)
             refresh()
           }}
           confirmMessage="This study will be restored (made active). Continue?"
@@ -86,6 +90,7 @@ export default function StudyLifecycleActions({
         onConfirm={async () => {
           await archiveMutation({ id: studyId })
           toast.success("Study archived")
+          setLocalIsArchived(true)
           refresh()
         }}
         confirmMessage="This study will be archived (hidden from active lists, not permanently deleted). Continue?"

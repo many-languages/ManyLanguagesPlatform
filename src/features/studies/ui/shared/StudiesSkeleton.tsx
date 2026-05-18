@@ -1,6 +1,6 @@
 import StudyListSkeleton from "./StudyListSkeleton"
 import PaginationControlsSkeleton from "./PaginationControlsSkeleton"
-import { SkeletonPageTitle } from "@/components/ui/SkeletonPageTitle"
+import { SkeletonPageTitle } from "@/src/components/ui/SkeletonPageTitle"
 
 export default function StudiesSkeleton() {
   return (

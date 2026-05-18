@@ -2,6 +2,7 @@ import "./global.css"
 import { Inter } from "next/font/google"
 import { BlitzProvider } from "./blitz-client"
 import { ThemeProvider } from "next-themes"
+import NextTopLoader from "nextjs-toploader"
 
 const inter = Inter({ subsets: ["latin"] })
 
@@ -32,6 +33,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             `,
           }}
         />
+        <NextTopLoader color="var(--color-primary)" showSpinner={false} />
         <ThemeProvider attribute="data-theme" defaultTheme="light" enableSystem={false}>
           <BlitzProvider>
             <div className="min-h-screen flex flex-col">{children}</div>

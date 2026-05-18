@@ -109,7 +109,12 @@ export {
 export type { ParticipantStudyViewQueryParseResult } from "./domain/participantStudyView"
 
 /** RSC helpers for routes & cross-feature callers */
-export { getParticipantStudyOverviewRsc, getStudyPageRsc, getStudyRsc } from "./server/getStudy"
+export {
+  getParticipantStudyOverviewRsc,
+  getStudyPageRsc,
+  getStudyRsc,
+  getStudyViewerRsc,
+} from "./server/getStudy"
 export { getStudies } from "./server/getStudies"
 export { getParticipantStudiesWithStatus } from "./server/getParticipantStudiesWithStatus"
 export {

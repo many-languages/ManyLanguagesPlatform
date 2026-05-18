@@ -1,4 +1,5 @@
-import { AuthenticationError } from "blitz"
+import { AuthenticationError, AuthorizationError } from "blitz"
+import { UserRole } from "@/db"
 import db from "db"
 import { getAuthorizedSession } from "@/src/lib/auth/session"
 import { assertStudyNotArchived } from "./studyLifecycle"
@@ -10,6 +11,10 @@ export async function joinStudy(studyId: number) {
 
   if (!userId) {
     throw new Error("You must be logged in to join a study")
+  }
+
+  if (session.role !== UserRole.PARTICIPANT) {
+    throw new AuthorizationError("Only participants can join studies")
   }
 
   const existing = await db.participantStudy.findUnique({

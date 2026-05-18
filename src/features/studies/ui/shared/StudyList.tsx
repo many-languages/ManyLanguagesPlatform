@@ -16,6 +16,8 @@ interface StudyListProps {
   >[]
   showJoinButton?: boolean
   showOpenButton?: boolean
+  /** When false, replaces the join button with a "View Details" link. Defaults to true. */
+  isParticipant?: boolean
   /** Overrides the default empty-state heading. Use when the caller knows the active filter. */
   emptyMessage?: string
 }
@@ -24,6 +26,7 @@ export default function StudyList({
   studies,
   showJoinButton,
   showOpenButton,
+  isParticipant = true,
   emptyMessage,
 }: StudyListProps) {
   if (!studies || studies.length === 0) {
@@ -53,6 +56,7 @@ export default function StudyList({
           study={study}
           showJoinButton={showJoinButton}
           showOpenButton={showOpenButton}
+          isParticipant={isParticipant}
         />
       ))}
     </div>

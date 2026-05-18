@@ -3,6 +3,7 @@ import { notFound } from "next/navigation"
 import {
   Step4Content,
   SetupStepHeader,
+  SetupContentSkeleton,
   getValidationDataRsc,
   loadStudySetupPage,
   type StudyWithRelations,
@@ -39,7 +40,7 @@ export default async function Step4Page({ params }: { params: Promise<{ studyId:
   const { studyId, study } = await loadStudySetupPage(params)
 
   return (
-    <Suspense fallback={<div className="skeleton h-96 w-full" />}>
+    <Suspense fallback={<SetupContentSkeleton />}>
       <Step4ContentWrapper studyId={studyId} study={study} />
     </Suspense>
   )

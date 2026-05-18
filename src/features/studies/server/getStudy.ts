@@ -1,5 +1,6 @@
 import { AuthorizationError, NotFoundError } from "blitz"
 import { cache } from "react"
+import { UserRole } from "@/db"
 import db from "db"
 import { getAuthorizedSession } from "@/src/lib/auth/session"
 import { isStaffAdmin } from "@/src/lib/auth/roles"
@@ -90,6 +91,28 @@ export const getParticipantStudyOverviewRsc = cache(async (id: IdInput) => {
   return study
 })
 
+/**
+ * For non-member researchers browsing another team's open study.
+ * Access is intentionally limited to OPEN, non-archived studies — the same
+ * constraint the explore page uses — so viewers can never reach a draft study
+ * by typing a URL directly.
+ */
+export const getStudyViewerRsc = cache(async (id: IdInput) => {
+  const session = await getAuthorizedSession()
+
+  if (session.role === UserRole.PARTICIPANT) {
+    throw new AuthorizationError()
+  }
+
+  const study = await findParticipantStudyOverviewById(id)
+
+  if (study.archived || study.status !== "OPEN") {
+    throw new AuthorizationError()
+  }
+
+  return study
+})
+
 export const getStudyPageRsc = cache(async (id: IdInput) => {
   const session = await getAuthorizedSession()
   const userId = session.userId
@@ -102,6 +125,13 @@ export const getStudyPageRsc = cache(async (id: IdInput) => {
     return {
       kind: "researcher" as const,
       study: await findStudyWithRelationsById(id),
+    }
+  }
+
+  if (session.role !== UserRole.PARTICIPANT) {
+    return {
+      kind: "viewer" as const,
+      study: await getStudyViewerRsc(id),
     }
   }
 

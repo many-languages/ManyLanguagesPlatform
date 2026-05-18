@@ -10,6 +10,7 @@ import {
   SetupProgressCard,
   StudyHeader,
   StudyStatusControl,
+  StudyInformationCard,
 } from "@/src/features/studies"
 
 export default async function StudyPage({ params }: { params: Promise<{ studyId: string }> }) {
@@ -40,6 +41,15 @@ export default async function StudyPage({ params }: { params: Promise<{ studyId:
           <Suspense fallback={<ResearcherDataSkeleton />}>
             <ResearcherData studyId={studyId} study={study} canEditStudySetup={canEditSetup} />
           </Suspense>
+        </main>
+      )
+    }
+
+    if (pageData.kind === "viewer") {
+      return (
+        <main>
+          <StudyHeader study={pageData.study} />
+          <StudyInformationCard study={pageData.study} userRole="RESEARCHER" />
         </main>
       )
     }

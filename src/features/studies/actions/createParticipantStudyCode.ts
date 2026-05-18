@@ -1,5 +1,7 @@
 "use server"
 
+import { AuthorizationError } from "blitz"
+import { UserRole } from "@/db"
 import { getBlitzContext } from "@/src/app/blitz-server"
 import { createPersonalStudyCodeForParticipant } from "@/src/lib/jatos/jatosAccessService"
 import { saveParticipantRunUrl } from "@/src/features/studies/server/studyParticipationWrites"
@@ -23,6 +25,9 @@ export async function createParticipantStudyCodeAndSaveAction({
   const userId = session.userId
   if (userId == null) {
     throw new Error("Not authenticated")
+  }
+  if (session.role !== UserRole.PARTICIPANT) {
+    throw new AuthorizationError("Only participants can run studies")
   }
 
   return createPersonalStudyCodeForParticipant({

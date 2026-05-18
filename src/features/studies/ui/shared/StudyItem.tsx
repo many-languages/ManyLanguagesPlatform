@@ -18,12 +18,15 @@ interface StudyItemProps {
   >
   showJoinButton?: boolean
   showOpenButton?: boolean
+  /** When false, replaces the join button with a "View Details" navigation link. Defaults to true. */
+  isParticipant?: boolean
 }
 
 export default function StudyItem({
   study,
   showJoinButton,
   showOpenButton = true,
+  isParticipant = true,
 }: StudyItemProps) {
   const latestUpload = study.latestJatosStudyUpload
   const joinData =
@@ -37,7 +40,8 @@ export default function StudyItem({
           jatosWorkerType: latestUpload.jatosWorkerType,
         }
       : null
-  const canJoinStudy = Boolean(showJoinButton) && joinData !== null
+  const canJoinStudy = Boolean(showJoinButton) && joinData !== null && isParticipant
+  const canViewDetails = Boolean(showJoinButton) && !isParticipant
 
   return (
     <CollapseCard
@@ -67,6 +71,15 @@ export default function StudyItem({
               jatosBatchId={joinData!.jatosBatchId}
               jatosWorkerType={joinData!.jatosWorkerType}
             />
+          )}
+          {canViewDetails && (
+            <NavigationButton
+              href={`/studies/${study.id}`}
+              pendingText="Opening"
+              className="btn-outline"
+            >
+              View Details
+            </NavigationButton>
           )}
         </>
       }

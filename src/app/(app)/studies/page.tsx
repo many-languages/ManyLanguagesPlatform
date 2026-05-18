@@ -29,6 +29,13 @@ export const metadata = {
   title: "My Studies",
 }
 
+const RESEARCHER_EMPTY_MESSAGES: Record<StudyView, string> = {
+  all: "No studies yet.",
+  active: "No active studies.",
+  archived: "No archived studies.",
+  incomplete: "All your studies have complete setup.",
+}
+
 async function ResearcherStudiesContent({ page, view }: { page: number; view: StudyView }) {
   const {
     studies: paginatedStudies,
@@ -40,7 +47,11 @@ async function ResearcherStudiesContent({ page, view }: { page: number; view: St
   })
   return (
     <>
-      <StudyList studies={paginatedStudies} showJoinButton={false} />
+      <StudyList
+        studies={paginatedStudies}
+        showJoinButton={false}
+        emptyMessage={RESEARCHER_EMPTY_MESSAGES[view]}
+      />
       <PaginationControls page={page} hasMore={hasMore} extraQuery={extraQuery} />
     </>
   )

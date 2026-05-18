@@ -2,7 +2,7 @@ import Card from "@/src/components/ui/Card"
 
 export default function ProfileSkeleton() {
   return (
-    <>
+    <main>
       <div className="flex justify-center mb-2">
         <div className="skeleton h-9 w-48" />
       </div>
@@ -22,6 +22,6 @@ export default function ProfileSkeleton() {
           <div className="skeleton h-4 w-3/6" />
         </div>
       </Card>
-    </>
+    </main>
   )
 }

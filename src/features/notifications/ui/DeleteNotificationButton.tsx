@@ -1,6 +1,6 @@
 "use client"
 
-import { useTransition } from "react"
+import { useOptimistic, useTransition } from "react"
 import { useRouter } from "next/navigation"
 import toast from "react-hot-toast"
 
@@ -15,6 +15,7 @@ export const DeleteNotificationButton = ({ ids }: DeleteNotificationButtonProps)
   const [isPending, startTransition] = useTransition()
   const { refetch } = useNotificationMenuContext()
   const router = useRouter()
+  const [optimisticIds, setOptimisticIds] = useOptimistic(ids)
 
   const handleDelete = () => {
     if (ids.length === 0) return
@@ -29,6 +30,7 @@ export const DeleteNotificationButton = ({ ids }: DeleteNotificationButtonProps)
     if (!confirmed) return
 
     startTransition(async () => {
+      setOptimisticIds([])
       try {
         const { deleted } = await deleteNotifications(ids)
         await refetch()
@@ -46,9 +48,9 @@ export const DeleteNotificationButton = ({ ids }: DeleteNotificationButtonProps)
       type="button"
       className="btn btn-secondary"
       onClick={handleDelete}
-      disabled={ids.length === 0 || isPending}
+      disabled={optimisticIds.length === 0 || isPending}
     >
-      Delete{ids.length > 1 ? " Notifications" : " Notification"}
+      Delete{optimisticIds.length > 1 ? " Notifications" : " Notification"}
     </button>
   )
 }

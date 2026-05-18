@@ -45,9 +45,6 @@ export const latestJatosStudyUploadSelect = Prisma.validator<Prisma.JatosStudyUp
 export const latestJatosStudyUploadWithRelationsSelect =
   Prisma.validator<Prisma.JatosStudyUploadSelect>()({
     ...latestJatosStudyUploadSelect,
-    pilotLinks: {
-      select: { markerToken: true },
-    },
     approvedExtraction: {
       select: {
         id: true,

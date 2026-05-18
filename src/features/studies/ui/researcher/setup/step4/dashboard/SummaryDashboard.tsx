@@ -1,16 +1,8 @@
 import Card from "@/src/components/ui/Card"
+import type { ExtractionDashboardStats } from "@/src/features/studies/domain/inspector/aggregateExtractionStats"
 
 interface SummaryDashboardProps {
-  stats: {
-    runCount: number
-    variableCount: number
-    variableIssueCount: number
-    variableErrorCount: number
-    variableWarningCount: number
-    structuralIssueCount: number
-    structuralErrorCount: number
-    structuralWarningCount: number
-  }
+  stats: ExtractionDashboardStats
   onNavigate: (tab: "variables" | "diagnostics" | "inspector") => void
 }
 

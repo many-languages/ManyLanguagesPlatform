@@ -4,7 +4,9 @@ import {
   getStudyPageRsc,
   canEditStudySetup,
   ResearcherData,
+  ResearcherDataSkeleton,
   ParticipantData,
+  ParticipantDataSkeleton,
   SetupProgressCard,
   StudyHeader,
   StudyStatusControl,
@@ -35,7 +37,7 @@ export default async function StudyPage({ params }: { params: Promise<{ studyId:
 
           <SetupProgressCard study={study} canEditStudySetup={canEditSetup} />
 
-          <Suspense fallback={<div className="skeleton h-32 w-full mt-4" />}>
+          <Suspense fallback={<ResearcherDataSkeleton />}>
             <ResearcherData studyId={studyId} study={study} canEditStudySetup={canEditSetup} />
           </Suspense>
         </main>
@@ -46,7 +48,7 @@ export default async function StudyPage({ params }: { params: Promise<{ studyId:
       <main>
         <StudyHeader study={pageData.study} />
 
-        <Suspense fallback={<div className="skeleton h-16 w-full mt-4" />}>
+        <Suspense fallback={<ParticipantDataSkeleton />}>
           <ParticipantData studyId={studyId} study={pageData.study} />
         </Suspense>
       </main>

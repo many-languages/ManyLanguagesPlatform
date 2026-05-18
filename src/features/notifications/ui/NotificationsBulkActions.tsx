@@ -1,6 +1,7 @@
 "use client"
 
 import { useMemo, useTransition } from "react"
+import { useRouter } from "next/navigation"
 import { useFormContext } from "react-hook-form"
 import toast from "react-hot-toast"
 
@@ -25,6 +26,7 @@ export const NotificationsBulkActions = ({ notifications }: NotificationsBulkAct
   const selectedIds = watch("selectedIds")
   const [isPending, startTransition] = useTransition()
   const { refetch } = useNotificationMenuContext()
+  const router = useRouter()
 
   const selectedNotifications = useMemo(
     () => notifications.filter((recipient) => selectedIds.includes(recipient.notificationId)),
@@ -48,11 +50,11 @@ export const NotificationsBulkActions = ({ notifications }: NotificationsBulkAct
       try {
         await action(selectedIds)
         await refetch()
+        router.refresh()
         toast.success(`${count} notification${count === 1 ? "" : "s"} marked as ${verb}.`, {
           id: "notifications-bulk-action",
         })
-      } catch (error) {
-        console.error("Failed to update notifications:", error)
+      } catch {
         toast.error("Failed to update notifications.", { id: "notifications-bulk-action" })
       } finally {
         resetField("selectedIds")

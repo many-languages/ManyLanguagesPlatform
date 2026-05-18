@@ -1,5 +1,3 @@
-"use client"
-
 import NotificationsCard from "./cards/NotificationsCard"
 import ResearcherSummaryCard from "./cards/ResearcherSummaryCard"
 import ActiveStudiesCard from "./cards/ActiveStudiesCard"

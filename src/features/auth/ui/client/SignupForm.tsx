@@ -234,8 +234,11 @@ export const SignupForm = () => {
 
             router.refresh()
             router.push(getDefaultAuthenticatedPath(result.user.role) as Route)
-          } catch (error: any) {
-            const errorMessage = error?.message || "An unexpected error occurred. Please try again."
+          } catch (error: unknown) {
+            const errorMessage =
+              error instanceof Error
+                ? error.message
+                : "An unexpected error occurred. Please try again."
             return { [FORM_ERROR]: errorMessage }
           }
         }}

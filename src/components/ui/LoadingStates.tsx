@@ -1,5 +1,3 @@
-"use client"
-
 interface LoadingSpinnerProps {
   /**
    * Size of the spinner
@@ -10,11 +8,17 @@ interface LoadingSpinnerProps {
    * Additional CSS classes
    */
   className?: string
+  "aria-hidden"?: boolean | "true" | "false"
 }
 
-export function LoadingSpinner({ size = "lg", className }: LoadingSpinnerProps) {
+export function LoadingSpinner({ size = "lg", className, ...rest }: LoadingSpinnerProps) {
   return (
-    <span className={`loading loading-spinner loading-${size} text-secondary ${className || ""}`} />
+    <span
+      role="status"
+      aria-label="Loading"
+      className={`loading loading-spinner loading-${size} text-secondary ${className || ""}`}
+      {...rest}
+    />
   )
 }
 
@@ -36,9 +40,15 @@ interface LoadingOverlayProps {
 
 export function LoadingOverlay({ message, minHeight = "200px", className }: LoadingOverlayProps) {
   return (
-    <div className={`flex items-center justify-center ${className || ""}`} style={{ minHeight }}>
+    <div
+      role="status"
+      aria-live="polite"
+      className={`flex items-center justify-center ${className || ""}`}
+      style={{ minHeight }}
+    >
       <div className="text-center">
-        <LoadingSpinner />
+        <LoadingSpinner aria-hidden />
+        <span className="sr-only">Loading</span>
         {message && <p className="mt-4 text-sm">{message}</p>}
       </div>
     </div>
@@ -57,5 +67,9 @@ interface LoadingMessageProps {
 }
 
 export function LoadingMessage({ message, className }: LoadingMessageProps) {
-  return <div className={`text-center text-sm p-3 ${className || ""}`}>{message}</div>
+  return (
+    <div role="status" aria-live="polite" className={`text-center text-sm p-3 ${className || ""}`}>
+      {message}
+    </div>
+  )
 }

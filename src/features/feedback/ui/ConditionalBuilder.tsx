@@ -1,26 +1,23 @@
 "use client"
 
-import { useState, useEffect, useCallback, useMemo } from "react"
+import { useState, useCallback, useMemo } from "react"
 import VariableSelector from "./VariableSelector"
 import StatsSelector from "./StatsSelector"
 import { SelectField, FilterButtonWithDisplay, SyntaxPreview } from "./shared"
 import type { FeedbackVariable } from "@/src/features/feedback/types"
 import { Textarea } from "@/src/components/ui/fields"
+import { getMetricsForVariableType } from "@/src/features/feedback/domain/feedbackVariableMetrics"
+import { getConditionalOperators } from "@/src/features/feedback/domain/feedbackDslOperators"
+import {
+  buildConditionalBlock,
+  buildConditionalPreview,
+} from "@/src/features/feedback/domain/buildFeedbackDslExpression"
 
 interface ConditionalBuilderProps {
   variables: FeedbackVariable[]
   onInsert: (conditionalBlock: string) => void
   onClose: () => void
 }
-
-const OPERATORS = [
-  { key: "==", label: "equals", types: ["string", "number", "boolean"] },
-  { key: "!=", label: "not equals", types: ["string", "number", "boolean"] },
-  { key: ">", label: "greater than", types: ["number"] },
-  { key: "<", label: "less than", types: ["number"] },
-  { key: ">=", label: "greater or equal", types: ["number"] },
-  { key: "<=", label: "less or equal", types: ["number"] },
-]
 
 /**
  * Modal for building conditional if/else blocks
@@ -42,21 +39,9 @@ export default function ConditionalBuilder({
   const [focusedTextArea, setFocusedTextArea] = useState<"then" | "else">("then")
   const [currentFilterClause, setCurrentFilterClause] = useState("")
 
-  // Get available variables for the condition builder
-  const getAvailableVariables = useCallback(() => {
-    return variables.map((v) => ({
-      name: v.variableName,
-      type: v.type,
-    }))
-  }, [variables])
-
   const variableOptions = useMemo(
-    () =>
-      getAvailableVariables().map((v) => ({
-        value: v.name,
-        label: `${v.name} (${v.type})`,
-      })),
-    [getAvailableVariables]
+    () => variables.map((v) => ({ value: v.variableName, label: `${v.variableName} (${v.type})` })),
+    [variables]
   )
 
   const modifierOptions = useMemo(
@@ -68,93 +53,41 @@ export default function ConditionalBuilder({
     []
   )
 
-  // Get available metrics based on variable type
-  const getAvailableMetrics = useCallback((variableType: string) => {
-    const METRICS = [
-      { key: "avg", label: "Average", description: "Mean value" },
-      { key: "median", label: "Median", description: "Middle value" },
-      { key: "sd", label: "Std Dev", description: "Standard deviation" },
-      { key: "count", label: "Count", description: "Number of trials" },
-    ]
-
-    switch (variableType) {
-      case "number":
-        return METRICS
-      case "boolean":
-        return METRICS.filter((metric) => metric.key === "count")
-      case "string":
-        return METRICS.filter((metric) => metric.key === "count")
-      default:
-        return METRICS.filter((metric) => metric.key === "count")
-    }
-  }, [])
-
-  // Get available operators based on variable type
-  const getAvailableOperators = useCallback((variableType: string) => {
-    // For arrays/objects, treat as string for operator selection
-    const effectiveType =
-      variableType === "array" || variableType === "object" ? "string" : variableType
-    return OPERATORS.filter((op) => op.types.includes(effectiveType))
-  }, [])
-
-  // Get current variable type for operator filtering
-  const getCurrentVariableType = useCallback(() => {
-    if (conditionType === "variable") {
-      return selectedVariable
-        ? getAvailableVariables().find((v) => v.name === selectedVariable)?.type || "string"
-        : "string"
-    } else if (conditionType === "statistic") {
-      // For statistics, we're comparing the result (always numeric for avg/median/sd, count is always numeric)
-      return "number"
-    }
-    return "string"
-  }, [conditionType, selectedVariable, getAvailableVariables])
-
-  const metricOptions = useMemo(() => {
-    const METRICS = [
-      { key: "avg", label: "Average", description: "Mean value" },
-      { key: "median", label: "Median", description: "Middle value" },
-      { key: "sd", label: "Std Dev", description: "Standard deviation" },
-      { key: "count", label: "Count", description: "Number of trials" },
-    ]
-
-    const currentType = selectedVariable
-      ? getAvailableVariables().find((v) => v.name === selectedVariable)?.type || "string"
+  const currentVariableType = useMemo(() => {
+    if (conditionType === "statistic") return "number"
+    return selectedVariable
+      ? variables.find((v) => v.variableName === selectedVariable)?.type ?? "string"
       : "string"
+  }, [conditionType, selectedVariable, variables])
 
-    return getAvailableMetrics(currentType).map((m) => ({
-      value: m.key,
-      label: `${m.label} - ${m.description}`,
-    }))
-  }, [selectedVariable, getAvailableVariables, getAvailableMetrics])
+  const metricOptions = useMemo(
+    () =>
+      getMetricsForVariableType(
+        selectedVariable
+          ? variables.find((v) => v.variableName === selectedVariable)?.type ?? "string"
+          : "string"
+      ).map((m) => ({ value: m.key, label: `${m.label} - ${m.description}` })),
+    [selectedVariable, variables]
+  )
 
-  const operatorOptions = useMemo(() => {
-    const currentType = getCurrentVariableType()
-    return getAvailableOperators(currentType).map((op) => ({
-      value: op.key,
-      label: op.label,
-    }))
-  }, [getCurrentVariableType, getAvailableOperators])
+  const operatorOptions = useMemo(
+    () =>
+      getConditionalOperators(currentVariableType).map((op) => ({
+        value: op.key,
+        label: op.label,
+      })),
+    [currentVariableType]
+  )
 
-  // Reset operator when variable type changes
-  useEffect(() => {
-    const currentType = getCurrentVariableType()
-    const availableOps = getAvailableOperators(currentType)
-
-    // If current operator is not available for this type, reset to first available
-    if (!availableOps.some((op) => op.key === operator)) {
-      if (availableOps.length > 0) {
+  const resetOperatorForType = useCallback(
+    (variableType: string) => {
+      const availableOps = getConditionalOperators(variableType)
+      if (!availableOps.some((op) => op.key === operator) && availableOps.length > 0) {
         setOperator(availableOps[0].key)
       }
-    }
-  }, [
-    selectedVariable,
-    conditionType,
-    selectedMetric,
-    operator,
-    getCurrentVariableType,
-    getAvailableOperators,
-  ])
+    },
+    [operator]
+  )
 
   // Handle variable insertion for condition
   const handleInsertVariable = (variableSyntax: string) => {
@@ -174,41 +107,27 @@ export default function ConditionalBuilder({
     }
   }
 
-  const generateConditionalBlock = () => {
-    let expression = ""
-
-    if (conditionType === "variable") {
-      expression = `var:${selectedVariable}`
-      if (selectedModifier !== "all") {
-        expression += `:${selectedModifier}`
-      }
-      if (currentFilterClause) {
-        expression += ` | where: ${currentFilterClause}`
-      }
-    } else if (conditionType === "statistic") {
-      expression = `stat:${selectedVariable}.${selectedMetric}`
-      if (currentFilterClause) {
-        expression += ` | where: ${currentFilterClause}`
-      }
-    }
-
-    expression += ` ${operator} ${value}`
-    const elsePart = includeElse ? `{{else}}${elseContent}{{/if}}` : "{{/if}}"
-    return `{{#if ${expression}}}${thenContent}${elsePart}`
-  }
-
   const handleInsert = () => {
     if (selectedVariable && operator && value && thenContent) {
-      const block = generateConditionalBlock()
+      const block = buildConditionalBlock({
+        conditionType,
+        selectedVariable,
+        selectedModifier,
+        selectedMetric,
+        filterClause: currentFilterClause,
+        operator,
+        value,
+        thenContent,
+        elseContent,
+        includeElse,
+      })
       onInsert(block)
       onClose()
     }
   }
 
-  const selectedFieldType = (fieldName: string) => {
-    const variable = variables.find((v) => v.variableName === fieldName)
-    return variable?.type || "string"
-  }
+  const selectedFieldType = (fieldName: string) =>
+    variables.find((v) => v.variableName === fieldName)?.type ?? "string"
 
   return (
     <div className="modal modal-open">
@@ -232,7 +151,14 @@ export default function ConditionalBuilder({
                     name="conditionType"
                     className="radio"
                     checked={conditionType === "variable"}
-                    onChange={() => setConditionType("variable")}
+                    onChange={() => {
+                      setConditionType("variable")
+                      const newType = selectedVariable
+                        ? variables.find((v) => v.variableName === selectedVariable)?.type ??
+                          "string"
+                        : "string"
+                      resetOperatorForType(newType)
+                    }}
                   />
                   <span className="label-text ml-2">Variable Value</span>
                 </label>
@@ -242,7 +168,10 @@ export default function ConditionalBuilder({
                     name="conditionType"
                     className="radio"
                     checked={conditionType === "statistic"}
-                    onChange={() => setConditionType("statistic")}
+                    onChange={() => {
+                      setConditionType("statistic")
+                      resetOperatorForType("number")
+                    }}
                   />
                   <span className="label-text ml-2">Statistical Value</span>
                 </label>
@@ -260,6 +189,10 @@ export default function ConditionalBuilder({
                       onChange={(value) => {
                         setSelectedVariable(value)
                         setSelectedModifier("all")
+                        const newType = value
+                          ? variables.find((v) => v.variableName === value)?.type ?? "string"
+                          : "string"
+                        resetOperatorForType(newType)
                       }}
                       options={variableOptions}
                       placeholder="Select variable..."
@@ -366,28 +299,15 @@ export default function ConditionalBuilder({
             </div>
 
             <SyntaxPreview
-              syntax={
-                selectedVariable && operator && value
-                  ? (() => {
-                      let expression = ""
-                      if (conditionType === "variable") {
-                        expression = `var:${selectedVariable}`
-                        if (selectedModifier !== "all") {
-                          expression += `:${selectedModifier}`
-                        }
-                        if (currentFilterClause) {
-                          expression += ` | where: ${currentFilterClause}`
-                        }
-                      } else if (conditionType === "statistic") {
-                        expression = `stat:${selectedVariable}.${selectedMetric}`
-                        if (currentFilterClause) {
-                          expression += ` | where: ${currentFilterClause}`
-                        }
-                      }
-                      return `{{#if ${expression} ${operator} ${value}}}`
-                    })()
-                  : ""
-              }
+              syntax={buildConditionalPreview({
+                conditionType,
+                selectedVariable,
+                selectedModifier,
+                selectedMetric,
+                filterClause: currentFilterClause,
+                operator,
+                value,
+              })}
               show={!!selectedVariable && !!operator && !!value}
             />
           </div>
@@ -445,7 +365,18 @@ export default function ConditionalBuilder({
           <div className="text-sm">
             <code className="block whitespace-pre-wrap">
               {selectedVariable && operator && value && thenContent
-                ? generateConditionalBlock()
+                ? buildConditionalBlock({
+                    conditionType,
+                    selectedVariable,
+                    selectedModifier,
+                    selectedMetric,
+                    filterClause: currentFilterClause,
+                    operator,
+                    value,
+                    thenContent,
+                    elseContent,
+                    includeElse,
+                  })
                 : "Complete the form to see preview..."}
             </code>
           </div>

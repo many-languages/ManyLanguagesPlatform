@@ -1,7 +1,5 @@
-import { Suspense } from "react"
 import { getCurrentUserRsc } from "@/src/features/auth/server/getCurrentUser"
 import {
-  DashboardSkeleton,
   PortalDashboard,
   getActiveStudiesWithResponseCounts,
   getParticipantCompletedNotPaidStudies,
@@ -49,16 +47,14 @@ export default async function DashboardPage() {
       : [emptyParticipantStudies, null, []]
 
   return (
-    <Suspense fallback={<DashboardSkeleton />}>
-      <PortalDashboard
-        currentUser={currentUser}
-        researcherCounts={researcherCounts}
-        activeStudiesWithResponses={activeStudiesWithResponses}
-        upcomingDeadlines={upcomingDeadlines}
-        participantIncompleteStudies={participantIncompleteStudies}
-        participantCounts={participantCounts}
-        participantCompletedNotPaid={participantCompletedNotPaid}
-      />
-    </Suspense>
+    <PortalDashboard
+      currentUser={currentUser}
+      researcherCounts={researcherCounts}
+      activeStudiesWithResponses={activeStudiesWithResponses}
+      upcomingDeadlines={upcomingDeadlines}
+      participantIncompleteStudies={participantIncompleteStudies}
+      participantCounts={participantCounts}
+      participantCompletedNotPaid={participantCompletedNotPaid}
+    />
   )
 }

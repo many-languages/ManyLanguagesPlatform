@@ -17,7 +17,7 @@ import {
 import MDEditor from "@uiw/react-md-editor"
 import type { AdminStudyCodebookEntryDto, AdminStudyListItemDto } from "../../types"
 import type { UserRole } from "@/db"
-import { getSetupStatusLabel, type StudyWithMinimalRelations } from "../../domain/setup/setupStatus"
+import { getSetupStatusLabel, toSetupStatusStudy } from "../../domain/setup/setupStatus"
 import StudyActions from "./StudyActions"
 import toast from "react-hot-toast"
 
@@ -46,22 +46,6 @@ function JatosStudyUuidCell({ uuid }: { uuid: string }) {
       {uuid}
     </button>
   )
-}
-
-function toSetupStatusStudy(study: AdminStudyListItemDto): StudyWithMinimalRelations {
-  return {
-    id: study.id,
-    archived: study.archived,
-    title: study.title,
-    description: study.description,
-    FeedbackTemplate: study.feedbackTemplate ? { id: study.feedbackTemplate.id } : null,
-    latestJatosStudyUpload: study.latestJatosStudyUpload
-      ? {
-          ...study.latestJatosStudyUpload,
-          jatosFileName: study.latestJatosStudyUpload.jatosFileName ?? undefined,
-        }
-      : null,
-  }
 }
 
 function CodebookButton({ entries }: { entries: AdminStudyCodebookEntryDto[] }) {

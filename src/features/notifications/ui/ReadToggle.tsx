@@ -1,6 +1,7 @@
 "use client"
 
-import { useTransition } from "react"
+import { useOptimistic, useTransition } from "react"
+import { useRouter } from "next/navigation"
 import { EyeIcon, EyeSlashIcon } from "@heroicons/react/24/outline"
 
 import { markNotificationsRead, markNotificationsUnread } from "../actions"
@@ -14,13 +15,16 @@ type ReadToggleProps = {
 const ReadToggle = ({ recipient }: ReadToggleProps) => {
   const [isPending, startTransition] = useTransition()
   const { refetch } = useNotificationMenuContext()
-  const isRead = Boolean(recipient.readAt)
+  const router = useRouter()
+  const [optimisticRead, setOptimisticRead] = useOptimistic(Boolean(recipient.readAt))
 
   const toggleReadStatus = () => {
     startTransition(async () => {
-      const action = isRead ? markNotificationsUnread : markNotificationsRead
+      setOptimisticRead(!optimisticRead)
+      const action = optimisticRead ? markNotificationsUnread : markNotificationsRead
       await action([recipient.notificationId])
       await refetch()
+      router.refresh()
     })
   }
 
@@ -30,10 +34,10 @@ const ReadToggle = ({ recipient }: ReadToggleProps) => {
       onClick={toggleReadStatus}
       disabled={isPending}
       className="btn btn-ghost btn-sm"
-      aria-pressed={isRead}
-      aria-label={isRead ? "Mark as unread" : "Mark as read"}
+      aria-pressed={optimisticRead}
+      aria-label={optimisticRead ? "Mark as unread" : "Mark as read"}
     >
-      {isRead ? (
+      {optimisticRead ? (
         <EyeIcon className="h-5 w-5 text-base-content" />
       ) : (
         <EyeSlashIcon className="h-5 w-5 text-primary" />

@@ -2,6 +2,7 @@ import { Suspense } from "react"
 import { notFound } from "next/navigation"
 import DebugContent from "@/src/features/studies/ui/researcher/inspector/DebugContent"
 import { getValidationDataRsc } from "@/src/features/studies/server/getValidationData"
+import InspectorSkeleton from "@/src/features/studies/ui/InspectorSkeleton"
 
 export default async function InspectorPage({ params }: { params: Promise<{ studyId: string }> }) {
   const { studyId: studyIdRaw } = await params
@@ -21,7 +22,7 @@ export default async function InspectorPage({ params }: { params: Promise<{ stud
         </p>
       </div>
 
-      <Suspense fallback={<div className="skeleton h-96 w-full" />}>
+      <Suspense fallback={<InspectorSkeleton />}>
         <InspectorContent studyId={studyId} />
       </Suspense>
     </main>

@@ -63,6 +63,7 @@ export default async function ParticipantFeedbackData({
 
   return (
     <ParticipantFeedback
+      key={studyId}
       studyId={studyId}
       pseudonym={pseudonym}
       jatosStudyId={jatosStudyId}

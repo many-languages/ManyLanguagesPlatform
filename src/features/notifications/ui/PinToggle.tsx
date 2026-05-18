@@ -1,6 +1,7 @@
 "use client"
 
-import { useTransition } from "react"
+import { useOptimistic, useTransition } from "react"
+import { useRouter } from "next/navigation"
 import { StarIcon as StarIconSolid } from "@heroicons/react/24/solid"
 import { StarIcon as StarIconOutline } from "@heroicons/react/24/outline"
 
@@ -15,15 +16,18 @@ type PinToggleProps = {
 export const PinToggle = ({ recipient }: PinToggleProps) => {
   const [isPending, startTransition] = useTransition()
   const { refetch } = useNotificationMenuContext()
-  const isPinned = recipient.pinned
+  const router = useRouter()
+  const [optimisticPinned, setOptimisticPinned] = useOptimistic(recipient.pinned)
 
   const handleToggle = () => {
     startTransition(async () => {
+      setOptimisticPinned(!optimisticPinned)
       await toggleNotificationPinned({
         notificationId: recipient.notificationId,
-        pinned: !isPinned,
+        pinned: !optimisticPinned,
       })
       await refetch()
+      router.refresh()
     })
   }
 
@@ -33,10 +37,10 @@ export const PinToggle = ({ recipient }: PinToggleProps) => {
       onClick={handleToggle}
       disabled={isPending}
       className="btn btn-ghost btn-sm"
-      aria-pressed={isPinned}
-      aria-label={isPinned ? "Unpin notification" : "Pin notification"}
+      aria-pressed={optimisticPinned}
+      aria-label={optimisticPinned ? "Unpin notification" : "Pin notification"}
     >
-      {isPinned ? (
+      {optimisticPinned ? (
         <StarIconSolid className="h-5 w-5 text-warning" />
       ) : (
         <StarIconOutline className="h-5 w-5 text-base-content/40" />

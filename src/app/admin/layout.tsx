@@ -1,10 +1,8 @@
-import { Suspense } from "react"
 import { redirect } from "next/navigation"
 import { Toaster } from "react-hot-toast"
 import { isStaffAdmin } from "@/src/lib/auth/roles"
-import { getCurrentUserRsc } from "@/src/features/auth/server/getCurrentUser"
 import { NotificationMenuRootProvider } from "@/src/features/notifications"
-import { AppNavbar, NavbarSkeleton } from "@/src/features/shell"
+import { AppNavbar } from "@/src/features/shell"
 import { getBlitzContext } from "../blitz-server"
 
 export default async function AdminAppLayout({ children }: { children: React.ReactNode }) {
@@ -18,14 +16,10 @@ export default async function AdminAppLayout({ children }: { children: React.Rea
     redirect("/dashboard")
   }
 
-  const currentUser = await getCurrentUserRsc().catch(() => null)
-
   return (
     <NotificationMenuRootProvider>
       <div className="min-h-screen flex flex-col bg-base-200">
-        <Suspense fallback={<NavbarSkeleton />}>
-          <AppNavbar variant="admin" currentUser={currentUser} />
-        </Suspense>
+        <AppNavbar variant="admin" userRole={session.role} />
         <main className="flex-1 mt-6 px-6 sm:px-8 lg:px-12">{children}</main>
         <Toaster position="top-right" />
       </div>

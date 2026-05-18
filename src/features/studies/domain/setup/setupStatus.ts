@@ -1,6 +1,7 @@
 import { deriveStep1Completed } from "./deriveStep1Completed"
 import { STEP_KEYS, STEP_NAMES, TOTAL_STEPS } from "./constants"
 import { studyPath, studySetupStepPath } from "./setupRoutes"
+import type { AdminStudyListItemDto } from "../../types"
 
 export interface StudyWithMinimalRelations {
   id?: number
@@ -46,6 +47,26 @@ function resolveStepFlags(study: StudyWithMinimalRelations): SetupStepFlags {
   })
 
   return flags
+}
+
+/**
+ * Maps an `AdminStudyListItemDto` to the minimal shape required by setup-status helpers.
+ * Centralised here to avoid duplication across admin UI components.
+ */
+export function toSetupStatusStudy(study: AdminStudyListItemDto): StudyWithMinimalRelations {
+  return {
+    id: study.id,
+    archived: study.archived,
+    title: study.title,
+    description: study.description,
+    FeedbackTemplate: study.feedbackTemplate ? { id: study.feedbackTemplate.id } : null,
+    latestJatosStudyUpload: study.latestJatosStudyUpload
+      ? {
+          ...study.latestJatosStudyUpload,
+          jatosFileName: study.latestJatosStudyUpload.jatosFileName ?? undefined,
+        }
+      : null,
+  }
 }
 
 /** True when every setup step flag is explicitly `true` (same rule as server actions using `getSetupCompletionRsc`). */

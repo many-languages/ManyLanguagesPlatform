@@ -9,7 +9,7 @@ import { TextField, FormSubmitButton, FormErrorDisplay } from "@/src/components/
 import { Form, FORM_ERROR } from "@/src/components/ui/Form"
 import { getDefaultAuthenticatedPath } from "@/src/lib/auth/routing"
 import login from "../../mutations/login"
-import { usePendingNavigation } from "../../hooks/usePendingNavigation"
+import { usePendingNavigation } from "@/src/lib/hooks/usePendingNavigation"
 import { Login } from "../../validations"
 
 export const LoginForm = () => {
@@ -47,8 +47,11 @@ export const LoginForm = () => {
                 router.push(getDefaultAuthenticatedPath(result.user.role) as Route)
               }
             })
-          } catch (error: any) {
-            const errorMessage = error?.message || "An unexpected error occurred. Please try again."
+          } catch (error: unknown) {
+            const errorMessage =
+              error instanceof Error
+                ? error.message
+                : "An unexpected error occurred. Please try again."
             return { [FORM_ERROR]: errorMessage }
           }
         }}

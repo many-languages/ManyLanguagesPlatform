@@ -3,39 +3,16 @@
 import { useState, useMemo } from "react"
 import { SelectField, SyntaxPreview } from "./shared"
 import type { FeedbackVariable } from "@/src/features/feedback/types"
+import { getFilterOperators } from "@/src/features/feedback/domain/feedbackDslOperators"
+import {
+  buildFilterClause,
+  type FilterCondition,
+} from "@/src/features/feedback/domain/buildFeedbackDslExpression"
 
 interface FilterBuilderProps {
   variables: FeedbackVariable[]
   onInsert: (filterClause: string) => void
   onClose: () => void
-}
-
-interface FilterCondition {
-  field: string
-  operator: string
-  value: string
-  logicalOperator?: "and" | "or"
-}
-
-const OPERATORS = {
-  string: [
-    { value: "==", label: "equals" },
-    { value: "!=", label: "not equals" },
-    { value: "in", label: "in list" },
-  ],
-  number: [
-    { value: "==", label: "equals" },
-    { value: "!=", label: "not equals" },
-    { value: ">", label: "greater than" },
-    { value: "<", label: "less than" },
-    { value: ">=", label: "greater or equal" },
-    { value: "<=", label: "less or equal" },
-    { value: "in", label: "in list" },
-  ],
-  boolean: [
-    { value: "==", label: "equals" },
-    { value: "!=", label: "not equals" },
-  ],
 }
 
 const MAX_CONDITIONS = 3
@@ -73,56 +50,22 @@ export default function FilterBuilder({ variables, onInsert, onClose }: FilterBu
     setConditions((prev) => prev.filter((_, i) => i !== index))
   }
 
-  const generateFilterClause = () => {
-    const validConditions = conditions.filter((c) => c.field && c.operator && c.value !== "")
-    if (validConditions.length === 0) return ""
-
-    return validConditions
-      .map((condition, index) => {
-        const { field, operator, value, logicalOperator } = condition
-        let conditionStr = ""
-
-        if (operator === "in") {
-          // Handle in operator with comma-separated values
-          conditionStr = `${field} in [${value}]`
-        } else {
-          conditionStr = `${field} ${operator} ${value}`
-        }
-
-        // Add logical operator before condition (except for the first one)
-        if (index > 0 && logicalOperator) {
-          return `${logicalOperator} ${conditionStr}`
-        }
-
-        return conditionStr
-      })
-      .join(" ")
-  }
-
   const handleInsert = () => {
-    const filterClause = generateFilterClause()
-    if (filterClause) {
-      onInsert(` | where: ${filterClause}`)
+    const clause = buildFilterClause(conditions)
+    if (clause) {
+      onInsert(` | where: ${clause}`)
       onClose()
     }
   }
 
-  const getFieldType = (index: number): "string" | "number" | "boolean" => {
+  const getFieldType = (index: number): string => {
     const field = conditions[index]?.field
     if (!field) return "string"
-    const variable = variables.find((v) => v.variableName === field)
-    // For arrays/objects, treat as string for filter operations
-    if (variable?.type === "array" || variable?.type === "object") return "string"
-    return (variable?.type as "string" | "number" | "boolean") || "string"
+    return variables.find((v) => v.variableName === field)?.type ?? "string"
   }
 
-  const getOperatorOptions = (index: number) => {
-    const fieldType = getFieldType(index)
-    return OPERATORS[fieldType].map((op) => ({
-      value: op.value,
-      label: op.label,
-    }))
-  }
+  const getOperatorOptions = (index: number) =>
+    getFilterOperators(getFieldType(index)).map((op) => ({ value: op.key, label: op.label }))
 
   const getPlaceholder = (fieldType: string, operator: string) => {
     if (fieldType === "boolean") {
@@ -138,28 +81,7 @@ export default function FilterBuilder({ variables, onInsert, onClose }: FilterBu
   }
 
   const filterPreview = useMemo(() => {
-    const validConditions = conditions.filter((c) => c.field && c.operator && c.value !== "")
-    if (validConditions.length === 0) return ""
-
-    const clause = validConditions
-      .map((condition, index) => {
-        const { field, operator, value, logicalOperator } = condition
-        let conditionStr = ""
-
-        if (operator === "in") {
-          conditionStr = `${field} in [${value}]`
-        } else {
-          conditionStr = `${field} ${operator} ${value}`
-        }
-
-        if (index > 0 && logicalOperator) {
-          return `${logicalOperator} ${conditionStr}`
-        }
-
-        return conditionStr
-      })
-      .join(" ")
-
+    const clause = buildFilterClause(conditions)
     return clause ? `| where: ${clause}` : ""
   }, [conditions])
 

@@ -106,3 +106,36 @@ export function variableHasDescriptionCoverage(
   const winner = findWinningGroup(dslKey, groups)
   return (winner?.description?.trim() ?? "") !== ""
 }
+
+export type CandidateGroupPrefix = { prefix: string; count: number }
+
+/**
+ * Prefixes shared by ≥minCount ungrouped variables, excluding keys already grouped
+ * or nested with an existing group.
+ */
+export function computeCandidateGroupPrefixes(
+  variables: { dslKey: string }[],
+  groupKeys: string[],
+  minCount = 2
+): CandidateGroupPrefix[] {
+  const ungrouped = variables.filter((v) => findWinningGroupKey(v.dslKey, groupKeys) === undefined)
+
+  const prefixCounts = new Map<string, number>()
+  for (const v of ungrouped) {
+    const segments = v.dslKey.split(".")
+    for (let i = 1; i < segments.length; i++) {
+      const prefix = segments.slice(0, i).join(".")
+      prefixCounts.set(prefix, (prefixCounts.get(prefix) ?? 0) + 1)
+    }
+  }
+
+  return Array.from(prefixCounts.entries())
+    .filter(
+      ([prefix, count]) =>
+        count >= minCount &&
+        !groupKeys.includes(prefix) &&
+        !wouldOverlapExistingGroupKeys(prefix, groupKeys)
+    )
+    .map(([prefix, count]) => ({ prefix, count }))
+    .sort((a, b) => a.prefix.localeCompare(b.prefix))
+}

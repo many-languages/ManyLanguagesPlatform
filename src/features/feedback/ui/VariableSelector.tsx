@@ -112,14 +112,12 @@ export default function VariableSelector({ variables, onInsert, markdown }: Vari
         </div>
       </div>
 
-      {/* FilterBuilder Modal */}
-      {showFilterBuilder && (
-        <FilterBuilder
-          variables={variables}
-          onInsert={handleFilterInsert}
-          onClose={() => setShowFilterBuilder(false)}
-        />
-      )}
+      <FilterBuilder
+        open={showFilterBuilder}
+        variables={variables}
+        onInsert={handleFilterInsert}
+        onClose={() => setShowFilterBuilder(false)}
+      />
     </div>
   )
 }

@@ -1,6 +1,7 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useEffect, useMemo, useState } from "react"
+import Modal from "@/src/components/ui/Modal"
 import { SelectField, SyntaxPreview } from "./shared"
 import type { FeedbackVariable } from "@/src/features/feedback/types"
 import { getFilterOperators } from "@/src/features/feedback/domain/feedbackDslOperators"
@@ -10,17 +11,23 @@ import {
 } from "@/src/features/feedback/domain/buildFeedbackDslExpression"
 
 interface FilterBuilderProps {
+  open: boolean
   variables: FeedbackVariable[]
   onInsert: (filterClause: string) => void
   onClose: () => void
 }
 
 const MAX_CONDITIONS = 3
+const INITIAL_CONDITION: FilterCondition = { field: "", operator: "==", value: "" }
 
-export default function FilterBuilder({ variables, onInsert, onClose }: FilterBuilderProps) {
-  const [conditions, setConditions] = useState<FilterCondition[]>([
-    { field: "", operator: "==", value: "" },
-  ])
+export default function FilterBuilder({ open, variables, onInsert, onClose }: FilterBuilderProps) {
+  const [conditions, setConditions] = useState<FilterCondition[]>([INITIAL_CONDITION])
+
+  useEffect(() => {
+    if (!open) {
+      setConditions([INITIAL_CONDITION])
+    }
+  }, [open])
 
   const fieldOptions = useMemo(
     () =>
@@ -85,12 +92,14 @@ export default function FilterBuilder({ variables, onInsert, onClose }: FilterBu
     return clause ? `| where: ${clause}` : ""
   }, [conditions])
 
+  const canInsert = conditions.some((c) => c.field && c.operator && c.value !== "")
+
   return (
-    <div className="modal modal-open">
-      <div className="modal-box w-11/12 max-w-2xl">
-        <div className="flex justify-between items-center mb-4">
+    <Modal open={open} size="max-w-2xl">
+      <div className="flex flex-col gap-4">
+        <div className="flex justify-between items-center">
           <h3 className="text-lg font-bold">Add Filter Conditions</h3>
-          <button className="btn btn-sm btn-circle btn-ghost" onClick={onClose}>
+          <button className="btn btn-sm btn-circle btn-ghost" onClick={onClose} type="button">
             ✕
           </button>
         </div>
@@ -99,7 +108,6 @@ export default function FilterBuilder({ variables, onInsert, onClose }: FilterBu
           {conditions.map((condition, index) => (
             <div key={index}>
               <div className="flex items-end gap-2 p-4 bg-base-100 rounded-lg">
-                {/* Field Selection */}
                 <div className="flex-1">
                   <SelectField
                     label="Field"
@@ -112,7 +120,6 @@ export default function FilterBuilder({ variables, onInsert, onClose }: FilterBu
                   />
                 </div>
 
-                {/* Operator Selection */}
                 <div className="flex-1">
                   <SelectField
                     label="Operator"
@@ -123,7 +130,6 @@ export default function FilterBuilder({ variables, onInsert, onClose }: FilterBu
                   />
                 </div>
 
-                {/* Value Input */}
                 <div className="flex-1">
                   <label className="label">
                     <span className="label-text">Value</span>
@@ -138,15 +144,17 @@ export default function FilterBuilder({ variables, onInsert, onClose }: FilterBu
                   />
                 </div>
 
-                {/* Remove Condition Button */}
                 {conditions.length > 1 && (
-                  <button className="btn btn-sm btn-error" onClick={() => removeCondition(index)}>
+                  <button
+                    className="btn btn-sm btn-error"
+                    onClick={() => removeCondition(index)}
+                    type="button"
+                  >
                     ×
                   </button>
                 )}
               </div>
 
-              {/* Logical Operator (show at the end of each condition except the last) */}
               {index < conditions.length - 1 && (
                 <div className="flex justify-center items-center py-2">
                   <div className="flex items-center gap-2 bg-base-200 px-3 py-1 rounded">
@@ -170,34 +178,28 @@ export default function FilterBuilder({ variables, onInsert, onClose }: FilterBu
           ))}
         </div>
 
-        {/* Add Condition Button */}
         {conditions.length < MAX_CONDITIONS && (
-          <div className="mt-4">
-            <button className="btn btn-outline w-full" onClick={addCondition}>
-              Add Condition
-            </button>
-          </div>
+          <button className="btn btn-outline w-full" onClick={addCondition} type="button">
+            Add Condition
+          </button>
         )}
 
-        <SyntaxPreview
-          syntax={filterPreview}
-          show={conditions.some((c) => c.field && c.operator && c.value !== "")}
-        />
+        <SyntaxPreview syntax={filterPreview} show={canInsert} />
 
-        {/* Action Buttons */}
-        <div className="modal-action">
-          <button className="btn btn-ghost" onClick={onClose}>
+        <div className="flex justify-end gap-2">
+          <button className="btn btn-ghost" onClick={onClose} type="button">
             Cancel
           </button>
           <button
             className="btn btn-primary"
             onClick={handleInsert}
-            disabled={!conditions.some((c) => c.field && c.operator && c.value !== "")}
+            disabled={!canInsert}
+            type="button"
           >
             Insert Filter
           </button>
         </div>
       </div>
-    </div>
+    </Modal>
   )
 }

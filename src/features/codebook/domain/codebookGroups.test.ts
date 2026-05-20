@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest"
 import {
   assertMutuallyExclusiveGroupKeys,
+  computeCandidateGroupPrefixes,
   findWinningGroupKey,
   groupKeysOverlap,
   isCoveredByGroupKey,
@@ -84,6 +85,45 @@ describe("wouldOverlapExistingGroupKeys", () => {
 
   it("blocks child when parent exists", () => {
     expect(wouldOverlapExistingGroupKeys("frameworksRate.angularv2", ["frameworksRate"])).toBe(true)
+  })
+})
+
+describe("computeCandidateGroupPrefixes", () => {
+  const variables = [
+    { dslKey: "matrix.dog.age" },
+    { dslKey: "matrix.dog.weight" },
+    { dslKey: "matrix.cat.age" },
+    { dslKey: "matrix.cat.weight" },
+    { dslKey: "other.value" },
+  ]
+
+  it("returns prefixes with at least minCount ungrouped descendants", () => {
+    const result = computeCandidateGroupPrefixes(variables, [], 2)
+    expect(result).toEqual([
+      { prefix: "matrix", count: 4 },
+      { prefix: "matrix.cat", count: 2 },
+      { prefix: "matrix.dog", count: 2 },
+    ])
+  })
+
+  it("excludes prefixes already used as group keys", () => {
+    const result = computeCandidateGroupPrefixes(variables, ["matrix.dog"], 2)
+    expect(result.map((r) => r.prefix)).toEqual(["matrix.cat"])
+  })
+
+  it("excludes prefixes that overlap existing groups", () => {
+    const result = computeCandidateGroupPrefixes(variables, ["matrix"], 2)
+    expect(result).toEqual([])
+  })
+
+  it("ignores variables already covered by a group", () => {
+    const result = computeCandidateGroupPrefixes(variables, ["matrix.dog"], 2)
+    expect(result.find((r) => r.prefix === "matrix.dog")).toBeUndefined()
+    expect(result.find((r) => r.prefix === "matrix")).toBeUndefined()
+    expect(result.find((r) => r.prefix === "matrix.cat")).toEqual({
+      prefix: "matrix.cat",
+      count: 2,
+    })
   })
 })
 

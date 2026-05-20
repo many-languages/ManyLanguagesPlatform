@@ -1,4 +1,4 @@
-import { ReactNode, useId } from "react"
+import { ChangeEvent, ReactNode, useId } from "react"
 import { ChevronDownIcon } from "@heroicons/react/24/outline"
 import clsx from "clsx"
 
@@ -14,7 +14,13 @@ interface CardProps {
   borderColorClass?: string
   bodyClassName?: string
   actionsWrapperClassName?: string
+  /** Where to render `actions` on non-collapsible cards. Collapsible cards always use footer. */
+  actionsPlacement?: "header" | "footer"
+  /** Uncontrolled initial open state (collapsible only). Ignored when `onOpenChange` is set. */
   defaultOpen?: boolean
+  /** Controlled open state (collapsible only). Use with `onOpenChange`. */
+  open?: boolean
+  onOpenChange?: (open: boolean) => void
 }
 
 const Card = ({
@@ -27,9 +33,18 @@ const Card = ({
   borderColorClass = "border-base-300",
   bodyClassName,
   actionsWrapperClassName,
+  actionsPlacement = "footer",
   defaultOpen = true,
+  open,
+  onOpenChange,
 }: CardProps) => {
   const collapseId = useId()
+  const isControlled = onOpenChange !== undefined
+
+  const handleCollapseChange = (event: ChangeEvent<HTMLInputElement>) => {
+    onOpenChange?.(event.target.checked)
+  }
+
   const renderActions = () => {
     if (!actions) return null
 
@@ -52,7 +67,9 @@ const Card = ({
           type="checkbox"
           id={collapseId}
           className="peer sr-only focus:outline-none focus-visible:outline-none"
-          defaultChecked={defaultOpen}
+          {...(isControlled
+            ? { checked: open ?? false, onChange: handleCollapseChange }
+            : { defaultChecked: defaultOpen })}
         />
         <label
           htmlFor={collapseId}
@@ -81,9 +98,18 @@ const Card = ({
       )}
     >
       <div className={clsx("card-body gap-3", bodyClassName)}>
-        <div className="text-xl font-medium">{title}</div>
+        {actions && actionsPlacement === "header" ? (
+          <div className="flex items-start justify-between gap-3">
+            <div className="text-xl font-medium min-w-0 flex-1">
+              {typeof title === "string" ? <span>{title}</span> : title}
+            </div>
+            <div className={clsx("shrink-0", actionsWrapperClassName)}>{actions}</div>
+          </div>
+        ) : (
+          <div className="text-xl font-medium">{title}</div>
+        )}
         {children}
-        {renderActions()}
+        {actionsPlacement === "footer" && renderActions()}
       </div>
     </div>
   )

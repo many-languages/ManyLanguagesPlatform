@@ -5,16 +5,11 @@ import db from "db"
 
 import { getAuthorizedSession } from "@/src/lib/auth/session"
 import { NOTIFICATIONS_MENU_TAG, NOTIFICATIONS_TABLE_TAG } from "../constants"
+import { ToggleNotificationPinnedSchema } from "../validations"
 
-type ToggleNotificationPinnedInput = {
-  notificationId: number
-  pinned: boolean
-}
+export const toggleNotificationPinned = async (input: unknown) => {
+  const { notificationId, pinned } = ToggleNotificationPinnedSchema.parse(input)
 
-export const toggleNotificationPinned = async ({
-  notificationId,
-  pinned,
-}: ToggleNotificationPinnedInput) => {
   const session = await getAuthorizedSession()
 
   await db.notificationRecipient.update({

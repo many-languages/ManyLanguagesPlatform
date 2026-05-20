@@ -61,3 +61,13 @@ export const validateTemplateData = <T>(
   }
   return { success: true, data: result.data as T }
 }
+
+/** Bulk notification actions (mark read/unread, delete). */
+export const NotificationIdsInput = z.array(z.number().int().positive()).max(100)
+
+export const ToggleNotificationPinnedSchema = z.object({
+  notificationId: z.number().int().positive(),
+  pinned: z.boolean(),
+})
+
+export type ToggleNotificationPinnedInput = z.infer<typeof ToggleNotificationPinnedSchema>

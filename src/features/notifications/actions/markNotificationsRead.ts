@@ -4,9 +4,15 @@ import { revalidateTag } from "next/cache"
 import db from "db"
 import { getAuthorizedSession } from "@/src/lib/auth/session"
 import { NOTIFICATIONS_MENU_TAG, NOTIFICATIONS_TABLE_TAG } from "../constants"
+import { NotificationIdsInput } from "../validations"
 
 export const markNotificationsRead = async (notificationIds: number[]) => {
-  if (!Array.isArray(notificationIds) || notificationIds.length === 0) {
+  if (notificationIds.length === 0) {
+    return { updated: 0 }
+  }
+
+  const parsed = NotificationIdsInput.safeParse(notificationIds)
+  if (!parsed.success) {
     return { updated: 0 }
   }
 
@@ -15,7 +21,7 @@ export const markNotificationsRead = async (notificationIds: number[]) => {
   const count = await db.notificationRecipient.updateMany({
     where: {
       userId: session.userId!,
-      notificationId: { in: notificationIds },
+      notificationId: { in: parsed.data },
     },
     data: {
       readAt: new Date(),

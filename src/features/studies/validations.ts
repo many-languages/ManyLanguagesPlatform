@@ -137,3 +137,27 @@ export const AdminStudySchema = z.object({
 })
 
 export type AdminStudyFormValues = z.infer<typeof AdminStudySchema>
+
+/** Step 2 import orchestration after JATOS file upload. */
+export const CompleteStep2ImportSchema = z.object({
+  studyId: Id,
+  jatosStudyId: z.number().int().positive(),
+  jatosStudyUUID: z.string().min(1),
+  latestUploadId: z.number().int().positive().nullable(),
+})
+
+export type CompleteStep2ImportInput = z.infer<typeof CompleteStep2ImportSchema>
+
+/** Participant join flow: create personal study code and persist run URL. */
+export const CreateParticipantStudyCodeActionSchema = z.object({
+  studyId: Id,
+  jatosStudyId: z.number().int().positive(),
+  jatosBatchId: z.number().int().positive().optional(),
+  type: z.enum(["ps", "pm"]),
+  comment: z.string().min(1).max(255),
+  participantStudyId: Id,
+})
+
+export type CreateParticipantStudyCodeActionInput = z.infer<
+  typeof CreateParticipantStudyCodeActionSchema
+>

@@ -28,9 +28,7 @@ export async function getPersonalDataViolationsForFeedbackTemplate(
   requiredVariableNames?: string[]
 ): Promise<string[]> {
   const { variables } = await fetchCodebookMergedVariablesForStudy(studyId)
-  const personalDataNames = new Set(
-    variables.filter((v) => v.personalData).map((v) => v.variableName)
-  )
+  const personalDataNames = new Set(variables.filter((v) => v.personalData).map((v) => v.dslKey))
   return collectPersonalDataViolationsForFeedbackTemplate(
     content,
     personalDataNames,

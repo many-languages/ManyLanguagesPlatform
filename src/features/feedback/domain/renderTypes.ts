@@ -10,7 +10,7 @@ export type FeedbackRenderContext = {
 
 /** Structural subset of `ExtractionBundle` inputs for building a render context. */
 export type FeedbackRenderBundleInput = {
-  variables: { variableKey: string; variableName: string }[]
+  variables: { variableKey: string; variableName: string; dslKey: string }[]
   observations: {
     variableKey: string
     scopeKeyId: string

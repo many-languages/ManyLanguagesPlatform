@@ -25,7 +25,7 @@ export default function FilterBuilder({ variables, onInsert, onClose }: FilterBu
   const fieldOptions = useMemo(
     () =>
       variables.map((v) => ({
-        value: v.variableName,
+        value: v.dslKey ?? v.variableName,
         label: `${v.variableName} (${v.type})`,
       })),
     [variables]

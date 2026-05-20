@@ -8,6 +8,14 @@ const UpdateVariableCodebook = z.object({
     z.object({
       variableKey: z.string(),
       variableName: z.string(),
+      dslKey: z.string(),
+      description: z.string().nullable(),
+      personalData: z.boolean(),
+    })
+  ),
+  groups: z.array(
+    z.object({
+      groupKey: z.string(),
       description: z.string().nullable(),
       personalData: z.boolean(),
     })

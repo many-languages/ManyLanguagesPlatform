@@ -298,7 +298,8 @@ export const DEFAULT_EXTRACTION_CONFIG: ExtractionConfig = {
 
 export interface ExtractedVariable {
   variableKey: string // Structural variable key with $ prefix, e.g. $trials[*].rt
-  variableName: string // Human-readable prettified name without quotes and root, e.g. "rt" or "Quality: easy to use"
+  variableName: string // Human-readable prettified name without quotes and root, e.g. "rt" or "angularv1 › knowledge"
+  dslKey: string // DSL-safe token derived from variableKey, e.g. "trials.rt" or "frameworksRate.angularv1.knowledge"
   examples: VariableExample[] // Array of examples, each with value and sourcePath from the same observation
   type: VariableType // Final variable type for consumers
   occurrences: number

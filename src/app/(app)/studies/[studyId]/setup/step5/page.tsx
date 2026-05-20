@@ -8,7 +8,7 @@ import { getCodebookDataRsc } from "@/src/features/codebook"
 
 async function Step5ContentWrapper({ study }: { study: StudyWithRelations }) {
   const studyId = study.id
-  const { variables, codebook, approvedExtractionId, approvedExtractionApprovedAt } =
+  const { variables, groups, codebook, approvedExtractionId, approvedExtractionApprovedAt } =
     await getCodebookDataRsc(studyId)
 
   return (
@@ -20,6 +20,7 @@ async function Step5ContentWrapper({ study }: { study: StudyWithRelations }) {
           ...v,
           examples: (v.examples as { value: string; sourcePath: string }[] | null) ?? [],
         }))}
+        initialGroups={groups}
         codebook={
           codebook
             ? {

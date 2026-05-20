@@ -34,9 +34,9 @@ export function validateDSL(
 ): ValidationResult {
   const errors: DSLError[] = []
 
-  const variableNames = new Set(variables.map((v) => v.variableName))
+  const variableNames = new Set(variables.map((v) => v.dslKey ?? v.variableName))
   const availableFields = variables.map((v) => ({
-    name: v.variableName,
+    name: v.dslKey ?? v.variableName,
     type: v.type,
   }))
 

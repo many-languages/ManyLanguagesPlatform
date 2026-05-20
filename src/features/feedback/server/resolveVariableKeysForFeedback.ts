@@ -2,19 +2,19 @@ import db from "db"
 import { extractRequiredVariableNames } from "@/src/features/feedback/domain/requiredVariableNames"
 
 /**
- * Maps variable **names** to `StudyVariable.variableKey` for one extraction snapshot.
- * Shared by persisted-template resolution and live preview (after each path decides which names apply).
+ * Maps DSL token identifiers to `StudyVariable.variableKey` for one extraction snapshot.
+ * Shared by persisted-template resolution and live preview (after each path decides which tokens apply).
  */
 export async function resolveVariableKeysForExtractionSnapshot(
   extractionSnapshotId: number,
-  variableNames: string[]
+  dslKeys: string[]
 ): Promise<string[]> {
-  if (variableNames.length === 0) return []
+  if (dslKeys.length === 0) return []
 
   const variables = await db.studyVariable.findMany({
     where: {
       extractionSnapshotId,
-      variableName: { in: variableNames },
+      dslKey: { in: dslKeys },
     },
     select: { variableKey: true },
   })
@@ -23,8 +23,8 @@ export async function resolveVariableKeysForExtractionSnapshot(
 }
 
 /**
- * Maps template `variableName` references to `StudyVariable.variableKey` for an extraction snapshot.
- * Uses explicit `requiredVariableNames` when present, otherwise parses names from template content.
+ * Maps template DSL token references to `StudyVariable.variableKey` for an extraction snapshot.
+ * Uses explicit `requiredVariableNames` (DSL tokens) when present, otherwise parses from template content.
  * Delegates to {@link resolveVariableKeysForExtractionSnapshot}.
  */
 export async function resolveVariableKeysForFeedback(template: {
@@ -34,13 +34,10 @@ export async function resolveVariableKeysForFeedback(template: {
 }): Promise<string[]> {
   if (!template.extractionSnapshotId) return []
 
-  const requiredVariableNames =
+  const requiredDslKeys =
     Array.isArray(template.requiredVariableNames) && template.requiredVariableNames.length > 0
       ? template.requiredVariableNames
       : extractRequiredVariableNames(template.content)
 
-  return resolveVariableKeysForExtractionSnapshot(
-    template.extractionSnapshotId,
-    requiredVariableNames
-  )
+  return resolveVariableKeysForExtractionSnapshot(template.extractionSnapshotId, requiredDslKeys)
 }

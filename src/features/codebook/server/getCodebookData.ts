@@ -1,6 +1,7 @@
 import db from "db"
 import { cache } from "react"
 import { withStudyAccess } from "@/src/features/studies/services"
+import { findWinningGroup } from "../domain/codebookGroups"
 import { computeCodebookValidation } from "./computeCodebookValidation"
 
 export const fetchCodebookMergedVariablesForStudy = cache(async (studyId: number) => {
@@ -31,6 +32,7 @@ export const fetchCodebookMergedVariablesForStudy = cache(async (studyId: number
           id: true,
           variableKey: true,
           variableName: true,
+          dslKey: true,
           type: true,
           examples: true,
         },
@@ -46,30 +48,39 @@ export const fetchCodebookMergedVariablesForStudy = cache(async (studyId: number
     },
   })
 
-  const entries = codebook
-    ? await db.codebookEntry.findMany({
-        where: { codebookId: codebook.id },
-        select: {
-          variableKey: true,
-          description: true,
-          personalData: true,
-        },
-      })
-    : []
+  const [entries, groups] = codebook
+    ? await Promise.all([
+        db.codebookEntry.findMany({
+          where: { codebookId: codebook.id },
+          select: { variableKey: true, description: true, personalData: true },
+        }),
+        db.codebookGroup.findMany({
+          where: { codebookId: codebook.id },
+          select: { groupKey: true, description: true, personalData: true },
+        }),
+      ])
+    : [[], []]
 
   const entryByKey = new Map(entries.map((entry) => [entry.variableKey, entry]))
+
   const codebookValidation = await computeCodebookValidation(studyId)
 
   return {
-    variables: variables.map((v) => ({
-      id: v.id,
-      variableKey: v.variableKey,
-      variableName: v.variableName,
-      type: v.type,
-      examples: v.examples,
-      description: entryByKey.get(v.variableKey)?.description ?? null,
-      personalData: entryByKey.get(v.variableKey)?.personalData ?? false,
-    })),
+    variables: variables.map((v) => {
+      const entry = entryByKey.get(v.variableKey)
+      const group = findWinningGroup(v.dslKey, groups)
+      return {
+        id: v.id,
+        variableKey: v.variableKey,
+        variableName: v.variableName,
+        dslKey: v.dslKey,
+        type: v.type,
+        examples: v.examples,
+        description: entry?.description ?? group?.description ?? null,
+        personalData: entry?.personalData ?? group?.personalData ?? false,
+      }
+    }),
+    groups,
     codebook: codebook
       ? {
           ...codebook,

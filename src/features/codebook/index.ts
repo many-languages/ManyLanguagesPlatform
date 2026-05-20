@@ -2,8 +2,11 @@ export { default as CodebookContent } from "./ui/CodebookContent"
 export type {
   CodebookContentProps,
   CodebookContentRef,
+  CodebookContentSnapshot,
   CodebookStepState,
-} from "./ui/CodebookContent"
+  VariableCodebookEntry,
+  CodebookGroupEntry,
+} from "./types"
 
 export {
   getCodebookDataRsc,

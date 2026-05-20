@@ -212,6 +212,7 @@ export async function approveExtraction(input: {
             extractionSnapshotId: extractionSnapshot.id,
             variableKey: variable.variableKey,
             variableName: variable.variableName,
+            dslKey: variable.dslKey,
             type: variable.type,
             examples: variable.examples as unknown as Prisma.InputJsonValue,
           })),

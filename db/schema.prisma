@@ -215,6 +215,7 @@ model StudyVariable {
 
   variableKey  String
   variableName String
+  dslKey       String
   type         String
   examples     Json?
 
@@ -222,6 +223,7 @@ model StudyVariable {
 
   @@unique([extractionSnapshotId, variableKey])
   @@index([extractionSnapshotId])
+  @@index([extractionSnapshotId, dslKey])
 }
 
 model ParticipantStudy {
@@ -261,11 +263,28 @@ model Codebook {
   studyId Int @unique
 
   entries CodebookEntry[]
+  groups  CodebookGroup[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   study Study @relation(fields: [studyId], references: [id], onDelete: Cascade)
+}
+
+model CodebookGroup {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  codebookId   Int
+  groupKey     String // dslKey path prefix, e.g. "matrix" or "frameworksRate.angularv1"
+  description  String?
+  personalData Boolean @default(false)
+
+  codebook Codebook @relation(fields: [codebookId], references: [id], onDelete: Cascade)
+
+  @@unique([codebookId, groupKey])
+  @@index([codebookId])
 }
 
 model CodebookEntry {
@@ -277,6 +296,7 @@ model CodebookEntry {
 
   variableKey  String
   variableName String
+  dslKey       String
 
   description  String?
   personalData Boolean @default(false)

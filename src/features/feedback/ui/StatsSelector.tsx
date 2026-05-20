@@ -27,7 +27,7 @@ export default function StatsSelector({ variables, onInsert, markdown }: StatsSe
   const variableOptions = useMemo(
     () =>
       variables.map((v) => ({
-        value: v.variableName,
+        value: v.dslKey ?? v.variableName,
         label: `${v.variableName} (${v.type})`,
       })),
     [variables]
@@ -36,7 +36,7 @@ export default function StatsSelector({ variables, onInsert, markdown }: StatsSe
   const currentVariableType = useMemo(
     () =>
       selectedVariable
-        ? variables.find((v) => v.variableName === selectedVariable)?.type ?? "string"
+        ? variables.find((v) => (v.dslKey ?? v.variableName) === selectedVariable)?.type ?? "string"
         : "string",
     [selectedVariable, variables]
   )
@@ -100,7 +100,7 @@ export default function StatsSelector({ variables, onInsert, markdown }: StatsSe
               setSelectedVariable(value)
               if (value) {
                 const variableType =
-                  variables.find((v) => v.variableName === value)?.type ?? "string"
+                  variables.find((v) => (v.dslKey ?? v.variableName) === value)?.type ?? "string"
                 const availableMetrics = getMetricsForVariableType(variableType)
                 if (availableMetrics.length > 0) setSelectedMetric(availableMetrics[0].key)
               }
@@ -151,14 +151,12 @@ export default function StatsSelector({ variables, onInsert, markdown }: StatsSe
         </div>
       </div>
 
-      {/* FilterBuilder Modal */}
-      {showFilterBuilder && (
-        <FilterBuilder
-          variables={variables}
-          onInsert={handleFilterInsert}
-          onClose={() => setShowFilterBuilder(false)}
-        />
-      )}
+      <FilterBuilder
+        open={showFilterBuilder}
+        variables={variables}
+        onInsert={handleFilterInsert}
+        onClose={() => setShowFilterBuilder(false)}
+      />
     </div>
   )
 }

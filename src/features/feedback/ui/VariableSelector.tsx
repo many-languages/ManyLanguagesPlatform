@@ -27,7 +27,7 @@ export default function VariableSelector({ variables, onInsert, markdown }: Vari
   const variableOptions = useMemo(
     () =>
       variables.map((v) => ({
-        value: v.variableName,
+        value: v.dslKey ?? v.variableName,
         label: v.type ? `${v.variableName} (${v.type})` : v.variableName,
       })),
     [variables]
@@ -112,14 +112,12 @@ export default function VariableSelector({ variables, onInsert, markdown }: Vari
         </div>
       </div>
 
-      {/* FilterBuilder Modal */}
-      {showFilterBuilder && (
-        <FilterBuilder
-          variables={variables}
-          onInsert={handleFilterInsert}
-          onClose={() => setShowFilterBuilder(false)}
-        />
-      )}
+      <FilterBuilder
+        open={showFilterBuilder}
+        variables={variables}
+        onInsert={handleFilterInsert}
+        onClose={() => setShowFilterBuilder(false)}
+      />
     </div>
   )
 }

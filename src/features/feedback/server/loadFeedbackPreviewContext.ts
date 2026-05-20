@@ -51,10 +51,8 @@ export async function loadFeedbackPreviewContext(
 
       const { variables, approvedExtractionId } = await getCodebookDataRsc(sid)
 
-      const allowedVariableNames = variables
-        .filter((v) => !v.personalData)
-        .map((v) => v.variableName)
-      const hiddenVariableNames = variables.filter((v) => v.personalData).map((v) => v.variableName)
+      const allowedVariableNames = variables.filter((v) => !v.personalData).map((v) => v.dslKey)
+      const hiddenVariableNames = variables.filter((v) => v.personalData).map((v) => v.dslKey)
 
       const pilotResultIds = allPilotResults.map((r) => r.id)
       const pilotDatasetHash = hashPilotResultIds(pilotResultIds)
@@ -76,6 +74,7 @@ export async function loadFeedbackPreviewContext(
             variableName: v.variableName,
             type: v.type,
             variableKey: v.variableKey,
+            dslKey: v.dslKey,
           })),
         hiddenVariables: hiddenVariableNames,
       }

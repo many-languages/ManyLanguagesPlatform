@@ -1,5 +1,9 @@
 import db from "db"
 import { withStudyWriteAccess } from "@/src/features/studies/services"
+import {
+  assertMutuallyExclusiveGroupKeys,
+  variableHasDescriptionCoverage,
+} from "../domain/codebookGroups"
 import { computeCodebookValidation } from "./computeCodebookValidation"
 import { getPersonalDataViolationsForPersistedTemplate } from "@/src/features/feedback"
 
@@ -8,6 +12,12 @@ export type UpdateVariableCodebookInput = {
   variables: Array<{
     variableKey: string
     variableName: string
+    dslKey: string
+    description: string | null
+    personalData: boolean
+  }>
+  groups: Array<{
+    groupKey: string
     description: string | null
     personalData: boolean
   }>
@@ -64,6 +74,9 @@ export async function updateVariableCodebookRsc(
         select: { id: true },
       }))
 
+    const inputGroupKeys = new Set(input.groups.map((g) => g.groupKey))
+    assertMutuallyExclusiveGroupKeys(input.groups.map((g) => g.groupKey))
+
     const codebookValidation = await db.$transaction(async (tx) => {
       await tx.codebookEntry.deleteMany({
         where: {
@@ -72,8 +85,15 @@ export async function updateVariableCodebookRsc(
         },
       })
 
-      await Promise.all(
-        input.variables.map((v) =>
+      await tx.codebookGroup.deleteMany({
+        where: {
+          codebookId: codebook.id,
+          groupKey: { notIn: Array.from(inputGroupKeys) },
+        },
+      })
+
+      await Promise.all([
+        ...input.variables.map((v) =>
           tx.codebookEntry.upsert({
             where: {
               codebookId_variableKey: {
@@ -83,6 +103,7 @@ export async function updateVariableCodebookRsc(
             },
             update: {
               variableName: v.variableName,
+              dslKey: v.dslKey,
               description: v.description,
               personalData: v.personalData,
             },
@@ -90,18 +111,39 @@ export async function updateVariableCodebookRsc(
               codebookId: codebook.id,
               variableKey: v.variableKey,
               variableName: v.variableName,
+              dslKey: v.dslKey,
               description: v.description,
               personalData: v.personalData,
             },
           })
-        )
-      )
+        ),
+        ...input.groups.map((g) =>
+          tx.codebookGroup.upsert({
+            where: {
+              codebookId_groupKey: {
+                codebookId: codebook.id,
+                groupKey: g.groupKey,
+              },
+            },
+            update: {
+              description: g.description,
+              personalData: g.personalData,
+            },
+            create: {
+              codebookId: codebook.id,
+              groupKey: g.groupKey,
+              description: g.description,
+              personalData: g.personalData,
+            },
+          })
+        ),
+      ])
 
       return computeCodebookValidation(input.studyId, tx)
     })
 
-    const allHaveDescriptions = input.variables.every(
-      (v) => v.description && v.description.trim() !== ""
+    const allHaveDescriptions = input.variables.every((v) =>
+      variableHasDescriptionCoverage(v.dslKey, v.description, input.groups)
     )
 
     const step5Completed =

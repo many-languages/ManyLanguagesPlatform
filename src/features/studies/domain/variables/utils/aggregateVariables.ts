@@ -6,6 +6,7 @@ import {
   VariableExample,
 } from "../types"
 import { buildVariableNames } from "./buildVariableNames"
+import { variableKeyToDslToken } from "./dslKey"
 import { deriveVariableFlags } from "./deriveVariableFlags"
 import { determineVariableType } from "./determineVariableType"
 import { materializeVariableDiagnostics } from "./materializeVariableDiagnostics"
@@ -107,6 +108,7 @@ export function aggregateVariables(
     variables.push({
       variableKey,
       variableName: variableNames.get(variableKey) || variableKey,
+      dslKey: variableKeyToDslToken(variableKey),
       examples: meta.examples,
       type: variableType,
       occurrences: observationCount,

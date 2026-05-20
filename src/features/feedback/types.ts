@@ -110,6 +110,7 @@ export interface FeedbackVariable {
   variableName: string
   type: string
   variableKey?: string
+  dslKey?: string
 }
 
 export interface FeedbackPreviewContextClientDto {

@@ -1,4 +1,5 @@
 import db, { Prisma } from "db"
+import { findWinningGroupKey } from "../domain/codebookGroups"
 
 type DbClient = Prisma.TransactionClient | typeof db
 
@@ -37,21 +38,31 @@ export async function computeCodebookValidation(
     }
   }
 
-  const [entries, extractionVariables] = await Promise.all([
+  const [entries, groups, extractionVariables] = await Promise.all([
     client.codebookEntry.findMany({
       where: { codebookId: codebook.id },
       select: { variableKey: true },
     }),
+    client.codebookGroup.findMany({
+      where: { codebookId: codebook.id },
+      select: { groupKey: true },
+    }),
     client.studyVariable.findMany({
       where: { extractionSnapshotId: latestUpload.approvedExtractionId },
-      select: { variableKey: true },
+      select: { variableKey: true, dslKey: true },
     }),
   ])
 
-  const entryKeys = new Set(entries.map((entry) => entry.variableKey))
+  const entryKeys = new Set(entries.map((e) => e.variableKey))
   const extractionKeys = new Set(extractionVariables.map((v) => v.variableKey))
 
-  const missingKeys = Array.from(extractionKeys).filter((key) => !entryKeys.has(key))
+  const groupKeys = groups.map((g) => g.groupKey)
+  const isGroupCovered = (dslKey: string) => findWinningGroupKey(dslKey, groupKeys) !== undefined
+
+  const missingKeys = extractionVariables
+    .filter((v) => !entryKeys.has(v.variableKey) && !isGroupCovered(v.dslKey))
+    .map((v) => v.variableKey)
+
   const extraKeys = Array.from(entryKeys).filter((key) => !extractionKeys.has(key))
 
   return {

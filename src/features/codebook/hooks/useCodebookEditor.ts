@@ -3,6 +3,7 @@
 import { useCallback, useMemo, useState } from "react"
 import { toast } from "react-hot-toast"
 
+import { codebookCardDefaultOpen } from "../domain/codebookCardOpen"
 import {
   computeCandidateGroupPrefixes,
   findWinningGroupKey,
@@ -38,9 +39,29 @@ function mapInitialGroups(initialGroups: CodebookInitialGroup[]): CodebookGroupE
       groupKey: g.groupKey,
       description: g.description ?? "",
       personalData: g.personalData,
-      childVariablesOpen: false,
     }))
   )
+}
+
+export interface CodebookCardOpenState {
+  groups: Record<string, boolean>
+  variables: Record<number, boolean>
+}
+
+function buildInitialCardOpenState(
+  groups: CodebookGroupEntry[],
+  variables: VariableCodebookEntry[],
+  groupKeys: string[]
+): CodebookCardOpenState {
+  const ungrouped = variables.filter((v) => findWinningGroupKey(v.dslKey, groupKeys) === undefined)
+  return {
+    groups: Object.fromEntries(
+      groups.map((g) => [g.groupKey, codebookCardDefaultOpen(g.description)])
+    ),
+    variables: Object.fromEntries(
+      ungrouped.map((v) => [v.id, codebookCardDefaultOpen(v.description)])
+    ),
+  }
 }
 
 export interface UseCodebookEditorOptions {
@@ -62,6 +83,12 @@ export function useCodebookEditor({
     mapInitialVariables(initialVariables)
   )
   const [groups, setGroups] = useState<CodebookGroupEntry[]>(() => mapInitialGroups(initialGroups))
+  const [cardOpen, setCardOpen] = useState<CodebookCardOpenState>(() => {
+    const mappedGroups = mapInitialGroups(initialGroups)
+    const mappedVariables = mapInitialVariables(initialVariables)
+    const keys = mappedGroups.map((g) => g.groupKey)
+    return buildInitialCardOpenState(mappedGroups, mappedVariables, keys)
+  })
   const [codebookSaved, setCodebookSaved] = useState(true)
   const [showGroupModal, setShowGroupModal] = useState(false)
 
@@ -120,7 +147,7 @@ export function useCodebookEditor({
   const updateGroup = useCallback(
     (
       groupKey: string,
-      field: keyof Omit<CodebookGroupEntry, "groupKey" | "childVariablesOpen">,
+      field: keyof Omit<CodebookGroupEntry, "groupKey">,
       value: string | boolean
     ) => {
       setGroups((prev) => prev.map((g) => (g.groupKey === groupKey ? { ...g, [field]: value } : g)))
@@ -129,19 +156,74 @@ export function useCodebookEditor({
     [markDirty]
   )
 
-  const setGroupChildVariablesOpen = useCallback((groupKey: string, open: boolean) => {
-    setGroups((prev) =>
-      prev.map((g) => (g.groupKey === groupKey ? { ...g, childVariablesOpen: open } : g))
-    )
-  }, [])
-
   const removeGroup = useCallback(
     (groupKey: string) => {
       setGroups((prev) => prev.filter((g) => g.groupKey !== groupKey))
+      setCardOpen((prev) => {
+        const { [groupKey]: _removed, ...groups } = prev.groups
+        return { ...prev, groups }
+      })
       markDirty()
     },
     [markDirty]
   )
+
+  const setGroupCardOpen = useCallback((groupKey: string, open: boolean) => {
+    setCardOpen((prev) => ({
+      ...prev,
+      groups: { ...prev.groups, [groupKey]: open },
+    }))
+  }, [])
+
+  const setVariableCardOpen = useCallback((variableId: number, open: boolean) => {
+    setCardOpen((prev) => ({
+      ...prev,
+      variables: { ...prev.variables, [variableId]: open },
+    }))
+  }, [])
+
+  const expandAllCards = useCallback(() => {
+    setCardOpen({
+      groups: Object.fromEntries(groups.map((g) => [g.groupKey, true])),
+      variables: Object.fromEntries(ungroupedVariables.map((v) => [v.id, true])),
+    })
+  }, [groups, ungroupedVariables])
+
+  const collapseAllCards = useCallback(() => {
+    setCardOpen({
+      groups: Object.fromEntries(groups.map((g) => [g.groupKey, false])),
+      variables: Object.fromEntries(ungroupedVariables.map((v) => [v.id, false])),
+    })
+  }, [groups, ungroupedVariables])
+
+  const isGroupCardOpen = useCallback(
+    (groupKey: string, description: string) =>
+      cardOpen.groups[groupKey] ?? codebookCardDefaultOpen(description),
+    [cardOpen.groups]
+  )
+
+  const isVariableCardOpen = useCallback(
+    (variableId: number, description: string | null) =>
+      cardOpen.variables[variableId] ?? codebookCardDefaultOpen(description),
+    [cardOpen.variables]
+  )
+
+  const allCardsExpanded = useMemo(() => {
+    if (groups.length === 0 && ungroupedVariables.length === 0) return false
+    const groupsExpanded = groups.every((g) => isGroupCardOpen(g.groupKey, g.description))
+    const variablesExpanded = ungroupedVariables.every((v) =>
+      isVariableCardOpen(v.id, v.description)
+    )
+    return groupsExpanded && variablesExpanded
+  }, [groups, ungroupedVariables, isGroupCardOpen, isVariableCardOpen])
+
+  const toggleAllCardsOpen = useCallback(() => {
+    if (allCardsExpanded) {
+      collapseAllCards()
+    } else {
+      expandAllCards()
+    }
+  }, [allCardsExpanded, collapseAllCards, expandAllCards])
 
   const handleCreateGroup = useCallback(
     (prefix: string) => {
@@ -158,9 +240,12 @@ export function useCodebookEditor({
           groupKey: prefix,
           description: "",
           personalData: false,
-          childVariablesOpen: true,
         },
       ])
+      setCardOpen((prev) => ({
+        ...prev,
+        groups: { ...prev.groups, [prefix]: true },
+      }))
       markDirty()
       setShowGroupModal(false)
     },
@@ -183,8 +268,13 @@ export function useCodebookEditor({
     getChildVariablesForGroup,
     updateVariable,
     updateGroup,
-    setGroupChildVariablesOpen,
     removeGroup,
     handleCreateGroup,
+    isGroupCardOpen,
+    isVariableCardOpen,
+    setGroupCardOpen,
+    setVariableCardOpen,
+    allCardsExpanded,
+    toggleAllCardsOpen,
   }
 }

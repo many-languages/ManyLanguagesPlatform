@@ -1,5 +1,6 @@
 import Card from "@/src/components/ui/Card"
 import { Textarea } from "@/src/components/ui/fields"
+import CodebookEntryStatus from "./CodebookEntryStatus"
 import CodebookPersonalDataField from "./CodebookPersonalDataField"
 import CodebookVariableHeader from "./CodebookVariableHeader"
 
@@ -15,6 +16,8 @@ export interface CodebookVariableCardVariable {
 
 interface CodebookVariableCardProps {
   variable: CodebookVariableCardVariable
+  open: boolean
+  onOpenChange: (open: boolean) => void
   onUpdateVariable: (
     field: keyof Omit<CodebookVariableCardVariable, "id">,
     value: string | boolean
@@ -23,11 +26,21 @@ interface CodebookVariableCardProps {
 
 export default function CodebookVariableCard({
   variable,
+  open,
+  onOpenChange,
   onUpdateVariable,
 }: CodebookVariableCardProps) {
   return (
     <Card
-      title={variable.variableName}
+      collapsible
+      open={open}
+      onOpenChange={onOpenChange}
+      title={
+        <span className="inline-flex items-center gap-2">
+          <CodebookEntryStatus description={variable.description} />
+          {variable.variableName}
+        </span>
+      }
       actions={
         <CodebookPersonalDataField
           checked={variable.personalData}

@@ -90,6 +90,9 @@ const CodebookContent = forwardRef<CodebookContentRef, CodebookContentProps>(
           isSaved={editor.showSavedBadge}
           isSaving={isSaving}
           onSave={saveCodebook}
+          showExpandCollapse={editor.groups.length > 0 || editor.ungroupedVariables.length > 0}
+          allCardsExpanded={editor.allCardsExpanded}
+          onToggleAllCardsOpen={editor.toggleAllCardsOpen}
         />
 
         <CodebookValidationAlerts alerts={editor.validationAlerts} />
@@ -106,11 +109,10 @@ const CodebookContent = forwardRef<CodebookContentRef, CodebookContentProps>(
             <CodebookGroupCard
               key={group.groupKey}
               group={group}
+              open={editor.isGroupCardOpen(group.groupKey, group.description)}
+              onOpenChange={(open) => editor.setGroupCardOpen(group.groupKey, open)}
               childVariables={editor.getChildVariablesForGroup(group.groupKey)}
               onUpdateGroup={(field, value) => editor.updateGroup(group.groupKey, field, value)}
-              onChildVariablesOpenChange={(open) =>
-                editor.setGroupChildVariablesOpen(group.groupKey, open)
-              }
               onRemoveGroup={() => editor.removeGroup(group.groupKey)}
             />
           ))}
@@ -119,6 +121,8 @@ const CodebookContent = forwardRef<CodebookContentRef, CodebookContentProps>(
             <CodebookVariableCard
               key={variable.id}
               variable={variable}
+              open={editor.isVariableCardOpen(variable.id, variable.description)}
+              onOpenChange={(open) => editor.setVariableCardOpen(variable.id, open)}
               onUpdateVariable={(field, value) => editor.updateVariable(variable.id, field, value)}
             />
           ))}

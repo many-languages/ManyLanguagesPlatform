@@ -17,8 +17,6 @@ export interface CodebookGroupEntry {
   groupKey: string
   description: string
   personalData: boolean
-  /** UI-only: child variable list expanded state (not persisted). */
-  childVariablesOpen: boolean
 }
 
 export interface CodebookInitialVariable {

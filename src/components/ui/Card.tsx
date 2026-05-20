@@ -14,7 +14,7 @@ interface CardProps {
   borderColorClass?: string
   bodyClassName?: string
   actionsWrapperClassName?: string
-  /** Where to render `actions` on non-collapsible cards. Collapsible cards always use footer. */
+  /** Where to render `actions`. Collapsible cards show actions in the header when provided. */
   actionsPlacement?: "header" | "footer"
   /** Uncontrolled initial open state (collapsible only). Ignored when `onOpenChange` is set. */
   defaultOpen?: boolean
@@ -71,18 +71,30 @@ const Card = ({
             ? { checked: open ?? false, onChange: handleCollapseChange }
             : { defaultChecked: defaultOpen })}
         />
-        <label
-          htmlFor={collapseId}
-          className="flex items-center justify-between cursor-pointer px-6 py-4 text-xl font-medium gap-3 peer-checked:[&_svg]:rotate-180"
-        >
-          {typeof title === "string" ? <span>{title}</span> : title}
-          <ChevronDownIcon className="h-5 w-5 transition-transform duration-200" />
-        </label>
-        <div className="border-base-300 px-6 py-4 flex flex-col min-h-0 gap-3 hidden peer-checked:flex">
+        <div className="flex items-center gap-3 px-6 py-4 peer-checked:[&_.card-collapse-chevron]:rotate-180">
+          <label htmlFor={collapseId} className="min-w-0 flex-1 cursor-pointer text-xl font-medium">
+            {typeof title === "string" ? <span>{title}</span> : title}
+          </label>
+          <div className="flex shrink-0 items-center gap-6">
+            {actions ? (
+              <div
+                className={actionsWrapperClassName}
+                onClick={(e) => e.stopPropagation()}
+                onKeyDown={(e) => e.stopPropagation()}
+              >
+                {actions}
+              </div>
+            ) : null}
+            <label htmlFor={collapseId} className="cursor-pointer">
+              <ChevronDownIcon className="card-collapse-chevron h-5 w-5 transition-transform duration-200" />
+            </label>
+          </div>
+        </div>
+        <div className="border-base-300 px-6 pb-4 flex flex-col min-h-0 gap-3 hidden peer-checked:flex">
           <div className={clsx("card-body flex flex-col gap-3 flex-1 min-h-0 p-0", bodyClassName)}>
             {children}
           </div>
-          {renderActions()}
+          {actionsPlacement === "footer" && renderActions()}
         </div>
       </div>
     )

@@ -294,7 +294,7 @@ const FeedbackFormEditor = forwardRef<FeedbackFormEditorRef, FeedbackFormEditorP
         </div>
 
         {/* DSL Helper */}
-        <DSLHelper variables={variables} />
+        <DSLHelper />
 
         {/* Preview */}
         <div className="divider">Preview</div>

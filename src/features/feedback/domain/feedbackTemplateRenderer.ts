@@ -4,6 +4,7 @@ import type {
 } from "@/src/features/feedback/domain/feedbackRenderContext"
 import {
   createBareVarReferenceRegex,
+  createBareStatReferenceRegex,
   createFeedbackStatPlaceholderRegex,
   createIfBlockNoElseRegex,
   createIfBlockWithElseRegex,
@@ -130,7 +131,16 @@ function evalExprWithContext(
   ctx: FeedbackRenderContext,
   options?: RenderTemplateOptions
 ): boolean {
-  let e = expr.replace(createBareVarReferenceRegex(), (_m, name: string, modifier?: string) => {
+  let e = expr.replace(
+    createBareStatReferenceRegex(),
+    (_m, name: string, metric: string, whereClause?: string) => {
+      const values = getVariableValues(ctx, name, whereClause, options)
+      const rendered = formatFeedbackStatMetric(metric, values)
+      return rendered === "" ? "null" : rendered
+    }
+  )
+
+  e = e.replace(createBareVarReferenceRegex(), (_m, name: string, modifier?: string) => {
     const values = getVariableValues(ctx, name, undefined, options)
     if (values.length === 0) return "null"
 
@@ -153,17 +163,199 @@ function evalExprWithContext(
     if (value === null || value === undefined) return "null"
     return JSON.stringify(String(value))
   })
-  e = e
-    .replace(/\band\b/g, "&&")
-    .replace(/\bor\b/g, "||")
-    .replace(/\bnot\b/g, "!")
-  if (/[^\w\s\d\+\-\*\/%<>=!&|\(\)\.'",]/.test(e)) return false
+  return evaluateConditionExpression(e)
+}
+
+type ConditionToken =
+  | { type: "literal"; value: Primitive }
+  | { type: "operator"; value: ConditionOperator }
+  | { type: "paren"; value: "(" | ")" }
+
+type ConditionOperator = "==" | "!=" | ">=" | "<=" | ">" | "<" | "and" | "or" | "not"
+
+function evaluateConditionExpression(expr: string): boolean {
+  const tokens = tokenizeConditionExpression(expr)
+  if (!tokens) return false
+
+  let cursor = 0
+
+  const peek = () => tokens[cursor]
+  const consume = () => tokens[cursor++]
+  const matchOperator = (...operators: ConditionOperator[]) => {
+    const token = peek()
+    if (token?.type !== "operator" || !operators.includes(token.value)) return false
+    cursor += 1
+    return true
+  }
+
+  const parseExpression = (): unknown => parseOr()
+
+  const parseOr = (): unknown => {
+    let left = parseAnd()
+    while (matchOperator("or")) {
+      const right = parseAnd()
+      left = Boolean(left) || Boolean(right)
+    }
+    return left
+  }
+
+  const parseAnd = (): unknown => {
+    let left = parseUnary()
+    while (matchOperator("and")) {
+      const right = parseUnary()
+      left = Boolean(left) && Boolean(right)
+    }
+    return left
+  }
+
+  const parseUnary = (): unknown => {
+    if (matchOperator("not")) {
+      return !Boolean(parseUnary())
+    }
+    return parseComparison()
+  }
+
+  const parseComparison = (): unknown => {
+    const left = parsePrimary()
+    const token = peek()
+    if (token?.type !== "operator" || !["==", "!=", ">=", "<=", ">", "<"].includes(token.value)) {
+      return left
+    }
+    const operator = consume()
+    const right = parsePrimary()
+    return compareConditionValues(left, operator.value, right)
+  }
+
+  const parsePrimary = (): unknown => {
+    const token = consume()
+    if (!token) throw new Error("Unexpected end of expression")
+    if (token.type === "literal") return token.value
+    if (token.type === "paren" && token.value === "(") {
+      const value = parseExpression()
+      const close = consume()
+      if (close?.type !== "paren" || close.value !== ")") {
+        throw new Error("Unclosed parenthesis")
+      }
+      return value
+    }
+    throw new Error("Expected literal or parenthesized expression")
+  }
+
   try {
-    // eslint-disable-next-line no-new-func
-    const fn = new Function(`return (${e});`)
-    return Boolean(fn())
+    const result = parseExpression()
+    return cursor === tokens.length ? Boolean(result) : false
   } catch {
     return false
+  }
+}
+
+function tokenizeConditionExpression(expr: string): ConditionToken[] | null {
+  const tokens: ConditionToken[] = []
+  let i = 0
+
+  while (i < expr.length) {
+    const ch = expr[i]
+    if (/\s/.test(ch)) {
+      i += 1
+      continue
+    }
+
+    const two = expr.slice(i, i + 2)
+    if (["==", "!=", ">=", "<=", "&&", "||"].includes(two)) {
+      tokens.push({
+        type: "operator",
+        value: two === "&&" ? "and" : two === "||" ? "or" : (two as ConditionOperator),
+      })
+      i += 2
+      continue
+    }
+
+    if (ch === ">" || ch === "<" || ch === "!") {
+      tokens.push({ type: "operator", value: ch === "!" ? "not" : (ch as ">" | "<") })
+      i += 1
+      continue
+    }
+
+    if (ch === "(" || ch === ")") {
+      tokens.push({ type: "paren", value: ch })
+      i += 1
+      continue
+    }
+
+    if (ch === '"' || ch === "'") {
+      const parsed = readQuotedString(expr, i)
+      if (!parsed) return null
+      tokens.push({ type: "literal", value: parsed.value })
+      i = parsed.end
+      continue
+    }
+
+    const numberMatch = expr.slice(i).match(/^-?\d+(?:\.\d+)?/)
+    if (numberMatch) {
+      tokens.push({ type: "literal", value: Number(numberMatch[0]) })
+      i += numberMatch[0].length
+      continue
+    }
+
+    const wordMatch = expr.slice(i).match(/^[a-zA-Z_][a-zA-Z0-9_]*/)
+    if (wordMatch) {
+      const word = wordMatch[0]
+      const normalized = word.toLowerCase()
+      if (normalized === "true" || normalized === "false") {
+        tokens.push({ type: "literal", value: normalized === "true" })
+      } else if (normalized === "null") {
+        tokens.push({ type: "literal", value: null })
+      } else if (normalized === "and" || normalized === "or" || normalized === "not") {
+        tokens.push({ type: "operator", value: normalized })
+      } else {
+        return null
+      }
+      i += word.length
+      continue
+    }
+
+    return null
+  }
+
+  return tokens
+}
+
+function readQuotedString(input: string, start: number): { value: string; end: number } | null {
+  const quote = input[start]
+  let value = ""
+  for (let i = start + 1; i < input.length; i++) {
+    const ch = input[i]
+    if (ch === "\\") {
+      const next = input[i + 1]
+      if (next === undefined) return null
+      value += next
+      i += 1
+      continue
+    }
+    if (ch === quote) {
+      return { value, end: i + 1 }
+    }
+    value += ch
+  }
+  return null
+}
+
+function compareConditionValues(lhs: unknown, op: string, rhs: unknown): boolean {
+  switch (op) {
+    case "==":
+      return lhs === rhs
+    case "!=":
+      return lhs !== rhs
+    case ">":
+      return Number(lhs) > Number(rhs)
+    case "<":
+      return Number(lhs) < Number(rhs)
+    case ">=":
+      return Number(lhs) >= Number(rhs)
+    case "<=":
+      return Number(lhs) <= Number(rhs)
+    default:
+      return false
   }
 }
 

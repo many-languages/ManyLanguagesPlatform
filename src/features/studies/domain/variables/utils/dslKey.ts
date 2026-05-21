@@ -15,6 +15,7 @@
  *   $score                              → score
  *   $frameworksRate.angularv1.knowledge → frameworksRate.angularv1.knowledge
  *   $trials[*].rt                       → trials.rt
+ *   $[*].score                          → score
  *   $["my.key"].value                   → my_key.value
  */
 export function variableKeyToDslToken(variableKey: string): string {
@@ -30,5 +31,7 @@ export function variableKeyToDslToken(variableKey: string): string {
         const safe = k.replace(/[^a-zA-Z0-9_]/g, "_")
         return prev !== undefined ? prev + "." + safe : safe
       })
+      // root-level [*] leaves a leading dot (e.g. $[*].score → .score)
+      .replace(/^\.+/, "")
   )
 }

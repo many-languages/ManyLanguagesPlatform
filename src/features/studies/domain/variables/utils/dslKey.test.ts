@@ -16,6 +16,11 @@ describe("variableKeyToDslToken", () => {
     expect(variableKeyToDslToken("$trials[*].rt")).toBe("trials.rt")
   })
 
+  it("removes root-level [*] wildcard without a leading dot", () => {
+    expect(variableKeyToDslToken("$[*].score")).toBe("score")
+    expect(variableKeyToDslToken("$[*].reactionTime")).toBe("reactionTime")
+  })
+
   it("removes trailing [*] wildcard", () => {
     expect(variableKeyToDslToken("$trials[*]")).toBe("trials")
   })

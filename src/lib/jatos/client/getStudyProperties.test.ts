@@ -81,6 +81,41 @@ describe("getStudyProperties", () => {
     await expect(getStudyProperties("123", { token: "token" })).resolves.toEqual(properties)
   })
 
+  it("accepts components without position in study properties", async () => {
+    const properties = {
+      id: 123,
+      uuid: "study-1",
+      title: "Test",
+      dirName: "study-dir",
+      active: true,
+      locked: false,
+      groupStudy: false,
+      linearStudy: true,
+      allowPreview: true,
+      components: [
+        {
+          id: 1,
+          uuid: "comp-1",
+          title: "Component 1",
+          htmlFilePath: "index.html",
+        },
+        {
+          id: 2,
+          uuid: "comp-2",
+          title: "Component 2",
+          htmlFilePath: "task.html",
+          position: 1,
+        },
+      ],
+    }
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      text: async () => JSON.stringify({ apiVersion: "1.1", data: properties }),
+    })
+
+    await expect(getStudyProperties("123", { token: "token" })).resolves.toEqual(properties)
+  })
+
   it("throws JatosTransportError when study properties shape is invalid", async () => {
     mockFetch.mockResolvedValueOnce({
       ok: true,

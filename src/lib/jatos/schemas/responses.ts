@@ -99,7 +99,7 @@ const JatosComponentSchema = z
     uuid: z.string(),
     title: z.string(),
     htmlFilePath: z.string(),
-    position: z.number(),
+    position: z.number().optional(),
     comments: z.string().optional(),
     active: z.boolean().optional(),
     reloadable: z.boolean().optional(),

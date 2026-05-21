@@ -1,7 +1,7 @@
 "use client"
 
-import { createContext, useContext, useMemo } from "react"
-import { useRouter } from "next/navigation"
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react"
+import { usePathname, useRouter } from "next/navigation"
 import { useQuery } from "@blitzjs/rpc"
 
 import getNotificationMenuData from "../queries/getNotificationMenuData"
@@ -23,6 +23,14 @@ type NotificationMenuContextValue = {
 
 const NotificationMenuContext = createContext<NotificationMenuContextValue | null>(null)
 
+function toMenuEntries(data: NotificationMenuData): NotificationMenuEntry[] {
+  return (data.latestUnread ?? []).map((recipient) => ({
+    id: recipient.notificationId,
+    message: recipient.notification.message,
+    routeData: parseRouteData(recipient.notification.routeData),
+  }))
+}
+
 export const NotificationMenuProvider = ({
   children,
   initialData,
@@ -31,31 +39,51 @@ export const NotificationMenuProvider = ({
   initialData: NotificationMenuData
 }) => {
   const router = useRouter()
-  const [data, { refetch }] = useQuery(
-    getNotificationMenuData,
-    {},
-    {
-      initialData,
-      staleTime: Infinity,
-      refetchOnMount: false,
-      refetchOnWindowFocus: false,
+  const pathname = usePathname()
+  const [menuData, setMenuData] = useState(initialData)
+  const [, { refetch: refetchQuery }] = useQuery(getNotificationMenuData, {}, { enabled: false })
+
+  useEffect(() => {
+    setMenuData(initialData)
+  }, [initialData])
+
+  const refreshMenu = useCallback(async () => {
+    const result = await refetchQuery()
+    if (result.data) {
+      setMenuData(result.data)
     }
-  )
+  }, [refetchQuery])
+
+  const previousPathnameRef = useRef(pathname)
+  useEffect(() => {
+    if (previousPathnameRef.current === pathname) {
+      return
+    }
+    previousPathnameRef.current = pathname
+    void refreshMenu()
+  }, [pathname, refreshMenu])
+
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        void refreshMenu()
+      }
+    }
+
+    document.addEventListener("visibilitychange", handleVisibilityChange)
+    return () => document.removeEventListener("visibilitychange", handleVisibilityChange)
+  }, [refreshMenu])
 
   const value = useMemo<NotificationMenuContextValue>(
     () => ({
-      unreadCount: data?.unreadCount ?? 0,
-      latestNotifications: (data?.latestUnread ?? []).map((recipient) => ({
-        id: recipient.notificationId,
-        message: recipient.notification.message,
-        routeData: parseRouteData(recipient.notification.routeData),
-      })),
+      unreadCount: menuData.unreadCount,
+      latestNotifications: toMenuEntries(menuData),
       refetch: async () => {
-        await refetch()
+        await refreshMenu()
         router.refresh()
       },
     }),
-    [data, refetch, router]
+    [menuData, refreshMenu, router]
   )
 
   return (

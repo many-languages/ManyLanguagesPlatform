@@ -125,6 +125,15 @@ describe("computeCandidateGroupPrefixes", () => {
       count: 2,
     })
   })
+
+  it("ignores empty prefix from root-level array wildcard dslKeys", () => {
+    const rootArrayVars = [
+      { dslKey: ".score" },
+      { dslKey: ".reactionTime" },
+      { dslKey: ".accuracy" },
+    ]
+    expect(computeCandidateGroupPrefixes(rootArrayVars, [], 2)).toEqual([])
+  })
 })
 
 describe("variableHasDescriptionCoverage", () => {

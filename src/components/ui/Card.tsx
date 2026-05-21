@@ -1,3 +1,5 @@
+"use client"
+
 import { ChangeEvent, ReactNode, useId } from "react"
 import { ChevronDownIcon } from "@heroicons/react/24/outline"
 import clsx from "clsx"
@@ -14,7 +16,7 @@ interface CardProps {
   borderColorClass?: string
   bodyClassName?: string
   actionsWrapperClassName?: string
-  /** Where to render `actions`. Collapsible cards show actions in the header when provided. */
+  /** Where to render `actions`. Collapsible cards honor this for header vs footer placement. */
   actionsPlacement?: "header" | "footer"
   /** Uncontrolled initial open state (collapsible only). Ignored when `onOpenChange` is set. */
   defaultOpen?: boolean
@@ -76,7 +78,7 @@ const Card = ({
             {typeof title === "string" ? <span>{title}</span> : title}
           </label>
           <div className="flex shrink-0 items-center gap-6">
-            {actions ? (
+            {actions && actionsPlacement === "header" ? (
               <div
                 className={actionsWrapperClassName}
                 onClick={(e) => e.stopPropagation()}

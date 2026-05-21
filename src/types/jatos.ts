@@ -102,7 +102,7 @@ export interface JatosComponent {
   uuid: string
   title: string
   htmlFilePath: string
-  position: number
+  position?: number
   comments?: string
   active?: boolean
   reloadable?: boolean

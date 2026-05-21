@@ -1,9 +1,30 @@
-import { Step3Content, SetupStepHeader, loadStudySetupPage } from "@/src/features/studies"
+import { notFound } from "next/navigation"
+import { Step3Content, SetupStepHeader, parseStudyIdParam } from "@/src/features/studies"
+import { getResearcherStudyRsc } from "@/src/features/studies/server/getStudy"
 import { getResearcherRunUrlRsc } from "@/src/features/studies/server/getResearcherRunUrl"
 
 export default async function Step3Page({ params }: { params: Promise<{ studyId: string }> }) {
-  const { studyId, study } = await loadStudySetupPage(params)
-  const runUrlData = await getResearcherRunUrlRsc(studyId).catch(() => null)
+  const { studyId: studyIdRaw } = await params
+  const studyId = parseStudyIdParam(studyIdRaw)
+
+  if (studyId === null) {
+    notFound()
+  }
+
+  let study
+  let runUrlData
+
+  try {
+    ;[study, runUrlData] = await Promise.all([
+      getResearcherStudyRsc(studyId),
+      getResearcherRunUrlRsc(studyId).catch(() => null),
+    ])
+  } catch (error: unknown) {
+    if (error instanceof Error && error.name === "NotFoundError") {
+      notFound()
+    }
+    throw error
+  }
 
   return (
     <>

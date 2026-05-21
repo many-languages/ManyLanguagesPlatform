@@ -3,6 +3,7 @@
 import { useState, useCallback, useMemo } from "react"
 import VariableSelector from "./VariableSelector"
 import StatsSelector from "./StatsSelector"
+import FilterBuilder from "./FilterBuilder"
 import { SelectField, FilterButtonWithDisplay, SyntaxPreview } from "./shared"
 import type { FeedbackVariable } from "@/src/features/feedback/types"
 import { Textarea } from "@/src/components/ui/fields"
@@ -29,7 +30,7 @@ export default function ConditionalBuilder({
 }: ConditionalBuilderProps) {
   const [conditionType, setConditionType] = useState<"variable" | "statistic">("variable")
   const [selectedVariable, setSelectedVariable] = useState("")
-  const [selectedModifier, setSelectedModifier] = useState("all")
+  const [selectedModifier, setSelectedModifier] = useState("first")
   const [selectedMetric, setSelectedMetric] = useState("avg")
   const [operator, setOperator] = useState("==")
   const [value, setValue] = useState("")
@@ -38,15 +39,28 @@ export default function ConditionalBuilder({
   const [includeElse, setIncludeElse] = useState(false)
   const [focusedTextArea, setFocusedTextArea] = useState<"then" | "else">("then")
   const [currentFilterClause, setCurrentFilterClause] = useState("")
+  const [showFilterBuilder, setShowFilterBuilder] = useState(false)
+
+  const getVariableSyntaxKey = useCallback((variable: FeedbackVariable) => {
+    return variable.dslKey ?? variable.variableName
+  }, [])
+
+  const findVariableBySyntaxKey = useCallback(
+    (syntaxKey: string) => variables.find((v) => getVariableSyntaxKey(v) === syntaxKey),
+    [getVariableSyntaxKey, variables]
+  )
 
   const variableOptions = useMemo(
-    () => variables.map((v) => ({ value: v.variableName, label: `${v.variableName} (${v.type})` })),
-    [variables]
+    () =>
+      variables.map((v) => ({
+        value: getVariableSyntaxKey(v),
+        label: `${v.variableName} (${v.type})`,
+      })),
+    [getVariableSyntaxKey, variables]
   )
 
   const modifierOptions = useMemo(
     () => [
-      { value: "all", label: "All Values - Show all occurrences" },
       { value: "first", label: "First Value - Show only first occurrence" },
       { value: "last", label: "Last Value - Show only last occurrence" },
     ],
@@ -55,19 +69,15 @@ export default function ConditionalBuilder({
 
   const currentVariableType = useMemo(() => {
     if (conditionType === "statistic") return "number"
-    return selectedVariable
-      ? variables.find((v) => v.variableName === selectedVariable)?.type ?? "string"
-      : "string"
-  }, [conditionType, selectedVariable, variables])
+    return selectedVariable ? findVariableBySyntaxKey(selectedVariable)?.type ?? "string" : "string"
+  }, [conditionType, findVariableBySyntaxKey, selectedVariable])
 
   const metricOptions = useMemo(
     () =>
       getMetricsForVariableType(
-        selectedVariable
-          ? variables.find((v) => v.variableName === selectedVariable)?.type ?? "string"
-          : "string"
+        selectedVariable ? findVariableBySyntaxKey(selectedVariable)?.type ?? "string" : "string"
       ).map((m) => ({ value: m.key, label: `${m.label} - ${m.description}` })),
-    [selectedVariable, variables]
+    [findVariableBySyntaxKey, selectedVariable]
   )
 
   const operatorOptions = useMemo(
@@ -127,7 +137,12 @@ export default function ConditionalBuilder({
   }
 
   const selectedFieldType = (fieldName: string) =>
-    variables.find((v) => v.variableName === fieldName)?.type ?? "string"
+    findVariableBySyntaxKey(fieldName)?.type ?? "string"
+
+  const handleFilterInsert = (filterClause: string) => {
+    setCurrentFilterClause(filterClause.replace(/^\s*\|\s*where:\s*/, ""))
+    setShowFilterBuilder(false)
+  }
 
   return (
     <div className="modal modal-open">
@@ -154,8 +169,7 @@ export default function ConditionalBuilder({
                     onChange={() => {
                       setConditionType("variable")
                       const newType = selectedVariable
-                        ? variables.find((v) => v.variableName === selectedVariable)?.type ??
-                          "string"
+                        ? findVariableBySyntaxKey(selectedVariable)?.type ?? "string"
                         : "string"
                       resetOperatorForType(newType)
                     }}
@@ -188,9 +202,9 @@ export default function ConditionalBuilder({
                       value={selectedVariable}
                       onChange={(value) => {
                         setSelectedVariable(value)
-                        setSelectedModifier("all")
+                        setSelectedModifier("first")
                         const newType = value
-                          ? variables.find((v) => v.variableName === value)?.type ?? "string"
+                          ? findVariableBySyntaxKey(value)?.type ?? "string"
                           : "string"
                         resetOperatorForType(newType)
                       }}
@@ -202,7 +216,7 @@ export default function ConditionalBuilder({
                   <div className="flex-1">
                     <SelectField
                       label="Value"
-                      hint="If a variable has only one value, All Values, First Value, and Last Value will return the same result."
+                      hint="Conditionals evaluate one value. Use filters or stats for multi-row logic."
                       value={selectedModifier}
                       onChange={setSelectedModifier}
                       options={modifierOptions}
@@ -213,9 +227,7 @@ export default function ConditionalBuilder({
 
                 <FilterButtonWithDisplay
                   currentFilterClause={currentFilterClause}
-                  onAddFilter={() => {
-                    /* TODO: Add filter modal */
-                  }}
+                  onAddFilter={() => setShowFilterBuilder(true)}
                   onClearFilter={() => setCurrentFilterClause("")}
                   enabled={!!selectedVariable}
                 />
@@ -233,9 +245,8 @@ export default function ConditionalBuilder({
                       onChange={(value) => {
                         setSelectedVariable(value)
                         if (value) {
-                          const variableType =
-                            getAvailableVariables().find((v) => v.name === value)?.type || "string"
-                          const availableMetrics = getAvailableMetrics(variableType)
+                          const variableType = findVariableBySyntaxKey(value)?.type ?? "string"
+                          const availableMetrics = getMetricsForVariableType(variableType)
                           if (availableMetrics.length > 0) {
                             setSelectedMetric(availableMetrics[0].key)
                           }
@@ -259,9 +270,7 @@ export default function ConditionalBuilder({
 
                 <FilterButtonWithDisplay
                   currentFilterClause={currentFilterClause}
-                  onAddFilter={() => {
-                    /* TODO: Add filter modal */
-                  }}
+                  onAddFilter={() => setShowFilterBuilder(true)}
                   onClearFilter={() => setCurrentFilterClause("")}
                   enabled={!!selectedVariable && !!selectedMetric}
                 />
@@ -395,6 +404,12 @@ export default function ConditionalBuilder({
           </button>
         </div>
       </div>
+      <FilterBuilder
+        open={showFilterBuilder}
+        variables={variables}
+        onInsert={handleFilterInsert}
+        onClose={() => setShowFilterBuilder(false)}
+      />
     </div>
   )
 }

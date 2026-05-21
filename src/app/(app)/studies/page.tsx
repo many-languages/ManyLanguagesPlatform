@@ -1,3 +1,4 @@
+import { Suspense } from "react"
 import PaginationControls from "@/src/components/ui/PaginationControls"
 import { redirect } from "next/navigation"
 import {
@@ -10,6 +11,8 @@ import {
   parseParticipantStudyViewQueryParam,
   parseStudyViewQueryParam,
   STUDIES_LIST_PAGE_SIZE,
+  StudyListSkeleton,
+  PaginationControlsSkeleton,
   type ParticipantStudyView,
   type StudyView,
 } from "@/src/features/studies"
@@ -80,6 +83,15 @@ async function ParticipantStudiesContent({
   )
 }
 
+function StudiesListFallback() {
+  return (
+    <>
+      <StudyListSkeleton />
+      <PaginationControlsSkeleton />
+    </>
+  )
+}
+
 export default async function StudiesPage({
   searchParams,
 }: {
@@ -127,9 +139,13 @@ export default async function StudiesPage({
         </div>
       )}
       {canManageStudies ? (
-        <ResearcherStudiesContent page={page} view={researcherView} />
+        <Suspense fallback={<StudiesListFallback />}>
+          <ResearcherStudiesContent page={page} view={researcherView} />
+        </Suspense>
       ) : (
-        <ParticipantStudiesContent page={page} view={participantView} />
+        <Suspense fallback={<StudiesListFallback />}>
+          <ParticipantStudiesContent page={page} view={participantView} />
+        </Suspense>
       )}
     </main>
   )

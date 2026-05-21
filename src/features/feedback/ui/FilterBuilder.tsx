@@ -68,7 +68,7 @@ export default function FilterBuilder({ open, variables, onInsert, onClose }: Fi
   const getFieldType = (index: number): string => {
     const field = conditions[index]?.field
     if (!field) return "string"
-    return variables.find((v) => v.variableName === field)?.type ?? "string"
+    return variables.find((v) => (v.dslKey ?? v.variableName) === field)?.type ?? "string"
   }
 
   const getOperatorOptions = (index: number) =>

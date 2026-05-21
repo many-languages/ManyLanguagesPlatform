@@ -129,9 +129,13 @@ export function computeCandidateGroupPrefixes(
     }
   }
 
+  const dslKeys = new Set(ungrouped.map((v) => v.dslKey))
+
   return Array.from(prefixCounts.entries())
     .filter(
       ([prefix, count]) =>
+        prefix !== "" &&
+        !dslKeys.has(prefix) &&
         count >= minCount &&
         !groupKeys.includes(prefix) &&
         !wouldOverlapExistingGroupKeys(prefix, groupKeys)

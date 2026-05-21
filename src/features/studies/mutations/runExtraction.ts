@@ -1,14 +1,9 @@
 import { resolver } from "@blitzjs/rpc"
-import { z } from "zod"
+import { RunExtractionSchema } from "@/src/features/studies/validations"
 import { runExtraction } from "../server/studyExtractionWrites"
 
-const RunExtraction = z.object({
-  studyId: z.number(),
-  includeDiagnostics: z.boolean().optional().default(true),
-})
-
 export default resolver.pipe(
-  resolver.zod(RunExtraction),
+  resolver.zod(RunExtractionSchema),
   resolver.authorize("RESEARCHER"),
   async (input) => {
     return runExtraction(input)

@@ -16,3 +16,14 @@ export const AdminInviteSchema = z.object({
 })
 
 export type AdminInviteFormValues = z.infer<typeof AdminInviteSchema>
+
+export const SendAdminInviteRemindersSchema = z.object({
+  inviteIds: z.array(z.number().int().positive()).min(1, "Select at least one invite"),
+})
+
+export const RevokeAdminInvitesSchema = z.object({
+  inviteIds: z.array(z.number().int().positive()).min(1, "Select at least one invite"),
+})
+
+export type SendAdminInviteRemindersInput = z.infer<typeof SendAdminInviteRemindersSchema>
+export type RevokeAdminInvitesInput = z.infer<typeof RevokeAdminInvitesSchema>

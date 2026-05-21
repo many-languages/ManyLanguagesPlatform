@@ -161,3 +161,76 @@ export const CreateParticipantStudyCodeActionSchema = z.object({
 export type CreateParticipantStudyCodeActionInput = z.infer<
   typeof CreateParticipantStudyCodeActionSchema
 >
+
+/** Admin bulk study lifecycle mutations */
+export const ApproveStudySchema = z.object({
+  studyIds: z.array(Id).min(1, "Select at least one study"),
+})
+
+export const RejectStudySchema = z.object({
+  studyIds: z.array(Id).min(1, "Select at least one study"),
+})
+
+export const AdminDeleteStudiesSchema = z.object({
+  studyIds: z.array(Id).min(1, "Select at least one study"),
+  reason: z.string().min(1, "Reason is required"),
+})
+
+export const EnableDataCollectionSchema = z.object({
+  studyIds: z.array(Id).min(1, "Select at least one study"),
+})
+
+export const DisableDataCollectionSchema = z.object({
+  studyIds: z.array(Id).min(1, "Select at least one study"),
+})
+
+/** Researcher setup and extraction mutations */
+export const ApproveExtractionSchema = z.object({
+  studyId: Id,
+})
+
+export const RunExtractionSchema = z.object({
+  studyId: Id,
+  includeDiagnostics: z.boolean().optional().default(true),
+})
+
+export const UpdateSetupCompletionSchema = z.object({
+  studyId: Id,
+  step1Completed: z.boolean().optional(),
+  step2Completed: z.boolean().optional(),
+  step3Completed: z.boolean().optional(),
+  step4Completed: z.boolean().optional(),
+  step5Completed: z.boolean().optional(),
+  step6Completed: z.boolean().optional(),
+})
+
+export const SaveParticipantRunUrlSchema = z.object({
+  participantStudyId: Id,
+  jatosRunUrl: z.string(),
+})
+
+export const CreateResearcherPilotLinkSchema = z.object({
+  studyId: Id,
+  studyResearcherId: Id,
+  jatosStudyUploadId: Id,
+  jatosRunUrl: z.string(),
+  markerToken: z.string(),
+})
+
+export const CheckJatosStudyUuidSchema = z.object({
+  studyId: Id,
+  jatosStudyUUID: z.string().min(1),
+  mode: z.enum(["create", "update"]),
+})
+
+export type ApproveStudyInput = z.infer<typeof ApproveStudySchema>
+export type RejectStudyInput = z.infer<typeof RejectStudySchema>
+export type AdminDeleteStudiesInput = z.infer<typeof AdminDeleteStudiesSchema>
+export type EnableDataCollectionInput = z.infer<typeof EnableDataCollectionSchema>
+export type DisableDataCollectionInput = z.infer<typeof DisableDataCollectionSchema>
+export type ApproveExtractionInput = z.infer<typeof ApproveExtractionSchema>
+export type RunExtractionInput = z.infer<typeof RunExtractionSchema>
+export type UpdateSetupCompletionInput = z.infer<typeof UpdateSetupCompletionSchema>
+export type SaveParticipantRunUrlInput = z.infer<typeof SaveParticipantRunUrlSchema>
+export type CreateResearcherPilotLinkInput = z.infer<typeof CreateResearcherPilotLinkSchema>
+export type CheckJatosStudyUuidInput = z.infer<typeof CheckJatosStudyUuidSchema>

@@ -1,30 +1,9 @@
 import { resolver } from "@blitzjs/rpc"
-import { z } from "zod"
+import { UpdateVariableCodebookSchema } from "../validations"
 import { updateVariableCodebookRsc } from "../server/updateVariableCodebook"
 
-const UpdateVariableCodebook = z.object({
-  studyId: z.number(),
-  variables: z.array(
-    z.object({
-      variableKey: z.string(),
-      variableName: z.string(),
-      dslKey: z.string(),
-      description: z.string().nullable(),
-      personalData: z.boolean(),
-    })
-  ),
-  groups: z.array(
-    z.object({
-      groupKey: z.string(),
-      description: z.string().nullable(),
-      personalData: z.boolean(),
-    })
-  ),
-})
-
-// Blitz RPC for client usage
 export default resolver.pipe(
-  resolver.zod(UpdateVariableCodebook),
+  resolver.zod(UpdateVariableCodebookSchema),
   resolver.authorize("RESEARCHER"),
   async (input) => {
     return updateVariableCodebookRsc(input)

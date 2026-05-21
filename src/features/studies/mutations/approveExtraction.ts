@@ -1,13 +1,9 @@
 import { resolver } from "@blitzjs/rpc"
-import { z } from "zod"
+import { ApproveExtractionSchema } from "@/src/features/studies/validations"
 import { approveExtraction } from "../server/studyExtractionWrites"
 
-const ApproveExtraction = z.object({
-  studyId: z.number(),
-})
-
 export default resolver.pipe(
-  resolver.zod(ApproveExtraction),
+  resolver.zod(ApproveExtractionSchema),
   resolver.authorize("RESEARCHER"),
   async (input) => {
     return approveExtraction(input)

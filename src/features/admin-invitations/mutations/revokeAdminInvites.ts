@@ -1,12 +1,8 @@
 "use server"
 
 import { resolver } from "@blitzjs/rpc"
-import { z } from "zod"
+import { RevokeAdminInvitesSchema } from "../validations"
 import { revokeAdminInvites as revokeAdminInvitesForIds } from "../server/revokeAdminInvites"
-
-const RevokeAdminInvitesSchema = z.object({
-  inviteIds: z.array(z.number()).min(1, "Select at least one invite"),
-})
 
 const revokeAdminInvites = resolver.pipe(
   resolver.zod(RevokeAdminInvitesSchema),

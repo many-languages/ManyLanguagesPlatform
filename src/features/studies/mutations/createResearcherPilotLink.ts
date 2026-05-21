@@ -1,14 +1,6 @@
 import { resolver } from "@blitzjs/rpc"
-import { z } from "zod"
+import { CreateResearcherPilotLinkSchema } from "@/src/features/studies/validations"
 import { createResearcherPilotLink } from "../server/studySetupWrites"
-
-const CreateResearcherPilotLinkSchema = z.object({
-  studyId: z.number(), // Added to support withStudyAccess
-  studyResearcherId: z.number(),
-  jatosStudyUploadId: z.number(),
-  jatosRunUrl: z.string(),
-  markerToken: z.string(),
-})
 
 export default resolver.pipe(
   resolver.zod(CreateResearcherPilotLinkSchema),

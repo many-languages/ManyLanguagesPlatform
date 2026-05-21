@@ -1,5 +1,5 @@
 import db from "db"
-import type { FeedbackTemplate } from "@/src/features/feedback/types"
+import type { FeedbackTemplateRscRow } from "@/src/features/feedback/feedbackTemplateRscSelect"
 import { withStudyWriteAccess } from "@/src/features/studies/services"
 import { assertFeedbackTemplatePersonalDataPolicy } from "@/src/features/feedback/server/assertFeedbackTemplatePersonalDataPolicy"
 import { updateFeedbackTemplateInTransaction } from "@/src/features/feedback/server/feedbackTemplateSaveShared"
@@ -8,7 +8,7 @@ export async function updateFeedbackTemplateRsc(input: {
   id: number
   content: string
   requiredVariableNames?: string[]
-}): Promise<FeedbackTemplate> {
+}): Promise<FeedbackTemplateRscRow> {
   const existingTemplate = await db.feedbackTemplate.findUnique({
     where: { id: input.id },
     select: { studyId: true },

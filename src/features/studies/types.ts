@@ -31,6 +31,7 @@ export type { StudySummaryCounts } from "./server/studySummaryCounts"
 export type { StudyView } from "./domain/studyView"
 export type { ParticipantStudyView } from "./domain/participantStudyView"
 export type { StudyWithMinimalRelations, SetupStepFlags } from "./domain/setup/setupStatus"
+export type { JoinStudyResult } from "./studySelects"
 
 /** Props for researcher `StudySummary` (RSC). */
 export interface StudySummaryProps {

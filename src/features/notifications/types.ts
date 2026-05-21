@@ -1,10 +1,6 @@
-import { Prisma } from "@prisma/client"
+export type { NotificationWithRecipient } from "./notificationSelects"
 
 export type RouteData = {
   path: string
-  params?: Record<string, any>
+  params?: Record<string, string | number | boolean>
 }
-
-export type NotificationWithRecipient = Prisma.NotificationRecipientGetPayload<{
-  include: { notification: true }
-}>

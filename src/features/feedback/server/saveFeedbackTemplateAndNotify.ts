@@ -6,7 +6,7 @@ import {
   isSetupCompleteFromFlags,
   type SetupStepFlags,
 } from "@/src/features/studies/services"
-import type { FeedbackTemplate } from "@/src/features/feedback/types"
+import type { FeedbackTemplateRscRow } from "@/src/features/feedback/feedbackTemplateRscSelect"
 import type { SaveFeedbackTemplateActionInput } from "@/src/features/feedback/validations"
 import { extractRequiredVariableNames } from "@/src/features/feedback/domain/requiredVariableNames"
 import { createFeedbackTemplateRsc } from "@/src/features/feedback/server/createFeedbackTemplate"
@@ -15,7 +15,7 @@ import { updateFeedbackTemplateRsc } from "@/src/features/feedback/server/update
 export type SaveFeedbackTemplateWorkflowInput = SaveFeedbackTemplateActionInput
 
 export interface SaveFeedbackTemplateWorkflowResult {
-  template: FeedbackTemplate
+  template: FeedbackTemplateRscRow
   setupComplete: boolean
 }
 

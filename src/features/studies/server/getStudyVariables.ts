@@ -23,6 +23,13 @@ export const getStudyVariablesRsc = cache(async (studyId: number) => {
     return db.studyVariable.findMany({
       where: { extractionSnapshotId: latestUpload.approvedExtractionId },
       orderBy: { variableName: "asc" },
+      select: {
+        id: true,
+        variableKey: true,
+        variableName: true,
+        dslKey: true,
+        type: true,
+      },
     })
   })
 })

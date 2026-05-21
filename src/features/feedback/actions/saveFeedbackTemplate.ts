@@ -1,6 +1,7 @@
 "use server"
 
-import type { FeedbackTemplate, FeedbackTemplateEditorInitial } from "@/src/features/feedback/types"
+import type { FeedbackTemplateRscRow } from "@/src/features/feedback/feedbackTemplateRscSelect"
+import type { FeedbackTemplateEditorInitial } from "@/src/features/feedback/types"
 import { mapFeedbackTemplateSaveErrorToUserMessage } from "@/src/features/feedback/domain/mapFeedbackTemplateSaveErrorToUserMessage"
 import { saveFeedbackTemplateAndNotify } from "@/src/features/feedback/server/saveFeedbackTemplateAndNotify"
 import { parseSaveFeedbackTemplateActionInput } from "../validations"
@@ -12,7 +13,7 @@ export interface SaveTemplateInput {
 }
 
 export type SaveFeedbackTemplateActionResult =
-  | { ok: true; template: FeedbackTemplate; setupComplete: boolean }
+  | { ok: true; template: FeedbackTemplateRscRow; setupComplete: boolean }
   | { ok: false; userMessage: string }
 
 export async function saveFeedbackTemplateAction(

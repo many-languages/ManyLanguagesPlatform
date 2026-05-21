@@ -1,17 +1,16 @@
 import { AuthenticationError, AuthorizationError } from "blitz"
 import { UserRole } from "@/db"
 import db from "db"
-import { getAuthorizedSession } from "@/src/lib/auth/session"
+import { getAuthorizedSession, getAuthorizedUserId } from "@/src/lib/auth/session"
+import { participantStudyJoinResultSelect, type JoinStudyResult } from "../studySelects"
 import { assertStudyNotArchived } from "./studyLifecycle"
 import { verifyResearcherStudyAccess } from "./verifyResearcherStudyAccess"
 
-export async function joinStudy(studyId: number) {
-  const session = await getAuthorizedSession()
-  const userId = session.userId
+export type { JoinStudyResult }
 
-  if (!userId) {
-    throw new Error("You must be logged in to join a study")
-  }
+export async function joinStudy(studyId: number): Promise<JoinStudyResult> {
+  const session = await getAuthorizedSession()
+  const userId = getAuthorizedUserId(session)
 
   if (session.role !== UserRole.PARTICIPANT) {
     throw new AuthorizationError("Only participants can join studies")
@@ -19,6 +18,7 @@ export async function joinStudy(studyId: number) {
 
   const existing = await db.participantStudy.findUnique({
     where: { userId_studyId: { userId, studyId } },
+    select: participantStudyJoinResultSelect,
   })
 
   if (existing) {
@@ -30,6 +30,7 @@ export async function joinStudy(studyId: number) {
       userId,
       studyId,
     },
+    select: participantStudyJoinResultSelect,
   })
 }
 

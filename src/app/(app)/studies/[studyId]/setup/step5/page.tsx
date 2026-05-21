@@ -1,6 +1,8 @@
+import { Suspense } from "react"
 import {
   Step5Content,
   SetupStepHeader,
+  SetupContentSkeleton,
   loadStudySetupPage,
   type StudyWithRelations,
 } from "@/src/features/studies"
@@ -40,5 +42,9 @@ async function Step5ContentWrapper({ study }: { study: StudyWithRelations }) {
 export default async function Step5Page({ params }: { params: Promise<{ studyId: string }> }) {
   const { study } = await loadStudySetupPage(params)
 
-  return <Step5ContentWrapper study={study} />
+  return (
+    <Suspense fallback={<SetupContentSkeleton />}>
+      <Step5ContentWrapper study={study} />
+    </Suspense>
+  )
 }

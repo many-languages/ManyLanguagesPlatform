@@ -1,7 +1,9 @@
+import { Suspense } from "react"
 import { Alert } from "@/src/components/ui/Alert"
 import {
   Step6Content,
   SetupStepHeader,
+  SetupContentSkeleton,
   loadStudySetupPage,
   type StudyWithRelations,
 } from "@/src/features/studies"
@@ -48,5 +50,9 @@ async function Step6ContentWrapper({
 export default async function Step6Page({ params }: { params: Promise<{ studyId: string }> }) {
   const { studyId, study } = await loadStudySetupPage(params)
 
-  return <Step6ContentWrapper studyId={studyId} study={study} />
+  return (
+    <Suspense fallback={<SetupContentSkeleton />}>
+      <Step6ContentWrapper studyId={studyId} study={study} />
+    </Suspense>
+  )
 }

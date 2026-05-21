@@ -1,4 +1,4 @@
-"use server"
+// Removed "use server" to keep Blitz RPC conventions clear
 
 import { resolver } from "@blitzjs/rpc"
 import { DisableDataCollectionSchema } from "@/src/features/studies/validations"

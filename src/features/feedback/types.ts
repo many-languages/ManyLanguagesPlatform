@@ -1,5 +1,5 @@
 import type { ReactNode } from "react"
-import type { FeedbackTemplateRscRow } from "./feedbackTemplateRscSelect"
+import type { FeedbackTemplateFullRow, FeedbackTemplateRscRow } from "./feedbackTemplateRscSelect"
 
 // Re-export variable types from shared variables module
 export type { ExtractedVariable } from "@/src/features/studies"
@@ -50,11 +50,7 @@ export type LoadResearcherFeedbackPipelineResult =
   | { kind: "done"; loaded: ResearcherFeedbackMarkdownLoadResult }
 
 // Template Types
-export interface FeedbackTemplate {
-  id: number
-  studyId: number
-  content: string
-  requiredVariableNames?: string[] | null
+export type FeedbackTemplate = Omit<FeedbackTemplateFullRow, "createdAt" | "updatedAt"> & {
   createdAt: Date | string
   updatedAt: Date | string
 }

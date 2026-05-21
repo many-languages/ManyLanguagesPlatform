@@ -10,7 +10,10 @@ import { useMutation } from "@blitzjs/rpc"
 import checkJatosStudyUuid from "@/src/features/studies/mutations/checkJatosStudyUuid"
 import updateJatosUploadWorkerType from "@/src/features/studies/mutations/updateJatosUploadWorkerType"
 import { completeStep2ImportAction } from "@/src/features/studies/actions/completeStep2Import"
-import { uploadStudyFile } from "@/src/lib/jatos/browser/uploadStudyFile"
+import {
+  messageForJatosImportFailure,
+  uploadStudyFile,
+} from "@/src/lib/jatos/browser/uploadStudyFile"
 import { extractJatosStudyUuidFromJzip } from "@/src/lib/jatos/parsers/extractJatosStudyUuid"
 import { Alert } from "@/src/components/ui/Alert"
 import { FORM_ERROR } from "@/src/components/ui/Form"
@@ -87,8 +90,7 @@ export default function Step2Content({ study }: Step2ContentProps) {
         setUpdateAlert(null)
       }
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : "Failed to update study"
-      toast.error(`Failed to update study: ${message}`)
+      toast.error(messageForJatosImportFailure(err))
       setLoading(false)
     }
   }
@@ -219,10 +221,10 @@ export default function Step2Content({ study }: Step2ContentProps) {
             // 2️⃣ Complete import (batch ID + setup completion + pilot link + navigate)
             await completeImport(uploadResult)
           } catch (err: unknown) {
-            toast.error("Failed to upload file")
+            const message = messageForJatosImportFailure(err)
+            toast.error(message)
             setLoading(false)
-            const message = err instanceof Error ? err.message : "Unknown error"
-            return { [FORM_ERROR]: `Upload error: ${message}` }
+            return { [FORM_ERROR]: message }
           }
         }}
       />

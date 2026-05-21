@@ -3,18 +3,17 @@ import { Textarea } from "@/src/components/ui/fields"
 import CodebookEntryStatus from "./CodebookEntryStatus"
 import CodebookPersonalDataField from "./CodebookPersonalDataField"
 import CodebookVariableChip from "./CodebookVariableChip"
+import type { CodebookGroupEntry, VariableCodebookEntry } from "../types"
 
-export interface CodebookGroupCardGroup {
-  groupKey: string
-  description: string
-  personalData: boolean
-}
+export type CodebookGroupCardGroup = Pick<
+  CodebookGroupEntry,
+  "groupKey" | "description" | "personalData"
+>
 
-export interface CodebookGroupCardChildVariable {
-  id: number
-  variableName: string
-  type: string | null
-}
+export type CodebookGroupCardChildVariable = Pick<
+  VariableCodebookEntry,
+  "id" | "variableName" | "type"
+>
 
 interface CodebookGroupCardProps {
   group: CodebookGroupCardGroup

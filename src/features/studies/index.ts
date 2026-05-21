@@ -63,6 +63,7 @@ export {
   getSetupStatusLabel,
   getSetupProgress,
   step6NeedsRevision,
+  toSetupStatusStudy,
   getNextSetupStepUrl,
   getPostStepNavigationUrl,
 } from "./domain/setup/setupStatus"

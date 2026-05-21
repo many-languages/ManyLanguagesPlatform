@@ -4,14 +4,29 @@
  * Posts FormData to POST /api/jatos/import (sole JATOS API route exception).
  * The route handles JATOS upload + DB updates + membership sync.
  *
+ * Failures are thrown as {@link JatosImportRouteError} with a `kind` discriminant:
+ * - `ingress` — request validation (file, studyId, worker type)
+ * - `auth` — not logged in
+ * - `jatos` — JATOS/transport/DB (message already user-safe from server)
+ * - `conflict` — duplicate UUID in DB
+ *
  * @example
  * ```ts
  * const result = await uploadStudyFile(file, { studyId, jatosWorkerType })
- * // result includes jatosStudyId, jatosStudyUUID, latestUpload, etc.
  * ```
  */
 
+import {
+  JatosImportRouteError,
+  parseJatosImportRouteErrorJson,
+} from "@/src/lib/jatos/import/importRouteResponse"
 import type { JatosImportResponse } from "@/src/types/jatos-api"
+
+export type {
+  JatosImportRouteError,
+  JatosImportRouteErrorKind,
+} from "@/src/lib/jatos/import/importRouteResponse"
+export { messageForJatosImportFailure } from "@/src/lib/jatos/import/importRouteResponse"
 
 export interface UploadStudyFileOptions {
   studyId: number
@@ -20,12 +35,6 @@ export interface UploadStudyFileOptions {
 
 /**
  * Uploads a JATOS study file (.jzip) via the import route.
- * Route performs full import: JATOS upload + DB + membership sync.
- *
- * @param file - The .jzip file to upload
- * @param options - studyId and jatosWorkerType (required by route)
- * @returns Import result with study IDs and latestUpload
- * @throws Error if upload fails
  */
 export async function uploadStudyFile(
   file: File,
@@ -42,22 +51,22 @@ export async function uploadStudyFile(
     body: fd,
   })
 
-  const data = await res.json()
+  const data: unknown = await res.json()
 
   if (!res.ok) {
-    const error = data as { error?: string }
-    throw new Error(error.error || `Upload failed: ${res.status}`)
+    throw parseJatosImportRouteErrorJson(data, res.status)
   }
 
+  const success = data as JatosImportResponse & { latestUpload?: { id: number } }
   return {
-    jatosStudyId: data.jatosStudyId,
-    jatosStudyUUID: data.jatosStudyUUID,
-    jatosFileName: data.jatosFileName,
-    buildHash: data.buildHash,
-    hashAlgorithm: data.hashAlgorithm,
-    studyExists: data.studyExists,
-    currentStudyTitle: data.currentStudyTitle,
-    uploadedStudyTitle: data.uploadedStudyTitle,
-    latestUpload: data.latestUpload,
+    jatosStudyId: success.jatosStudyId,
+    jatosStudyUUID: success.jatosStudyUUID,
+    jatosFileName: success.jatosFileName,
+    buildHash: success.buildHash,
+    hashAlgorithm: success.hashAlgorithm,
+    studyExists: success.studyExists,
+    currentStudyTitle: success.currentStudyTitle,
+    uploadedStudyTitle: success.uploadedStudyTitle,
+    latestUpload: success.latestUpload,
   }
 }

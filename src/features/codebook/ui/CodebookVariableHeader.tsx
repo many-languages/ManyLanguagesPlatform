@@ -1,9 +1,9 @@
-export interface CodebookVariableHeaderVariable {
-  variableKey: string
-  variableName: string
-  type: string | null
-  examples: Array<{ value: string; sourcePath: string }>
-}
+import type { VariableCodebookEntry } from "../types"
+
+export type CodebookVariableHeaderVariable = Pick<
+  VariableCodebookEntry,
+  "variableKey" | "variableName" | "type" | "examples"
+>
 
 interface CodebookVariableHeaderProps {
   variable: CodebookVariableHeaderVariable

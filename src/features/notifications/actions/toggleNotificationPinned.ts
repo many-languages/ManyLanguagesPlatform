@@ -3,7 +3,8 @@
 import { revalidateTag } from "next/cache"
 import db from "db"
 
-import { getAuthorizedSession, getAuthorizedUserId } from "@/src/lib/auth/session"
+import { getAuthorizedUserId } from "@/src/lib/auth/getAuthorizedUserId"
+import { getAuthorizedSession } from "@/src/lib/auth/session"
 import { NOTIFICATIONS_MENU_TAG, NOTIFICATIONS_TABLE_TAG } from "../constants"
 import { ToggleNotificationPinnedSchema } from "../validations"
 

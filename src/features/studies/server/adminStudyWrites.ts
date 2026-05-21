@@ -5,7 +5,7 @@ import { getAuthorizedSession } from "@/src/lib/auth/session"
 import { sendNotification } from "@/src/features/notifications"
 import { deleteStudyAsAdmin } from "@/src/lib/jatos/admin/deleteStudyWorkflow"
 import { isStaffAdmin, isSuperAdmin } from "@/src/lib/auth/roles"
-import { isSetupComplete, type StudyWithMinimalRelations } from "../domain/setup/setupStatus"
+import { isSetupComplete, toSetupStatusStudy } from "../domain/setup/setupStatus"
 import { studyHasParticipantResponsesSafe } from "./participantResponses"
 
 async function requireStaffAdminSession() {
@@ -120,7 +120,7 @@ export async function enableDataCollection(studyIds: number[]) {
   }))
 
   const invalidStudies = studiesWithLatestUpload.filter(
-    (study) => study.adminApproved !== true || !isSetupComplete(study as StudyWithMinimalRelations)
+    (study) => study.adminApproved !== true || !isSetupComplete(toSetupStatusStudy(study))
   )
 
   if (invalidStudies.length > 0) {

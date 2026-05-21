@@ -1,5 +1,10 @@
 import { z } from "zod"
 
+export const RouteDataSchema = z.object({
+  path: z.string().min(1),
+  params: z.record(z.union([z.string(), z.number(), z.boolean()])).optional(),
+})
+
 export const dataCollectionStartedSchema = z.object({
   studyTitle: z.string(),
   endDate: z.string().optional(),

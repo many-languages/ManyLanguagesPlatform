@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 import { AuthorizationError } from "blitz"
-import { getAuthorizedUserId } from "./session"
+import { getAuthorizedUserId } from "./getAuthorizedUserId"
 
 describe("getAuthorizedUserId", () => {
   it("returns userId when present", () => {

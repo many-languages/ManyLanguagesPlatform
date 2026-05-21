@@ -3,16 +3,12 @@ import { Textarea } from "@/src/components/ui/fields"
 import CodebookEntryStatus from "./CodebookEntryStatus"
 import CodebookPersonalDataField from "./CodebookPersonalDataField"
 import CodebookVariableHeader from "./CodebookVariableHeader"
+import type { VariableCodebookEntry } from "../types"
 
-export interface CodebookVariableCardVariable {
-  id: number
-  variableKey: string
-  variableName: string
-  type: string | null
-  examples: Array<{ value: string; sourcePath: string }>
-  description: string | null
-  personalData: boolean
-}
+export type CodebookVariableCardVariable = Pick<
+  VariableCodebookEntry,
+  "id" | "variableKey" | "variableName" | "type" | "examples" | "description" | "personalData"
+>
 
 interface CodebookVariableCardProps {
   variable: CodebookVariableCardVariable

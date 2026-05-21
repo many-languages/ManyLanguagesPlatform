@@ -1,21 +1,17 @@
 import { RouteData } from "../types"
-import { isRouteData } from "./isRouteData"
+import { RouteDataSchema } from "../validations"
 
 export const parseRouteData = (value: unknown): RouteData | null => {
   if (!value) return null
 
   if (typeof value === "string") {
     try {
-      const parsed = JSON.parse(value)
-      return isRouteData(parsed) ? parsed : null
+      return RouteDataSchema.parse(JSON.parse(value))
     } catch {
       return null
     }
   }
 
-  if (isRouteData(value)) {
-    return value
-  }
-
-  return null
+  const parsed = RouteDataSchema.safeParse(value)
+  return parsed.success ? parsed.data : null
 }

@@ -8,10 +8,12 @@ export interface VariableCodebookEntry {
   variableName: string
   dslKey: string
   type: string | null
-  examples: Array<{ value: string; sourcePath: string }>
+  examples: CodebookVariableExample[]
   description: string | null
   personalData: boolean
 }
+
+export type CodebookVariableExample = { value: string; sourcePath: string }
 
 export interface CodebookGroupEntry {
   groupKey: string
@@ -25,7 +27,7 @@ export interface CodebookInitialVariable {
   variableName: string
   dslKey: string
   type: string | null
-  examples: Array<{ value: string; sourcePath: string }> | null
+  examples: CodebookVariableExample[] | null
   description: string | null
   personalData: boolean
 }

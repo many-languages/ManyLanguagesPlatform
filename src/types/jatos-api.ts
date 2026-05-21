@@ -4,12 +4,18 @@
  */
 
 /**
- * Standard error response structure for all JATOS API routes
+ * Generic route error JSON (legacy shape). Prefer {@link JatosImportRouteErrorJson}
+ * for POST /api/jatos/import — it includes a `kind` discriminant.
  */
 export interface JatosApiError {
   error: string
   details?: string | unknown
 }
+
+export type {
+  JatosImportRouteErrorJson,
+  JatosImportRouteErrorKind,
+} from "@/src/lib/jatos/import/importRouteResponse"
 
 /**
  * Response from /api/jatos/import

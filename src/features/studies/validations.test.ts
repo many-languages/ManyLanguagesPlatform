@@ -1,8 +1,11 @@
 import { JatosWorkerType } from "@/db"
 import { describe, expect, it } from "vitest"
 import {
-  JatosImportRouteSchema,
+  parseImportStudyFileFromFormData,
   JATOS_IMPORT_MAX_FILE_SIZE,
+} from "./domain/jatos/parseImportStudyFile"
+import {
+  JatosImportRouteFieldsSchema,
   parseJatosImportFormData,
   StudyInformationFormSchema,
   UpdateStudy,
@@ -12,58 +15,36 @@ function mockJzipFile(name: string, size = 1): File {
   return new File([new ArrayBuffer(size)], name)
 }
 
-describe("JatosImportRouteSchema", () => {
-  it("accepts valid import payload", () => {
-    const result = JatosImportRouteSchema.safeParse({
+describe("parseImportStudyFileFromFormData", () => {
+  it("accepts .jzip and .JZIP", () => {
+    expect(parseImportStudyFileFromFormData(mockJzipFile("study.jzip")).success).toBe(true)
+    expect(parseImportStudyFileFromFormData(mockJzipFile("study.JZIP")).success).toBe(true)
+  })
+
+  it("returns specific errors", () => {
+    const missing = parseImportStudyFileFromFormData(null)
+    expect(missing.success).toBe(false)
+    if (!missing.success) expect(missing.error).toMatch(/Missing/)
+
+    const wrongExt = parseImportStudyFileFromFormData(mockJzipFile("study.zip"))
+    expect(wrongExt.success).toBe(false)
+    if (!wrongExt.success) expect(wrongExt.error).toMatch(/\.jzip/)
+
+    const tooBig = parseImportStudyFileFromFormData(
+      mockJzipFile("big.jzip", JATOS_IMPORT_MAX_FILE_SIZE + 1)
+    )
+    expect(tooBig.success).toBe(false)
+    if (!tooBig.success) expect(tooBig.error).toMatch(/too large/)
+  })
+})
+
+describe("JatosImportRouteFieldsSchema", () => {
+  it("accepts coerced studyId and worker type", () => {
+    const result = JatosImportRouteFieldsSchema.safeParse({
       studyId: "42",
       jatosWorkerType: JatosWorkerType.SINGLE,
-      studyFile: mockJzipFile("study.jzip"),
     })
     expect(result.success).toBe(true)
-    if (result.success) {
-      expect(result.data.studyId).toBe(42)
-      expect(result.data.jatosWorkerType).toBe(JatosWorkerType.SINGLE)
-    }
-  })
-
-  it("rejects missing file, invalid studyId, and bad worker type", () => {
-    expect(
-      JatosImportRouteSchema.safeParse({
-        studyId: "42",
-        jatosWorkerType: JatosWorkerType.MULTIPLE,
-      }).success
-    ).toBe(false)
-    expect(
-      JatosImportRouteSchema.safeParse({
-        studyId: "abc",
-        jatosWorkerType: JatosWorkerType.SINGLE,
-        studyFile: mockJzipFile("study.jzip"),
-      }).success
-    ).toBe(false)
-    expect(
-      JatosImportRouteSchema.safeParse({
-        studyId: "1",
-        jatosWorkerType: "INVALID",
-        studyFile: mockJzipFile("study.jzip"),
-      }).success
-    ).toBe(false)
-  })
-
-  it("rejects non-jzip extension and oversized files", () => {
-    expect(
-      JatosImportRouteSchema.safeParse({
-        studyId: "1",
-        jatosWorkerType: JatosWorkerType.SINGLE,
-        studyFile: mockJzipFile("study.zip"),
-      }).success
-    ).toBe(false)
-    expect(
-      JatosImportRouteSchema.safeParse({
-        studyId: "1",
-        jatosWorkerType: JatosWorkerType.SINGLE,
-        studyFile: mockJzipFile("big.jzip", JATOS_IMPORT_MAX_FILE_SIZE + 1),
-      }).success
-    ).toBe(false)
   })
 })
 

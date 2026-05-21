@@ -188,5 +188,40 @@ export const CreateJatosUserTokenEnvelopeSchema = z
   })
   .passthrough()
 
+type AssetNode = {
+  type?: string
+  name?: string
+  path?: string
+  content?: AssetNode[]
+}
+
+const AssetNodeSchema: z.ZodType<AssetNode> = z.lazy(() =>
+  z
+    .object({
+      type: z.string().optional(),
+      name: z.string().optional(),
+      path: z.string().optional(),
+      content: z.array(AssetNodeSchema).optional(),
+    })
+    .passthrough()
+    .refine(
+      (node) =>
+        node.type !== undefined ||
+        node.name !== undefined ||
+        node.path !== undefined ||
+        node.content !== undefined,
+      "Asset node must include type, name, path, or content"
+    )
+)
+
+export const AssetStructureResponseSchema = z.union([
+  z
+    .object({
+      data: z.union([AssetNodeSchema, z.array(AssetNodeSchema)]).optional(),
+    })
+    .passthrough(),
+  AssetNodeSchema,
+])
+
 export type JatosMetadataResponse = z.infer<typeof JatosMetadataSchema>
 export type JatosStudyPropertiesEnvelope = z.infer<typeof JatosStudyPropertiesEnvelopeSchema>

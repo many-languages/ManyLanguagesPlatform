@@ -5,7 +5,7 @@ import { useMutation } from "@blitzjs/rpc"
 import { useRouter } from "next/navigation"
 import toast from "react-hot-toast"
 import updateStudyStatus from "@/src/features/studies/mutations/updateStudyStatus"
-import { isSetupComplete, type StudyWithMinimalRelations } from "../../domain/setup/setupStatus"
+import { isSetupComplete, toSetupStatusStudy } from "../../domain/setup/setupStatus"
 import type { StudyWithRelations } from "../../types"
 import StatusBadge from "@/src/components/ui/StatusBadge"
 import { getAdminApprovalProps } from "@/src/lib/utils/statusBadgePresets"
@@ -19,7 +19,7 @@ export default function StudyStatusControl({ study }: StudyStatusControlProps) {
   const [updateStatusMutation] = useMutation(updateStudyStatus)
   const [, startTransition] = useTransition()
 
-  const setupComplete = isSetupComplete(study as StudyWithMinimalRelations)
+  const setupComplete = isSetupComplete(toSetupStatusStudy(study))
   const isApproved = study.adminApproved === true
   const canLaunch = isApproved && setupComplete
   const isArchived = study.archived

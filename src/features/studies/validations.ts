@@ -1,6 +1,12 @@
 import { JatosWorkerType } from "@/db"
 import { jatosRunUrlSchema } from "@/src/lib/jatos/utils/jatosRunUrlSchema"
+import {
+  JATOS_IMPORT_MAX_FILE_SIZE,
+  parseImportStudyFileFromFormData,
+} from "@/src/features/studies/domain/jatos/parseImportStudyFile"
 import { z } from "zod"
+
+export { JATOS_IMPORT_MAX_FILE_SIZE }
 
 export const Id = z.number().int().positive()
 export type IdInput = z.infer<typeof Id>
@@ -30,38 +36,44 @@ export const JatosFormSchema = BaseJatosFormSchema.refine(
   }
 )
 
-export const JATOS_IMPORT_MAX_FILE_SIZE = 100 * 1024 * 1024
-
-const jatosImportStudyFileSchema = z.custom<File>(
-  (f) =>
-    typeof File !== "undefined" &&
-    f instanceof File &&
-    f.name.endsWith(".jzip") &&
-    f.size <= JATOS_IMPORT_MAX_FILE_SIZE,
-  { message: "Expected a .jzip file up to 100MB" }
-)
-
-/** POST /api/jatos/import — FormData fields after extraction from multipart body. */
-export const JatosImportRouteSchema = z.object({
+/** POST /api/jatos/import — studyId + worker type (file parsed separately for clear errors). */
+export const JatosImportRouteFieldsSchema = z.object({
   studyId: z.coerce.number().pipe(Id),
   jatosWorkerType: z.nativeEnum(JatosWorkerType),
-  studyFile: jatosImportStudyFileSchema,
 })
 
-export type JatosImportRouteInput = z.infer<typeof JatosImportRouteSchema>
+export type JatosImportRouteInput = z.infer<typeof JatosImportRouteFieldsSchema> & {
+  studyFile: File
+}
 
 export function parseJatosImportFormData(
   form: FormData
 ): { success: true; data: JatosImportRouteInput } | { success: false; error: string } {
-  const parsed = JatosImportRouteSchema.safeParse({
+  const fileParsed = parseImportStudyFileFromFormData(form.get("studyFile"))
+  if (!fileParsed.success) {
+    return { success: false, error: fileParsed.error }
+  }
+
+  const fieldsParsed = JatosImportRouteFieldsSchema.safeParse({
     studyId: form.get("studyId"),
     jatosWorkerType: form.get("jatosWorkerType"),
-    studyFile: form.get("studyFile"),
   })
-  if (!parsed.success) {
-    return { success: false, error: parsed.error.issues[0]?.message ?? "Invalid request" }
+  if (!fieldsParsed.success) {
+    const issue = fieldsParsed.error.issues[0]
+    const field = issue?.path[0]
+    if (field === "studyId") {
+      return { success: false, error: "Invalid or missing studyId." }
+    }
+    if (field === "jatosWorkerType") {
+      return { success: false, error: "Missing or invalid jatosWorkerType (SINGLE or MULTIPLE)." }
+    }
+    return { success: false, error: issue?.message ?? "Invalid request" }
   }
-  return { success: true, data: parsed.data }
+
+  return {
+    success: true,
+    data: { ...fieldsParsed.data, studyFile: fileParsed.file },
+  }
 }
 
 const validateStudyDateRange = (

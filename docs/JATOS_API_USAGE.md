@@ -136,11 +136,22 @@ be checked.
 
 **Flow**:
 
-1. Route receives FormData, validates file (.jzip, 100MB limit).
+1. Route receives FormData, validates file (.jzip, 1 GB limit).
 2. Resolves session via `getBlitzContext()`.
 3. Calls `importJatosStudyForResearcher` from `provisioning/importJatosStudy.ts`.
 4. Service: computes build hash → uploads to JATOS → updates DB → syncs membership.
 5. Returns full import result (jatosStudyId, jatosStudyUUID, latestUpload, etc.).
+
+**Error responses** (`{ error, kind }` via `importRouteResponse.ts`):
+
+| `kind`     | When                                                    | User message source                                   |
+| ---------- | ------------------------------------------------------- | ----------------------------------------------------- |
+| `ingress`  | FormData / file validation before JATOS                 | Specific parse errors (extension, size, missing file) |
+| `auth`     | No `session.userId`                                     | `"Not authenticated"`                                 |
+| `jatos`    | JATOS HTTP, transport, or unhandled DB errors in import | `mapJatosErrorToUserMessage` (generic, safe)          |
+| `conflict` | Prisma P2002 on `jatosStudyUUID`                        | `"UUID already exists in database"`                   |
+
+Browser: `uploadStudyFile` throws `JatosImportRouteError`; UI uses `messageForJatosImportFailure` (no extra prefix for `ingress`/`auth`).
 
 **Browser usage** (sole exception: app may import from `browser/` for FormData; never from `client/*`):
 
@@ -154,7 +165,7 @@ const result = await uploadStudyFile(file, {
 // result includes jatosStudyId, jatosStudyUUID, latestUpload, etc.
 ```
 
-**Rationale**: Large .jzip files (up to 100MB), FormData handling, and Blitz RPC JSON serialization constraints make a dedicated route the practical choice. All business logic lives in the service layer; the route is a thin transport boundary.
+**Rationale**: Large .jzip files (up to 1 GB), FormData handling, and Blitz RPC JSON serialization constraints make a dedicated route the practical choice. All business logic lives in the service layer; the route is a thin transport boundary.
 
 ---
 

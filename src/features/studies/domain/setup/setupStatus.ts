@@ -1,14 +1,12 @@
 import { deriveStep1Completed } from "./deriveStep1Completed"
 import { STEP_KEYS, STEP_NAMES, TOTAL_STEPS } from "./constants"
 import { studyPath, studySetupStepPath } from "./setupRoutes"
-import type { AdminStudyListItemDto } from "../../types"
-
 export interface StudyWithMinimalRelations {
   id?: number
   archived?: boolean | null
   title?: string | null
   description?: string | null
-  FeedbackTemplate?: { id: number } | null
+  FeedbackTemplate?: { id?: number } | null
   latestJatosStudyUpload?: {
     step1Completed?: boolean
     step2Completed?: boolean
@@ -18,9 +16,30 @@ export interface StudyWithMinimalRelations {
     step6Completed?: boolean
     // We might need these for logic
     id?: number
+    jatosStudyId?: number | null
+    approvedExtractionId?: number | null
     jatosWorkerType?: string
     jatosFileName?: string
   } | null
+}
+
+type SetupStatusUploadInput = Omit<
+  NonNullable<StudyWithMinimalRelations["latestJatosStudyUpload"]>,
+  "jatosFileName"
+> & {
+  jatosFileName?: string | null
+}
+
+type SetupStatusFeedbackTemplateInput = { id?: number } | Record<string, unknown> | null
+
+type SetupStatusStudyInput = Omit<
+  StudyWithMinimalRelations,
+  "FeedbackTemplate" | "latestJatosStudyUpload"
+> & {
+  FeedbackTemplate?: SetupStatusFeedbackTemplateInput
+  feedbackTemplate?: SetupStatusFeedbackTemplateInput
+  latestJatosStudyUpload?: SetupStatusUploadInput | null
+  jatosStudyUploads?: SetupStatusUploadInput[]
 }
 
 /** Resolved step completion flags (same shape as latest upload fields + step 1 derivation). */
@@ -49,23 +68,35 @@ function resolveStepFlags(study: StudyWithMinimalRelations): SetupStepFlags {
   return flags
 }
 
+function toSetupStatusUpload(
+  upload: SetupStatusUploadInput | null | undefined
+): StudyWithMinimalRelations["latestJatosStudyUpload"] {
+  if (!upload) return null
+  return {
+    ...upload,
+    jatosFileName: upload.jatosFileName ?? undefined,
+  }
+}
+
 /**
- * Maps an `AdminStudyListItemDto` to the minimal shape required by setup-status helpers.
- * Centralised here to avoid duplication across admin UI components.
+ * Maps Prisma/admin rows to the minimal shape required by setup-status helpers.
+ * Accepts either a pre-attached `latestJatosStudyUpload` or a latest-first `jatosStudyUploads`.
  */
-export function toSetupStatusStudy(study: AdminStudyListItemDto): StudyWithMinimalRelations {
+export function toSetupStatusStudy(study: SetupStatusStudyInput): StudyWithMinimalRelations {
+  const feedbackTemplate = study.FeedbackTemplate ?? study.feedbackTemplate ?? null
+  const latestUpload = study.latestJatosStudyUpload ?? study.jatosStudyUploads?.[0] ?? null
+  const feedbackTemplateId =
+    feedbackTemplate && "id" in feedbackTemplate && typeof feedbackTemplate.id === "number"
+      ? feedbackTemplate.id
+      : undefined
+
   return {
     id: study.id,
     archived: study.archived,
     title: study.title,
     description: study.description,
-    FeedbackTemplate: study.feedbackTemplate ? { id: study.feedbackTemplate.id } : null,
-    latestJatosStudyUpload: study.latestJatosStudyUpload
-      ? {
-          ...study.latestJatosStudyUpload,
-          jatosFileName: study.latestJatosStudyUpload.jatosFileName ?? undefined,
-        }
-      : null,
+    FeedbackTemplate: feedbackTemplate ? { id: feedbackTemplateId } : null,
+    latestJatosStudyUpload: toSetupStatusUpload(latestUpload),
   }
 }
 

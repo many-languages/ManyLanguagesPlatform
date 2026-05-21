@@ -4,6 +4,7 @@ import { SecurePassword } from "@blitzjs/auth/secure-password"
 import db from "db"
 import { createAuthenticatedSession } from "./session"
 import { ResetPassword } from "../validations"
+import { resetPasswordUserSelect } from "../userSelects"
 
 export class ResetPasswordError extends Error {
   name = "ResetPasswordError"
@@ -27,7 +28,12 @@ export async function resetPassword(
   const hashedToken = hash256(token)
   const savedToken = await db.token.findFirst({
     where: { hashedToken, type: "RESET_PASSWORD" },
-    include: { user: true },
+    select: {
+      id: true,
+      expiresAt: true,
+      userId: true,
+      user: { select: resetPasswordUserSelect },
+    },
   })
 
   if (!savedToken) {

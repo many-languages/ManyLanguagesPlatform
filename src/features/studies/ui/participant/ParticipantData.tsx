@@ -26,6 +26,14 @@ export default async function ParticipantData({ studyId, study }: ParticipantDat
     )
   }
 
+  if (jatosStudyId == null) {
+    return (
+      <Alert variant="warning" className="mt-4">
+        <p>This study is not ready for participants yet (JATOS study not linked).</p>
+      </Alert>
+    )
+  }
+
   try {
     const participant = await getStudyParticipantRsc(studyId)
 
@@ -41,7 +49,7 @@ export default async function ParticipantData({ studyId, study }: ParticipantDat
     const completionCheck = await checkParticipantCompletionAction(
       studyId,
       participant.pseudonym,
-      jatosStudyId!
+      jatosStudyId
     )
 
     const isCompleted = completionCheck.success && completionCheck.completed
@@ -86,7 +94,7 @@ export default async function ParticipantData({ studyId, study }: ParticipantDat
         <ParticipantFeedbackData
           studyId={studyId}
           pseudonym={participant.pseudonym}
-          jatosStudyId={jatosStudyId!}
+          jatosStudyId={jatosStudyId}
         />
       </>
     )

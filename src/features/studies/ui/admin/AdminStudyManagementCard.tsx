@@ -15,6 +15,7 @@ import {
   getDataCollectionProps,
 } from "@/src/lib/utils/statusBadgePresets"
 import MDEditor from "@uiw/react-md-editor"
+import type { ColumnDef } from "@tanstack/react-table"
 import type { AdminStudyCodebookEntryDto, AdminStudyListItemDto } from "../../types"
 import type { UserRole } from "@/db"
 import { getSetupStatusLabel, toSetupStatusStudy } from "../../domain/setup/setupStatus"
@@ -111,7 +112,11 @@ function FeedbackTemplateButton({
   return (
     <ViewDetailsButton hasData={!!feedbackTemplate} buttonLabel="View Template">
       {({ open, onClose }) => (
-        <FeedbackTemplateModal open={open} onClose={onClose} content={feedbackTemplate!.content} />
+        <FeedbackTemplateModal
+          open={open}
+          onClose={onClose}
+          content={feedbackTemplate?.content ?? ""}
+        />
       )}
     </ViewDetailsButton>
   )
@@ -142,6 +147,21 @@ function FeedbackTemplateModal({
   )
 }
 
+type AdminStudyTableRow = {
+  id: number
+  label: string
+  jatosStudyUUID: string
+  createdAt: string
+  setupStatus: string
+  adminApproval: string
+  dataCollectionStatus: string
+  archived: boolean
+  archivedLabel: string
+  participantResponsesLabel: string
+  codebookEntries: AdminStudyCodebookEntryDto[]
+  feedbackTemplate: { content: string } | null
+}
+
 export default function AdminStudyManagementCard({
   studies,
   viewerRole,
@@ -149,7 +169,7 @@ export default function AdminStudyManagementCard({
   studies: AdminStudyListItemDto[]
   viewerRole: UserRole
 }) {
-  const rows = useMemo(() => {
+  const rows = useMemo<AdminStudyTableRow[]>(() => {
     return studies.map((study) => {
       const created = study.createdAt ? new Date(study.createdAt) : null
 
@@ -178,20 +198,20 @@ export default function AdminStudyManagementCard({
     })
   }, [studies])
 
-  const columns = useMemo(
+  const columns = useMemo<ColumnDef<AdminStudyTableRow>[]>(
     () => [
       {
         id: "jatosStudyUUID",
         header: "JATOS Study UUID",
         accessorKey: "jatosStudyUUID",
-        cell: ({ row }: any) => <JatosStudyUuidCell uuid={row.original.jatosStudyUUID as string} />,
+        cell: ({ row }) => <JatosStudyUuidCell uuid={row.original.jatosStudyUUID} />,
       },
       {
         id: "adminApproval",
         header: "Admin Approval",
         accessorKey: "adminApproval",
-        cell: ({ row }: any) => {
-          const label = row.original.adminApproval as string
+        cell: ({ row }) => {
+          const label = row.original.adminApproval
           return <StatusBadge label={label} variant={getAdminApprovalVariant(label)} />
         },
       },
@@ -199,8 +219,8 @@ export default function AdminStudyManagementCard({
         id: "setupStatus",
         header: "Setup Status",
         accessorKey: "setupStatus",
-        cell: ({ row }: any) => {
-          const props = getSetupStatusProps(row.original.setupStatus as string)
+        cell: ({ row }) => {
+          const props = getSetupStatusProps(row.original.setupStatus)
           return <StatusBadge {...props} />
         },
       },
@@ -208,8 +228,8 @@ export default function AdminStudyManagementCard({
         id: "dataCollectionStatus",
         header: "Data Collection",
         accessorKey: "dataCollectionStatus",
-        cell: ({ row }: any) => {
-          const props = getDataCollectionProps(row.original.dataCollectionStatus as string)
+        cell: ({ row }) => {
+          const props = getDataCollectionProps(row.original.dataCollectionStatus)
           return <StatusBadge {...props} />
         },
       },
@@ -217,8 +237,8 @@ export default function AdminStudyManagementCard({
         id: "archived",
         header: "Archived",
         accessorKey: "archivedLabel",
-        cell: ({ row }: any) => {
-          const archived = row.original.archived as boolean
+        cell: ({ row }) => {
+          const archived = row.original.archived
           return (
             <StatusBadge
               label={archived ? "Yes" : "No"}
@@ -231,8 +251,8 @@ export default function AdminStudyManagementCard({
         id: "participantResponses",
         header: "Participant responses",
         accessorKey: "participantResponsesLabel",
-        cell: ({ row }: any) => {
-          const label = row.original.participantResponsesLabel as string
+        cell: ({ row }) => {
+          const label = row.original.participantResponsesLabel
           const variant: StatusBadgeVariant =
             label === "Yes" ? "warning" : label === "No" ? "success" : "ghost"
           return <StatusBadge label={label} variant={variant} />
@@ -241,12 +261,12 @@ export default function AdminStudyManagementCard({
       {
         id: "codebook",
         header: "Codebook",
-        cell: ({ row }: any) => <CodebookButton entries={row.original.codebookEntries} />,
+        cell: ({ row }) => <CodebookButton entries={row.original.codebookEntries} />,
       },
       {
         id: "feedbackTemplate",
         header: "Feedback Template",
-        cell: ({ row }: any) => (
+        cell: ({ row }) => (
           <FeedbackTemplateButton feedbackTemplate={row.original.feedbackTemplate} />
         ),
       },

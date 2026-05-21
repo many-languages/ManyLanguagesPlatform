@@ -64,8 +64,8 @@ export default async function StudyPage({ params }: { params: Promise<{ studyId:
         </Suspense>
       </main>
     )
-  } catch (error: any) {
-    if (error.name === "NotFoundError") {
+  } catch (error: unknown) {
+    if (error instanceof Error && error.name === "NotFoundError") {
       notFound()
     }
     throw error

@@ -69,8 +69,9 @@ export default function Step1Content({
           toast.success(isEditMode ? "Study updated successfully!" : "General information saved")
           router.refresh() // Refresh to get updated study data
           router.push(getNavigationPath() as Route)
-        } catch (err: any) {
-          const errorMessage = err?.message || "An unexpected error occurred. Please try again."
+        } catch (err: unknown) {
+          const errorMessage =
+            err instanceof Error ? err.message : "An unexpected error occurred. Please try again."
           return { [FORM_ERROR]: errorMessage }
         }
       }}

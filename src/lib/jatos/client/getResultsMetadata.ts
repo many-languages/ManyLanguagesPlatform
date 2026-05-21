@@ -35,7 +35,7 @@ export async function getResultsMetadata(
 
   try {
     const json = await response.json()
-    return parseJatosResponse(OPERATION, json, JatosMetadataSchema) as JatosMetadata
+    return parseJatosResponse(OPERATION, json, JatosMetadataSchema)
   } catch (cause) {
     if (cause instanceof JatosTransportError) throw cause
     throw new JatosTransportError(`Invalid JSON in ${OPERATION} response`, OPERATION, cause)

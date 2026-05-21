@@ -86,8 +86,9 @@ export default function Step2Content({ study }: Step2ContentProps) {
       if (success) {
         setUpdateAlert(null)
       }
-    } catch (err: any) {
-      toast.error(`Failed to update study: ${err.message}`)
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Failed to update study"
+      toast.error(`Failed to update study: ${message}`)
       setLoading(false)
     }
   }
@@ -157,8 +158,8 @@ export default function Step2Content({ study }: Step2ContentProps) {
                 },
                 { successToast: "Setup saved" }
               )
-            } catch (err: any) {
-              toast.error(err?.message ?? "Failed to continue")
+            } catch (err: unknown) {
+              toast.error(err instanceof Error ? err.message : "Failed to continue")
               setLoading(false)
             }
             return
@@ -217,10 +218,11 @@ export default function Step2Content({ study }: Step2ContentProps) {
 
             // 2️⃣ Complete import (batch ID + setup completion + pilot link + navigate)
             await completeImport(uploadResult)
-          } catch (err: any) {
+          } catch (err: unknown) {
             toast.error("Failed to upload file")
             setLoading(false)
-            return { [FORM_ERROR]: `Upload error: ${err.message}` }
+            const message = err instanceof Error ? err.message : "Unknown error"
+            return { [FORM_ERROR]: `Upload error: ${message}` }
           }
         }}
       />

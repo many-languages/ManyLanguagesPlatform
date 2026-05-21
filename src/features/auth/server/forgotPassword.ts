@@ -2,6 +2,7 @@ import { generateToken, hash256 } from "@blitzjs/auth"
 import db from "db"
 import { forgotPasswordMailer } from "mailers/forgotPasswordMailer"
 import { ForgotPassword } from "../validations"
+import { userIdEmailSelect } from "../userSelects"
 
 const RESET_PASSWORD_TOKEN_EXPIRATION_IN_HOURS = 4
 const PASSWORD_RESET_DELIVERY_ERROR_MESSAGE =
@@ -18,7 +19,10 @@ export class PasswordResetDeliveryError extends Error {
 
 export async function requestPasswordReset(input: { email: string }) {
   const { email } = ForgotPassword.parse(input)
-  const user = await db.user.findFirst({ where: { email } })
+  const user = await db.user.findFirst({
+    where: { email },
+    select: userIdEmailSelect,
+  })
 
   const token = generateToken()
   const hashedToken = hash256(token)

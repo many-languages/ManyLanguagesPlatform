@@ -2,13 +2,14 @@
 
 import React, { useCallback, useMemo, useRef, useEffect } from "react"
 import { useFormContext } from "react-hook-form"
+import { ColumnDef } from "@tanstack/react-table"
 import Table from "./Table"
 
 interface CheckboxFieldTableProps<T> {
   name: string
   options: { id: number; label: string }[]
   extraData?: T[]
-  extraColumns?: any[]
+  extraColumns?: ColumnDef<T & { id: number; label: string }, unknown>[]
   /** When true, selection checkboxes are disabled (e.g. archived study). */
   selectionDisabled?: boolean
 }
@@ -65,7 +66,7 @@ const CheckboxFieldTable = <T,>({
     }
   }, [selectedIds, options.length])
 
-  const columns = useMemo(
+  const columns = useMemo<ColumnDef<T & { id: number; label: string }, unknown>[]>(
     () => [
       {
         id: "selection",
@@ -80,7 +81,7 @@ const CheckboxFieldTable = <T,>({
             title="Select / Deselect all"
           />
         ),
-        cell: ({ row }: any) => (
+        cell: ({ row }) => (
           <input
             type="checkbox"
             className="checkbox checkbox-primary border-2"
@@ -94,7 +95,7 @@ const CheckboxFieldTable = <T,>({
         id: "name",
         accessorKey: "label",
         header: "Name",
-        cell: (info: any) => info.getValue(),
+        cell: (info) => info.getValue() as React.ReactNode,
       },
       ...extraColumns,
     ],

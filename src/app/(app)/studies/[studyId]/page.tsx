@@ -1,5 +1,6 @@
 import { Suspense } from "react"
-import { notFound } from "next/navigation"
+import { notFound, redirect } from "next/navigation"
+import { getBlitzContext } from "@/src/app/blitz-server"
 import {
   getStudyPageRsc,
   canEditStudySetup,
@@ -66,6 +67,13 @@ export default async function StudyPage({ params }: { params: Promise<{ studyId:
     )
   } catch (error: unknown) {
     if (error instanceof Error && error.name === "NotFoundError") {
+      notFound()
+    }
+    if (error instanceof Error && error.name === "AuthorizationError") {
+      const { session } = await getBlitzContext()
+      if (!session.userId) {
+        redirect("/login")
+      }
       notFound()
     }
     throw error

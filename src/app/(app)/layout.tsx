@@ -1,12 +1,14 @@
 import { redirect } from "next/navigation"
 import { Toaster } from "react-hot-toast"
-import { getBlitzContext } from "../blitz-server"
+import { getBlitzContext, useAuthenticatedBlitzContext } from "../blitz-server"
 import { NotificationMenuRootProvider } from "@/src/features/notifications"
 import { AppNavbar } from "@/src/features/shell"
 import { isStaffAdmin } from "@/src/lib/auth/roles"
 import { DEFAULT_ADMIN_PATH } from "@/src/lib/auth/routing"
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
+  await useAuthenticatedBlitzContext({ redirectTo: "/login" })
+
   const { session } = await getBlitzContext()
   if (isStaffAdmin(session.role)) {
     redirect(DEFAULT_ADMIN_PATH)

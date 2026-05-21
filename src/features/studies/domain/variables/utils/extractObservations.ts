@@ -203,8 +203,8 @@ export function extractObservations(
         runFactsByRun,
         componentFactsByRun,
         variableFactsByRun,
-      })
-    : null
+      }) ?? undefined
+    : undefined
 
   return {
     observations: allObservations,
@@ -213,6 +213,6 @@ export function extractObservations(
     stats: statsTracker.getStats(),
     variableFacts,
     componentFacts,
-    crossRunDiagnostics: crossRunDiagnostics ?? undefined,
+    crossRunDiagnostics,
   }
 }

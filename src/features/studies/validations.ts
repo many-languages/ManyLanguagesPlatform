@@ -30,15 +30,39 @@ export const JatosFormSchema = BaseJatosFormSchema.refine(
   }
 )
 
-// Use the base schema for extension (avoids .refine() issue)
-export const ImportJatosSchema = BaseJatosFormSchema.extend({
-  studyId: Id,
-  jatosStudyId: z.number(),
-  jatosStudyUUID: z.string(),
-  jatosFileName: z.string(),
-  buildHash: z.string().min(1),
-  hashAlgorithm: z.string().optional(),
+export const JATOS_IMPORT_MAX_FILE_SIZE = 100 * 1024 * 1024
+
+const jatosImportStudyFileSchema = z.custom<File>(
+  (f) =>
+    typeof File !== "undefined" &&
+    f instanceof File &&
+    f.name.endsWith(".jzip") &&
+    f.size <= JATOS_IMPORT_MAX_FILE_SIZE,
+  { message: "Expected a .jzip file up to 100MB" }
+)
+
+/** POST /api/jatos/import — FormData fields after extraction from multipart body. */
+export const JatosImportRouteSchema = z.object({
+  studyId: z.coerce.number().pipe(Id),
+  jatosWorkerType: z.nativeEnum(JatosWorkerType),
+  studyFile: jatosImportStudyFileSchema,
 })
+
+export type JatosImportRouteInput = z.infer<typeof JatosImportRouteSchema>
+
+export function parseJatosImportFormData(
+  form: FormData
+): { success: true; data: JatosImportRouteInput } | { success: false; error: string } {
+  const parsed = JatosImportRouteSchema.safeParse({
+    studyId: form.get("studyId"),
+    jatosWorkerType: form.get("jatosWorkerType"),
+    studyFile: form.get("studyFile"),
+  })
+  if (!parsed.success) {
+    return { success: false, error: parsed.error.issues[0]?.message ?? "Invalid request" }
+  }
+  return { success: true, data: parsed.data }
+}
 
 const validateStudyDateRange = (
   data: { startDate: string; endDate: string },

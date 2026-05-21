@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest"
-import { parseSaveFeedbackTemplateActionInput } from "./validations"
+import {
+  parseSaveFeedbackTemplateActionInput,
+  RenderFeedbackPreviewActionSchema,
+} from "./validations"
 
 describe("parseSaveFeedbackTemplateActionInput", () => {
   it("accepts create input with trimmed content", () => {
@@ -49,6 +52,35 @@ describe("parseSaveFeedbackTemplateActionInput", () => {
       content: "Hello",
     })
 
+    expect(result.success).toBe(false)
+  })
+})
+
+describe("RenderFeedbackPreviewActionSchema", () => {
+  it("accepts valid preview input", () => {
+    const result = RenderFeedbackPreviewActionSchema.safeParse({
+      studyId: 1,
+      contextKey: "ctx-abc",
+      templateContent: "# Hello",
+    })
+    expect(result.success).toBe(true)
+  })
+
+  it("rejects empty contextKey", () => {
+    const result = RenderFeedbackPreviewActionSchema.safeParse({
+      studyId: 1,
+      contextKey: "",
+      templateContent: "Hello",
+    })
+    expect(result.success).toBe(false)
+  })
+
+  it("rejects oversized template content", () => {
+    const result = RenderFeedbackPreviewActionSchema.safeParse({
+      studyId: 1,
+      contextKey: "ctx-abc",
+      templateContent: "x".repeat(512_001),
+    })
     expect(result.success).toBe(false)
   })
 })

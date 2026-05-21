@@ -24,9 +24,14 @@ export const GetFeedbackTemplateSchema = z.object({
   studyId: z.number().int().positive(),
 })
 
-export const PreviewFeedbackSchema = z.object({
-  template: z.string().min(1),
-  enrichedResult: z.any(),
+/** Live Step 6 preview via `renderFeedbackPreviewAction` (server-stored context, not client JATOS JSON). */
+export const RenderFeedbackPreviewActionSchema = z.object({
+  studyId: z.number().int().positive(),
+  contextKey: z.string().min(1).max(128),
+  templateContent: z
+    .string()
+    .max(MAX_FEEDBACK_TEMPLATE_CONTENT_LENGTH, "Template is too large to preview."),
+  withinStudyResultId: z.number().int().positive().optional(),
 })
 
 const SaveFeedbackTemplateActionEnvelopeSchema = z.object({
@@ -106,4 +111,4 @@ export function parseSaveFeedbackTemplateActionInput(
 export type CreateFeedbackTemplateInput = z.infer<typeof CreateFeedbackTemplateSchema>
 export type UpdateFeedbackTemplateInput = z.infer<typeof UpdateFeedbackTemplateSchema>
 export type GetFeedbackTemplateInput = z.infer<typeof GetFeedbackTemplateSchema>
-export type PreviewFeedbackInput = z.infer<typeof PreviewFeedbackSchema>
+export type RenderFeedbackPreviewActionInput = z.infer<typeof RenderFeedbackPreviewActionSchema>

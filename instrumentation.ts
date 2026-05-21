@@ -5,7 +5,7 @@
  */
 export async function register() {
   if (process.env.NEXT_RUNTIME === "nodejs") {
-    const { assertProductionSecrets } = await import("./src/lib/startupGuards")
-    assertProductionSecrets()
+    const { assertProductionEnv } = await import("./src/lib/env")
+    assertProductionEnv()
   }
 }

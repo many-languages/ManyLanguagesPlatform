@@ -18,6 +18,7 @@ import { isSetupComplete, toSetupStatusStudy } from "../../domain/setup/setupSta
 import type { AdminStudyListItemDto } from "../../types"
 import type { UserRole } from "@/db"
 import { isSuperAdmin } from "@/src/lib/auth/roles"
+import { getAdminStudyBulkActions } from "../../domain/adminStudyBulkActions"
 
 type ActionKey = "enable" | "disable" | "approve" | "reject" | "delete" | "archive" | "unarchive"
 
@@ -84,51 +85,18 @@ export default function StudyActions({
   const selectedIds = watch("selectedStudyIds")
   const selectedStudies = studies.filter((s) => selectedIds.includes(s.id))
 
-  const hasPending = selectedStudies.some((s) => s.adminApproved === null)
-  const hasPendingWithSetupComplete = selectedStudies.some(
-    (s) => s.adminApproved === null && isSetupComplete(toSetupStatusStudy(s))
-  )
-  const allApproved =
-    selectedStudies.length > 0 && selectedStudies.every((s) => s.adminApproved === true)
-  const allEnabled = selectedStudies.length > 0 && selectedStudies.every((s) => s.status === "OPEN")
-  const allDisabled =
-    selectedStudies.length > 0 && selectedStudies.every((s) => s.status === "CLOSED")
-  const mixed = selectedStudies.length > 0 && !allEnabled && !allDisabled
-
-  /** Archive only when every selected study has real participant responses and is not already archived. */
-  const showArchiveButton =
-    selectedStudies.length > 0 &&
-    selectedStudies.every((s) => !s.archived && s.hasParticipantResponses === true)
-  /** Unarchive when every selected study is archived (same idea as researcher StudyLifecycleActions). */
-  const allArchived = selectedStudies.length > 0 && selectedStudies.every((s) => s.archived)
-  const showUnarchiveButton = allArchived
-  const superadmin = isSuperAdmin(viewerRole)
-
-  /** Non–super-admins cannot delete archived studies that have responses; hide Delete entirely so it is not shown disabled. */
-  const hideDeleteForStaffAdmin =
-    !superadmin && selectedStudies.some((s) => s.hasParticipantResponses === true && s.archived)
-
-  const deleteDisabledReason =
-    selectedStudies.length === 0
-      ? null
-      : selectedStudies.some((s) => s.hasParticipantResponses === null)
-      ? "Could not verify participant response data. Try again later."
-      : selectedStudies.some((s) => s.hasParticipantResponses === true && !s.archived)
-      ? "Studies with participant responses must be archived before they can be deleted. Adjust your selection."
-      : null
-
-  const deleteEnabled =
-    selectedStudies.length > 0 && !hideDeleteForStaffAdmin && deleteDisabledReason === null
-
-  const deleteConfirmMessage =
-    superadmin && selectedStudies.some((s) => s.archived)
-      ? "This will permanently remove the selected archived study/studies from the platform and JATOS. All related data will be lost. Before continuing, confirm that study materials and results are copied to a long-term archive (for example Zenodo). This cannot be undone. Continue?"
-      : "This will permanently delete the selected study/studies from the database and JATOS. This cannot be undone. Continue?"
-
-  const showApproveButton = hasPendingWithSetupComplete
-  const showRejectButton = hasPending
-  const showDisableButton = allApproved && (allEnabled || mixed) && !allArchived
-  const showEnableButton = allApproved && (allDisabled || mixed) && !allArchived
+  const {
+    showApproveButton,
+    showRejectButton,
+    showEnableButton,
+    showDisableButton,
+    showArchiveButton,
+    showUnarchiveButton,
+    hideDeleteForStaffAdmin,
+    deleteEnabled,
+    deleteDisabledReason,
+    deleteConfirmMessage,
+  } = getAdminStudyBulkActions(selectedStudies, viewerRole)
 
   const handleEnable = () =>
     runWithStudyAction({

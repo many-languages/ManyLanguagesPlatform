@@ -1,4 +1,6 @@
 import type { FormatDetectionResult } from "@/src/lib/jatos/parsers/formatDetector"
+import type { z } from "zod"
+import type { JatosStudyPropertiesSchema } from "@/src/lib/jatos/schemas/responses"
 
 export interface JatosFileInfo {
   filename: string
@@ -117,27 +119,4 @@ export interface JatosMember {
  * Represents the result of GET /jatos/api/v1/studies/{id}
  * This corresponds to "JATOS study properties".
  */
-export interface JatosStudyProperties {
-  id: number
-  uuid: string
-  title: string
-  dirName: string
-  comments?: string | null
-  active: boolean
-  locked: boolean
-  groupStudy: boolean
-  linearStudy: boolean
-  allowPreview: boolean
-  descriptionHash?: string | null
-  studyEntryMsg?: string | null
-  endRedirectUrl?: string | null
-  jsonData?: string | null
-
-  components?: JatosComponent[]
-  batches?: JatosBatch[]
-  members?: JatosMember[]
-
-  // legacy or null placeholders
-  componentList?: any | null
-  batchList?: any | null
-}
+export type JatosStudyProperties = z.infer<typeof JatosStudyPropertiesSchema>

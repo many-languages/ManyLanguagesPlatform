@@ -1,6 +1,6 @@
 import { z } from "zod"
 
-const WorkerTypeSchema = z.enum([
+export const WorkerTypeSchema = z.enum([
   "GeneralMultiple",
   "GeneralSingle",
   "Jatos",
@@ -10,7 +10,7 @@ const WorkerTypeSchema = z.enum([
   "PersonalSingle",
 ])
 
-const JatosFileInfoSchema = z
+export const JatosFileInfoSchema = z
   .object({
     filename: z.string(),
     size: z.number(),
@@ -18,7 +18,7 @@ const JatosFileInfoSchema = z
   })
   .passthrough()
 
-const JatosDataInfoSchema = z
+export const JatosDataInfoSchema = z
   .object({
     size: z.number(),
     sizeHumanReadable: z.string(),
@@ -78,7 +78,7 @@ export const JatosMetadataSchema = z
   })
   .passthrough()
 
-const JatosBatchSchema = z
+export const JatosBatchSchema = z
   .object({
     id: z.number(),
     uuid: z.string(),
@@ -93,7 +93,7 @@ const JatosBatchSchema = z
   })
   .passthrough()
 
-const JatosComponentSchema = z
+export const JatosComponentSchema = z
   .object({
     id: z.number(),
     uuid: z.string(),
@@ -107,7 +107,7 @@ const JatosComponentSchema = z
   })
   .passthrough()
 
-const JatosMemberSchema = z
+export const JatosMemberSchema = z
   .object({
     username: z.string(),
   })

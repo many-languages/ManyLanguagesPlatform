@@ -41,5 +41,5 @@ export async function getStudyProperties(
   const text = await response.text()
   const json = parseJatosTextResponse(OPERATION, text, JatosStudyPropertiesEnvelopeSchema)
 
-  return json.data as JatosStudyProperties
+  return json.data
 }

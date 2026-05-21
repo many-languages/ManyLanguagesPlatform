@@ -216,16 +216,6 @@ export const RunExtractionSchema = z.object({
   includeDiagnostics: z.boolean().optional().default(true),
 })
 
-export const UpdateSetupCompletionSchema = z.object({
-  studyId: Id,
-  step1Completed: z.boolean().optional(),
-  step2Completed: z.boolean().optional(),
-  step3Completed: z.boolean().optional(),
-  step4Completed: z.boolean().optional(),
-  step5Completed: z.boolean().optional(),
-  step6Completed: z.boolean().optional(),
-})
-
 export const SaveParticipantRunUrlSchema = z.object({
   participantStudyId: Id,
   jatosRunUrl: jatosRunUrlSchema,
@@ -245,6 +235,12 @@ export const CheckJatosStudyUuidSchema = z.object({
   mode: z.enum(["create", "update"]),
 })
 
+export const CheckPilotStatusActionSchema = z.object({
+  studyId: Id,
+  jatosStudyUUID: z.string().min(1).nullable(),
+  jatosStudyUploadId: Id.nullable(),
+})
+
 export type ApproveStudyInput = z.infer<typeof ApproveStudySchema>
 export type RejectStudyInput = z.infer<typeof RejectStudySchema>
 export type AdminDeleteStudiesInput = z.infer<typeof AdminDeleteStudiesSchema>
@@ -252,7 +248,7 @@ export type EnableDataCollectionInput = z.infer<typeof EnableDataCollectionSchem
 export type DisableDataCollectionInput = z.infer<typeof DisableDataCollectionSchema>
 export type ApproveExtractionInput = z.infer<typeof ApproveExtractionSchema>
 export type RunExtractionInput = z.infer<typeof RunExtractionSchema>
-export type UpdateSetupCompletionInput = z.infer<typeof UpdateSetupCompletionSchema>
 export type SaveParticipantRunUrlInput = z.infer<typeof SaveParticipantRunUrlSchema>
 export type CreateResearcherPilotLinkInput = z.infer<typeof CreateResearcherPilotLinkSchema>
 export type CheckJatosStudyUuidInput = z.infer<typeof CheckJatosStudyUuidSchema>
+export type CheckPilotStatusActionInput = z.infer<typeof CheckPilotStatusActionSchema>

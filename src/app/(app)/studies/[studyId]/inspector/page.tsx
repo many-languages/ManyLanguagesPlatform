@@ -3,12 +3,13 @@ import { notFound } from "next/navigation"
 import DebugContent from "@/src/features/studies/ui/researcher/inspector/DebugContent"
 import { getValidationDataRsc } from "@/src/features/studies/server/getValidationData"
 import InspectorSkeleton from "@/src/features/studies/ui/InspectorSkeleton"
+import { parseStudyIdParam } from "@/src/features/studies"
 
 export default async function InspectorPage({ params }: { params: Promise<{ studyId: string }> }) {
   const { studyId: studyIdRaw } = await params
-  const studyId = Number(studyIdRaw)
+  const studyId = parseStudyIdParam(studyIdRaw)
 
-  if (!Number.isFinite(studyId)) {
+  if (studyId === null) {
     notFound()
   }
 

@@ -107,6 +107,7 @@ export {
   parseParticipantStudyViewQueryParam,
 } from "./domain/participantStudyView"
 export type { ParticipantStudyViewQueryParseResult } from "./domain/participantStudyView"
+export { parseStudyIdParam } from "./domain/parseStudyIdParam"
 
 /** RSC helpers for routes & cross-feature callers */
 export {

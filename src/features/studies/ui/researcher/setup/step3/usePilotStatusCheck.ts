@@ -3,9 +3,7 @@
 import { useState, useTransition, useCallback, useRef, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { toast } from "react-hot-toast"
-import { useMutation } from "@blitzjs/rpc"
 
-import updateSetupCompletion from "@/src/features/studies/mutations/updateSetupCompletion"
 import { checkPilotStatusAction } from "@/src/features/studies/actions/checkPilotStatus"
 import { useWindowResumeCheck } from "@/src/lib/utils/useWindowResumeCheck"
 
@@ -30,18 +28,8 @@ export function usePilotStatusCheck({
   step3Completed,
 }: UsePilotStatusCheckParams): UsePilotStatusCheckResult {
   const router = useRouter()
-  const [updateSetupCompletionMutation] = useMutation(updateSetupCompletion)
   const [, startTransition] = useTransition()
   const [pilotCompleted, setPilotCompleted] = useState<boolean>(step3Completed)
-
-  const updateCompletion = useCallback(async () => {
-    try {
-      await updateSetupCompletionMutation({ studyId, step3Completed: true })
-      router.refresh()
-    } catch (err) {
-      throw err
-    }
-  }, [studyId, updateSetupCompletionMutation, router])
 
   const checkPilotStatus = useCallback(
     async (showToasts = true) => {
@@ -73,15 +61,9 @@ export function usePilotStatusCheck({
       })
 
       if (result.completed) {
-        try {
-          await updateCompletion()
-          if (showToasts) {
-            toast.success("Pilot run completed! You can proceed to Step 4.")
-          }
-        } catch {
-          if (showToasts) {
-            toast.error("Pilot completed but failed to update step completion")
-          }
+        router.refresh()
+        if (showToasts) {
+          toast.success("Pilot run completed! You can proceed to Step 4.")
         }
       } else {
         if (showToasts) {
@@ -89,7 +71,7 @@ export function usePilotStatusCheck({
         }
       }
     },
-    [jatosStudyUUID, jatosStudyUploadId, studyId, updateCompletion, startTransition]
+    [jatosStudyUUID, jatosStudyUploadId, studyId, router, startTransition]
   )
 
   // Auto-check on mount when the run URL is available and step not yet completed.

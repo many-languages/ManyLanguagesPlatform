@@ -14,14 +14,7 @@ export default async function StudySetupLayout({
   children: React.ReactNode
   params: Promise<{ studyId: string }>
 }) {
-  const { studyId: studyIdRaw } = await params
-  const studyId = Number(studyIdRaw)
-
-  if (!Number.isFinite(studyId)) {
-    notFound()
-  }
-
-  const { study } = await loadStudySetupPage(params)
+  const { studyId, study } = await loadStudySetupPage(params)
 
   if (!canEditStudySetup(study)) {
     redirect(studyPath(studyId))

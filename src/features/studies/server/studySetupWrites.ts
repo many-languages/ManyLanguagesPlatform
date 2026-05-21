@@ -68,7 +68,11 @@ export async function updateStudyBatch(input: { studyId: number; jatosBatchId: n
   })
 }
 
-export async function updateSetupCompletion(input: {
+/**
+ * Trusted server-side setup flag writer.
+ * Do not expose this as a generic client/RPC boundary; each workflow must prove its own step.
+ */
+export async function applySetupCompletionFlags(input: {
   studyId: number
   step1Completed?: boolean
   step2Completed?: boolean

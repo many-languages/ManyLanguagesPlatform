@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation"
+import { parseStudyIdParam } from "../domain/parseStudyIdParam"
 import { getResearcherStudyRsc } from "./getStudy"
 import type { StudyWithRelations } from "../types"
 
@@ -15,9 +16,9 @@ export async function loadStudySetupPage(
   params: Promise<{ studyId: string }>
 ): Promise<StudySetupPageContext> {
   const { studyId: studyIdRaw } = await params
-  const studyId = Number(studyIdRaw)
+  const studyId = parseStudyIdParam(studyIdRaw)
 
-  if (!Number.isFinite(studyId)) {
+  if (studyId === null) {
     notFound()
   }
 

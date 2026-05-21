@@ -11,13 +11,14 @@ import {
   StudyHeader,
   StudyStatusControl,
   StudyInformationCard,
+  parseStudyIdParam,
 } from "@/src/features/studies"
 
 export default async function StudyPage({ params }: { params: Promise<{ studyId: string }> }) {
   const { studyId: studyIdRaw } = await params
-  const studyId = Number(studyIdRaw)
+  const studyId = parseStudyIdParam(studyIdRaw)
 
-  if (!Number.isFinite(studyId)) {
+  if (studyId === null) {
     notFound()
   }
 

@@ -2,7 +2,7 @@
 
 import { getBlitzContext } from "@/src/app/blitz-server"
 import { getBatchIdForResearcher } from "@/src/lib/jatos/jatosAccessService"
-import { updateStudyBatch, updateSetupCompletion } from "../server/studySetupWrites"
+import { applySetupCompletionFlags, updateStudyBatch } from "../server/studySetupWrites"
 import { createResearcherPilotUrlAndSaveAction } from "./createResearcherPilotUrl"
 import { CompleteStep2ImportSchema } from "../validations"
 import db from "db"
@@ -53,7 +53,7 @@ export async function completeStep2ImportAction(
 
   // 3. Mark step 2 as complete
   try {
-    await updateSetupCompletion({ studyId, step2Completed: true })
+    await applySetupCompletionFlags({ studyId, step2Completed: true })
   } catch (err) {
     console.error("[completeStep2Import] Failed to mark step 2 complete:", err)
     // Non-fatal — the batch ID is saved; step flag can be retried

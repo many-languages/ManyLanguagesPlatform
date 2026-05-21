@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest"
+import { JatosTransportError } from "../errors"
 import { getResultsMetadata } from "./getResultsMetadata"
 
 const mockFetch = vi.fn()
@@ -35,6 +36,69 @@ describe("getResultsMetadata", () => {
   it("throws when auth.token is missing", async () => {
     await expect(getResultsMetadata({ studyIds: [1] }, { token: "" })).rejects.toThrow(
       "Missing JATOS_BASE or auth.token"
+    )
+  })
+
+  it("returns validated results metadata", async () => {
+    const metadata = {
+      apiVersion: "1.1",
+      data: [
+        {
+          studyId: 10,
+          studyUuid: "study-uuid",
+          studyTitle: "Study",
+          studyResults: [
+            {
+              id: 20,
+              uuid: "result-uuid",
+              studyCode: "code-1",
+              startDate: 1,
+              endDate: 2,
+              duration: "1s",
+              lastSeenDate: 2,
+              studyState: "FINISHED",
+              workerId: 30,
+              workerType: "PersonalSingle",
+              batchId: 40,
+              batchUuid: "batch-uuid",
+              batchTitle: "Default",
+              componentResults: [
+                {
+                  id: 50,
+                  componentId: 60,
+                  componentUuid: "component-uuid",
+                  startDate: 1,
+                  endDate: 2,
+                  duration: "1s",
+                  componentState: "FINISHED",
+                  path: "index.html",
+                  data: { size: 10, sizeHumanReadable: "10 B" },
+                  files: [{ filename: "data.txt", size: 10, sizeHumanReadable: "10 B" }],
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    }
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => metadata,
+    })
+
+    await expect(getResultsMetadata({ studyIds: [10] }, { token: "token" })).resolves.toEqual(
+      metadata
+    )
+  })
+
+  it("throws JatosTransportError when metadata shape is invalid", async () => {
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ data: [{ studyId: "10", studyResults: [] }] }),
+    })
+
+    await expect(getResultsMetadata({ studyIds: [10] }, { token: "token" })).rejects.toThrow(
+      JatosTransportError
     )
   })
 })

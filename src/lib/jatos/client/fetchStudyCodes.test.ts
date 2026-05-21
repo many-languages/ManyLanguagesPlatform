@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest"
+import { JatosTransportError } from "../errors"
 import { fetchStudyCodes } from "./fetchStudyCodes"
 
 const mockFetch = vi.fn()
@@ -36,5 +37,16 @@ describe("fetchStudyCodes", () => {
     await expect(fetchStudyCodes({ studyId: "123", type: "gs" }, { token: "" })).rejects.toThrow(
       "Missing JATOS_BASE or auth.token"
     )
+  })
+
+  it("throws JatosTransportError when study code data is invalid", async () => {
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      text: async () => JSON.stringify({ data: [123] }),
+    })
+
+    await expect(
+      fetchStudyCodes({ studyId: "123", type: "gs" }, { token: "token" })
+    ).rejects.toThrow(JatosTransportError)
   })
 })

@@ -1,6 +1,8 @@
 import type { JatosAuth } from "./types"
 import { throwIfJatosError } from "./throwIfJatosError"
 import { JatosTransportError } from "../errors"
+import { CreateJatosUserTokenEnvelopeSchema } from "../schemas"
+import { parseJatosTextResponse } from "./parseJatosResponse"
 
 export interface CreateJatosUserTokenParams {
   jatosUserId: number
@@ -47,20 +49,7 @@ export async function createJatosUserToken(
   await throwIfJatosError(response, OPERATION)
 
   const text = await response.text()
-  let json: { data?: { id?: number; token?: string } }
-  try {
-    json = JSON.parse(text) as { data?: { id?: number; token?: string } }
-  } catch (cause) {
-    throw new JatosTransportError(`Invalid JSON in ${OPERATION} response`, OPERATION, cause)
-  }
-
-  const data = json?.data
-  if (!data || typeof data.id !== "number" || !data.token) {
-    throw new JatosTransportError(
-      `Missing data.id or data.token in ${OPERATION} response`,
-      OPERATION
-    )
-  }
+  const { data } = parseJatosTextResponse(OPERATION, text, CreateJatosUserTokenEnvelopeSchema)
 
   return { id: data.id, token: data.token }
 }

@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest"
+import { JatosTransportError } from "../errors"
 import { getStudyProperties } from "./getStudyProperties"
 
 const mockFetch = vi.fn()
@@ -22,7 +23,20 @@ describe("getStudyProperties", () => {
   it("uses passed token when provided", async () => {
     mockFetch.mockResolvedValueOnce({
       ok: true,
-      text: async () => JSON.stringify({ data: { uuid: "study-1", title: "Test" } }),
+      text: async () =>
+        JSON.stringify({
+          data: {
+            id: 123,
+            uuid: "study-1",
+            title: "Test",
+            dirName: "study-dir",
+            active: true,
+            locked: false,
+            groupStudy: false,
+            linearStudy: true,
+            allowPreview: true,
+          },
+        }),
     })
 
     await getStudyProperties("123", { token: "custom-token-xyz" })
@@ -36,5 +50,57 @@ describe("getStudyProperties", () => {
     await expect(getStudyProperties("123", { token: "" })).rejects.toThrow(
       "Missing JATOS_BASE or auth.token"
     )
+  })
+
+  it("returns validated study properties with batches", async () => {
+    const properties = {
+      id: 123,
+      uuid: "study-1",
+      title: "Test",
+      dirName: "study-dir",
+      active: true,
+      locked: false,
+      groupStudy: false,
+      linearStudy: true,
+      allowPreview: true,
+      batches: [
+        {
+          id: 456,
+          uuid: "batch-1",
+          title: "Default",
+          active: true,
+          allowedWorkerTypes: ["PersonalSingle"],
+        },
+      ],
+    }
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      text: async () => JSON.stringify({ apiVersion: "1.1", data: properties }),
+    })
+
+    await expect(getStudyProperties("123", { token: "token" })).resolves.toEqual(properties)
+  })
+
+  it("throws JatosTransportError when study properties shape is invalid", async () => {
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      text: async () =>
+        JSON.stringify({
+          data: {
+            id: 123,
+            uuid: "study-1",
+            title: "Test",
+            dirName: "study-dir",
+            active: true,
+            locked: false,
+            groupStudy: false,
+            linearStudy: true,
+            allowPreview: true,
+            batches: [{ id: "bad", uuid: "batch-1", title: "Default", active: true }],
+          },
+        }),
+    })
+
+    await expect(getStudyProperties("123", { token: "token" })).rejects.toThrow(JatosTransportError)
   })
 })

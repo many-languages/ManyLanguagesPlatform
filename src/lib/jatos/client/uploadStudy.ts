@@ -1,6 +1,8 @@
 import type { JatosAuth } from "./types"
 import { throwIfJatosError } from "./throwIfJatosError"
 import { JatosTransportError } from "../errors"
+import { UploadStudyEnvelopeSchema } from "../schemas"
+import { parseJatosTextResponse } from "./parseJatosResponse"
 
 const OPERATION = "Upload study"
 
@@ -42,19 +44,7 @@ export async function uploadStudy(
   await throwIfJatosError(response, OPERATION)
 
   const text = await response.text()
-  let json: { data?: { id?: number; uuid?: string; title?: string } }
-  try {
-    json = JSON.parse(text) as {
-      data?: { id?: number; uuid?: string; title?: string }
-    }
-  } catch (cause) {
-    throw new JatosTransportError(`Invalid JSON in ${OPERATION} response`, OPERATION, cause)
-  }
-
-  const data = json?.data
-  if (!data?.uuid || data.id == null) {
-    throw new JatosTransportError(`Missing id or uuid in ${OPERATION} response`, OPERATION)
-  }
+  const { data } = parseJatosTextResponse(OPERATION, text, UploadStudyEnvelopeSchema)
 
   return { id: data.id, uuid: data.uuid, title: data.title }
 }

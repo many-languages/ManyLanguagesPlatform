@@ -2,6 +2,8 @@ import type { JatosStudyProperties } from "@/src/types/jatos"
 import type { JatosAuth } from "./types"
 import { throwIfJatosError } from "./throwIfJatosError"
 import { JatosTransportError } from "../errors"
+import { JatosStudyPropertiesEnvelopeSchema } from "../schemas"
+import { parseJatosTextResponse } from "./parseJatosResponse"
 
 const OPERATION = "Fetch study properties"
 
@@ -37,16 +39,7 @@ export async function getStudyProperties(
   await throwIfJatosError(response, OPERATION)
 
   const text = await response.text()
-  let json: { data?: JatosStudyProperties }
-  try {
-    json = JSON.parse(text) as { data?: JatosStudyProperties }
-  } catch (cause) {
-    throw new JatosTransportError(`Invalid JSON in ${OPERATION} response`, OPERATION, cause)
-  }
+  const json = parseJatosTextResponse(OPERATION, text, JatosStudyPropertiesEnvelopeSchema)
 
-  if (json.data == null) {
-    throw new JatosTransportError(`Missing data in ${OPERATION} response`, OPERATION)
-  }
-
-  return json.data
+  return json.data as JatosStudyProperties
 }

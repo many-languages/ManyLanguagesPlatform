@@ -8,9 +8,7 @@ function formatBytes(bytes: number): string {
 }
 
 /** Node/undici multipart entries are Blob-like; avoid `instanceof File` alone. */
-export function isFormDataStudyUpload(
-  value: FormDataEntryValue | null
-): value is Blob & { name: string } {
+export function isFormDataStudyUpload(value: FormDataEntryValue | null): value is File {
   if (value == null || typeof value === "string") return false
   return (
     typeof value.size === "number" &&

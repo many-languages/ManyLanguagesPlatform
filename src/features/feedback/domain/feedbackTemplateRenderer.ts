@@ -221,9 +221,10 @@ function evaluateConditionExpression(expr: string): boolean {
     if (token?.type !== "operator" || !["==", "!=", ">=", "<=", ">", "<"].includes(token.value)) {
       return left
     }
-    const operator = consume()
+    const operator = token.value
+    consume()
     const right = parsePrimary()
-    return compareConditionValues(left, operator.value, right)
+    return compareConditionValues(left, operator, right)
   }
 
   const parsePrimary = (): unknown => {

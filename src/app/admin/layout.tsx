@@ -24,7 +24,7 @@ export default async function AdminAppLayout({ children }: { children: React.Rea
   return (
     <NotificationMenuRootProvider initialData={initialMenuData}>
       <div className="min-h-screen flex flex-col bg-base-200">
-        <AppNavbar variant="admin" userRole={session.role} />
+        <AppNavbar variant="admin" userRole={session.role ?? undefined} />
         <main className="flex-1 mt-6 px-6 sm:px-8 lg:px-12">{children}</main>
         <Toaster position="top-right" />
       </div>

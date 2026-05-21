@@ -5,7 +5,7 @@ import { VariableType, ValueType } from "../types"
  */
 export function determineVariableType(
   variableKey: string,
-  variableTypes: Map<string, Map<string, { count: number; examplePaths: string[] }>>
+  variableTypes: Map<string, Map<ValueType, { count: number; examplePaths: string[] }>>
 ): VariableType {
   const typeMap = variableTypes.get(variableKey)
   if (!typeMap) {
@@ -15,7 +15,7 @@ export function determineVariableType(
   // Remove null from consideration
   const nonNullTypes = Array.from(typeMap.entries())
     .filter(([type, data]) => type !== "null" && data.count > 0)
-    .map(([type]) => type as ValueType)
+    .map(([type]) => type)
 
   if (nonNullTypes.length === 0) {
     return "string" // Default fallback

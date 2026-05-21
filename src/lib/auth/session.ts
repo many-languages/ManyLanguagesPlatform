@@ -21,7 +21,7 @@ export async function getSessionContext(): Promise<SessionContext> {
 }
 
 export async function getAuthorizedSession(): Promise<SessionContext> {
-  const session = await getSessionContext()
+  const session: SessionContext = await getSessionContext()
   session.$authorize()
   return session
 }

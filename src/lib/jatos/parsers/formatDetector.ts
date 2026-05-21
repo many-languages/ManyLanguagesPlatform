@@ -14,6 +14,8 @@ export interface FormatDetectionResult {
   message: string
 }
 
+type DelimiterCandidate = { type: DataFormat; char: string; avg: number; consistency: number }
+
 /**
  * Detect the format of a data string
  */
@@ -106,56 +108,54 @@ export function detectFormat(content: string): FormatDetectionResult {
     return Math.max(0, 1 - stdDev / (avg + 1))
   }
 
-  // Find best delimiter candidate
-  let bestDelimiter: { type: string; char: string; avg: number; consistency: number } | null = null
+  const delimiterCandidates: DelimiterCandidate[] = []
 
   if (averages.tab > 0) {
     const consistency = getConsistency(delimiterCounts.tab)
-    if (!bestDelimiter || (consistency > 0.8 && averages.tab > bestDelimiter.avg)) {
-      bestDelimiter = {
-        type: "tsv",
-        char: "\t",
-        avg: averages.tab,
-        consistency,
-      }
-    }
+    delimiterCandidates.push({
+      type: "tsv",
+      char: "\t",
+      avg: averages.tab,
+      consistency,
+    })
   }
 
   if (averages.comma > 0) {
     const consistency = getConsistency(delimiterCounts.comma)
-    if (!bestDelimiter || (consistency > 0.8 && averages.comma > bestDelimiter.avg)) {
-      bestDelimiter = {
-        type: "csv",
-        char: ",",
-        avg: averages.comma,
-        consistency,
-      }
-    }
+    delimiterCandidates.push({
+      type: "csv",
+      char: ",",
+      avg: averages.comma,
+      consistency,
+    })
   }
 
   if (averages.semicolon > 0) {
     const consistency = getConsistency(delimiterCounts.semicolon)
-    if (!bestDelimiter || (consistency > 0.8 && averages.semicolon > bestDelimiter.avg)) {
-      bestDelimiter = {
-        type: "csv",
-        char: ";",
-        avg: averages.semicolon,
-        consistency,
-      }
-    }
+    delimiterCandidates.push({
+      type: "csv",
+      char: ";",
+      avg: averages.semicolon,
+      consistency,
+    })
   }
 
   if (averages.pipe > 0) {
     const consistency = getConsistency(delimiterCounts.pipe)
-    if (!bestDelimiter || (consistency > 0.8 && averages.pipe > bestDelimiter.avg)) {
-      bestDelimiter = {
-        type: "csv",
-        char: "|",
-        avg: averages.pipe,
-        consistency,
-      }
-    }
+    delimiterCandidates.push({
+      type: "csv",
+      char: "|",
+      avg: averages.pipe,
+      consistency,
+    })
   }
+
+  const bestDelimiter = delimiterCandidates.reduce<DelimiterCandidate | null>((best, candidate) => {
+    if (!best || (candidate.consistency > 0.8 && candidate.avg > best.avg)) {
+      return candidate
+    }
+    return best
+  }, null)
 
   // If we found a good delimiter pattern
   if (bestDelimiter && bestDelimiter.consistency > 0.7 && bestDelimiter.avg > 0) {

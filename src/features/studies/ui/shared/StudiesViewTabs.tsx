@@ -2,6 +2,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
+import type { Route } from "next"
 import type { StudyView } from "@/src/features/studies/domain/studyView"
 import { STUDY_VIEWS } from "@/src/features/studies/domain/studyView"
 import clsx from "clsx"
@@ -26,7 +27,7 @@ export default function StudiesViewTabs({ currentView }: StudiesViewTabsProps) {
       className="tabs tabs-boxed bg-base-200 p-1.5 rounded-xl shadow-sm border border-base-300"
     >
       {STUDY_VIEWS.map((view) => {
-        const href = view === "all" ? pathname : `${pathname}?view=${view}`
+        const href = (view === "all" ? pathname : `${pathname}?view=${view}`) as Route
         const isActive = currentView === view
 
         return (

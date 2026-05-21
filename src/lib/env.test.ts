@@ -1,10 +1,8 @@
-import { afterEach, describe, expect, it } from "vitest"
+import { afterEach, describe, expect, it, vi } from "vitest"
 import { assertProductionEnv, collectProductionEnvIssues, isUnsafeEnvValue } from "./env"
 
-const originalNodeEnv = process.env.NODE_ENV
-
 afterEach(() => {
-  process.env.NODE_ENV = originalNodeEnv
+  vi.unstubAllEnvs()
 })
 
 describe("isUnsafeEnvValue", () => {
@@ -26,6 +24,7 @@ describe("collectProductionEnvIssues", () => {
       JATOS_TOKEN: "real-token-value",
       JATOS_BASE: "http://jatos.example",
       NEXT_PUBLIC_JATOS_BASE: "http://jatos.example",
+      NODE_ENV: "production",
     })
     expect(issues.some((i) => i.includes("SESSION_SECRET_KEY"))).toBe(true)
     expect(issues.some((i) => i.includes("POSTGRES_PASSWORD"))).toBe(true)
@@ -34,12 +33,12 @@ describe("collectProductionEnvIssues", () => {
 
 describe("assertProductionEnv", () => {
   it("no-ops outside production", () => {
-    process.env.NODE_ENV = "development"
+    vi.stubEnv("NODE_ENV", "development")
     expect(() => assertProductionEnv()).not.toThrow()
   })
 
   it("throws in production when env is incomplete", () => {
-    process.env.NODE_ENV = "production"
+    vi.stubEnv("NODE_ENV", "production")
     expect(() => assertProductionEnv()).toThrow(/Production environment invalid/)
   })
 })

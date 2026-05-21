@@ -7,6 +7,7 @@ import { useQuery } from "@blitzjs/rpc"
 import getNotificationMenuData from "../queries/getNotificationMenuData"
 import { parseRouteData } from "../utils/parseRouteData"
 import type { RouteData } from "../types"
+import type { NotificationMenuData } from "../server/getNotificationMenuData"
 
 type NotificationMenuEntry = {
   id: number
@@ -22,9 +23,24 @@ type NotificationMenuContextValue = {
 
 const NotificationMenuContext = createContext<NotificationMenuContextValue | null>(null)
 
-export const NotificationMenuProvider = ({ children }: { children: React.ReactNode }) => {
+export const NotificationMenuProvider = ({
+  children,
+  initialData,
+}: {
+  children: React.ReactNode
+  initialData: NotificationMenuData
+}) => {
   const router = useRouter()
-  const [data, { refetch }] = useQuery(getNotificationMenuData, {})
+  const [data, { refetch }] = useQuery(
+    getNotificationMenuData,
+    {},
+    {
+      initialData,
+      staleTime: Infinity,
+      refetchOnMount: false,
+      refetchOnWindowFocus: false,
+    }
+  )
 
   const value = useMemo<NotificationMenuContextValue>(
     () => ({

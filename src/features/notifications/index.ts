@@ -15,6 +15,10 @@ export { NotificationMenuRootProvider } from "./context/NotificationMenuRootProv
 export { sendNotification } from "./services/sendNotification"
 export { notifyAdminsOfPendingStudyReview } from "./services/notifyAdminsOfPendingStudyReview"
 export { getNotificationsRsc } from "./server/getNotifications"
+export {
+  getNotificationMenuDataForUser,
+  type NotificationMenuData,
+} from "./server/getNotificationMenuData"
 
 // Types
 export type { NotificationWithRecipient, RouteData } from "./types"

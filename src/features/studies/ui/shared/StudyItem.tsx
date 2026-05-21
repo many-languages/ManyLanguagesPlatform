@@ -20,6 +20,8 @@ interface StudyItemProps {
   showOpenButton?: boolean
   /** When false, replaces the join button with a "View Details" navigation link. Defaults to true. */
   isParticipant?: boolean
+  /** Server-loaded membership flag for the join button. */
+  initialJoined?: boolean
 }
 
 export default function StudyItem({
@@ -27,6 +29,7 @@ export default function StudyItem({
   showJoinButton,
   showOpenButton = true,
   isParticipant = true,
+  initialJoined = false,
 }: StudyItemProps) {
   const latestUpload = study.latestJatosStudyUpload
   const joinData =
@@ -70,6 +73,7 @@ export default function StudyItem({
               jatosStudyId={joinData!.jatosStudyId}
               jatosBatchId={joinData!.jatosBatchId}
               jatosWorkerType={joinData!.jatosWorkerType}
+              initialJoined={initialJoined}
             />
           )}
           {canViewDetails && (

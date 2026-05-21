@@ -1,4 +1,4 @@
-import { StudyList, getStudies } from "@/src/features/studies"
+import { StudyList, getParticipantJoinedByStudyIdRsc, getStudies } from "@/src/features/studies"
 import PaginationControls from "@/src/components/ui/PaginationControls"
 import { parsePageQueryParam } from "@/src/lib/searchParams/parsePageQueryParam"
 import { getBlitzContext } from "../../blitz-server"
@@ -35,6 +35,10 @@ async function ExploreContent({
 
   const { studies, hasMore } = result
 
+  const joinedByStudyId = isParticipant
+    ? await getParticipantJoinedByStudyIdRsc(studies.map((study) => study.id))
+    : undefined
+
   return (
     <>
       <StudyList
@@ -42,6 +46,7 @@ async function ExploreContent({
         showJoinButton={true}
         showOpenButton={false}
         isParticipant={isParticipant}
+        joinedByStudyId={joinedByStudyId}
       />
       <PaginationControls page={page} hasMore={hasMore} />
     </>

@@ -1,9 +1,9 @@
 "use client"
 
-import { useMutation, useQuery } from "@blitzjs/rpc"
+import { useState } from "react"
+import { useMutation } from "@blitzjs/rpc"
 import joinStudy from "@/src/features/studies/mutations/joinStudy"
 import toast from "react-hot-toast"
-import isParticipantInStudy from "@/src/features/studies/queries/isParticipantInStudy"
 import { createParticipantStudyCodeAndSaveAction } from "@/src/features/studies/actions/createParticipantStudyCode"
 import { AsyncButton } from "@/src/components/ui/AsyncButton"
 import { useRouter } from "next/navigation"
@@ -13,6 +13,7 @@ interface JoinStudyButtonProps {
   jatosStudyId: number
   jatosBatchId: number
   jatosWorkerType: "SINGLE" | "MULTIPLE"
+  initialJoined?: boolean
 }
 
 export default function JoinStudyButton({
@@ -20,9 +21,10 @@ export default function JoinStudyButton({
   jatosStudyId,
   jatosBatchId,
   jatosWorkerType,
+  initialJoined = false,
 }: JoinStudyButtonProps) {
   const router = useRouter()
-  const [{ joined } = { joined: false }] = useQuery(isParticipantInStudy, { studyId })
+  const [joined, setJoined] = useState(initialJoined)
   const [joinStudyMutation] = useMutation(joinStudy)
 
   const handleJoin = async () => {
@@ -41,6 +43,7 @@ export default function JoinStudyButton({
       participantStudyId,
     })
 
+    setJoined(true)
     toast.success("You have joined the study!")
     router.push(`/studies/${studyId}`)
   }

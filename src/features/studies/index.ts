@@ -118,6 +118,10 @@ export {
   getStudyViewerRsc,
 } from "./server/getStudy"
 export { getStudies } from "./server/getStudies"
+export {
+  getParticipantJoinedByStudyIdRsc,
+  isParticipantInStudyRsc,
+} from "./server/isParticipantInStudy"
 export { getParticipantStudiesWithStatus } from "./server/getParticipantStudiesWithStatus"
 export {
   getResearcherStudiesPageSlice,

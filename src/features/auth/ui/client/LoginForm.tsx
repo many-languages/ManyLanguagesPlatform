@@ -8,6 +8,7 @@ import { useRouter, useSearchParams } from "next/navigation"
 import { TextField, FormSubmitButton, FormErrorDisplay } from "@/src/components/ui/fields"
 import { Form, FORM_ERROR } from "@/src/components/ui/Form"
 import { getDefaultAuthenticatedPath } from "@/src/lib/auth/routing"
+import { safeRedirectPath } from "@/src/lib/auth/safeRedirectPath"
 import login from "../../mutations/login"
 import { usePendingNavigation } from "@/src/lib/hooks/usePendingNavigation"
 import { Login } from "../../validations"
@@ -15,7 +16,7 @@ import { Login } from "../../validations"
 export const LoginForm = () => {
   const [loginMutation] = useMutation(login)
   const router = useRouter()
-  const next = useSearchParams()?.get("next")
+  const next = safeRedirectPath(useSearchParams()?.get("next"))
   const { isPending: isNavigating, startNavigation } = usePendingNavigation()
 
   const defaultValues = useMemo(() => ({ email: "", password: "" }), [])

@@ -14,6 +14,7 @@ import {
   type StudyView,
 } from "@/src/features/studies"
 import { getBlitzContext } from "@/src/app/blitz-server"
+import { parsePageQueryParam } from "@/src/lib/searchParams/parsePageQueryParam"
 
 type SessionRole = "RESEARCHER" | "PARTICIPANT" | "ADMIN" | "SUPERADMIN"
 
@@ -85,8 +86,7 @@ export default async function StudiesPage({
   searchParams: Promise<{ page?: string; view?: string }>
 }) {
   const params = await searchParams
-  const rawPage = Number(params.page ?? 0)
-  const page = Number.isFinite(rawPage) && rawPage >= 0 ? Math.floor(rawPage) : 0
+  const page = parsePageQueryParam(params.page)
 
   const { session } = await getBlitzContext()
   if (!session.userId) redirect("/login")

@@ -6,16 +6,13 @@ import {
   isSetupCompleteFromFlags,
   type SetupStepFlags,
 } from "@/src/features/studies/services"
-import type { FeedbackTemplate, FeedbackTemplateEditorInitial } from "@/src/features/feedback/types"
+import type { FeedbackTemplate } from "@/src/features/feedback/types"
+import type { SaveFeedbackTemplateActionInput } from "@/src/features/feedback/validations"
 import { extractRequiredVariableNames } from "@/src/features/feedback/domain/requiredVariableNames"
 import { createFeedbackTemplateRsc } from "@/src/features/feedback/server/createFeedbackTemplate"
 import { updateFeedbackTemplateRsc } from "@/src/features/feedback/server/updateFeedbackTemplate"
 
-export interface SaveFeedbackTemplateWorkflowInput {
-  studyId: number
-  content: string
-  initialTemplate?: Pick<FeedbackTemplateEditorInitial, "id" | "content"> | null
-}
+export type SaveFeedbackTemplateWorkflowInput = SaveFeedbackTemplateActionInput
 
 export interface SaveFeedbackTemplateWorkflowResult {
   template: FeedbackTemplate
@@ -26,18 +23,17 @@ export async function saveFeedbackTemplateAndNotify(
   input: SaveFeedbackTemplateWorkflowInput
 ): Promise<SaveFeedbackTemplateWorkflowResult> {
   const { studyId, content, initialTemplate } = input
-  const trimmedContent = content.trim()
-  const requiredVariableNames = extractRequiredVariableNames(trimmedContent)
+  const requiredVariableNames = extractRequiredVariableNames(content)
 
   const template = initialTemplate
     ? await updateFeedbackTemplateRsc({
         id: initialTemplate.id,
-        content: trimmedContent,
+        content,
         requiredVariableNames,
       })
     : await createFeedbackTemplateRsc({
         studyId,
-        content: trimmedContent,
+        content,
         requiredVariableNames,
       })
 

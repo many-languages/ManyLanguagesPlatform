@@ -3,7 +3,7 @@
 import type { FeedbackTemplate, FeedbackTemplateEditorInitial } from "@/src/features/feedback/types"
 import { mapFeedbackTemplateSaveErrorToUserMessage } from "@/src/features/feedback/domain/mapFeedbackTemplateSaveErrorToUserMessage"
 import { saveFeedbackTemplateAndNotify } from "@/src/features/feedback/server/saveFeedbackTemplateAndNotify"
-import { SaveFeedbackTemplateActionSchema } from "../validations"
+import { parseSaveFeedbackTemplateActionInput } from "../validations"
 
 export interface SaveTemplateInput {
   studyId: number
@@ -18,10 +18,9 @@ export type SaveFeedbackTemplateActionResult =
 export async function saveFeedbackTemplateAction(
   input: SaveTemplateInput
 ): Promise<SaveFeedbackTemplateActionResult> {
-  const parsed = SaveFeedbackTemplateActionSchema.safeParse(input)
+  const parsed = parseSaveFeedbackTemplateActionInput(input)
   if (!parsed.success) {
-    const userMessage = parsed.error.errors[0]?.message ?? "Invalid feedback template input."
-    return { ok: false, userMessage }
+    return { ok: false, userMessage: parsed.error }
   }
 
   try {

@@ -28,8 +28,8 @@ export default async function ParticipantData({ studyId, study }: ParticipantDat
 
   if (jatosStudyId == null) {
     return (
-      <Alert variant="warning" className="mt-4">
-        <p>This study is not ready for participants yet (JATOS study not linked).</p>
+      <Alert variant="error" className="mt-4">
+        <p>Study setup is incomplete — JATOS linkage missing.</p>
       </Alert>
     )
   }

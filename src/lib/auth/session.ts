@@ -1,7 +1,17 @@
 "use server"
 
 import type { SessionContext } from "@blitzjs/auth"
+import { AuthorizationError } from "blitz"
 import { getBlitzContext } from "@/src/app/blitz-server"
+
+/** After `$authorize()`, returns a definite user id or throws. */
+export function getAuthorizedUserId(session: SessionContext): number {
+  const userId = session.userId
+  if (userId == null) {
+    throw new AuthorizationError()
+  }
+  return userId
+}
 
 function assertSessionContext(session: unknown): asserts session is SessionContext {
   if (

@@ -2,7 +2,7 @@
 
 import { revalidateTag } from "next/cache"
 import db from "db"
-import { getAuthorizedSession } from "@/src/lib/auth/session"
+import { getAuthorizedSession, getAuthorizedUserId } from "@/src/lib/auth/session"
 import { NOTIFICATIONS_MENU_TAG, NOTIFICATIONS_TABLE_TAG } from "../constants"
 import { NotificationIdsInput } from "../validations"
 
@@ -17,10 +17,11 @@ export const deleteNotifications = async (notificationIds: number[]) => {
   }
 
   const session = await getAuthorizedSession()
+  const userId = getAuthorizedUserId(session)
 
   const { count } = await db.notificationRecipient.deleteMany({
     where: {
-      userId: session.userId!,
+      userId,
       notificationId: { in: parsed.data },
     },
   })

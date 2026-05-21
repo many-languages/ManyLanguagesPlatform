@@ -1,4 +1,5 @@
 import { JatosWorkerType } from "@/db"
+import { jatosRunUrlSchema } from "@/src/lib/jatos/utils/jatosRunUrlSchema"
 import { z } from "zod"
 
 export const Id = z.number().int().positive()
@@ -39,7 +40,25 @@ export const ImportJatosSchema = BaseJatosFormSchema.extend({
   hashAlgorithm: z.string().optional(),
 })
 
-export const StudyInformationFormSchema = z.object({
+const validateStudyDateRange = (
+  data: { startDate: string; endDate: string },
+  ctx: z.RefinementCtx
+) => {
+  const start = new Date(data.startDate)
+  const end = new Date(data.endDate)
+  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
+    return
+  }
+  if (end < start) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "End date must be on or after start date",
+      path: ["endDate"],
+    })
+  }
+}
+
+const StudyInformationFormFields = z.object({
   title: z.string().min(1, "Title is required").trim(),
   description: z.string().min(1, "Description is required").trim(),
   startDate: z.string().min(1, "Start date is required"),
@@ -48,6 +67,9 @@ export const StudyInformationFormSchema = z.object({
   payment: z.string().min(1, "Payment description is required").trim(),
   length: z.string().min(1, "Study length is required").trim(),
 })
+
+export const StudyInformationFormSchema =
+  StudyInformationFormFields.superRefine(validateStudyDateRange)
 
 export const CreateStudy = z.object({
   // Bare minimum for creating a new study draft record
@@ -62,10 +84,10 @@ export const CreateStudy = z.object({
 
 export type CreateStudyInput = z.infer<typeof CreateStudy>
 
-export const UpdateStudy = StudyInformationFormSchema.extend({
+export const UpdateStudy = StudyInformationFormFields.extend({
   id: Id,
   status: z.enum(["OPEN", "CLOSED"]).optional(),
-})
+}).superRefine(validateStudyDateRange)
 export type UpdateStudyInput = z.infer<typeof UpdateStudy>
 
 export const ArchiveStudy = z.object({ id: Id })
@@ -206,14 +228,14 @@ export const UpdateSetupCompletionSchema = z.object({
 
 export const SaveParticipantRunUrlSchema = z.object({
   participantStudyId: Id,
-  jatosRunUrl: z.string(),
+  jatosRunUrl: jatosRunUrlSchema,
 })
 
 export const CreateResearcherPilotLinkSchema = z.object({
   studyId: Id,
   studyResearcherId: Id,
   jatosStudyUploadId: Id,
-  jatosRunUrl: z.string(),
+  jatosRunUrl: jatosRunUrlSchema,
   markerToken: z.string(),
 })
 

@@ -15,9 +15,10 @@ type FormValues = {
 
 type NotificationContentProps = {
   notifications: NotificationWithRecipient[]
+  locale: string
 }
 
-export const NotificationContent = ({ notifications }: NotificationContentProps) => {
+export const NotificationContent = ({ notifications, locale }: NotificationContentProps) => {
   const formMethods = useForm<FormValues>({
     defaultValues: { selectedIds: [] },
     mode: "onChange",
@@ -44,7 +45,7 @@ export const NotificationContent = ({ notifications }: NotificationContentProps)
         </section>
 
         <Card title="">
-          <NotificationTable notifications={notifications} />
+          <NotificationTable notifications={notifications} locale={locale} />
         </Card>
       </FormProvider>
     </main>

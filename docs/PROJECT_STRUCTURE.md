@@ -209,15 +209,15 @@ Blitz scans **`features/*/queries/*`** and **`features/*/mutations/*`** and wrap
 
 ## What exists where (quick map)
 
-| Concern                                                                       | Typical location                                                    |
-| ----------------------------------------------------------------------------- | ------------------------------------------------------------------- |
-| Portal routes                                                                 | `src/app/(app)/` — thin `page.tsx` / `layout.tsx`                   |
-| Admin routes                                                                  | `src/app/admin/`                                                    |
-| Auth pages                                                                    | `src/app/(auth)/`                                                   |
-| Dashboard, studies, feedback, codebook, notifications, profile, admin invites | `src/features/<name>/`                                              |
-| Navbar / shell pieces                                                         | `src/features/shell/` (and related)                                 |
-| Current user session query                                                    | `src/features/auth/queries/getCurrentUser.ts` (and hooks alongside) |
-| JATOS, email, generic auth routing                                            | `src/lib/`                                                          |
-| Database (Prisma)                                                             | Project `db/` module (Blitz / Next convention)                      |
+| Concern                                                                       | Typical location                                  |
+| ----------------------------------------------------------------------------- | ------------------------------------------------- |
+| Portal routes                                                                 | `src/app/(app)/` — thin `page.tsx` / `layout.tsx` |
+| Admin routes                                                                  | `src/app/admin/`                                  |
+| Auth pages                                                                    | `src/app/(auth)/`                                 |
+| Dashboard, studies, feedback, codebook, notifications, profile, admin invites | `src/features/<name>/`                            |
+| Navbar / shell pieces                                                         | `src/features/shell/` (and related)               |
+| Current user session helper                                                   | `src/features/auth/server/getCurrentUser.ts`      |
+| JATOS, email, generic auth routing                                            | `src/lib/`                                        |
+| Database (Prisma)                                                             | Project `db/` module (Blitz / Next convention)    |
 
 This map is indicative; **`src/features/`** is the source of truth for module boundaries.

@@ -224,4 +224,15 @@ export const AssetStructureResponseSchema = z.union([
 ])
 
 export type JatosMetadataResponse = z.infer<typeof JatosMetadataSchema>
+export type JatosWorkerType = z.infer<typeof WorkerTypeSchema>
+export type JatosFileInfo = z.infer<typeof JatosFileInfoSchema>
+export type JatosDataInfo = z.infer<typeof JatosDataInfoSchema>
+export type JatosComponentResult = z.infer<typeof JatosComponentResultSchema>
+export type JatosStudyResult = z.infer<typeof JatosStudyResultSchema>
+export type JatosMetadataStudy = z.infer<typeof JatosMetadataStudySchema>
+export type JatosMetadata = z.infer<typeof JatosMetadataSchema>
+export type JatosBatch = z.infer<typeof JatosBatchSchema>
+export type JatosComponent = z.infer<typeof JatosComponentSchema>
+export type JatosMember = z.infer<typeof JatosMemberSchema>
+export type JatosStudyProperties = z.infer<typeof JatosStudyPropertiesSchema>
 export type JatosStudyPropertiesEnvelope = z.infer<typeof JatosStudyPropertiesEnvelopeSchema>

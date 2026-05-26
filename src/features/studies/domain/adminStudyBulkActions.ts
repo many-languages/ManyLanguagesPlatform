@@ -14,6 +14,14 @@ export interface AdminStudyBulkActionsResult {
   deleteEnabled: boolean
   deleteDisabledReason: string | null
   deleteConfirmMessage: string
+  enableTargetIds: number[]
+  enableBlockedMessage: string | null
+  disableTargetIds: number[]
+  approveTargetIds: number[]
+  rejectTargetIds: number[]
+  deleteTargetIds: number[]
+  archiveTargetIds: number[]
+  unarchiveTargetIds: number[]
 }
 
 export function getAdminStudyBulkActions(
@@ -32,13 +40,22 @@ export function getAdminStudyBulkActions(
       deleteEnabled: false,
       deleteDisabledReason: null,
       deleteConfirmMessage: "",
+      enableTargetIds: [],
+      enableBlockedMessage: null,
+      disableTargetIds: [],
+      approveTargetIds: [],
+      rejectTargetIds: [],
+      deleteTargetIds: [],
+      archiveTargetIds: [],
+      unarchiveTargetIds: [],
     }
   }
 
   const hasPending = selectedStudies.some((s) => s.adminApproved === null)
-  const hasPendingWithSetupComplete = selectedStudies.some(
+  const pendingWithSetupComplete = selectedStudies.filter(
     (s) => s.adminApproved === null && isSetupComplete(toSetupStatusStudy(s))
   )
+  const hasPendingWithSetupComplete = pendingWithSetupComplete.length > 0
   const allApproved = selectedStudies.every((s) => s.adminApproved === true)
   const allEnabled = selectedStudies.every((s) => s.status === "OPEN")
   const allDisabled = selectedStudies.every((s) => s.status === "CLOSED")
@@ -76,6 +93,23 @@ export function getAdminStudyBulkActions(
   const showRejectButton = hasPending
   const showDisableButton = allApproved && (allEnabled || mixed) && !allArchived
   const showEnableButton = allApproved && (allDisabled || mixed) && !allArchived
+  const selectedStudyIds = selectedStudies.map((s) => s.id)
+  const enableBlockedStudies = selectedStudies.filter(
+    (s) => s.adminApproved !== true || !isSetupComplete(toSetupStatusStudy(s))
+  )
+  const enableBlockedMessage =
+    enableBlockedStudies.length > 0
+      ? `Cannot enable data collection. The following studies need admin approval and completed setup: ${enableBlockedStudies
+          .map((s) => s.title?.trim() || `Study #${s.id}`)
+          .join(", ")}`
+      : null
+  const enableTargetIds = enableBlockedMessage ? [] : selectedStudyIds
+  const approveTargetIds = pendingWithSetupComplete.map((s) => s.id)
+  const rejectTargetIds = selectedStudies.filter((s) => s.adminApproved === null).map((s) => s.id)
+  const disableTargetIds = showDisableButton ? selectedStudyIds : []
+  const deleteTargetIds = deleteEnabled ? selectedStudyIds : []
+  const archiveTargetIds = showArchiveButton ? selectedStudyIds : []
+  const unarchiveTargetIds = showUnarchiveButton ? selectedStudyIds : []
 
   return {
     showApproveButton,
@@ -88,5 +122,13 @@ export function getAdminStudyBulkActions(
     deleteEnabled,
     deleteDisabledReason,
     deleteConfirmMessage,
+    enableTargetIds,
+    enableBlockedMessage,
+    disableTargetIds,
+    approveTargetIds,
+    rejectTargetIds,
+    deleteTargetIds,
+    archiveTargetIds,
+    unarchiveTargetIds,
   }
 }

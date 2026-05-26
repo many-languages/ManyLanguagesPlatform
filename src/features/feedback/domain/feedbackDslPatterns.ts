@@ -43,6 +43,14 @@ export function createBareVarReferenceRegex(): RegExp {
   return new RegExp(String.raw`var:(${IDENT})(?::(${MOD}))?`, "g")
 }
 
+/** Bare `stat:var.metric` inside `#if` conditions (no `{{ }}`), optionally with a where clause. */
+export function createBareStatReferenceRegex(): RegExp {
+  return new RegExp(
+    String.raw`stat:(${IDENT})\.(avg|median|sd|count)(?:\s*\|\s*where:\s*([\s\S]*?))?(?=\s*(?:==|!=|>=|<=|>|<|\}\}|$))`,
+    "g"
+  )
+}
+
 /** `{{ stat:var.metric[:scope] [| where: …] }}` — keep in sync with metrics in renderer/validator. */
 export function createFeedbackStatPlaceholderRegex(): RegExp {
   return new RegExp(

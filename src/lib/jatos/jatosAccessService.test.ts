@@ -36,6 +36,13 @@ const mockStudyFindUnique = vi.fn()
 const mockStudyFindFirst = vi.fn()
 const mockStudyFindMany = vi.fn()
 
+function arrayBufferFromString(value: string): ArrayBuffer {
+  const buffer = Buffer.from(value)
+  const arrayBuffer = new ArrayBuffer(buffer.byteLength)
+  new Uint8Array(arrayBuffer).set(buffer)
+  return arrayBuffer
+}
+
 vi.mock("db", async () => {
   const { Prisma } = await import("@prisma/client")
   return {
@@ -294,7 +301,7 @@ describe("jatosAccessService", () => {
       )
       vi.spyOn(getResultsDataModule, "getResultsData").mockResolvedValueOnce({
         success: true,
-        data: Buffer.from("zip"),
+        data: arrayBufferFromString("zip"),
         contentType: "application/zip",
       })
       vi.spyOn(parseJatosZipModule, "parseJatosZip").mockResolvedValue([
@@ -454,7 +461,7 @@ describe("jatosAccessService", () => {
       )
       vi.spyOn(getResultsDataModule, "getResultsData").mockResolvedValueOnce({
         success: true,
-        data: Buffer.from("zip"),
+        data: arrayBufferFromString("zip"),
         contentType: "application/zip",
       })
       vi.spyOn(parseJatosZipModule, "parseJatosZip").mockResolvedValue([
@@ -584,7 +591,7 @@ describe("jatosAccessService", () => {
       mockStudyFindUnique.mockResolvedValue({ jatosStudyUUID: "uuid-7" })
       vi.spyOn(getResultsDataModule, "getResultsData").mockResolvedValue({
         success: true,
-        data: Buffer.from("zip-content"),
+        data: arrayBufferFromString("zip-content"),
         contentType: "application/zip",
       })
 
@@ -611,7 +618,7 @@ describe("jatosAccessService", () => {
       mockStudyFindUnique.mockResolvedValue({ jatosStudyUUID: "uuid-7" })
       vi.spyOn(getResultsDataModule, "getResultsData").mockResolvedValue({
         success: true,
-        data: Buffer.from("zip-content"),
+        data: arrayBufferFromString("zip-content"),
         contentType: "application/zip",
       })
 

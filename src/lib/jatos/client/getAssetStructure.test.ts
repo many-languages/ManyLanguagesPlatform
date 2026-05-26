@@ -67,4 +67,14 @@ describe("getAssetStructure", () => {
     const { JatosTransportError } = await import("../errors")
     await expect(getAssetStructure(123, { token: "token" })).rejects.toThrow(JatosTransportError)
   })
+
+  it("throws JatosTransportError when asset structure shape is invalid", async () => {
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      text: async () => JSON.stringify(["not", "an", "asset", "tree"]),
+    })
+
+    const { JatosTransportError } = await import("../errors")
+    await expect(getAssetStructure(123, { token: "token" })).rejects.toThrow(JatosTransportError)
+  })
 })

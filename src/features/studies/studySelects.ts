@@ -184,6 +184,16 @@ export const pendingAdminApprovalStudySelect = Prisma.validator<Prisma.StudySele
   },
 })
 
+/** Minimal shape returned from `joinStudy` RPC (client needs id + pseudonym only). */
+export const participantStudyJoinResultSelect = {
+  id: true,
+  pseudonym: true,
+} satisfies Prisma.ParticipantStudySelect
+
+export type JoinStudyResult = Prisma.ParticipantStudyGetPayload<{
+  select: typeof participantStudyJoinResultSelect
+}>
+
 export const participantWithEmailArgs = Prisma.validator<Prisma.ParticipantStudyDefaultArgs>()({
   include: { user: { select: { email: true } } },
 })

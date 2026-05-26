@@ -2,6 +2,7 @@ import { Prisma } from "@prisma/client"
 import { cache } from "react"
 import { getBlitzContext } from "@/src/app/blitz-server"
 import db from "db"
+import { notificationRecipientWithNotificationSelect } from "../notificationSelects"
 import type { NotificationWithRecipient } from "../types"
 
 type OrderBy =
@@ -32,9 +33,7 @@ export async function findNotificationsForUser(
       userId,
       ...(includeDismissed ? {} : { dismissedAt: null }),
     },
-    include: {
-      notification: true,
-    },
+    select: notificationRecipientWithNotificationSelect,
     orderBy: orderBy ?? DEFAULT_ORDER_BY,
     skip,
     take,

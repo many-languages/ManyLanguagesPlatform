@@ -7,8 +7,7 @@ export const metadata = {
 }
 
 export default async function AdminStudiesPage() {
-  const studies = await getStudiesRsc()
-  const { session } = await getBlitzContext()
+  const [studies, { session }] = await Promise.all([getStudiesRsc(), getBlitzContext()])
   const viewerRole = session.role as UserRole
 
   return (

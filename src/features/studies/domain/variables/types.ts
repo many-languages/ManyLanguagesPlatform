@@ -17,7 +17,7 @@ export type VariableFacts = {
     variableUnserializableFallbacks: Map<string, number>
   }
   types: {
-    variableTypes: Map<string, Map<string, { count: number; examplePaths: string[] }>>
+    variableTypes: Map<string, Map<ValueType, { count: number; examplePaths: string[] }>>
     variableObjectArrayLeaves: Set<string>
   }
   shapes: {

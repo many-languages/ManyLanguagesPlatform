@@ -1,5 +1,8 @@
 import { Prisma } from "db"
-import type { FeedbackTemplate } from "@/src/features/feedback/types"
+import {
+  feedbackTemplateSelect,
+  type FeedbackTemplateRscRow,
+} from "@/src/features/feedback/feedbackTemplateRscSelect"
 import { computeFeedbackTemplateValidation } from "./computeFeedbackTemplateValidation"
 
 /**
@@ -10,7 +13,7 @@ export async function finalizeFeedbackTemplateAfterContentChange(
   tx: Prisma.TransactionClient,
   studyId: number,
   templateId: number
-): Promise<FeedbackTemplate> {
+): Promise<FeedbackTemplateRscRow> {
   const latestUpload = await tx.jatosStudyUpload.findFirst({
     where: { studyId },
     orderBy: { createdAt: "desc" },
@@ -30,10 +33,10 @@ export async function finalizeFeedbackTemplateAfterContentChange(
     })
   }
 
-  const row = await tx.feedbackTemplate.findUniqueOrThrow({
+  return tx.feedbackTemplate.findUniqueOrThrow({
     where: { id: templateId },
+    select: feedbackTemplateSelect,
   })
-  return row as FeedbackTemplate
 }
 
 export type SaveFeedbackTemplateInTransaction = {
@@ -48,7 +51,7 @@ export type SaveFeedbackTemplateInTransaction = {
 export async function createFeedbackTemplateInTransaction(
   tx: Prisma.TransactionClient,
   input: SaveFeedbackTemplateInTransaction
-): Promise<FeedbackTemplate> {
+): Promise<FeedbackTemplateRscRow> {
   const created = await tx.feedbackTemplate.create({
     data: {
       studyId: input.studyId,
@@ -63,7 +66,7 @@ export async function createFeedbackTemplateInTransaction(
 export async function updateFeedbackTemplateInTransaction(
   tx: Prisma.TransactionClient,
   input: { id: number } & SaveFeedbackTemplateInTransaction
-): Promise<FeedbackTemplate> {
+): Promise<FeedbackTemplateRscRow> {
   await tx.feedbackTemplate.update({
     where: { id: input.id },
     data: {

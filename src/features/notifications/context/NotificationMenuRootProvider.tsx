@@ -1,7 +1,16 @@
 "use client"
 
 import { NotificationMenuProvider } from "./NotificationMenuContext"
+import type { NotificationMenuData } from "../server/getNotificationMenuData"
 
-export const NotificationMenuRootProvider = ({ children }: { children: React.ReactNode }) => {
-  return <NotificationMenuProvider>{children}</NotificationMenuProvider>
+type NotificationMenuRootProviderProps = {
+  children: React.ReactNode
+  initialData: NotificationMenuData
+}
+
+export const NotificationMenuRootProvider = ({
+  children,
+  initialData,
+}: NotificationMenuRootProviderProps) => {
+  return <NotificationMenuProvider initialData={initialData}>{children}</NotificationMenuProvider>
 }

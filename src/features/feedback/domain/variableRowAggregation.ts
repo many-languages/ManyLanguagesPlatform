@@ -18,35 +18,89 @@ export function collectVariableValuesAcrossAllRows(
 }
 
 export function buildPredicate(whereClause: string): (row: Record<string, Primitive>) => boolean {
-  let clause = whereClause.replace(/\s+/g, " ").trim()
-  const parts = clause
-    .replace(/\|\|/g, " or ")
-    .replace(/&&/g, " and ")
-    .toLowerCase()
-    .split(/\band\b/)
-    .map((p) => p.trim())
-    .filter(Boolean)
-
-  const predicates: ((row: Record<string, Primitive>) => boolean)[] = []
+  const terms = splitLogicalTerms(whereClause.replace(/\s+/g, " ").trim())
   const MAX_PREDICATES = 3
-  for (let i = 0; i < Math.min(parts.length, MAX_PREDICATES); i++) {
-    const p = parts[i]
-    const pred = parseSimplePredicate(p)
-    if (pred) predicates.push(pred)
-  }
+  const parts = terms.parts.slice(0, MAX_PREDICATES)
+  const connectors = terms.connectors.slice(0, Math.max(0, parts.length - 1))
+  const predicates = parts.map((part) => parseSimplePredicate(part))
 
-  return (row: Record<string, Primitive>) =>
-    predicates.every((fn) => {
+  return (row: Record<string, Primitive>) => {
+    if (predicates.length === 0) return false
+
+    const results = predicates.map((fn) => {
+      if (!fn) return false
       try {
         return fn(row)
       } catch {
         return false
       }
     })
+
+    let groupResult = results[0] ?? false
+    const orGroups: boolean[] = []
+    for (let i = 0; i < connectors.length; i++) {
+      const next = results[i + 1] ?? false
+      if (connectors[i] === "and") {
+        groupResult = groupResult && next
+      } else {
+        orGroups.push(groupResult)
+        groupResult = next
+      }
+    }
+    orGroups.push(groupResult)
+
+    return orGroups.some(Boolean)
+  }
+}
+
+function splitLogicalTerms(whereClause: string): {
+  parts: string[]
+  connectors: ("and" | "or")[]
+} {
+  const parts: string[] = []
+  const connectors: ("and" | "or")[] = []
+  let start = 0
+  let quote: '"' | "'" | null = null
+
+  for (let i = 0; i < whereClause.length; i++) {
+    const ch = whereClause[i]
+    if ((ch === '"' || ch === "'") && whereClause[i - 1] !== "\\") {
+      quote = quote === ch ? null : quote ?? ch
+      continue
+    }
+    if (quote) continue
+
+    if (whereClause.startsWith("&&", i) || whereClause.startsWith("||", i)) {
+      const part = whereClause.slice(start, i).trim()
+      if (part) parts.push(part)
+      connectors.push(whereClause.startsWith("&&", i) ? "and" : "or")
+      i += 1
+      start = i + 1
+      continue
+    }
+
+    const wordMatch = whereClause.slice(i).match(/^(and|or)\b/i)
+    if (!wordMatch || !isLogicalBoundary(whereClause[i - 1])) continue
+
+    const part = whereClause.slice(start, i).trim()
+    if (part) parts.push(part)
+    connectors.push(wordMatch[1]!.toLowerCase() as "and" | "or")
+    i += wordMatch[1]!.length - 1
+    start = i + 1
+  }
+
+  const finalPart = whereClause.slice(start).trim()
+  if (finalPart) parts.push(finalPart)
+
+  return { parts, connectors }
+}
+
+function isLogicalBoundary(ch: string | undefined): boolean {
+  return ch === undefined || /\s|\(/.test(ch)
 }
 
 function parseSimplePredicate(p: string): ((row: Record<string, Primitive>) => boolean) | null {
-  const inMatch = p.match(/^([a-zA-Z0-9_\.]+)\s+in\s*\[(.*)\]$/)
+  const inMatch = p.match(/^([a-zA-Z0-9_\.]+)\s+in\s*\[(.*)\]$/i)
   if (inMatch) {
     const field = inMatch[1]!
     const listRaw = inMatch[2]!
@@ -87,6 +141,10 @@ function parseLiteral(token: string): unknown {
 }
 
 function resolveField(obj: Record<string, Primitive>, path: string): unknown {
+  if (Object.prototype.hasOwnProperty.call(obj, path)) {
+    return obj[path]
+  }
+
   const parts = path.split(".")
   let cur: unknown = obj
   for (const k of parts) {

@@ -14,10 +14,9 @@ import archiveStudy from "@/src/features/studies/mutations/archiveStudy"
 import unarchiveStudy from "@/src/features/studies/mutations/unarchiveStudy"
 import { AdminStudyFormValues } from "@/src/features/studies/validations"
 import { ConfirmButton } from "@/src/components/ui/ConfirmButton"
-import { isSetupComplete, toSetupStatusStudy } from "../../domain/setup/setupStatus"
 import type { AdminStudyListItemDto } from "../../types"
 import type { UserRole } from "@/db"
-import { isSuperAdmin } from "@/src/lib/auth/roles"
+import { getAdminStudyBulkActions } from "../../domain/adminStudyBulkActions"
 
 type ActionKey = "enable" | "disable" | "approve" | "reject" | "delete" | "archive" | "unarchive"
 
@@ -84,68 +83,36 @@ export default function StudyActions({
   const selectedIds = watch("selectedStudyIds")
   const selectedStudies = studies.filter((s) => selectedIds.includes(s.id))
 
-  const hasPending = selectedStudies.some((s) => s.adminApproved === null)
-  const hasPendingWithSetupComplete = selectedStudies.some(
-    (s) => s.adminApproved === null && isSetupComplete(toSetupStatusStudy(s))
-  )
-  const allApproved =
-    selectedStudies.length > 0 && selectedStudies.every((s) => s.adminApproved === true)
-  const allEnabled = selectedStudies.length > 0 && selectedStudies.every((s) => s.status === "OPEN")
-  const allDisabled =
-    selectedStudies.length > 0 && selectedStudies.every((s) => s.status === "CLOSED")
-  const mixed = selectedStudies.length > 0 && !allEnabled && !allDisabled
-
-  /** Archive only when every selected study has real participant responses and is not already archived. */
-  const showArchiveButton =
-    selectedStudies.length > 0 &&
-    selectedStudies.every((s) => !s.archived && s.hasParticipantResponses === true)
-  /** Unarchive when every selected study is archived (same idea as researcher StudyLifecycleActions). */
-  const allArchived = selectedStudies.length > 0 && selectedStudies.every((s) => s.archived)
-  const showUnarchiveButton = allArchived
-  const superadmin = isSuperAdmin(viewerRole)
-
-  /** Non–super-admins cannot delete archived studies that have responses; hide Delete entirely so it is not shown disabled. */
-  const hideDeleteForStaffAdmin =
-    !superadmin && selectedStudies.some((s) => s.hasParticipantResponses === true && s.archived)
-
-  const deleteDisabledReason =
-    selectedStudies.length === 0
-      ? null
-      : selectedStudies.some((s) => s.hasParticipantResponses === null)
-      ? "Could not verify participant response data. Try again later."
-      : selectedStudies.some((s) => s.hasParticipantResponses === true && !s.archived)
-      ? "Studies with participant responses must be archived before they can be deleted. Adjust your selection."
-      : null
-
-  const deleteEnabled =
-    selectedStudies.length > 0 && !hideDeleteForStaffAdmin && deleteDisabledReason === null
-
-  const deleteConfirmMessage =
-    superadmin && selectedStudies.some((s) => s.archived)
-      ? "This will permanently remove the selected archived study/studies from the platform and JATOS. All related data will be lost. Before continuing, confirm that study materials and results are copied to a long-term archive (for example Zenodo). This cannot be undone. Continue?"
-      : "This will permanently delete the selected study/studies from the database and JATOS. This cannot be undone. Continue?"
-
-  const showApproveButton = hasPendingWithSetupComplete
-  const showRejectButton = hasPending
-  const showDisableButton = allApproved && (allEnabled || mixed) && !allArchived
-  const showEnableButton = allApproved && (allDisabled || mixed) && !allArchived
+  const {
+    showApproveButton,
+    showRejectButton,
+    showEnableButton,
+    showDisableButton,
+    showArchiveButton,
+    showUnarchiveButton,
+    hideDeleteForStaffAdmin,
+    deleteEnabled,
+    deleteDisabledReason,
+    deleteConfirmMessage,
+    enableTargetIds,
+    enableBlockedMessage,
+    disableTargetIds,
+    approveTargetIds,
+    rejectTargetIds,
+    deleteTargetIds,
+    archiveTargetIds,
+    unarchiveTargetIds,
+  } = getAdminStudyBulkActions(selectedStudies, viewerRole)
 
   const handleEnable = () =>
     runWithStudyAction({
       action: async (ids) => {
-        const selectedStudiesToEnable = studies.filter((s) => ids.includes(s.id))
-        const invalidStudies = selectedStudiesToEnable.filter(
-          (s) => s.adminApproved !== true || !isSetupComplete(toSetupStatusStudy(s))
-        )
-        if (invalidStudies.length > 0) {
-          const titles = invalidStudies.map((s) => s.title?.trim() || `Study #${s.id}`).join(", ")
-          toast.error(
-            `Cannot enable data collection. The following studies need admin approval and completed setup: ${titles}`,
-            { duration: 5000 }
-          )
+        if (enableBlockedMessage) {
+          toast.error(enableBlockedMessage, { duration: 5000 })
           return null
         }
-        return enableMutation({ studyIds: ids })
+        if (enableTargetIds.length === 0) return null
+        return enableMutation({ studyIds: ids.filter((id) => enableTargetIds.includes(id)) })
       },
       successMessage: (count) => `Enabled data collection for ${count} study/studies`,
       errorMessage: "Failed to enable data collection.",
@@ -155,14 +122,7 @@ export default function StudyActions({
   const handleApprove = () =>
     runWithStudyAction({
       action: async (ids) => {
-        const idsToApprove = studies
-          .filter(
-            (s) =>
-              ids.includes(s.id) &&
-              s.adminApproved === null &&
-              isSetupComplete(toSetupStatusStudy(s))
-          )
-          .map((s) => s.id)
+        const idsToApprove = ids.filter((id) => approveTargetIds.includes(id))
         if (idsToApprove.length === 0) return null
         return approveMutation({ studyIds: idsToApprove })
       },
@@ -174,9 +134,7 @@ export default function StudyActions({
   const handleReject = () =>
     runWithStudyAction({
       action: async (ids) => {
-        const idsToReject = studies
-          .filter((s) => ids.includes(s.id) && s.adminApproved === null)
-          .map((s) => s.id)
+        const idsToReject = ids.filter((id) => rejectTargetIds.includes(id))
         if (idsToReject.length === 0) return null
         return rejectMutation({ studyIds: idsToReject })
       },
@@ -187,7 +145,11 @@ export default function StudyActions({
 
   const handleDisable = () =>
     runWithStudyAction({
-      action: async (ids) => disableMutation({ studyIds: ids }),
+      action: async (ids) => {
+        const idsToDisable = ids.filter((id) => disableTargetIds.includes(id))
+        if (idsToDisable.length === 0) return null
+        return disableMutation({ studyIds: idsToDisable })
+      },
       successMessage: (count) => `Disabled data collection for ${count} study/studies`,
       errorMessage: "Failed to disable data collection.",
       setLoading: (v) => setActiveAction(v ? "disable" : null),
@@ -195,8 +157,11 @@ export default function StudyActions({
 
   const handleDelete = () =>
     runWithStudyAction({
-      action: async (ids) =>
-        deleteMutation({ studyIds: ids, reason: "Admin deletion from dashboard" }),
+      action: async (ids) => {
+        const idsToDelete = ids.filter((id) => deleteTargetIds.includes(id))
+        if (idsToDelete.length === 0) return null
+        return deleteMutation({ studyIds: idsToDelete, reason: "Admin deletion from dashboard" })
+      },
       successMessage: (count) => `Deleted ${count} study/studies`,
       errorMessage: "Failed to delete studies.",
       setLoading: (v) => setActiveAction(v ? "delete" : null),
@@ -205,12 +170,12 @@ export default function StudyActions({
   const handleArchive = () =>
     runWithStudyAction({
       action: async (ids) => {
-        const targets = studies.filter((s) => ids.includes(s.id) && !s.archived)
-        if (targets.length === 0) return null
-        for (const s of targets) {
-          await archiveMutation({ id: s.id })
+        const idsToArchive = ids.filter((id) => archiveTargetIds.includes(id))
+        if (idsToArchive.length === 0) return null
+        for (const id of idsToArchive) {
+          await archiveMutation({ id })
         }
-        return { updated: targets.length }
+        return { updated: idsToArchive.length }
       },
       successMessage: (count) => `Archived ${count} study/studies`,
       errorMessage: "Failed to archive studies.",
@@ -220,12 +185,12 @@ export default function StudyActions({
   const handleUnarchive = () =>
     runWithStudyAction({
       action: async (ids) => {
-        const targets = studies.filter((s) => ids.includes(s.id) && s.archived)
-        if (targets.length === 0) return null
-        for (const s of targets) {
-          await unarchiveMutation({ id: s.id })
+        const idsToUnarchive = ids.filter((id) => unarchiveTargetIds.includes(id))
+        if (idsToUnarchive.length === 0) return null
+        for (const id of idsToUnarchive) {
+          await unarchiveMutation({ id })
         }
-        return { updated: targets.length }
+        return { updated: idsToUnarchive.length }
       },
       successMessage: (count) => `Unarchived ${count} study/studies`,
       errorMessage: "Failed to unarchive studies.",

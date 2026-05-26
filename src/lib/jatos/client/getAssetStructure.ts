@@ -1,6 +1,8 @@
 import type { JatosAuth, AssetStructureResponse } from "./types"
 import { throwIfJatosError } from "./throwIfJatosError"
 import { JatosTransportError } from "../errors"
+import { AssetStructureResponseSchema } from "../schemas"
+import { parseJatosTextResponse } from "./parseJatosResponse"
 
 const OPERATION = "Fetch asset structure"
 
@@ -33,9 +35,5 @@ export async function getAssetStructure(
   await throwIfJatosError(response, OPERATION)
 
   const text = await response.text()
-  try {
-    return JSON.parse(text) as AssetStructureResponse
-  } catch (cause) {
-    throw new JatosTransportError(`Invalid JSON in ${OPERATION} response`, OPERATION, cause)
-  }
+  return parseJatosTextResponse(OPERATION, text, AssetStructureResponseSchema)
 }

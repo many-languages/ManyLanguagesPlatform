@@ -17,7 +17,7 @@ import Filter from "./Filter"
 import { EmptyState } from "./EmptyState"
 
 type TableProps<TData> = {
-  columns: ColumnDef<TData, any>[]
+  columns: ColumnDef<TData, unknown>[]
   data: TData[]
   filters?: {}
   enableSorting?: boolean

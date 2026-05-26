@@ -14,7 +14,10 @@ export async function changePassword(
   const activeSession: SessionContext = await resolveSessionContext(session)
   activeSession.$authorize()
 
-  const user = await db.user.findFirst({ where: { id: activeSession.userId } })
+  const user = await db.user.findFirst({
+    where: { id: activeSession.userId },
+    select: { email: true },
+  })
   if (!user) {
     throw new NotFoundError()
   }
@@ -26,7 +29,7 @@ export async function changePassword(
 
   const hashedPassword = await SecurePassword.hash(newPassword)
   await db.user.update({
-    where: { id: user.id },
+    where: { id: activeSession.userId },
     data: { hashedPassword },
   })
 

@@ -4,7 +4,7 @@ import { AuthorizationError } from "blitz"
 import db from "db"
 import { getAuthorizedSession } from "@/src/lib/auth/session"
 import { isStaffAdmin } from "@/src/lib/auth/roles"
-import { isSetupComplete, type StudyWithMinimalRelations } from "../domain/setup/setupStatus"
+import { isSetupComplete, toSetupStatusStudy } from "../domain/setup/setupStatus"
 import { pendingAdminApprovalStudySelect } from "../studySelects"
 import type { PendingAdminApprovalStudyRow } from "../types"
 
@@ -62,7 +62,7 @@ async function findPendingAdminApprovalStudiesForDashboard(): Promise<
   })
 
   const mapped = studies.map(attachLatestJatosStudyUpload)
-  const ready = mapped.filter((study) => isSetupComplete(study as StudyWithMinimalRelations))
+  const ready = mapped.filter((study) => isSetupComplete(toSetupStatusStudy(study)))
 
   ready.sort((a, b) => {
     const ta = a.FeedbackTemplate?.createdAt.getTime() ?? 0

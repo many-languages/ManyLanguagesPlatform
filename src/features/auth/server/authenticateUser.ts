@@ -1,8 +1,9 @@
 import { SecurePassword } from "@blitzjs/auth/secure-password"
-import db, { type User } from "db"
+import db from "db"
 import { Login } from "../validations"
+import { authUserWithPasswordSelect, type AuthUserWithPassword } from "../userSelects"
 
-export type AuthenticatedUser = Omit<User, "hashedPassword">
+export type AuthenticatedUser = Omit<AuthUserWithPassword, "hashedPassword">
 
 export interface AuthenticateUserResult {
   error?: string
@@ -14,7 +15,10 @@ export async function authenticateUser(
   rawPassword: string
 ): Promise<AuthenticateUserResult> {
   const { email, password } = Login.parse({ email: rawEmail, password: rawPassword })
-  const user = await db.user.findFirst({ where: { email } })
+  const user = await db.user.findFirst({
+    where: { email },
+    select: authUserWithPasswordSelect,
+  })
 
   if (!user) {
     return { error: "Invalid credentials" }

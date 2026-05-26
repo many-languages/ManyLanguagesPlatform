@@ -1,4 +1,5 @@
 import { Prisma } from "db"
+import { getAuthorizedUserId } from "@/src/lib/auth/getAuthorizedUserId"
 import { getAuthorizedSession } from "@/src/lib/auth/session"
 import type { StudyView } from "../domain/studyView"
 import { getStudies } from "./getStudies"
@@ -22,7 +23,7 @@ export async function getResearcherStudiesPageSlice(options: {
 }> {
   const { page, view } = options
   const session = await getAuthorizedSession()
-  const userId = session.userId!
+  const userId = getAuthorizedUserId(session)
 
   const baseWhere: Prisma.StudyWhereInput = {
     OR: [{ researchers: { some: { userId } } }, { participations: { some: { userId } } }],

@@ -9,6 +9,16 @@ export const feedbackTemplateSelect = {
   updatedAt: true,
 } as const
 
+/** Full template row shape for server workflows that need the owning study id. */
+export const feedbackTemplateFullSelect = {
+  ...feedbackTemplateSelect,
+  studyId: true,
+} as const
+
 export type FeedbackTemplateRscRow = Prisma.FeedbackTemplateGetPayload<{
   select: typeof feedbackTemplateSelect
+}>
+
+export type FeedbackTemplateFullRow = Prisma.FeedbackTemplateGetPayload<{
+  select: typeof feedbackTemplateFullSelect
 }>

@@ -1,6 +1,8 @@
 import type { JatosAuth } from "./types"
 import { throwIfJatosError } from "./throwIfJatosError"
 import { JatosTransportError } from "../errors"
+import { StudyCodesEnvelopeSchema } from "../schemas"
+import { parseJatosTextResponse } from "./parseJatosResponse"
 
 export interface FetchStudyCodesParams {
   studyId: string | number
@@ -63,20 +65,7 @@ export async function fetchStudyCodes(
   })
 
   const text = await response.text()
-  let json: { apiVersion?: string; data?: string[] }
-  try {
-    json = JSON.parse(text) as { apiVersion?: string; data?: string[] }
-  } catch (cause) {
-    throw new JatosTransportError(`Invalid JSON in ${OPERATION} response`, OPERATION, cause)
-  }
-
-  const data = json?.data
-  if (!Array.isArray(data)) {
-    throw new JatosTransportError(
-      `Missing or invalid data array in ${OPERATION} response`,
-      OPERATION
-    )
-  }
+  const { data } = parseJatosTextResponse(OPERATION, text, StudyCodesEnvelopeSchema)
 
   return data
 }

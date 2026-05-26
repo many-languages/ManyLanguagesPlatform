@@ -2,8 +2,9 @@
 
 import { getBlitzContext } from "@/src/app/blitz-server"
 import { getBatchIdForResearcher } from "@/src/lib/jatos/jatosAccessService"
-import { updateStudyBatch, updateSetupCompletion } from "../server/studySetupWrites"
+import { applySetupCompletionFlags, updateStudyBatch } from "../server/studySetupWrites"
 import { createResearcherPilotUrlAndSaveAction } from "./createResearcherPilotUrl"
+import { CompleteStep2ImportSchema } from "../validations"
 import db from "db"
 
 export type CompleteStep2ImportResult = { ok: true } | { ok: false; error: string }
@@ -20,12 +21,17 @@ export type CompleteStep2ImportResult = { ok: true } | { ok: false; error: strin
  * The upload itself (file transfer + DB + membership sync) is done by the caller
  * before this action is invoked.
  */
-export async function completeStep2ImportAction(input: {
-  studyId: number
-  jatosStudyId: number
-  jatosStudyUUID: string
-  latestUploadId: number | null
-}): Promise<CompleteStep2ImportResult> {
+export async function completeStep2ImportAction(
+  input: unknown
+): Promise<CompleteStep2ImportResult> {
+  const parsed = CompleteStep2ImportSchema.safeParse(input)
+  if (!parsed.success) {
+    const error = parsed.error.errors[0]?.message ?? "Invalid import completion input."
+    return { ok: false, error }
+  }
+
+  const { studyId, jatosStudyId, jatosStudyUUID, latestUploadId } = parsed.data
+
   const { session } = await getBlitzContext()
   const userId = session.userId
   if (userId == null) {
@@ -34,38 +40,38 @@ export async function completeStep2ImportAction(input: {
 
   // 1. Get batch ID from JATOS
   const jatosBatchId = await getBatchIdForResearcher({
-    studyId: input.studyId,
+    studyId,
     userId,
-    jatosStudyUUID: input.jatosStudyUUID,
+    jatosStudyUUID,
   })
   if (!jatosBatchId) {
     return { ok: false, error: "No JATOS batch found for this study" }
   }
 
   // 2. Persist batch ID
-  await updateStudyBatch({ studyId: input.studyId, jatosBatchId })
+  await updateStudyBatch({ studyId, jatosBatchId })
 
   // 3. Mark step 2 as complete
   try {
-    await updateSetupCompletion({ studyId: input.studyId, step2Completed: true })
+    await applySetupCompletionFlags({ studyId, step2Completed: true })
   } catch (err) {
     console.error("[completeStep2Import] Failed to mark step 2 complete:", err)
     // Non-fatal — the batch ID is saved; step flag can be retried
   }
 
   // 4. Auto-generate pilot link for the current researcher (best-effort)
-  if (input.latestUploadId != null) {
+  if (latestUploadId != null) {
     try {
       const researcher = await db.studyResearcher.findFirst({
-        where: { studyId: input.studyId, userId },
+        where: { studyId, userId },
         select: { id: true },
       })
       if (researcher) {
         await createResearcherPilotUrlAndSaveAction({
-          studyId: input.studyId,
+          studyId,
           studyResearcherId: researcher.id,
-          jatosStudyUploadId: input.latestUploadId,
-          jatosStudyId: input.jatosStudyId,
+          jatosStudyUploadId: latestUploadId,
+          jatosStudyId,
           jatosBatchId,
         })
       }

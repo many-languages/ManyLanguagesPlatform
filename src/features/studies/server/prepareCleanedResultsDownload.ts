@@ -4,13 +4,15 @@ import {
   getEnrichedResultsForResearcher,
   type DownloadPayload,
 } from "@/src/lib/jatos/jatosAccessService"
-import { isSetupComplete } from "@/src/features/studies/domain/setup/setupStatus"
+import {
+  isSetupComplete,
+  toSetupStatusStudy,
+  type StudyWithMinimalRelations,
+} from "@/src/features/studies/domain/setup/setupStatus"
 import { extractVariableBundleForRenderFromResults } from "@/src/features/studies/domain/variables/utils/extractVariable"
 import { DEFAULT_EXTRACTION_CONFIG } from "@/src/features/studies/domain/variables/types"
 import { observationsToLongCsv } from "@/src/features/studies/domain/variables/utils/observationsLongCsv"
 import { verifyResearcherStudyAccess } from "@/src/features/studies/server/verifyResearcherStudyAccess"
-
-type StudyForSetupCheck = Parameters<typeof isSetupComplete>[0]
 
 export class CleanedResultsDownloadError extends Error {
   constructor(message: string) {
@@ -19,20 +21,9 @@ export class CleanedResultsDownloadError extends Error {
   }
 }
 
-/** Narrow upload shape from our Prisma select (setupStatus allows partial uploads on the type union). */
-type LatestUploadRow = {
-  id: number
-  jatosStudyId: number
-  approvedExtractionId: number | null
-  step1Completed: boolean
-  step2Completed: boolean
-  step3Completed: boolean
-  step4Completed: boolean
-  step5Completed: boolean
-  step6Completed: boolean
-}
-
-async function loadStudyForCleanedDownload(studyId: number): Promise<StudyForSetupCheck | null> {
+async function loadStudyForCleanedDownload(
+  studyId: number
+): Promise<StudyWithMinimalRelations | null> {
   const study = await db.study.findUnique({
     where: { id: studyId },
     select: {
@@ -58,11 +49,7 @@ async function loadStudyForCleanedDownload(studyId: number): Promise<StudyForSet
     },
   })
   if (!study) return null
-  const latest = study.jatosStudyUploads[0] ?? null
-  return {
-    ...study,
-    latestJatosStudyUpload: latest,
-  } as StudyForSetupCheck
+  return toSetupStatusStudy(study)
 }
 
 export async function prepareCleanedResultsDownload({
@@ -85,7 +72,7 @@ export async function prepareCleanedResultsDownload({
     )
   }
 
-  const latestUpload = study.latestJatosStudyUpload as LatestUploadRow | null
+  const latestUpload = study.latestJatosStudyUpload
   const jatosStudyId = latestUpload?.jatosStudyId ?? null
   const approvedExtractionId = latestUpload?.approvedExtractionId ?? null
 

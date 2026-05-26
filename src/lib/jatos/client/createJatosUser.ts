@@ -2,6 +2,8 @@ import { randomBytes } from "crypto"
 import type { JatosAuth } from "./types"
 import { throwIfJatosError } from "./throwIfJatosError"
 import { JatosTransportError } from "../errors"
+import { CreateJatosUserEnvelopeSchema } from "../schemas"
+import { parseJatosTextResponse } from "./parseJatosResponse"
 
 export interface CreateJatosUserParams {
   username: string
@@ -54,20 +56,7 @@ export async function createJatosUser(
   await throwIfJatosError(response, OPERATION)
 
   const text = await response.text()
-  let json: { data?: { id?: number; username?: string } }
-  try {
-    json = JSON.parse(text) as { data?: { id?: number; username?: string } }
-  } catch (cause) {
-    throw new JatosTransportError(`Invalid JSON in ${OPERATION} response`, OPERATION, cause)
-  }
-
-  const data = json?.data
-  if (!data || typeof data.id !== "number" || !data.username) {
-    throw new JatosTransportError(
-      `Missing data.id or data.username in ${OPERATION} response`,
-      OPERATION
-    )
-  }
+  const { data } = parseJatosTextResponse(OPERATION, text, CreateJatosUserEnvelopeSchema)
 
   return { id: data.id, username: data.username }
 }

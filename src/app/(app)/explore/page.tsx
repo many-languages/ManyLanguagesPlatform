@@ -1,5 +1,6 @@
-import { StudyList, getStudies } from "@/src/features/studies"
+import { StudyList, getParticipantJoinedByStudyIdRsc, getStudies } from "@/src/features/studies"
 import PaginationControls from "@/src/components/ui/PaginationControls"
+import { parsePageQueryParam } from "@/src/lib/searchParams/parsePageQueryParam"
 import { getBlitzContext } from "../../blitz-server"
 import { redirect } from "next/navigation"
 import { UserRole } from "@/db"
@@ -34,6 +35,10 @@ async function ExploreContent({
 
   const { studies, hasMore } = result
 
+  const joinedByStudyId = isParticipant
+    ? await getParticipantJoinedByStudyIdRsc(studies.map((study) => study.id))
+    : undefined
+
   return (
     <>
       <StudyList
@@ -41,6 +46,7 @@ async function ExploreContent({
         showJoinButton={true}
         showOpenButton={false}
         isParticipant={isParticipant}
+        joinedByStudyId={joinedByStudyId}
       />
       <PaginationControls page={page} hasMore={hasMore} />
     </>
@@ -53,7 +59,7 @@ export default async function ExplorePage({
   searchParams: Promise<{ page?: string }>
 }) {
   const params = await searchParams
-  const page = Number(params.page || 0)
+  const page = parsePageQueryParam(params.page)
 
   const { session } = await getBlitzContext()
   if (!session.userId) redirect("/login")

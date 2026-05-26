@@ -3,25 +3,22 @@
 import { revalidateTag } from "next/cache"
 import db from "db"
 
+import { getAuthorizedUserId } from "@/src/lib/auth/getAuthorizedUserId"
 import { getAuthorizedSession } from "@/src/lib/auth/session"
 import { NOTIFICATIONS_MENU_TAG, NOTIFICATIONS_TABLE_TAG } from "../constants"
+import { ToggleNotificationPinnedSchema } from "../validations"
 
-type ToggleNotificationPinnedInput = {
-  notificationId: number
-  pinned: boolean
-}
+export const toggleNotificationPinned = async (input: unknown) => {
+  const { notificationId, pinned } = ToggleNotificationPinnedSchema.parse(input)
 
-export const toggleNotificationPinned = async ({
-  notificationId,
-  pinned,
-}: ToggleNotificationPinnedInput) => {
   const session = await getAuthorizedSession()
+  const userId = getAuthorizedUserId(session)
 
   await db.notificationRecipient.update({
     where: {
       notificationId_userId: {
         notificationId,
-        userId: session.userId!,
+        userId,
       },
     },
     data: {

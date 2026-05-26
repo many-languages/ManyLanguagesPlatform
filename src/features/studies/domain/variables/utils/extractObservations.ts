@@ -196,15 +196,15 @@ export function extractObservations(
     ? materializeRunDiagnostics(runFactsByRun, { maxExamplePaths: config.run.maxExamplePaths })
     : []
   const componentDiagnostics = diagnosticsEnabled
-    ? materializeComponentDiagnostics(componentFactsByRun)
+    ? materializeComponentDiagnostics(componentFacts)
     : new Map()
-  const crossRunDiagnostics =
-    diagnosticsEnabled &&
-    materializeCrossRunDiagnostics({
-      runFactsByRun,
-      componentFactsByRun,
-      variableFactsByRun,
-    })
+  const crossRunDiagnostics = diagnosticsEnabled
+    ? materializeCrossRunDiagnostics({
+        runFactsByRun,
+        componentFactsByRun,
+        variableFactsByRun,
+      }) ?? undefined
+    : undefined
 
   return {
     observations: allObservations,
@@ -213,6 +213,6 @@ export function extractObservations(
     stats: statsTracker.getStats(),
     variableFacts,
     componentFacts,
-    crossRunDiagnostics: crossRunDiagnostics ?? undefined,
+    crossRunDiagnostics,
   }
 }

@@ -27,9 +27,10 @@ const columnHelper = createColumnHelper<NotificationRow>()
 
 type NotificationTableProps = {
   notifications: NotificationWithRecipient[]
+  locale: string
 }
 
-export const NotificationTable = ({ notifications }: NotificationTableProps) => {
+export const NotificationTable = ({ notifications, locale }: NotificationTableProps) => {
   const rows = useMemo<NotificationRow[]>(() => {
     return notifications.map((recipient) => ({
       notificationId: recipient.notificationId,
@@ -50,9 +51,10 @@ export const NotificationTable = ({ notifications }: NotificationTableProps) => 
         header: () => <SelectAllCheckbox values={allIds} />,
         cell: (info) => <SelectCheckbox value={info.row.original.notificationId} />,
       }),
-      columnHelper.accessor("createdAt", {
+      columnHelper.display({
+        id: "createdAt",
         header: "Received",
-        cell: (info) => <DateFormat date={info.getValue()} />,
+        cell: (info) => <DateFormat date={info.row.original.createdAt} locale={locale} />,
       }),
       columnHelper.display({
         id: "message",
@@ -75,7 +77,7 @@ export const NotificationTable = ({ notifications }: NotificationTableProps) => 
         cell: (info) => <ReadToggle recipient={info.row.original.recipient} />,
       }),
     ],
-    [allIds]
+    [allIds, locale]
   )
 
   return <Table columns={columns} data={rows} addPagination />

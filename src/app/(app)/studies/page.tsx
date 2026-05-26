@@ -1,3 +1,4 @@
+import { Suspense } from "react"
 import PaginationControls from "@/src/components/ui/PaginationControls"
 import { redirect } from "next/navigation"
 import {
@@ -10,10 +11,13 @@ import {
   parseParticipantStudyViewQueryParam,
   parseStudyViewQueryParam,
   STUDIES_LIST_PAGE_SIZE,
+  StudyListSkeleton,
+  PaginationControlsSkeleton,
   type ParticipantStudyView,
   type StudyView,
 } from "@/src/features/studies"
 import { getBlitzContext } from "@/src/app/blitz-server"
+import { parsePageQueryParam } from "@/src/lib/searchParams/parsePageQueryParam"
 
 type SessionRole = "RESEARCHER" | "PARTICIPANT" | "ADMIN" | "SUPERADMIN"
 
@@ -79,14 +83,22 @@ async function ParticipantStudiesContent({
   )
 }
 
+function StudiesListFallback() {
+  return (
+    <>
+      <StudyListSkeleton />
+      <PaginationControlsSkeleton />
+    </>
+  )
+}
+
 export default async function StudiesPage({
   searchParams,
 }: {
   searchParams: Promise<{ page?: string; view?: string }>
 }) {
   const params = await searchParams
-  const rawPage = Number(params.page ?? 0)
-  const page = Number.isFinite(rawPage) && rawPage >= 0 ? Math.floor(rawPage) : 0
+  const page = parsePageQueryParam(params.page)
 
   const { session } = await getBlitzContext()
   if (!session.userId) redirect("/login")
@@ -127,9 +139,13 @@ export default async function StudiesPage({
         </div>
       )}
       {canManageStudies ? (
-        <ResearcherStudiesContent page={page} view={researcherView} />
+        <Suspense fallback={<StudiesListFallback />}>
+          <ResearcherStudiesContent page={page} view={researcherView} />
+        </Suspense>
       ) : (
-        <ParticipantStudiesContent page={page} view={participantView} />
+        <Suspense fallback={<StudiesListFallback />}>
+          <ParticipantStudiesContent page={page} view={participantView} />
+        </Suspense>
       )}
     </main>
   )

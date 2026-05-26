@@ -1,4 +1,7 @@
 import {
+  createBareVarReferenceRegex,
+  createBareStatReferenceRegex,
+  createConditionalBlockRegex,
   createFeedbackStatPlaceholderRegex,
   createVarPlaceholderRegex,
   extractFieldNamesFromWhereClause,
@@ -29,6 +32,33 @@ export function extractRequiredVariableNames(template: string): string[] {
     if (where) {
       for (const n of extractFieldNamesFromWhereClause(where)) {
         names.add(n)
+      }
+    }
+  }
+
+  const conditionalRe = createConditionalBlockRegex()
+  let cm: RegExpExecArray | null
+  while ((cm = conditionalRe.exec(template)) !== null) {
+    const condition = cm[1]
+    if (!condition) continue
+
+    const bareVarRe = createBareVarReferenceRegex()
+    let bm: RegExpExecArray | null
+    while ((bm = bareVarRe.exec(condition)) !== null) {
+      const varName = bm[1]
+      if (varName) names.add(varName)
+    }
+
+    const bareStatRe = createBareStatReferenceRegex()
+    let bsm: RegExpExecArray | null
+    while ((bsm = bareStatRe.exec(condition)) !== null) {
+      const varName = bsm[1]
+      if (varName) names.add(varName)
+      const where = bsm[3]?.trim()
+      if (where) {
+        for (const n of extractFieldNamesFromWhereClause(where)) {
+          names.add(n)
+        }
       }
     }
   }

@@ -24,11 +24,12 @@ async function Step4ContentWrapper({
         <Step4Content validationData={validationData} study={study} />
       </>
     )
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : ""
     if (
-      error.message?.includes("not authorized") ||
-      error.message?.includes("Not authenticated") ||
-      error.message?.includes("not found")
+      message.includes("not authorized") ||
+      message.includes("Not authenticated") ||
+      message.includes("not found")
     ) {
       notFound()
     }

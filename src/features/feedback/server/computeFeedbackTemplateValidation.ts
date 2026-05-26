@@ -43,16 +43,14 @@ export async function computeFeedbackTemplateValidation(
 
   const variables = await client.studyVariable.findMany({
     where: { extractionSnapshotId: latestUpload.approvedExtractionId },
-    select: { variableName: true },
+    select: { dslKey: true },
   })
 
-  const availableNames = new Set(variables.map((v) => v.variableName))
+  const availableNames = new Set(variables.map((v) => v.dslKey))
   const requiredSet = new Set(requiredVariableNames)
 
   const missingVariableNames = requiredVariableNames.filter((name) => !availableNames.has(name))
-  const extraVariableNames = variables
-    .map((v) => v.variableName)
-    .filter((name) => !requiredSet.has(name))
+  const extraVariableNames = variables.map((v) => v.dslKey).filter((name) => !requiredSet.has(name))
 
   return {
     status: missingVariableNames.length === 0 ? "VALID" : "INVALID",

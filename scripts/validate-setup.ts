@@ -4,13 +4,19 @@
  * Run via: make validate-setup or npx tsx scripts/validate-setup.ts
  *
  * Checks:
- * - JATOS_BASE set
+ * - JATOS_BASE and NEXT_PUBLIC_JATOS_BASE set
  * - JATOS_TOKEN set and valid (calls /jatos/api/v1/admin/token)
  * - Service account in SystemConfig (key jatosServiceUserID)
- * - In production: SESSION_SECRET_KEY and POSTGRES_PASSWORD not placeholders
+ * - DATABASE_URL connectivity
+ * - In production: required env vars and no placeholder secrets
  */
 
 import { config } from "dotenv"
+import {
+  collectProductionEnvIssues,
+  isUnsafeEnvValue,
+  PRODUCTION_SECRET_ENV_KEYS,
+} from "../src/lib/env"
 
 // Load .env from project root (for local runs)
 config({ path: ".env", quiet: true })
@@ -19,22 +25,6 @@ const JATOS_BASE = process.env.JATOS_BASE
 const JATOS_TOKEN = process.env.JATOS_TOKEN
 const NODE_ENV = process.env.NODE_ENV || "development"
 const isProduction = NODE_ENV === "production"
-
-const UNSAFE_VALUES = [
-  "CHANGE_ME",
-  "devpass",
-  "dev-secret",
-  "your-token",
-  "your-secret",
-  "LONGPASS",
-  "change-in-production",
-  "change-me",
-]
-
-function isUnsafe(value: string): boolean {
-  const upper = value.toUpperCase()
-  return UNSAFE_VALUES.some((u) => upper.includes(u.toUpperCase()))
-}
 
 async function checkJatosBase(): Promise<boolean> {
   if (!JATOS_BASE?.trim()) {
@@ -45,9 +35,23 @@ async function checkJatosBase(): Promise<boolean> {
   return true
 }
 
+function checkPublicJatosBase(): boolean {
+  if (!process.env.NEXT_PUBLIC_JATOS_BASE?.trim()) {
+    console.error("❌ NEXT_PUBLIC_JATOS_BASE is not set")
+    return false
+  }
+  console.log("✅ NEXT_PUBLIC_JATOS_BASE is set")
+  return true
+}
+
 async function checkJatosToken(): Promise<boolean> {
   if (!JATOS_TOKEN?.trim()) {
     console.error("❌ JATOS_TOKEN is not set")
+    return false
+  }
+
+  if (isProduction && isUnsafeEnvValue(JATOS_TOKEN)) {
+    console.error("❌ JATOS_TOKEN appears to use a placeholder value")
     return false
   }
 
@@ -96,28 +100,41 @@ async function checkServiceAccount(): Promise<boolean> {
   }
 }
 
-function checkProductionSecrets(): boolean {
+async function checkDatabaseConnectivity(): Promise<boolean> {
+  const databaseUrl = process.env.DATABASE_URL
+  if (!databaseUrl?.trim()) {
+    console.error("❌ DATABASE_URL is not set")
+    return false
+  }
+
+  try {
+    const { default: db } = await import("../db")
+    await db.$queryRaw`SELECT 1`
+    console.log("✅ DATABASE_URL connects successfully")
+    return true
+  } catch (err) {
+    console.error(`❌ DATABASE_URL connectivity failed: ${(err as Error).message}`)
+    return false
+  }
+}
+
+function checkProductionEnv(): boolean {
   if (!isProduction) return true
 
-  const checks: Array<{ name: string; value: string | undefined }> = [
-    { name: "SESSION_SECRET_KEY", value: process.env.SESSION_SECRET_KEY },
-    { name: "POSTGRES_PASSWORD", value: process.env.POSTGRES_PASSWORD },
-  ]
-
-  let ok = true
-  for (const { name, value } of checks) {
-    if (!value?.trim()) {
-      console.error(`❌ ${name} is not set (required in production)`)
-      ok = false
-    } else if (isUnsafe(value)) {
-      console.error(`❌ ${name} appears to use a placeholder value`)
-      ok = false
+  const issues = collectProductionEnvIssues()
+  if (issues.length > 0) {
+    for (const issue of issues) {
+      console.error(`❌ ${issue}`)
     }
+    return false
   }
-  if (ok) {
-    console.log("✅ Production secrets look safe")
-  }
-  return ok
+
+  console.log(
+    `✅ Production env OK (${PRODUCTION_SECRET_ENV_KEYS.join(
+      ", "
+    )}, JATOS_BASE, NEXT_PUBLIC_JATOS_BASE)`
+  )
+  return true
 }
 
 async function main() {
@@ -125,9 +142,11 @@ async function main() {
 
   const results: boolean[] = []
   results.push(await checkJatosBase())
+  results.push(checkPublicJatosBase())
   results.push(await checkJatosToken())
   results.push(await checkServiceAccount())
-  results.push(checkProductionSecrets())
+  results.push(await checkDatabaseConnectivity())
+  results.push(checkProductionEnv())
 
   const allOk = results.every(Boolean)
   console.log("")

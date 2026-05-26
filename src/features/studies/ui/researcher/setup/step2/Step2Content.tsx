@@ -10,7 +10,10 @@ import { useMutation } from "@blitzjs/rpc"
 import checkJatosStudyUuid from "@/src/features/studies/mutations/checkJatosStudyUuid"
 import updateJatosUploadWorkerType from "@/src/features/studies/mutations/updateJatosUploadWorkerType"
 import { completeStep2ImportAction } from "@/src/features/studies/actions/completeStep2Import"
-import { uploadStudyFile } from "@/src/lib/jatos/browser/uploadStudyFile"
+import {
+  messageForJatosImportFailure,
+  uploadStudyFile,
+} from "@/src/lib/jatos/browser/uploadStudyFile"
 import { extractJatosStudyUuidFromJzip } from "@/src/lib/jatos/parsers/extractJatosStudyUuid"
 import { Alert } from "@/src/components/ui/Alert"
 import { FORM_ERROR } from "@/src/components/ui/Form"
@@ -86,8 +89,8 @@ export default function Step2Content({ study }: Step2ContentProps) {
       if (success) {
         setUpdateAlert(null)
       }
-    } catch (err: any) {
-      toast.error(`Failed to update study: ${err.message}`)
+    } catch (err: unknown) {
+      toast.error(messageForJatosImportFailure(err))
       setLoading(false)
     }
   }
@@ -157,8 +160,8 @@ export default function Step2Content({ study }: Step2ContentProps) {
                 },
                 { successToast: "Setup saved" }
               )
-            } catch (err: any) {
-              toast.error(err?.message ?? "Failed to continue")
+            } catch (err: unknown) {
+              toast.error(err instanceof Error ? err.message : "Failed to continue")
               setLoading(false)
             }
             return
@@ -217,10 +220,11 @@ export default function Step2Content({ study }: Step2ContentProps) {
 
             // 2️⃣ Complete import (batch ID + setup completion + pilot link + navigate)
             await completeImport(uploadResult)
-          } catch (err: any) {
-            toast.error("Failed to upload file")
+          } catch (err: unknown) {
+            const message = messageForJatosImportFailure(err)
+            toast.error(message)
             setLoading(false)
-            return { [FORM_ERROR]: `Upload error: ${err.message}` }
+            return { [FORM_ERROR]: message }
           }
         }}
       />

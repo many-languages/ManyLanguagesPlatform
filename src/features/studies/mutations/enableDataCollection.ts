@@ -1,12 +1,8 @@
-"use server"
+// Removed "use server" to keep Blitz RPC conventions clear
 
 import { resolver } from "@blitzjs/rpc"
-import { z } from "zod"
+import { EnableDataCollectionSchema } from "@/src/features/studies/validations"
 import { enableDataCollection } from "../server/adminStudyWrites"
-
-const EnableDataCollectionSchema = z.object({
-  studyIds: z.array(z.number()).min(1, "Select at least one study"),
-})
 
 export default resolver.pipe(
   resolver.zod(EnableDataCollectionSchema),

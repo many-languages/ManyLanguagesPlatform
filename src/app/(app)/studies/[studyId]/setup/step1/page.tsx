@@ -1,4 +1,5 @@
 import { Step1Content, SetupStepHeader, loadStudySetupPage } from "@/src/features/studies"
+import { parseReturnToQueryParam } from "@/src/features/studies/domain/setup/parseReturnToQueryParam"
 
 export default async function Step1Page({
   params,
@@ -10,7 +11,7 @@ export default async function Step1Page({
   const { studyId, study } = await loadStudySetupPage(params)
   const searchParamsValue = await searchParams
   const isEditMode = searchParamsValue.edit === "true"
-  const returnTo = searchParamsValue.returnTo || "step2"
+  const returnTo = parseReturnToQueryParam(searchParamsValue.returnTo)
 
   return (
     <>

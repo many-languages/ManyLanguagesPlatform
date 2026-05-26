@@ -1,12 +1,16 @@
-import { vi, describe, it, beforeAll, expect } from "vitest"
+import { vi, describe, it, beforeEach, expect } from "vitest"
 import db, { UserRole } from "db"
 import { hash256 } from "@blitzjs/auth"
 import forgotPassword from "./forgotPassword"
 import { Ctx } from "@blitzjs/next"
 import { PasswordResetDeliveryError } from "../server/forgotPassword"
 
-beforeAll(async () => {
-  await db.$reset()
+const testEmails = ["user@example.com", "mail-fail@example.com"]
+
+beforeEach(async () => {
+  await db.token.deleteMany({ where: { user: { email: { in: testEmails } } } })
+  await db.session.deleteMany({ where: { user: { email: { in: testEmails } } } })
+  await db.user.deleteMany({ where: { email: { in: testEmails } } })
 })
 
 let generatedToken = "plain-token"

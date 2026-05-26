@@ -16,7 +16,6 @@ describe("tokenBroker", () => {
     clearTokenCache()
     vi.useFakeTimers()
     vi.mocked(dbModule.default.systemConfig.findUnique).mockResolvedValue({
-      id: 1,
       key: "jatosServiceUserID",
       value: "42",
     })

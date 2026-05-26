@@ -1,16 +1,11 @@
-"use server"
+// Removed "use server" to keep Blitz RPC conventions clear
 
 import { resolver } from "@blitzjs/rpc"
-import { z } from "zod"
+import { AdminDeleteStudiesSchema } from "@/src/features/studies/validations"
 import { deleteStudy } from "../server/adminStudyWrites"
 
-const DeleteStudySchema = z.object({
-  studyIds: z.array(z.number()).min(1, "Select at least one study"),
-  reason: z.string().min(1, "Reason is required"),
-})
-
 export default resolver.pipe(
-  resolver.zod(DeleteStudySchema),
+  resolver.zod(AdminDeleteStudiesSchema),
   resolver.authorize(["ADMIN", "SUPERADMIN"]),
   async ({ studyIds, reason }) => {
     return deleteStudy({ studyIds, reason })

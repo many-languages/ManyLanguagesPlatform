@@ -8,6 +8,7 @@ import toast from "react-hot-toast"
 
 import updateStudy from "@/src/features/studies/mutations/updateStudy"
 import StudyInformationForm from "./StudyInformationForm"
+import { parseReturnToQueryParam } from "../../../../domain/setup/parseReturnToQueryParam"
 import { getPostStepNavigationUrl } from "../../../../domain/setup/setupStatus"
 import { studyPath } from "../../../../domain/setup/setupRoutes"
 
@@ -30,18 +31,15 @@ export default function Step1Content({
   // const { study, studyId } = useStudySetup() // Removed context usage
   const [updateStudyMutation] = useMutation(updateStudy)
 
-  // Parse returnTo and get navigation URL
   const getNavigationPath = (): string => {
-    if (returnTo === "study") {
+    const target = parseReturnToQueryParam(returnTo)
+    if (target === "study") {
       return getPostStepNavigationUrl(studyId, 1, "study")
     }
-    if (returnTo?.startsWith("step")) {
-      const stepNum = parseInt(returnTo.replace("step", ""), 10)
-      if (!isNaN(stepNum) && stepNum >= 1 && stepNum <= 5) {
-        return getPostStepNavigationUrl(studyId, 1, stepNum, study)
-      }
+    if (target.startsWith("step")) {
+      const stepNum = parseInt(target.replace("step", ""), 10)
+      return getPostStepNavigationUrl(studyId, 1, stepNum, study)
     }
-    // Default to next step
     return getPostStepNavigationUrl(studyId, 1, "next", study)
   }
 
@@ -71,8 +69,9 @@ export default function Step1Content({
           toast.success(isEditMode ? "Study updated successfully!" : "General information saved")
           router.refresh() // Refresh to get updated study data
           router.push(getNavigationPath() as Route)
-        } catch (err: any) {
-          const errorMessage = err?.message || "An unexpected error occurred. Please try again."
+        } catch (err: unknown) {
+          const errorMessage =
+            err instanceof Error ? err.message : "An unexpected error occurred. Please try again."
           return { [FORM_ERROR]: errorMessage }
         }
       }}

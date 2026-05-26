@@ -3,8 +3,7 @@
  * Used by the cron API route and can be called from external schedulers.
  */
 import db from "db"
-import { isSetupComplete } from "@/src/features/studies"
-import type { StudyWithMinimalRelations } from "@/src/features/studies"
+import { isSetupComplete, toSetupStatusStudy } from "@/src/features/studies"
 
 export interface StudyStatusSchedulerResult {
   opened: number
@@ -34,7 +33,7 @@ export async function runStudyStatusScheduler(): Promise<StudyStatusSchedulerRes
   const toOpen = studiesWithLatestUpload.filter(
     (s) =>
       s.adminApproved === true &&
-      isSetupComplete(s as StudyWithMinimalRelations) &&
+      isSetupComplete(toSetupStatusStudy(s)) &&
       s.status === "CLOSED" &&
       s.startDate <= now &&
       s.endDate > now

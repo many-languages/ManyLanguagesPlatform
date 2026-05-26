@@ -1,5 +1,10 @@
 import { z } from "zod"
 
+export const RouteDataSchema = z.object({
+  path: z.string().min(1),
+  params: z.record(z.union([z.string(), z.number(), z.boolean()])).optional(),
+})
+
 export const dataCollectionStartedSchema = z.object({
   studyTitle: z.string(),
   endDate: z.string().optional(),
@@ -61,3 +66,13 @@ export const validateTemplateData = <T>(
   }
   return { success: true, data: result.data as T }
 }
+
+/** Bulk notification actions (mark read/unread, delete). */
+export const NotificationIdsInput = z.array(z.number().int().positive()).max(100)
+
+export const ToggleNotificationPinnedSchema = z.object({
+  notificationId: z.number().int().positive(),
+  pinned: z.boolean(),
+})
+
+export type ToggleNotificationPinnedInput = z.infer<typeof ToggleNotificationPinnedSchema>

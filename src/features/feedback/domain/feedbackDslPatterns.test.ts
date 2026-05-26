@@ -23,6 +23,19 @@ describe("feedbackDslPatterns", () => {
     expect(names).toContain("region")
   })
 
+  it("extractRequiredVariableNames includes bare var references inside conditionals", () => {
+    const names = extractRequiredVariableNames("{{#if var:.correct == true}}{{ var:.rt }}{{/if}}")
+
+    expect(names).toContain(".correct")
+    expect(names).toContain(".rt")
+  })
+
+  it("extractRequiredVariableNames includes bare stat references inside conditionals", () => {
+    const names = extractRequiredVariableNames("{{#if stat:.rt.avg > 500}}slow{{/if}}")
+
+    expect(names).toContain(".rt")
+  })
+
   it("var and stat regex factories are safe to exec-loop (fresh g regex)", () => {
     const s = "{{ var:x }} {{ stat:y.count }}"
     const v = createVarPlaceholderRegex()

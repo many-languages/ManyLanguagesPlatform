@@ -5,22 +5,12 @@ import { UserRole } from "@/db"
 import { getBlitzContext } from "@/src/app/blitz-server"
 import { createPersonalStudyCodeForParticipant } from "@/src/lib/jatos/jatosAccessService"
 import { saveParticipantRunUrl } from "@/src/features/studies/server/studyParticipationWrites"
+import { CreateParticipantStudyCodeActionSchema } from "../validations"
 
-export async function createParticipantStudyCodeAndSaveAction({
-  studyId,
-  jatosStudyId,
-  jatosBatchId,
-  type,
-  comment,
-  participantStudyId,
-}: {
-  studyId: number
-  jatosStudyId: number
-  jatosBatchId?: number
-  type: "ps" | "pm"
-  comment: string
-  participantStudyId: number
-}): Promise<string> {
+export async function createParticipantStudyCodeAndSaveAction(input: unknown): Promise<string> {
+  const { studyId, jatosStudyId, jatosBatchId, type, comment, participantStudyId } =
+    CreateParticipantStudyCodeActionSchema.parse(input)
+
   const { session } = await getBlitzContext()
   const userId = session.userId
   if (userId == null) {

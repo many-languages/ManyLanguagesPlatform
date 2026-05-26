@@ -1,13 +1,9 @@
-import { useCurrentUser } from "@/src/features/auth/hooks/useCurrentUser"
-
 interface DateFormatProps {
   date?: Date | null
+  locale: string
 }
 
-export default function DateFormat({ date }: DateFormatProps) {
-  const currentUser = useCurrentUser()
-  const locale = currentUser ? currentUser.language : "en-US"
-
+export default function DateFormat({ date, locale }: DateFormatProps) {
   return (
     <>
       {" "}

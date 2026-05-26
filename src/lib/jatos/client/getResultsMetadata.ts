@@ -2,6 +2,8 @@ import type { JatosMetadata } from "@/src/types/jatos"
 import type { JatosAuth } from "./types"
 import { throwIfJatosError } from "./throwIfJatosError"
 import { JatosTransportError } from "../errors"
+import { JatosMetadataSchema } from "../schemas"
+import { parseJatosResponse } from "./parseJatosResponse"
 
 const OPERATION = "Fetch results metadata"
 
@@ -33,8 +35,9 @@ export async function getResultsMetadata(
 
   try {
     const json = await response.json()
-    return json as JatosMetadata
+    return parseJatosResponse(OPERATION, json, JatosMetadataSchema)
   } catch (cause) {
+    if (cause instanceof JatosTransportError) throw cause
     throw new JatosTransportError(`Invalid JSON in ${OPERATION} response`, OPERATION, cause)
   }
 }

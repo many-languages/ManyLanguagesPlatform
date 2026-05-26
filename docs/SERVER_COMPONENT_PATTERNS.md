@@ -155,7 +155,7 @@ try {
 ### Type Safety
 
 ```tsx
-import type { StudyWithRelations } from "../queries/getStudy"
+import type { StudyWithRelations } from "../types"
 
 interface Props {
   study: StudyWithRelations

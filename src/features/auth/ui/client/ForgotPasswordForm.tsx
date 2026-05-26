@@ -3,7 +3,6 @@
 import { useMemo } from "react"
 import Link from "next/link"
 import { useMutation } from "@blitzjs/rpc"
-import toast from "react-hot-toast"
 import { TextField, FormSubmitButton, FormErrorDisplay } from "@/src/components/ui/fields"
 import { Form, FORM_ERROR } from "@/src/components/ui/Form"
 import forgotPassword from "../../mutations/forgotPassword"
@@ -19,12 +18,14 @@ export function ForgotPasswordForm() {
       <h1 className="font-black text-3xl">Forgot your password?</h1>
       <>
         {isSuccess ? (
-          <div>
-            <h2>Request Submitted</h2>
-            <p>
-              If your email is in our system, you will receive instructions to reset your password
-              shortly.
-            </p>
+          <div className="alert alert-success w-md" role="status">
+            <div>
+              <p className="font-medium">Request submitted</p>
+              <p className="text-sm">
+                If your email is in our system, you will receive instructions to reset your password
+                shortly.
+              </p>
+            </div>
           </div>
         ) : (
           <Form
@@ -33,7 +34,6 @@ export function ForgotPasswordForm() {
             onSubmit={async (values) => {
               try {
                 await forgotPasswordMutation(values)
-                toast.success("Password reset instructions sent to your email")
               } catch (error: unknown) {
                 const errorMessage =
                   error instanceof Error
@@ -46,7 +46,7 @@ export function ForgotPasswordForm() {
             }}
             className="space-y-4"
           >
-            <div className="fieldset  bg-base-200 border-base-300 rounded-box w-md border p-4">
+            <div className="fieldset bg-base-200 border-base-300 rounded-box w-md border p-4">
               <TextField
                 name="email"
                 label="Email"
@@ -68,7 +68,10 @@ export function ForgotPasswordForm() {
       </>
 
       <div>
-        Or <Link href="/login">Login</Link>
+        Or{" "}
+        <Link href="/login" className="link link-primary">
+          Login
+        </Link>
       </div>
     </div>
   )

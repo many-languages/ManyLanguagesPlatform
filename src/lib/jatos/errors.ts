@@ -88,6 +88,10 @@ export function isJatosUnauthorized(e: unknown): e is JatosUnauthorizedError {
 }
 
 // --- User-safe message mapping ---
+//
+// POST /api/jatos/import: ingress/auth errors are returned with kind "ingress" | "auth"
+// before JATOS runs. Thrown JATOS/DB errors use mapJatosErrorToUserMessage with kind "jatos".
+// See src/lib/jatos/import/importRouteResponse.ts.
 
 /**
  * Maps known JATOS error types to safe user-facing messages.

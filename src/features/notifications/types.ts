@@ -1,10 +1,6 @@
-import { Prisma } from "@prisma/client"
+import type { z } from "zod"
+import type { RouteDataSchema } from "./validations"
 
-export type RouteData = {
-  path: string
-  params?: Record<string, any>
-}
+export type { NotificationWithRecipient } from "./notificationSelects"
 
-export type NotificationWithRecipient = Prisma.NotificationRecipientGetPayload<{
-  include: { notification: true }
-}>
+export type RouteData = z.infer<typeof RouteDataSchema>

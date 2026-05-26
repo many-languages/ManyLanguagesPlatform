@@ -11,7 +11,8 @@ export async function parseJatosZip(rawData: Blob | ArrayBuffer | Buffer) {
   if (rawData instanceof Blob) {
     arrayBuffer = await rawData.arrayBuffer()
   } else if (Buffer.isBuffer(rawData)) {
-    arrayBuffer = rawData.buffer.slice(rawData.byteOffset, rawData.byteOffset + rawData.byteLength)
+    arrayBuffer = new ArrayBuffer(rawData.byteLength)
+    new Uint8Array(arrayBuffer).set(rawData)
   } else {
     arrayBuffer = rawData
   }

@@ -1,6 +1,7 @@
 import { cache } from "react"
 import { getBlitzContext } from "@/src/app/blitz-server"
 import db from "db"
+import { notificationRecipientWithNotificationSelect } from "../notificationSelects"
 import type { NotificationWithRecipient } from "../types"
 
 export async function findLatestUnreadNotificationsForUser(
@@ -12,9 +13,7 @@ export async function findLatestUnreadNotificationsForUser(
       readAt: null,
       dismissedAt: null,
     },
-    include: {
-      notification: true,
-    },
+    select: notificationRecipientWithNotificationSelect,
     orderBy: [{ pinned: "desc" }, { createdAt: "desc" }],
     take: 3,
   })

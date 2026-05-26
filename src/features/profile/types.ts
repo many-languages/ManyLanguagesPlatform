@@ -1,6 +1,6 @@
 import type { CurrentUserFromSession } from "@/src/features/auth/types"
 
-/** Props for profile UI — same shape as `getCurrentUserRsc` / `getCurrentUser` (Prisma-inferred). */
+/** Props for profile UI — same shape as `getCurrentUserRsc` (Prisma-inferred). */
 export type ProfileContentUser = CurrentUserFromSession
 
 /** Passed from thin route pages so portal vs admin URLs stay explicit (see profile-feature-migration.md). */

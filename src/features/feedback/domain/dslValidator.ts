@@ -1,5 +1,6 @@
 import {
   createBareVarReferenceRegex,
+  createBareStatReferenceRegex,
   createConditionalBlockRegex,
   createFeedbackStatPlaceholderRegex,
   createMalformedStatSpanRegex,
@@ -215,6 +216,45 @@ function validateConditionExpression(
         end,
         severity: "error",
       })
+    }
+  }
+
+  const statRegex = createBareStatReferenceRegex()
+  let statMatch
+  while ((statMatch = statRegex.exec(condition)) !== null) {
+    const [fullMatch, varName, metric, whereClause] = statMatch
+    const start = offset + statMatch.index
+    const end = start + fullMatch.length
+
+    if (!availableFields.some((field) => field.name === varName)) {
+      errors.push({
+        type: "conditional",
+        message: `Variable '${varName}' does not exist in the data`,
+        start,
+        end,
+        severity: "error",
+      })
+    }
+
+    const validMetrics = ["avg", "median", "sd", "count"]
+    if (!validMetrics.includes(metric)) {
+      errors.push({
+        type: "conditional",
+        message: `Invalid metric '${metric}'. Valid metrics: ${validMetrics.join(", ")}`,
+        start,
+        end,
+        severity: "error",
+      })
+    }
+
+    if (whereClause) {
+      errors.push(
+        ...validateFilterClause(
+          whereClause,
+          availableFields,
+          start + fullMatch.indexOf("where:") + 6
+        )
+      )
     }
   }
 

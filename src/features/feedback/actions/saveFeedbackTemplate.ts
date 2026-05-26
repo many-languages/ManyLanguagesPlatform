@@ -1,8 +1,10 @@
 "use server"
 
-import type { FeedbackTemplate, FeedbackTemplateEditorInitial } from "@/src/features/feedback/types"
+import type { FeedbackTemplateRscRow } from "@/src/features/feedback/feedbackTemplateRscSelect"
+import type { FeedbackTemplateEditorInitial } from "@/src/features/feedback/types"
 import { mapFeedbackTemplateSaveErrorToUserMessage } from "@/src/features/feedback/domain/mapFeedbackTemplateSaveErrorToUserMessage"
 import { saveFeedbackTemplateAndNotify } from "@/src/features/feedback/server/saveFeedbackTemplateAndNotify"
+import { parseSaveFeedbackTemplateActionInput } from "../validations"
 
 export interface SaveTemplateInput {
   studyId: number
@@ -11,23 +13,19 @@ export interface SaveTemplateInput {
 }
 
 export type SaveFeedbackTemplateActionResult =
-  | { ok: true; template: FeedbackTemplate; setupComplete: boolean }
+  | { ok: true; template: FeedbackTemplateRscRow; setupComplete: boolean }
   | { ok: false; userMessage: string }
 
 export async function saveFeedbackTemplateAction(
   input: SaveTemplateInput
 ): Promise<SaveFeedbackTemplateActionResult> {
-  const { content } = input
-
-  if (!content.trim()) {
-    return {
-      ok: false,
-      userMessage: "Please enter some content for your feedback template.",
-    }
+  const parsed = parseSaveFeedbackTemplateActionInput(input)
+  if (!parsed.success) {
+    return { ok: false, userMessage: parsed.error }
   }
 
   try {
-    const { template, setupComplete } = await saveFeedbackTemplateAndNotify(input)
+    const { template, setupComplete } = await saveFeedbackTemplateAndNotify(parsed.data)
     return { ok: true, template, setupComplete }
   } catch (error) {
     console.error("saveFeedbackTemplateAction:", error)

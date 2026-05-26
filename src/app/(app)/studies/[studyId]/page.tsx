@@ -1,5 +1,6 @@
 import { Suspense } from "react"
-import { notFound } from "next/navigation"
+import { notFound, redirect } from "next/navigation"
+import { getBlitzContext } from "@/src/app/blitz-server"
 import {
   getStudyPageRsc,
   canEditStudySetup,
@@ -11,13 +12,14 @@ import {
   StudyHeader,
   StudyStatusControl,
   StudyInformationCard,
+  parseStudyIdParam,
 } from "@/src/features/studies"
 
 export default async function StudyPage({ params }: { params: Promise<{ studyId: string }> }) {
   const { studyId: studyIdRaw } = await params
-  const studyId = Number(studyIdRaw)
+  const studyId = parseStudyIdParam(studyIdRaw)
 
-  if (!Number.isFinite(studyId)) {
+  if (studyId === null) {
     notFound()
   }
 
@@ -63,8 +65,15 @@ export default async function StudyPage({ params }: { params: Promise<{ studyId:
         </Suspense>
       </main>
     )
-  } catch (error: any) {
-    if (error.name === "NotFoundError") {
+  } catch (error: unknown) {
+    if (error instanceof Error && error.name === "NotFoundError") {
+      notFound()
+    }
+    if (error instanceof Error && error.name === "AuthorizationError") {
+      const { session } = await getBlitzContext()
+      if (!session.userId) {
+        redirect("/login")
+      }
       notFound()
     }
     throw error

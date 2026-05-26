@@ -63,6 +63,7 @@ export {
   getSetupStatusLabel,
   getSetupProgress,
   step6NeedsRevision,
+  toSetupStatusStudy,
   getNextSetupStepUrl,
   getPostStepNavigationUrl,
 } from "./domain/setup/setupStatus"
@@ -107,6 +108,7 @@ export {
   parseParticipantStudyViewQueryParam,
 } from "./domain/participantStudyView"
 export type { ParticipantStudyViewQueryParseResult } from "./domain/participantStudyView"
+export { parseStudyIdParam } from "./domain/parseStudyIdParam"
 
 /** RSC helpers for routes & cross-feature callers */
 export {
@@ -116,6 +118,10 @@ export {
   getStudyViewerRsc,
 } from "./server/getStudy"
 export { getStudies } from "./server/getStudies"
+export {
+  getParticipantJoinedByStudyIdRsc,
+  isParticipantInStudyRsc,
+} from "./server/isParticipantInStudy"
 export { getParticipantStudiesWithStatus } from "./server/getParticipantStudiesWithStatus"
 export {
   getResearcherStudiesPageSlice,

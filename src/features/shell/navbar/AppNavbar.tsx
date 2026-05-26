@@ -2,10 +2,7 @@ import { Suspense } from "react"
 import Link from "next/link"
 import type { Route } from "next"
 
-import {
-  NotificationMenu as NotificationsMenu,
-  NotificationMenuProvider,
-} from "@/src/features/notifications"
+import { NotificationMenu as NotificationsMenu } from "@/src/features/notifications"
 import ThemeToggle from "../ui/ThemeToggle"
 import { AvatarSection } from "./AvatarSection"
 import { AvatarSkeleton } from "./AvatarSkeleton"
@@ -41,9 +38,7 @@ export default function AppNavbar({ variant, userRole }: AppNavbarProps) {
       <div className="flex-none px-6 flex items-center gap-2">
         <ul className="menu menu-horizontal px-6 items-center">
           <li>
-            <NotificationMenuProvider>
-              <NotificationsMenu variant={variant} />
-            </NotificationMenuProvider>
+            <NotificationsMenu variant={variant} />
           </li>
           {items.map((item) => (
             <li key={item.href}>

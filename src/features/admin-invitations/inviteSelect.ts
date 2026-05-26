@@ -1,11 +1,10 @@
 /**
- * Shared Prisma `select` shape for admin invite rows. Used by both
- * `queries/getAdminInvites` and `queries/getStalePendingAdminInvites` so the
- * two stay in lockstep when columns are added.
+ * Shared Prisma `select` shape for admin invite rows. Used by admin invite
+ * server loaders so list and dashboard surfaces stay in lockstep when columns
+ * are added.
  *
- * Lives at the feature root (not under `queries/`) because Blitz auto-wraps
- * every file in `queries/` as an RPC resolver; plain-data modules must sit
- * outside that folder.
+ * Lives at the feature root because this select is shared feature data, not a
+ * server loader or transport entrypoint.
  */
 export const inviteSelect = {
   id: true,

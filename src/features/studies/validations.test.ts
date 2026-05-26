@@ -12,7 +12,7 @@ import {
 } from "./validations"
 
 function mockJzipFile(name: string, size = 1): File {
-  return new File([new ArrayBuffer(size)], name)
+  return Object.assign(new Blob([new ArrayBuffer(size)]), { name }) as File
 }
 
 describe("parseImportStudyFileFromFormData", () => {

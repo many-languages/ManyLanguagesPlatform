@@ -29,11 +29,17 @@ export function ResetPasswordForm() {
       <h1 className="font-black text-3xl">Set a New Password</h1>
 
       {isSuccess ? (
-        <div>
-          <h2>Password Reset Successfully</h2>
-          <p>
-            Go to the <Link href="/">homepage</Link>
-          </p>
+        <div className="alert alert-success w-md" role="status">
+          <div>
+            <p className="font-medium">Password reset successfully</p>
+            <p className="text-sm">
+              You can now{" "}
+              <Link href="/login" className="link link-primary">
+                log in
+              </Link>{" "}
+              with your new password.
+            </p>
+          </div>
         </div>
       ) : (
         <Form
@@ -76,7 +82,10 @@ export function ResetPasswordForm() {
       )}
 
       <div>
-        Or <Link href="/login">Login</Link>
+        Or{" "}
+        <Link href="/login" className="link link-primary">
+          Login
+        </Link>
       </div>
     </div>
   )

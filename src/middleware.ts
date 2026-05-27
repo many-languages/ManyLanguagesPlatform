@@ -41,9 +41,11 @@ export function middleware(request: NextRequest) {
     path.startsWith("/api/cron/study-status")
 
   if (isSensitive) {
-    // Attempt to get client IP
+    // Attempt to get client IP from headers (Next.js 15+ removes request.ip)
     const ip =
-      request.ip || request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown-ip"
+      request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+      request.headers.get("x-real-ip")?.trim() ||
+      "unknown-ip"
 
     const now = Date.now()
     cleanupMap()

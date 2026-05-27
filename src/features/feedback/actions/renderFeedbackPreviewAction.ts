@@ -27,7 +27,7 @@ export async function renderFeedbackPreviewAction(
   const { studyId, contextKey, templateContent, withinStudyResultId } = parsed.data
 
   return await withStudyAccess(studyId, async (verifiedStudyId, userId) => {
-    const ctx = getFeedbackPreviewContext(contextKey)
+    const ctx = await getFeedbackPreviewContext(contextKey)
     if (!ctx || ctx.studyId !== verifiedStudyId || ctx.userId !== userId) {
       const keyLen = contextKey.length
       const keyPreview = keyLen > 0 ? `${contextKey.slice(0, 8)}…(len=${keyLen})` : "(empty)"

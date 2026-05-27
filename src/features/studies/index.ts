@@ -76,11 +76,7 @@ export type {
 export { serializeExtractionBundle } from "./domain/setup/serializeExtractionBundle"
 export { deriveStep1Completed } from "./domain/setup/deriveStep1Completed"
 export { STEP_KEYS, STEP_NAMES, TOTAL_STEPS } from "./domain/setup/constants"
-export type { ExtractionCacheKeyParts } from "./domain/setup/extractionBundleCache"
-export {
-  extractionBundleCache,
-  buildExtractionCacheKey,
-} from "./domain/setup/extractionBundleCache"
+
 export {
   EXTRACTOR_VERSION,
   REQUIRED_KEYS_HASH,

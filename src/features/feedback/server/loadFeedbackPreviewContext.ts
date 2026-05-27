@@ -98,7 +98,7 @@ export async function loadFeedbackPreviewContext(
         allPilotResults,
       }
 
-      const contextKey = putFeedbackPreviewContext(stored)
+      const contextKey = await putFeedbackPreviewContext(stored)
 
       return { kind: "ok" as const, contextKey, client }
     })

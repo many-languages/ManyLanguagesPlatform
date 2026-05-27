@@ -35,6 +35,7 @@ fi
 
 COMPOSE_FILES=(
   -f deploy/compose/base.yml
+  -f deploy/compose/services/redis.yml
   -f deploy/compose/services/jatos-db.yml
   -f deploy/compose/services/jatos.yml
   -f deploy/compose/services/traefik.yml

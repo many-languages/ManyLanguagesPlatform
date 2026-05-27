@@ -1,3 +1,4 @@
+"use client"
 import Link from "next/link"
 import DOMPurify from "isomorphic-dompurify"
 import { RouteData } from "../types"

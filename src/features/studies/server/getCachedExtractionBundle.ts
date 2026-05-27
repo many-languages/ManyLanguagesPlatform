@@ -52,14 +52,14 @@ export async function getCachedExtractionBundleRsc(input: {
       includeDiagnostics,
     })
 
-    let bundle = extractionBundleCache.get(cacheKey)
+    let bundle = await extractionBundleCache.get(cacheKey)
     if (!bundle && !includeDiagnostics) {
       const fallbackKey = buildCacheKey({
         scopeId: latestUpload.id,
         pilotDatasetHash,
         includeDiagnostics: true,
       })
-      bundle = extractionBundleCache.get(fallbackKey)
+      bundle = await extractionBundleCache.get(fallbackKey)
     }
 
     return {

@@ -82,12 +82,12 @@ export async function runExtraction(input: {
       includeDiagnostics,
     })
 
-    let bundle = extractionBundleCache.get(cacheKey)
+    let bundle = await extractionBundleCache.get(cacheKey)
     if (!bundle) {
       bundle = extractVariableBundleFromResults(pilotResults, DEFAULT_EXTRACTION_CONFIG, {
         diagnostics: includeDiagnostics,
       })
-      extractionBundleCache.set(cacheKey, bundle)
+      await extractionBundleCache.set(cacheKey, bundle)
     }
 
     return { bundle: serializeExtractionBundle(bundle) }
@@ -135,10 +135,10 @@ export async function approveExtraction(input: {
       includeDiagnostics: true,
     })
 
-    let bundle = extractionBundleCache.get(cacheKey)
+    let bundle = await extractionBundleCache.get(cacheKey)
     if (!bundle) {
       bundle = extractVariableBundleFromResults(pilotResults, DEFAULT_EXTRACTION_CONFIG)
-      extractionBundleCache.set(cacheKey, bundle)
+      await extractionBundleCache.set(cacheKey, bundle)
     }
 
     const extractionConfigHash = hashJson(DEFAULT_EXTRACTION_CONFIG)

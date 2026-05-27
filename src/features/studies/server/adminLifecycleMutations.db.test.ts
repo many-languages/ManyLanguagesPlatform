@@ -183,6 +183,15 @@ describe("admin lifecycle mutation boundaries", () => {
     await db.study.deleteMany({
       where: { title: { startsWith: TEST_PREFIX } },
     })
+    await db.adminAuditEvent.deleteMany({
+      where: {
+        actorUserId: {
+          in: [researcher?.id, otherResearcher?.id, admin?.id, superadmin?.id].filter(
+            (id): id is number => typeof id === "number"
+          ),
+        },
+      },
+    })
     await db.user.deleteMany({
       where: { email: { startsWith: TEST_PREFIX } },
     })
@@ -233,6 +242,41 @@ describe("admin lifecycle mutation boundaries", () => {
     expect(current.adminApproved).toBe(false)
     expect(current.adminReviewedById).toBe(admin.id)
     expect(mocks.sendNotification).toHaveBeenCalled()
+
+    const auditEvents = await db.adminAuditEvent.findMany({
+      where: { entityType: "Study", entityId: study.id },
+      orderBy: [{ createdAt: "asc" }, { id: "asc" }],
+    })
+    expect(auditEvents.map((event) => event.event)).toEqual([
+      "admin_study_approved",
+      "data_collection_enabled",
+      "data_collection_disabled",
+      "admin_study_rejected",
+    ])
+    expect(auditEvents).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          actorUserId: admin.id,
+          actorRole: "ADMIN",
+          entityType: "Study",
+          entityId: study.id,
+        }),
+      ])
+    )
+    expect(
+      auditEvents.find((event) => event.event === "data_collection_enabled")?.metadata
+    ).toMatchObject({
+      studyTitle: study.title,
+      previousStatus: "CLOSED",
+      newStatus: "OPEN",
+    })
+    expect(
+      auditEvents.find((event) => event.event === "data_collection_disabled")?.metadata
+    ).toMatchObject({
+      studyTitle: study.title,
+      previousStatus: "OPEN",
+      newStatus: "CLOSED",
+    })
   })
 
   it("blocks enabling data collection when setup or approval is incomplete", async () => {
@@ -338,6 +382,61 @@ describe("admin lifecycle mutation boundaries", () => {
       studyId: study.id,
       adminUserId: superadmin.id,
       reason: "cleanup",
+    })
+
+    const auditEvents = await db.adminAuditEvent.findMany({
+      where: { entityType: "Study", entityId: study.id },
+      orderBy: [{ createdAt: "asc" }, { id: "asc" }],
+    })
+    expect(auditEvents).toHaveLength(2)
+    expect(auditEvents.map((event) => event.event)).toEqual([
+      "study_deletion_requested",
+      "study_deleted",
+    ])
+    expect(auditEvents).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          actorUserId: superadmin.id,
+          actorRole: "SUPERADMIN",
+          entityType: "Study",
+          entityId: study.id,
+        }),
+      ])
+    )
+    expect(auditEvents[0]?.metadata).toMatchObject({
+      reason: "cleanup",
+      studyTitle: study.title,
+      hasParticipantResponses: true,
+    })
+  })
+
+  it("records an audit event when JATOS deletion fails and keeps the study", async () => {
+    const study = await createStudy("delete-jatos-failure", researcher, {
+      adminApproved: true,
+      archived: false,
+      status: "CLOSED",
+      completeSetup: true,
+    })
+    mocks.deleteStudyAsAdmin.mockRejectedValueOnce(new Error("JATOS unavailable"))
+    setSession(admin)
+
+    await expect(deleteStudy({ studyIds: [study.id], reason: "failed cleanup" })).rejects.toThrow(
+      "JATOS unavailable"
+    )
+
+    await expect(db.study.findUnique({ where: { id: study.id } })).resolves.not.toBeNull()
+
+    const auditEvents = await db.adminAuditEvent.findMany({
+      where: { entityType: "Study", entityId: study.id },
+      orderBy: [{ createdAt: "asc" }, { id: "asc" }],
+    })
+    expect(auditEvents.map((event) => event.event)).toEqual([
+      "study_deletion_requested",
+      "jatos_deletion_failed",
+    ])
+    expect(auditEvents[1]?.metadata).toMatchObject({
+      reason: "failed cleanup",
+      errorName: "Error",
     })
   })
 })

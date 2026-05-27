@@ -50,6 +50,7 @@ model User {
   notificationRecipients NotificationRecipient[]
   AdminInvite            AdminInvite[]
   ResearcherJatos        ResearcherJatos?
+  adminAuditEvents       AdminAuditEvent[]       @relation("AdminAuditActor")
 }
 
 model Session {
@@ -326,6 +327,26 @@ model AdminInvite {
   @@index([email])
   @@index([expiresAt])
   @@index([redeemedAt, revokedAt, expiresAt, createdAt])
+}
+
+model AdminAuditEvent {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+
+  actorUserId Int?
+  actorRole   String?
+
+  event      String
+  entityType String
+  entityId   Int?
+  metadata   Json?
+
+  actor User? @relation("AdminAuditActor", fields: [actorUserId], references: [id], onDelete: SetNull)
+
+  @@index([createdAt])
+  @@index([event, createdAt])
+  @@index([entityType, entityId, createdAt])
+  @@index([actorUserId, createdAt])
 }
 
 model PilotLink {

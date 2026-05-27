@@ -5,6 +5,7 @@ import { getAuthorizedSession } from "@/src/lib/auth/session"
 import { sendNotification } from "@/src/features/notifications"
 import { deleteStudyAsAdmin } from "@/src/lib/jatos/admin/deleteStudyWorkflow"
 import { isStaffAdmin, isSuperAdmin } from "@/src/lib/auth/roles"
+import { recordAdminAuditEvent } from "@/src/lib/audit/adminAudit"
 import { isSetupComplete, toSetupStatusStudy } from "../domain/setup/setupStatus"
 import { studyHasParticipantResponsesSafe } from "./participantResponses"
 
@@ -23,6 +24,53 @@ function formatChangedAt(date: Date): string {
     dateStyle: "medium",
     timeStyle: "short",
   }).format(date)
+}
+
+function normalizeAuditReason(reason: string): string {
+  return reason.trim().slice(0, 2000)
+}
+
+function deletionAuditMetadata(input: {
+  reason: string
+  study: {
+    title: string
+    archived: boolean
+    jatosStudyUUID: string | null
+    jatosStudyUploads: Array<{ jatosStudyId: number; id: number; versionNumber: number }>
+  }
+  hasParticipantResponses: boolean
+}) {
+  const latestUpload = input.study.jatosStudyUploads[0] ?? null
+
+  return {
+    reason: normalizeAuditReason(input.reason),
+    studyTitle: input.study.title,
+    archived: input.study.archived,
+    hasParticipantResponses: input.hasParticipantResponses,
+    jatosStudyUUID: input.study.jatosStudyUUID,
+    jatosStudyUploadId: latestUpload?.id ?? null,
+    jatosStudyId: latestUpload?.jatosStudyId ?? null,
+    jatosUploadVersionNumber: latestUpload?.versionNumber ?? null,
+  }
+}
+
+function studyAuditMetadata(input: {
+  study: { title: string; status?: string; adminApproved?: boolean | null }
+  previousStatus?: string
+  newStatus?: string
+  newAdminApproved?: boolean | null
+  reviewedAt?: Date
+  changedAt?: Date
+}) {
+  return {
+    studyTitle: input.study.title,
+    previousStatus: input.previousStatus ?? null,
+    newStatus: input.newStatus ?? null,
+    previousAdminApproved: input.study.adminApproved,
+    newAdminApproved: input.newAdminApproved ?? null,
+    reviewedAt: input.reviewedAt?.toISOString() ?? null,
+    changedAt: input.changedAt?.toISOString() ?? null,
+  }
 }
 
 export async function approveStudy(studyIds: number[]) {
@@ -46,6 +94,15 @@ export async function approveStudy(studyIds: number[]) {
   const reviewedAt = formatChangedAt(now)
 
   for (const study of studies) {
+    await recordAdminAuditEvent({
+      actorUserId: session.userId,
+      actorRole: session.role,
+      event: "admin_study_approved",
+      entityType: "Study",
+      entityId: study.id,
+      metadata: studyAuditMetadata({ study, reviewedAt: now, newAdminApproved: true }),
+    })
+
     const researcherIds = study.researchers.map((researcher) => researcher.userId)
     if (researcherIds.length > 0) {
       await sendNotification({
@@ -85,6 +142,15 @@ export async function rejectStudy(studyIds: number[]) {
   const reviewedAt = formatChangedAt(now)
 
   for (const study of studies) {
+    await recordAdminAuditEvent({
+      actorUserId: session.userId,
+      actorRole: session.role,
+      event: "admin_study_rejected",
+      entityType: "Study",
+      entityId: study.id,
+      metadata: studyAuditMetadata({ study, reviewedAt: now, newAdminApproved: false }),
+    })
+
     const researcherIds = study.researchers.map((researcher) => researcher.userId)
     if (researcherIds.length > 0) {
       await sendNotification({
@@ -104,7 +170,7 @@ export async function rejectStudy(studyIds: number[]) {
 }
 
 export async function enableDataCollection(studyIds: number[]) {
-  await requireStaffAdminSession()
+  const session = await requireStaffAdminSession()
 
   const studies = await db.study.findMany({
     where: { id: { in: studyIds } },
@@ -138,9 +204,24 @@ export async function enableDataCollection(studyIds: number[]) {
     data: { status: "OPEN" },
   })
 
-  const changedAt = formatChangedAt(new Date())
+  const changedAtDate = new Date()
+  const changedAt = formatChangedAt(changedAtDate)
 
   for (const study of studies) {
+    await recordAdminAuditEvent({
+      actorUserId: session.userId,
+      actorRole: session.role,
+      event: "data_collection_enabled",
+      entityType: "Study",
+      entityId: study.id,
+      metadata: studyAuditMetadata({
+        study,
+        previousStatus: study.status,
+        newStatus: "OPEN",
+        changedAt: changedAtDate,
+      }),
+    })
+
     const researcherIds = study.researchers.map((researcher) => researcher.userId)
     if (researcherIds.length > 0) {
       await sendNotification({
@@ -164,7 +245,7 @@ export async function enableDataCollection(studyIds: number[]) {
 }
 
 export async function disableDataCollection(studyIds: number[]) {
-  await requireStaffAdminSession()
+  const session = await requireStaffAdminSession()
 
   const studies = await db.study.findMany({
     where: { id: { in: studyIds } },
@@ -178,9 +259,24 @@ export async function disableDataCollection(studyIds: number[]) {
     data: { status: "CLOSED" },
   })
 
-  const changedAt = formatChangedAt(new Date())
+  const changedAtDate = new Date()
+  const changedAt = formatChangedAt(changedAtDate)
 
   for (const study of studies) {
+    await recordAdminAuditEvent({
+      actorUserId: session.userId,
+      actorRole: session.role,
+      event: "data_collection_disabled",
+      entityType: "Study",
+      entityId: study.id,
+      metadata: studyAuditMetadata({
+        study,
+        previousStatus: study.status,
+        newStatus: "CLOSED",
+        changedAt: changedAtDate,
+      }),
+    })
+
     const researcherIds = study.researchers.map((researcher) => researcher.userId)
     if (researcherIds.length > 0) {
       await sendNotification({
@@ -230,6 +326,11 @@ export async function deleteStudy(input: { studyIds: number[]; reason: string })
     throw new Error("One or more studies were not found.")
   }
 
+  const deletionTargets: Array<{
+    study: (typeof studies)[number]
+    hasParticipantResponses: boolean
+  }> = []
+
   for (const study of studies) {
     const hasResponsesSafe = await studyHasParticipantResponsesSafe(study.id)
     if (hasResponsesSafe === null) {
@@ -251,21 +352,68 @@ export async function deleteStudy(input: { studyIds: number[]; reason: string })
         `Cannot delete: archived studies with participant responses may only be removed by a superadmin. Affected: ${title}`
       )
     }
+
+    deletionTargets.push({ study, hasParticipantResponses: hasResponsesSafe })
   }
 
   const idsToDelete = studies.map((study) => study.id)
 
-  for (const study of studies) {
-    await deleteStudyAsAdmin({
-      studyId: study.id,
-      adminUserId,
+  for (const { study, hasParticipantResponses } of deletionTargets) {
+    const metadata = deletionAuditMetadata({
       reason: input.reason,
+      study,
+      hasParticipantResponses,
     })
+
+    await recordAdminAuditEvent({
+      actorUserId: adminUserId,
+      actorRole: role,
+      event: "study_deletion_requested",
+      entityType: "Study",
+      entityId: study.id,
+      metadata,
+    })
+
+    try {
+      await deleteStudyAsAdmin({
+        studyId: study.id,
+        adminUserId,
+        reason: input.reason,
+      })
+    } catch (error) {
+      await recordAdminAuditEvent({
+        actorUserId: adminUserId,
+        actorRole: role,
+        event: "jatos_deletion_failed",
+        entityType: "Study",
+        entityId: study.id,
+        metadata: {
+          ...metadata,
+          errorName: error instanceof Error ? error.name : typeof error,
+        },
+      })
+      throw error
+    }
   }
 
   const result = await db.study.deleteMany({
     where: { id: { in: idsToDelete } },
   })
+
+  for (const { study, hasParticipantResponses } of deletionTargets) {
+    await recordAdminAuditEvent({
+      actorUserId: adminUserId,
+      actorRole: role,
+      event: "study_deleted",
+      entityType: "Study",
+      entityId: study.id,
+      metadata: deletionAuditMetadata({
+        reason: input.reason,
+        study,
+        hasParticipantResponses,
+      }),
+    })
+  }
 
   return { updated: result.count }
 }

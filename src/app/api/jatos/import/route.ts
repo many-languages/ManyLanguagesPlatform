@@ -81,6 +81,31 @@ export async function POST(req: Request): Promise<NextResponse<JatosImportRespon
   let userIdForLog: number | undefined
 
   try {
+    const origin = req.headers.get("origin")
+    const referer = req.headers.get("referer")
+    const host = req.headers.get("x-forwarded-host") || req.headers.get("host")
+
+    const sourceUrl = origin || referer
+    if (!sourceUrl) {
+      return jatosImportIngressErrorResponse("CSRF validation failed: Missing Origin and Referer")
+    }
+
+    try {
+      const sourceHost = new URL(sourceUrl).host
+      const appOriginHost = process.env.APP_ORIGIN ? new URL(process.env.APP_ORIGIN).host : null
+
+      if (sourceHost !== host && sourceHost !== appOriginHost) {
+        return jatosImportIngressErrorResponse("CSRF validation failed: Origin mismatch")
+      }
+    } catch {
+      return jatosImportIngressErrorResponse("CSRF validation failed: Malformed Origin/Referer")
+    }
+
+    const contentLength = req.headers.get("content-length")
+    if (contentLength && parseInt(contentLength, 10) > 100 * 1024 * 1024) {
+      return jatosImportIngressErrorResponse("Payload Too Large: maximum size is 100MB")
+    }
+
     const form = await req.formData()
     const parsed = parseJatosImportFormData(form)
     if (!parsed.success) {

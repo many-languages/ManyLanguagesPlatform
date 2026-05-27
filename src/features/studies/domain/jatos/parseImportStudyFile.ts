@@ -1,5 +1,5 @@
 /** Max .jzip size for POST /api/jatos/import */
-export const JATOS_IMPORT_MAX_FILE_SIZE = 1024 * 1024 * 1024 // 1 GB
+export const JATOS_IMPORT_MAX_FILE_SIZE = 100 * 1024 * 1024 // 100 MB
 
 function formatBytes(bytes: number): string {
   if (bytes >= 1024 ** 3) return `${(bytes / 1024 ** 3).toFixed(1)} GB`

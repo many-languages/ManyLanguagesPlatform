@@ -19,11 +19,20 @@ export const PRODUCTION_SECRET_ENV_KEYS = [
   "SESSION_SECRET_KEY",
   "POSTGRES_PASSWORD",
   "JATOS_TOKEN",
+  "DATABASE_URL",
+  "CRON_SECRET",
+  "POSTMARK_SERVER_TOKEN",
+  "SMTP_PASSWORD",
 ] as const
 
 /** Required in production at server startup (participant join URLs depend on JATOS bases). */
 export const PRODUCTION_REQUIRED_ENV_KEYS = [
-  ...PRODUCTION_SECRET_ENV_KEYS,
+  "SESSION_SECRET_KEY",
+  "POSTGRES_PASSWORD",
+  "JATOS_TOKEN",
+  "DATABASE_URL",
+  "CRON_SECRET",
+  "APP_ORIGIN",
   "JATOS_BASE",
   "NEXT_PUBLIC_JATOS_BASE",
 ] as const
@@ -36,6 +45,9 @@ export const productionEnvSchema = z.object({
   JATOS_TOKEN: nonEmptyTrimmedString,
   JATOS_BASE: nonEmptyTrimmedString,
   NEXT_PUBLIC_JATOS_BASE: nonEmptyTrimmedString,
+  DATABASE_URL: nonEmptyTrimmedString,
+  CRON_SECRET: nonEmptyTrimmedString,
+  APP_ORIGIN: nonEmptyTrimmedString,
 })
 
 export type ProductionEnv = z.infer<typeof productionEnvSchema>
@@ -53,6 +65,9 @@ export function collectProductionEnvIssues(env: NodeJS.ProcessEnv = process.env)
     JATOS_TOKEN: env.JATOS_TOKEN,
     JATOS_BASE: env.JATOS_BASE,
     NEXT_PUBLIC_JATOS_BASE: env.NEXT_PUBLIC_JATOS_BASE,
+    DATABASE_URL: env.DATABASE_URL,
+    CRON_SECRET: env.CRON_SECRET,
+    APP_ORIGIN: env.APP_ORIGIN,
   })
 
   const issues: string[] = []
@@ -60,6 +75,29 @@ export function collectProductionEnvIssues(env: NodeJS.ProcessEnv = process.env)
     for (const issue of parsed.error.issues) {
       const key = issue.path[0]
       issues.push(typeof key === "string" ? `${key} is not set or empty` : issue.message)
+    }
+  }
+
+  const emailEnabled = env.EMAIL_ENABLED === "true" || env.EMAIL_ENABLED === "1"
+  if (emailEnabled) {
+    if (!env.EMAIL_FROM_ADDRESS?.trim()) {
+      issues.push("EMAIL_FROM_ADDRESS is required when email is enabled")
+    }
+
+    const provider = env.EMAIL_PROVIDER?.trim().toLowerCase() || "mailhog"
+    if (provider === "postmark") {
+      if (!env.POSTMARK_SERVER_TOKEN?.trim()) {
+        issues.push("POSTMARK_SERVER_TOKEN is required when EMAIL_PROVIDER=postmark")
+      }
+    } else if (provider === "smtp") {
+      if (!env.SMTP_HOST?.trim()) {
+        issues.push("SMTP_HOST is required when EMAIL_PROVIDER=smtp")
+      }
+      if (!env.SMTP_PORT?.trim()) {
+        issues.push("SMTP_PORT is required when EMAIL_PROVIDER=smtp")
+      }
+    } else if (provider !== "mailhog") {
+      issues.push(`Unsupported EMAIL_PROVIDER "${provider}"`)
     }
   }
 

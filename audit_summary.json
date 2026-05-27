@@ -1,0 +1,147 @@
+{
+  "metadata": {
+    "info": 0,
+    "low": 2,
+    "moderate": 12,
+    "high": 13,
+    "critical": 0,
+    "total": 27
+  },
+  "packages": [
+    {
+      "name": "@blitzjs/auth",
+      "severity": "moderate",
+      "isDirect": true
+    },
+    {
+      "name": "@blitzjs/generator",
+      "severity": "high",
+      "isDirect": false
+    },
+    {
+      "name": "@blitzjs/next",
+      "severity": "moderate",
+      "isDirect": true
+    },
+    {
+      "name": "@prisma/config",
+      "severity": "high",
+      "isDirect": false
+    },
+    {
+      "name": "ajv",
+      "severity": "moderate",
+      "isDirect": true
+    },
+    {
+      "name": "blitz",
+      "severity": "high",
+      "isDirect": true
+    },
+    {
+      "name": "braces",
+      "severity": "high",
+      "isDirect": false
+    },
+    {
+      "name": "cookie",
+      "severity": "low",
+      "isDirect": false
+    },
+    {
+      "name": "copy-webpack-plugin",
+      "severity": "moderate",
+      "isDirect": false
+    },
+    {
+      "name": "cross-spawn",
+      "severity": "high",
+      "isDirect": false
+    },
+    {
+      "name": "diff",
+      "severity": "low",
+      "isDirect": false
+    },
+    {
+      "name": "effect",
+      "severity": "high",
+      "isDirect": false
+    },
+    {
+      "name": "esbuild",
+      "severity": "moderate",
+      "isDirect": false
+    },
+    {
+      "name": "jscodeshift",
+      "severity": "moderate",
+      "isDirect": false
+    },
+    {
+      "name": "micromatch",
+      "severity": "high",
+      "isDirect": false
+    },
+    {
+      "name": "nanoid",
+      "severity": "moderate",
+      "isDirect": false
+    },
+    {
+      "name": "next",
+      "severity": "moderate",
+      "isDirect": true
+    },
+    {
+      "name": "node-fetch",
+      "severity": "moderate",
+      "isDirect": false
+    },
+    {
+      "name": "nodemailer",
+      "severity": "high",
+      "isDirect": false
+    },
+    {
+      "name": "postcss",
+      "severity": "moderate",
+      "isDirect": true
+    },
+    {
+      "name": "preview-email",
+      "severity": "moderate",
+      "isDirect": true
+    },
+    {
+      "name": "prisma",
+      "severity": "high",
+      "isDirect": true
+    },
+    {
+      "name": "semver",
+      "severity": "high",
+      "isDirect": false
+    },
+    {
+      "name": "serialize-javascript",
+      "severity": "high",
+      "isDirect": false
+    },
+    {
+      "name": "tar",
+      "severity": "high",
+      "isDirect": false
+    },
+    {
+      "name": "uuid",
+      "severity": "moderate",
+      "isDirect": false
+    },
+    {
+      "name": "vite",
+      "severity": "high",
+      "isDirect": false
+    }
+  ]
+}

@@ -21,14 +21,91 @@ import {
   jatosImportJatosFailureResponse,
 } from "@/src/lib/jatos/import/importRouteResponse"
 import { importJatosStudyForResearcher } from "@/src/lib/jatos/provisioning/importJatosStudy"
+import { JatosApiError, JatosTransportError } from "@/src/lib/jatos/errors"
 import type { JatosImportResponse } from "@/src/types/jatos-api"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
 export const maxDuration = 300
 
+function getSafeImportErrorLogContext(input: {
+  error: unknown
+  studyId?: number
+  userId?: number
+}) {
+  const { error, studyId, userId } = input
+  const base = {
+    operation: "jatos_import",
+    studyId,
+    userId,
+    errorName: error instanceof Error ? error.name : typeof error,
+  }
+
+  if (error instanceof JatosTransportError) {
+    return {
+      ...base,
+      category: "jatos_transport",
+      jatosOperation: error.operation,
+      causeName: error.cause instanceof Error ? error.cause.name : undefined,
+    }
+  }
+
+  if (error instanceof JatosApiError) {
+    return {
+      ...base,
+      category: "jatos_api",
+      status: error.status,
+      code: error.code,
+      jatosOperation: error.context?.operation,
+    }
+  }
+
+  const err = error as { code?: string; meta?: { target?: string[] } } | null
+  if (err?.code) {
+    return {
+      ...base,
+      category: "database_or_known_error",
+      code: err.code,
+      target: err.meta?.target,
+    }
+  }
+
+  return {
+    ...base,
+    category: "unexpected",
+  }
+}
+
 export async function POST(req: Request): Promise<NextResponse<JatosImportResponse | unknown>> {
+  let studyIdForLog: number | undefined
+  let userIdForLog: number | undefined
+
   try {
+    const origin = req.headers.get("origin")
+    const referer = req.headers.get("referer")
+    const host = req.headers.get("x-forwarded-host") || req.headers.get("host")
+
+    const sourceUrl = origin || referer
+    if (!sourceUrl) {
+      return jatosImportIngressErrorResponse("CSRF validation failed: Missing Origin and Referer")
+    }
+
+    try {
+      const sourceHost = new URL(sourceUrl).host
+      const appOriginHost = process.env.APP_ORIGIN ? new URL(process.env.APP_ORIGIN).host : null
+
+      if (sourceHost !== host && sourceHost !== appOriginHost) {
+        return jatosImportIngressErrorResponse("CSRF validation failed: Origin mismatch")
+      }
+    } catch {
+      return jatosImportIngressErrorResponse("CSRF validation failed: Malformed Origin/Referer")
+    }
+
+    const contentLength = req.headers.get("content-length")
+    if (contentLength && parseInt(contentLength, 10) > 100 * 1024 * 1024) {
+      return jatosImportIngressErrorResponse("Payload Too Large: maximum size is 100MB")
+    }
+
     const form = await req.formData()
     const parsed = parseJatosImportFormData(form)
     if (!parsed.success) {
@@ -36,9 +113,11 @@ export async function POST(req: Request): Promise<NextResponse<JatosImportRespon
     }
 
     const { studyFile: file, studyId, jatosWorkerType } = parsed.data
+    studyIdForLog = studyId
 
     const { session } = await getBlitzContext()
     const userId = session.userId
+    userIdForLog = userId ?? undefined
     if (userId == null) {
       return jatosImportAuthErrorResponse()
     }
@@ -67,7 +146,10 @@ export async function POST(req: Request): Promise<NextResponse<JatosImportRespon
         )
       }
     }
-    console.error("Error importing JATOS study:", error)
+    console.error(
+      "[JatosImportRoute] Import failed",
+      getSafeImportErrorLogContext({ error, studyId: studyIdForLog, userId: userIdForLog })
+    )
 
     return jatosImportJatosFailureResponse(error)
   }

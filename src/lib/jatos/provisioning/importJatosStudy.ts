@@ -27,16 +27,45 @@ export interface ImportJatosStudyResult {
 
 async function computeBuildHash(file: File): Promise<string> {
   const arrayBuffer = await file.arrayBuffer()
+
+  // Magic bytes check (PK\x03\x04)
+  if (arrayBuffer.byteLength < 4) {
+    throw new Error("Invalid file format: too small to be a ZIP archive")
+  }
+  const view = new Uint8Array(arrayBuffer, 0, 4)
+  if (view[0] !== 0x50 || view[1] !== 0x4b || view[2] !== 0x03 || view[3] !== 0x04) {
+    throw new Error("Invalid file format: not a valid ZIP archive")
+  }
+
   const zip = await JSZip.loadAsync(arrayBuffer)
+
+  const MAX_FILES = 10000
+  const MAX_DECOMPRESSED_SIZE = 500 * 1024 * 1024 // 500 MB
+
+  let fileCount = 0
+  let decompressedSize = 0
+
   const entries = Object.entries(zip.files)
     .filter(([, entry]) => !entry.dir)
     .sort(([a], [b]) => a.localeCompare(b))
 
   const hash = createHash("sha256")
   for (const [filename, entry] of entries) {
+    fileCount++
+    if (fileCount > MAX_FILES) {
+      throw new Error(`Zip bomb detected: exceeds maximum allowed files (${MAX_FILES})`)
+    }
+
     hash.update(filename)
     hash.update("\0")
+
     const content = await entry.async("uint8array")
+
+    decompressedSize += content.byteLength
+    if (decompressedSize > MAX_DECOMPRESSED_SIZE) {
+      throw new Error(`Zip bomb detected: decompressed size exceeds maximum allowed (500 MB)`)
+    }
+
     hash.update(content)
     hash.update("\0")
   }

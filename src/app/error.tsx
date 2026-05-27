@@ -5,7 +5,7 @@ import { Alert } from "@/src/components/ui/Alert"
 export default function Error({ error, reset }: { error: Error; reset: () => void }) {
   useEffect(() => {
     // Log the error to an error reporting service
-    console.error(error)
+    console.error("[RootError]", error)
   }, [error])
 
   return (

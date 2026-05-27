@@ -40,19 +40,35 @@ export async function resetPassword(
     throw new ResetPasswordError()
   }
 
-  await db.token.delete({ where: { id: savedToken.id } })
-
   if (savedToken.expiresAt < new Date()) {
+    await db.token.delete({ where: { id: savedToken.id } })
     throw new ResetPasswordError()
   }
 
   const hashedPassword = await SecurePassword.hash(password)
-  const user = await db.user.update({
-    where: { id: savedToken.userId },
-    data: { hashedPassword },
+
+  const user = await db.$transaction(async (tx) => {
+    const consumedToken = await tx.token.deleteMany({
+      where: {
+        id: savedToken.id,
+        expiresAt: { gte: new Date() },
+      },
+    })
+
+    if (consumedToken.count !== 1) {
+      throw new ResetPasswordError()
+    }
+
+    const updatedUser = await tx.user.update({
+      where: { id: savedToken.userId },
+      data: { hashedPassword },
+    })
+
+    await tx.session.deleteMany({ where: { userId: updatedUser.id } })
+
+    return updatedUser
   })
 
-  await db.session.deleteMany({ where: { userId: user.id } })
   await createAuthenticatedSession(user.id, user.role, session)
 
   return true

@@ -152,7 +152,10 @@ model Study {
   FeedbackTemplate FeedbackTemplate?
   notifications    Notification[]
 
+  @@index([createdAt])
   @@index([archived, createdAt])
+  @@index([archived, status, createdAt])
+  @@index([archived, status, adminApproved, startDate, endDate])
 }
 
 enum ResearcherRole {
@@ -243,6 +246,7 @@ model ParticipantStudy {
   active Boolean @default(true)
 
   @@unique([userId, studyId])
+  @@index([studyId, createdAt])
 }
 
 model FeedbackTemplate {
@@ -321,6 +325,7 @@ model AdminInvite {
 
   @@index([email])
   @@index([expiresAt])
+  @@index([redeemedAt, revokedAt, expiresAt, createdAt])
 }
 
 model PilotLink {

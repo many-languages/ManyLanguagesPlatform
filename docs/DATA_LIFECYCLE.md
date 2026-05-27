@@ -85,6 +85,25 @@ metadata, not full cohort arrays.
 6. Payment/admin tracking such as `payed` and `active` lives in
    `ParticipantStudy`.
 
+## Sensitive Link and Token Lifecycle
+
+Some app database fields are nullable because they only exist after a workflow
+step has happened, but once populated they should be treated as sensitive
+operational data:
+
+| Field                               | Current behavior                                                                                                                                | Retention / cleanup expectation                                                                                                                                                                                                                                                                 |
+| ----------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `ParticipantStudy.jatosRunUrl`      | Stored after a participant run URL is generated. Used to let that participant resume/open their assigned JATOS study.                           | Keep while the participation is active and the study is available. Deleting the participation or parent `Study` removes the app-side URL by cascade, but JATOS-owned run data still requires JATOS deletion/retention handling. Do not include this URL in dashboards, logs, or unrelated DTOs. |
+| `PilotLink.jatosRunUrl`             | Stored when a researcher creates a pilot run link for a specific upload.                                                                        | Keep while the upload/study setup remains relevant. Deleting the parent `StudyResearcher`, `JatosStudyUpload`, or `Study` removes the app-side pilot link by cascade. Treat it as researcher-scoped data and avoid serializing it outside the setup UI that needs the link.                     |
+| `PilotLink.markerToken`             | Stored with the pilot link and embedded in JATOS result comments to identify pilot runs for that upload.                                        | Keep while pilot-result matching and extraction approval may need it. It is not an API credential, but it is a non-public identifier and should not be exposed in broad study DTOs or logs. Deleting the parent study/upload/researcher membership removes it by cascade.                       |
+| `PilotDatasetSnapshot.markerTokens` | Stores the marker-token set used for an approved pilot dataset snapshot.                                                                        | Keep with the extraction snapshot for auditability/reproducibility of approved variable extraction. Delete with the parent upload/study according to study deletion rules.                                                                                                                      |
+| `AdminInvite.token`                 | Stores only the hashed invite token. The plaintext token is returned immediately after creation and sent by email; it is not stored by the app. | Keep invite rows while they are pending, redeemed, revoked, or needed for audit/reminder history. Expired/redeemed/revoked invites are not currently purged automatically; decide a production retention period before real admin onboarding volume grows.                                      |
+| Password reset `Token.hashedToken`  | Stores only a hashed reset token with an expiry. Valid reset consumes the token; failed email delivery deletes the saved token.                 | Expired reset tokens should be cleaned up periodically if volume grows. Plain reset tokens must never be logged or persisted.                                                                                                                                                                   |
+
+MVP policy: treat run URLs, marker tokens, admin invite tokens, and password reset
+tokens as sensitive even when they are not full service credentials. They should
+not appear in logs, broad list responses, unrelated RSC props, or error payloads.
+
 ## Deletion and Archive
 
 Archive and delete have different meanings:

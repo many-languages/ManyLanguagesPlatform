@@ -46,22 +46,26 @@ export const sendNotification = async <TData extends Record<string, any>>({
   const compiledMessage = await compileTemplate(templateId, validationResult.data)
   const plainMessage = stripHtmlTags(compiledMessage)
 
-  const notification = await db.notification.create({
-    data: {
-      message: compiledMessage,
-      announcement,
-      routeData: routeData ?? undefined,
-      studyId: studyId ?? undefined,
-    },
-  })
+  const notification = await db.$transaction(async (tx) => {
+    const createdNotification = await tx.notification.create({
+      data: {
+        message: compiledMessage,
+        announcement,
+        routeData: routeData ?? undefined,
+        studyId: studyId ?? undefined,
+      },
+    })
 
-  await db.notificationRecipient.createMany({
-    data: recipients.map((userId) => ({
-      notificationId: notification.id,
-      userId,
-      pinned: pinForRecipients,
-    })),
-    skipDuplicates: true,
+    await tx.notificationRecipient.createMany({
+      data: recipients.map((userId) => ({
+        notificationId: createdNotification.id,
+        userId,
+        pinned: pinForRecipients,
+      })),
+      skipDuplicates: true,
+    })
+
+    return createdNotification
   })
 
   revalidateTag(NOTIFICATIONS_MENU_TAG)

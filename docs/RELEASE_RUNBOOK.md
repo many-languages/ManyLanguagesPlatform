@@ -109,6 +109,62 @@ If migrations or data writes need to be undone:
 Never restore only one of PostgreSQL or JATOS when the failed release changed
 both sides of the platform/JATOS boundary.
 
+## Study Deletion Reconciliation
+
+Study deletion crosses two systems: the app PostgreSQL database and JATOS. The
+delete workflow should try to delete the JATOS study before deleting the app
+`Study` row, because the app row contains the linkage needed to find JATOS
+state. This operation is not atomic across systems, so treat delete failures as
+operational incidents until both sides have been checked.
+
+Use this reconciliation procedure when a researcher/admin reports a failed
+study delete, when logs show a delete failure, or after restoring only one side
+of the app/JATOS boundary.
+
+1. Identify the app study row in PostgreSQL, if it still exists:
+
+   ```sql
+   SELECT
+     s.id,
+     s.title,
+     s."jatosStudyUUID",
+     s.archived,
+     s.status,
+     u."jatosStudyId",
+     u."versionNumber",
+     u."createdAt"
+   FROM "Study" s
+   LEFT JOIN "JatosStudyUpload" u ON u."studyId" = s.id
+   WHERE s.id = <study_id>
+   ORDER BY u."versionNumber" DESC;
+   ```
+
+2. Check whether the corresponding JATOS study still exists using the JATOS
+   admin UI or JATOS API, using `Study.jatosStudyUUID` and the latest
+   `JatosStudyUpload.jatosStudyId` when available.
+
+3. Reconcile according to the observed state:
+
+| State                                    | Meaning                                                                                                          | Operator action                                                                                                                                                                                                                         |
+| ---------------------------------------- | ---------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| App study exists, JATOS study exists     | Delete did not complete or was never attempted.                                                                  | Retry the normal app delete flow after confirming authorization and response/archive rules.                                                                                                                                             |
+| App study exists, JATOS study is missing | JATOS deletion likely succeeded but app DB deletion failed.                                                      | If deletion was authorized and intended, delete the app `Study` row through the app/admin flow if possible. If the app flow cannot proceed because JATOS is missing, perform a supervised DB deletion after taking a PostgreSQL backup. |
+| App study missing, JATOS study exists    | App DB deletion completed but JATOS deletion did not, or PostgreSQL was restored without matching JATOS restore. | Delete the orphaned JATOS study through the JATOS admin UI/API, or restore the matching PostgreSQL backup if the app deletion was unintended.                                                                                           |
+| App study missing, JATOS study missing   | Deletion completed on both sides.                                                                                | No action beyond recording the incident/resolution if this was part of a failed-delete investigation.                                                                                                                                   |
+
+4. Before any supervised DB deletion, take a fresh PostgreSQL backup. If JATOS
+   still has participant runs or study assets, also take/confirm the relevant
+   JATOS MySQL and study-volume backups.
+
+5. After reconciliation, run the relevant smoke checks:
+
+- Admin/researcher study lists no longer show deleted studies.
+- Participant dashboards no longer expose deleted/removed study links.
+- JATOS admin UI no longer shows deleted JATOS studies unless retention policy
+  intentionally keeps them.
+- Logs/errors from the original failure do not contain service tokens, run URLs,
+  or raw participant payloads.
+
 ## Operational Checks
 
 After release:

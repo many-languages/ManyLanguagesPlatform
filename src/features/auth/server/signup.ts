@@ -9,6 +9,10 @@ import { SignupWithAdminInvite } from "../validations"
 
 const hashToken = (token: string) => createHash("sha256").update(token).digest("hex")
 
+class AdminInviteRedemptionError extends Error {
+  name = "AdminInviteRedemptionError"
+}
+
 function withTimeout<T>(promise: Promise<T>, timeoutMs: number, errorMessage: string): Promise<T> {
   return Promise.race([
     promise,
@@ -24,7 +28,7 @@ export async function signupUser(
 
   try {
     let finalRole = role
-    let inviteId: number | null = null
+    let hashedAdminInviteToken: string | null = null
 
     if (adminInviteToken) {
       const validation = await validateAdminInviteToken({ token: adminInviteToken, email })
@@ -38,12 +42,7 @@ export async function signupUser(
       }
 
       finalRole = UserRole.ADMIN
-
-      const invite = await db.adminInvite.findUnique({
-        where: { token: hashToken(adminInviteToken) },
-        select: { id: true },
-      })
-      inviteId = invite?.id ?? null
+      hashedAdminInviteToken = hashToken(adminInviteToken)
     } else if (role === UserRole.ADMIN) {
       return { error: "Admin role requires a valid invite token" }
     }
@@ -54,16 +53,27 @@ export async function signupUser(
       "Password hashing timed out after 10 seconds"
     )
 
-    const user = await db.user.create({
-      data: { email, hashedPassword, role: finalRole },
-    })
+    const user = await db.$transaction(async (tx) => {
+      if (hashedAdminInviteToken) {
+        const result = await tx.adminInvite.updateMany({
+          where: {
+            token: hashedAdminInviteToken,
+            redeemedAt: null,
+            revokedAt: null,
+            expiresAt: { gt: new Date() },
+          },
+          data: { redeemedAt: new Date() },
+        })
 
-    if (inviteId) {
-      await db.adminInvite.update({
-        where: { id: inviteId },
-        data: { redeemedAt: new Date() },
+        if (result.count !== 1) {
+          throw new AdminInviteRedemptionError("Admin invite is no longer available")
+        }
+      }
+
+      return tx.user.create({
+        data: { email, hashedPassword, role: finalRole },
       })
-    }
+    })
 
     if (finalRole === UserRole.RESEARCHER || finalRole === UserRole.ADMIN) {
       try {
@@ -82,6 +92,10 @@ export async function signupUser(
   } catch (error: any) {
     if (error.code === "P2002" && error.meta?.target?.includes("email")) {
       return { error: "This email is already being used" }
+    }
+
+    if (error instanceof AdminInviteRedemptionError) {
+      return { error: "This invite has already been redeemed, revoked, or expired" }
     }
 
     throw error

@@ -12,6 +12,28 @@
 
 This work is supported by a grant from the National Science Foundation [2438627](https://www.nsf.gov/awardsearch/show-award?AWD_ID=2438627).
 
+## Local Development
+
+For complete setup and configuration details, see the [Getting Started](deploy/docs/getting-started.md) guide. Here's a quick start for running the app locally:
+
+1. Clone the repository and install dependencies:
+   ```bash
+   npm install
+   ```
+2. Copy the `.env.example` file to `.env` and fill in the required values:
+   ```bash
+   cp .env.example .env
+   ```
+3. Start the application and database containers:
+   ```bash
+   make dev-host-app
+   # or `make dev-fullstack` to run the app in Docker as well
+   ```
+4. Run the Next.js development server (if using `dev-host-app`):
+   ```bash
+   npm run dev
+   ```
+
 ## Testing
 
 Vitest uses the dedicated root [.env.test](./.env.test) instead of inheriting your normal dev `.env`.

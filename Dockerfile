@@ -30,7 +30,6 @@ COPY --from=builder /app/node_modules ./node_modules
 
 # Copy built application and Prisma files
 COPY --from=builder /app/.next ./.next
-COPY --from=builder /app/.blitz ./.blitz
 COPY --from=builder /app/public ./public
 COPY --from=builder /app/db ./db
 COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma

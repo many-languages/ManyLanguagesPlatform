@@ -19,7 +19,7 @@ import {
 } from "../src/lib/env"
 
 // Load .env from project root (for local runs)
-config({ path: ".env", quiet: true })
+config({ path: ".env" })
 
 const JATOS_BASE = process.env.JATOS_BASE
 const JATOS_TOKEN = process.env.JATOS_TOKEN

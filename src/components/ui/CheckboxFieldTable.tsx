@@ -27,7 +27,7 @@ const CheckboxFieldTable = <T,>({
     formState: { isSubmitting, errors },
   } = useFormContext()
 
-  const selectedIds = watch(name) || []
+  const selectedIds = useMemo(() => watch(name) || [], [watch, name])
   const error = errors[name]
 
   const toggleSelection = useCallback(
@@ -107,7 +107,6 @@ const CheckboxFieldTable = <T,>({
       selectionDisabled,
       toggleAll,
       options.length,
-      watch,
     ]
   )
 

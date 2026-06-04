@@ -1,6 +1,7 @@
 "use client"
 
 import { useMemo } from "react"
+import Image from "next/image"
 import Link from "next/link"
 import type { Route } from "next"
 import { useMutation } from "@blitzjs/rpc"
@@ -46,7 +47,7 @@ export function AvatarDropdown({ currentUser, variant }: AvatarDropdownProps) {
       <label tabIndex={0} className="btn btn-ghost btn-circle avatar placeholder">
         <div className="w-10 rounded-full">
           {gravatarUrl ? (
-            <img
+            <Image
               src={gravatarUrl}
               alt="User avatar"
               className="rounded-full"

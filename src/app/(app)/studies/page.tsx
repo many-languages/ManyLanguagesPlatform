@@ -22,7 +22,7 @@ import { parsePageQueryParam } from "@/src/lib/searchParams/parsePageQueryParam"
 type SessionRole = "RESEARCHER" | "PARTICIPANT" | "ADMIN" | "SUPERADMIN"
 
 /** Canonical `/studies` URL when dropping invalid query keys (preserves valid page). */
-function studiesListPath(page: number): string {
+function studiesListPath(page: number): `/studies` | `/studies?${string}` {
   const sp = new URLSearchParams()
   if (page > 0) sp.set("page", String(page))
   const q = sp.toString()

@@ -9,7 +9,7 @@ export type StudySetupStepQuery = {
 }
 
 /** `/studies/:studyId` */
-export function studyPath(studyId: number): string {
+export function studyPath(studyId: number): `/studies/${number}` {
   return `/studies/${studyId}`
 }
 

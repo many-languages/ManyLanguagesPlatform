@@ -26,6 +26,7 @@ FROM node:20-alpine AS runner
 WORKDIR /app
 
 # Copy production dependencies from builder stage
+COPY --from=builder /app/package.json ./
 COPY --from=builder /app/node_modules ./node_modules
 
 # Copy built application and Prisma files

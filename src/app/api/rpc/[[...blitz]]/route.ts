@@ -29,7 +29,6 @@ async function normalizeRpcRequest(req: Request): Promise<Request> {
   })
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const { GET, HEAD, POST } = withBlitzAuth({
   GET: (req, segmentData, ctx) =>
     normalizeRpcRequest(req).then((r) => rpc.GET(r, segmentData, ctx)),

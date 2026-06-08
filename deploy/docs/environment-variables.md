@@ -94,6 +94,7 @@ See [Two layers of configuration](#two-layers-of-configuration).
 | Variable                 | Default                  | Required   | Description                             |
 | ------------------------ | ------------------------ | ---------- | --------------------------------------- |
 | `DATABASE_URL`           | _(auto-constructed)_     | host only  | PostgreSQL connection string            |
+| `REDIS_URL`              | `redis://redis:6379`     | auto       | Redis connection string                 |
 | `JATOS_BASE`             | `http://jatos:9000`      | host only  | Server-side JATOS URL                   |
 | `NEXT_PUBLIC_JATOS_BASE` | `http://jatos.localhost` | yes        | Browser-side JATOS URL                  |
 | `SESSION_SECRET_KEY`     | `dev-secret-key...`      | prod       | Blitz session encryption key            |
@@ -105,6 +106,9 @@ See [Two layers of configuration](#two-layers-of-configuration).
 
 > `DATABASE_URL` is constructed automatically in Docker modes from the
 > `POSTGRES_*` variables. Set it manually only when the app runs on the host.
+
+> `REDIS_URL` is `redis://redis:6379` inside Docker and
+> `redis://localhost:6379` when the app runs on the host.
 
 > `JATOS_BASE` is `http://jatos:9000` inside Docker (internal hostname) and
 > `http://jatos.localhost` (or `https://...`) when the app runs on the host.
@@ -156,6 +160,7 @@ constructed in Compose from `POSTGRES_*` or defaults in `app.yml`.
 | `JATOS_DOMAIN`           |      yes       |     yes      |      yes      |      yes      |
 | `POSTGRES_*`             |       —        |     yes      |      yes      |      yes      |
 | `DATABASE_URL`           |       —        | host `.env`  |     auto      |     auto      |
+| `REDIS_URL`              |       —        | host `.env`  |     auto      |     auto      |
 | `JATOS_BASE`             |       —        | host `.env`  |     auto      |     auto      |
 | `NEXT_PUBLIC_JATOS_BASE` |       —        | host `.env`  |      yes      |      yes      |
 | `SESSION_SECRET_KEY`     |       —        | host `.env`  |      yes      |      yes      |

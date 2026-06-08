@@ -31,6 +31,7 @@ services:
           memory: 1G
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER:-blitz}:${POSTGRES_PASSWORD:-devpass}@postgres:5432/${POSTGRES_DB:-manylanguagesplatform}
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379}
       JATOS_BASE: http://jatos:9000
       JATOS_TOKEN: ${JATOS_TOKEN:-}
       NEXT_PUBLIC_JATOS_BASE: ${NEXT_PUBLIC_JATOS_BASE:-http://jatos.localhost}
@@ -54,6 +55,8 @@ services:
       - "3000:3000"
     depends_on:
       postgres:
+        condition: service_healthy
+      redis:
         condition: service_healthy
       jatos:
         condition: service_started

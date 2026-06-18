@@ -232,7 +232,6 @@ export const SignupForm = () => {
               return { [FORM_ERROR]: "Signup succeeded but user data was missing." }
             }
 
-            router.refresh()
             router.push(getDefaultAuthenticatedPath(result.user.role) as Route)
           } catch (error: unknown) {
             const errorMessage =

@@ -13,7 +13,7 @@ export function LogoutButton() {
       className="btn btn-primary"
       onClick={async () => {
         await logoutMutation()
-        router.refresh()
+        router.push("/login")
       }}
     >
       Logout

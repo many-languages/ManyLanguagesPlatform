@@ -42,6 +42,9 @@ COPY --from=builder /app/tsconfig.json ./
 COPY --from=builder /app/scripts ./scripts
 COPY --from=builder /app/src ./src
 
+# Install OpenSSL (required by Prisma on slim images)
+RUN apt-get update -y && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
+
 # Create non-root user and fix ownership
 RUN groupadd --system --gid 1001 nodejs && useradd --system --uid 1001 --gid nodejs nextjs
 RUN chown -R nextjs:nodejs /app

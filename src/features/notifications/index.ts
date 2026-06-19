@@ -11,14 +11,5 @@ export {
 } from "./context/NotificationMenuContext"
 export { NotificationMenuRootProvider } from "./context/NotificationMenuRootProvider"
 
-// Server-side entry points for routes + other features (avoid re-exporting ./queries/* — Blitz RPC client loader strips named exports)
-export { sendNotification } from "./services/sendNotification"
-export { notifyAdminsOfPendingStudyReview } from "./services/notifyAdminsOfPendingStudyReview"
-export { getNotificationsRsc } from "./server/getNotifications"
-export {
-  getNotificationMenuDataForUser,
-  type NotificationMenuData,
-} from "./server/getNotificationMenuData"
-
 // Types
 export type { NotificationWithRecipient, RouteData } from "./types"

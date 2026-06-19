@@ -1,6 +1,6 @@
 import db from "db"
 
-import { notifyAdminsOfPendingStudyReview } from "@/src/features/notifications"
+import { notifyAdminsOfPendingStudyReview } from "@/src/features/notifications/services/notifyAdminsOfPendingStudyReview"
 import {
   getSetupCompletionRsc,
   isSetupCompleteFromFlags,

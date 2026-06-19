@@ -7,6 +7,7 @@
 #   docker compose \
 #     -f deploy/compose/base.yml \
 #     -f deploy/compose/services/postgres.yml \
+#     -f deploy/compose/services/redis.yml \
 #     -f deploy/compose/services/jatos-db.yml \
 #     -f deploy/compose/services/jatos.yml \
 #     -f deploy/compose/services/traefik.yml \
@@ -40,12 +41,10 @@ services:
       - -c
       - |
         set -e
-        echo 'Generating Prisma client...' &&
-        npx prisma generate &&
         echo 'Running database migrations...' &&
         npx prisma migrate deploy &&
         echo 'Ensuring JATOS service account...' &&
-        npx tsx scripts/ensure-service-account.ts &&
+        npx tsx scripts/ensure-service-account.ts || echo '⚠️  JATOS service account setup failed — set JATOS_TOKEN in prod.env and run make restart' &&
         echo 'Starting production server...' &&
         npm start
     labels:

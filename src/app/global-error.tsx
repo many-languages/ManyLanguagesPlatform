@@ -42,6 +42,7 @@ export default function GlobalError({
             <button type="button" className="btn btn-error" onClick={() => reset()}>
               Try again
             </button>
+            {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
             <a href="/" className="btn btn-outline">
               Go home
             </a>

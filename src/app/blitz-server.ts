@@ -1,5 +1,3 @@
-"use server"
-
 import { setupBlitzServer } from "@blitzjs/next"
 import { AuthServerPlugin, PrismaStorage, simpleRolesIsAuthorized } from "@blitzjs/auth"
 import db from "db"

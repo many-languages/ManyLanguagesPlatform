@@ -41,7 +41,6 @@ export const LoginForm = () => {
             }
 
             startNavigation(() => {
-              router.refresh()
               if (next) {
                 router.push(next as Route)
               } else {

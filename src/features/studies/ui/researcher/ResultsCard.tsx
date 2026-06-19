@@ -19,6 +19,16 @@ import { refetchEnrichedResultsAction } from "@/src/features/studies/actions/res
 
 export type { ResultsCardProps } from "../../types"
 
+const colorClasses = [
+  "status-primary",
+  "status-secondary",
+  "status-accent",
+  "status-info",
+  "status-success",
+  "status-warning",
+  "status-error",
+]
+
 export default function ResultsCard({
   jatosStudyId,
   resultComponents,
@@ -36,17 +46,6 @@ export default function ResultsCard({
   )
 
   const cleanedDownloadEnabled = hasApprovedExtraction && hasResults
-
-  // ✅ Define DaisyUI colors
-  const colorClasses = [
-    "status-primary",
-    "status-secondary",
-    "status-accent",
-    "status-info",
-    "status-success",
-    "status-warning",
-    "status-error",
-  ]
 
   // ✅ Build a single unified component map with colors
   const componentsWithColors = useMemo(() => {

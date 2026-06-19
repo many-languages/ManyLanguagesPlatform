@@ -30,9 +30,9 @@ async function normalizeRpcRequest(req: Request): Promise<Request> {
 }
 
 export const { GET, HEAD, POST } = withBlitzAuth({
-  GET: (req, segmentData, ctx) =>
+  GET: (req: Request, segmentData: any, ctx: any) =>
     normalizeRpcRequest(req).then((r) => rpc.GET(r, segmentData, ctx)),
   HEAD: rpc.HEAD,
-  POST: (req, segmentData, ctx) =>
+  POST: (req: Request, segmentData: any, ctx: any) =>
     normalizeRpcRequest(req).then((r) => rpc.POST(r, segmentData, ctx)),
-})
+}) as any

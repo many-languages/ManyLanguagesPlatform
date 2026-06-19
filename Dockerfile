@@ -3,6 +3,9 @@ FROM node:20-alpine AS builder
 
 WORKDIR /app
 
+# Build tools needed to compile native modules (e.g. sodium-native) against musl libc
+RUN apk add --no-cache python3 make g++
+
 # Copy package files
 COPY package*.json ./
 COPY db ./db
@@ -26,11 +29,11 @@ FROM node:20-alpine AS runner
 WORKDIR /app
 
 # Copy production dependencies from builder stage
+COPY --from=builder /app/package.json ./
 COPY --from=builder /app/node_modules ./node_modules
 
 # Copy built application and Prisma files
 COPY --from=builder /app/.next ./.next
-COPY --from=builder /app/.blitz ./.blitz
 COPY --from=builder /app/public ./public
 COPY --from=builder /app/db ./db
 COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma

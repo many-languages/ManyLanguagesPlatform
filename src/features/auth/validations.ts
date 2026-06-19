@@ -21,7 +21,10 @@ export const Signup = z.object({
 })
 
 export const SignupWithAdminInvite = Signup.extend({
-  adminInviteToken: z.string().optional(),
+  adminInviteToken: z
+    .string()
+    .nullish()
+    .transform((value) => value ?? undefined),
 })
 
 export const Login = z.object({

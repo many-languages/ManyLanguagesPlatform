@@ -48,7 +48,7 @@ export async function signupUser(
     }
 
     console.log("[signup] hashing password...")
-    let hashedPassword: Buffer
+    let hashedPassword: string
     try {
       hashedPassword = await withTimeout(
         SecurePassword.hash(password),

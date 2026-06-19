@@ -47,11 +47,19 @@ export async function signupUser(
       return { error: "Admin role requires a valid invite token" }
     }
 
-    const hashedPassword = await withTimeout(
-      SecurePassword.hash(password),
-      10000,
-      "Password hashing timed out after 10 seconds"
-    )
+    console.log("[signup] hashing password...")
+    let hashedPassword: Buffer
+    try {
+      hashedPassword = await withTimeout(
+        SecurePassword.hash(password),
+        10000,
+        "Password hashing timed out after 10 seconds"
+      )
+    } catch (hashError) {
+      console.error("[signup] password hashing failed:", hashError)
+      throw hashError
+    }
+    console.log("[signup] password hashed, creating user...")
 
     const user = await db.$transaction(async (tx) => {
       if (hashedAdminInviteToken) {

@@ -1,10 +1,7 @@
 # Build stage
-FROM node:20-alpine AS builder
+FROM node:20-slim AS builder
 
 WORKDIR /app
-
-# Build tools needed to compile native modules (e.g. sodium-native) against musl libc
-RUN apk add --no-cache python3 make g++
 
 # Copy package files
 COPY package*.json ./
@@ -13,8 +10,6 @@ COPY db ./db
 # Install dependencies
 # Use --legacy-peer-deps to handle React 19 vs React 18 peer dependency conflicts
 RUN npm ci --legacy-peer-deps
-# Rebuild sodium-native from source for Alpine/musl (pre-built binaries target glibc)
-RUN npm rebuild sodium-native --build-from-source
 
 # Copy source code
 COPY . .
@@ -26,7 +21,7 @@ RUN npx prisma generate
 RUN mkdir -p .blitz && npm run build
 
 # Production stage
-FROM node:20-alpine AS runner
+FROM node:20-slim AS runner
 
 WORKDIR /app
 
@@ -48,8 +43,7 @@ COPY --from=builder /app/scripts ./scripts
 COPY --from=builder /app/src ./src
 
 # Create non-root user and fix ownership
-RUN addgroup --system --gid 1001 nodejs
-RUN adduser --system --uid 1001 nextjs
+RUN groupadd --system --gid 1001 nodejs && useradd --system --uid 1001 --gid nodejs nextjs
 RUN chown -R nextjs:nodejs /app
 USER nextjs
 

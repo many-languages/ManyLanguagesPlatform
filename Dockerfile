@@ -42,9 +42,10 @@ COPY --from=builder /app/tsconfig.json ./
 COPY --from=builder /app/scripts ./scripts
 COPY --from=builder /app/src ./src
 
-# Create non-root user
+# Create non-root user and fix ownership
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
+RUN chown -R nextjs:nodejs /app
 USER nextjs
 
 EXPOSE 3000

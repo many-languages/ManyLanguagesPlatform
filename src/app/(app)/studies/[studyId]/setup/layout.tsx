@@ -1,4 +1,5 @@
-import { notFound, redirect } from "next/navigation"
+import { notFound } from "next/navigation"
+import { redirect } from "@/src/lib/navigation"
 import {
   StepIndicator,
   canEditStudySetup,

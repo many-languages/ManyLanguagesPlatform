@@ -1,4 +1,4 @@
-import { redirect } from "next/navigation"
+import { redirect } from "@/src/lib/navigation"
 import { DEFAULT_ADMIN_PATH } from "@/src/lib/auth/routing"
 
 /** `/admin` has no content of its own — the canonical admin landing page is `/admin/dashboard`. */

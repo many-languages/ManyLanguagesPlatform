@@ -1,6 +1,6 @@
 import { Suspense } from "react"
 import PaginationControls from "@/src/components/ui/PaginationControls"
-import { redirect } from "next/navigation"
+import { redirect } from "@/src/lib/navigation"
 import {
   StudyList,
   StudiesViewTabs,

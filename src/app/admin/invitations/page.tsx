@@ -2,7 +2,7 @@ export const metadata = {
   title: "Admin Invites",
 }
 
-import { redirect } from "next/navigation"
+import { redirect } from "@/src/lib/navigation"
 import Card from "@/src/components/ui/Card"
 import {
   AdminInviteForm,

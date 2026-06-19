@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect } from "react"
+import Link from "next/link"
 import { Inter } from "next/font/google"
 import "./global.css"
 import { Alert } from "@/src/components/ui/Alert"
@@ -42,9 +43,9 @@ export default function GlobalError({
             <button type="button" className="btn btn-error" onClick={() => reset()}>
               Try again
             </button>
-            <a href="/" className="btn btn-outline">
+            <Link href="/" className="btn btn-outline">
               Go home
-            </a>
+            </Link>
           </div>
         </div>
       </body>

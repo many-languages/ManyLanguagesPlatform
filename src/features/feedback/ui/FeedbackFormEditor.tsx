@@ -227,10 +227,10 @@ const FeedbackFormEditor = forwardRef<FeedbackFormEditorRef, FeedbackFormEditorP
               />
             </svg>
             <div>
-              <h3 className="font-bold">Using "Across All Results" Statistics</h3>
+              <h3 className="font-bold">Using &quot;Across All Results&quot; Statistics</h3>
               <div className="text-sm">
                 This template uses statistics calculated across all participants. In the preview
-                above, we're using all pilot results ({pilotResultCount ?? 0} result
+                above, we&apos;re using all pilot results ({pilotResultCount ?? 0} result
                 {pilotResultCount !== 1 ? "s" : ""}). In actual participant feedback, it will use
                 all participant results from the study.
               </div>

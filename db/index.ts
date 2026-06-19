@@ -1,15 +1,13 @@
 import { enhancePrisma } from "blitz"
 import { PrismaClient } from "@prisma/client"
 
-// Only check DATABASE_URL on the server side
-// Client-side code should never access the database directly
-if (typeof window === "undefined") {
-  // Ensure DATABASE_URL is set
+// Only check DATABASE_URL at runtime, not during the Next.js build phase.
+// Client-side code should never access the database directly.
+const isBuild = process.env.NEXT_PHASE === "phase-production-build"
+if (typeof window === "undefined" && !isBuild) {
   if (!process.env.DATABASE_URL) {
     throw new Error("DATABASE_URL environment variable is not set!")
   }
-
-  // Verify it contains the correct database name
   if (!process.env.DATABASE_URL.includes("manylanguagesplatform")) {
     throw new Error('DATABASE_URL must point to "manylanguagesplatform" database')
   }

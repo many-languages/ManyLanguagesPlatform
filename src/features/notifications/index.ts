@@ -2,7 +2,6 @@
 export { default as NotificationMenu } from "./ui/NotificationMenu"
 export { default as NotificationItem } from "./ui/NotificationItem"
 export { NotificationContent } from "./ui/NotificationContent"
-export { SharedNotificationsPage } from "./ui/SharedNotificationsPage"
 
 // Context / providers / hooks
 export {

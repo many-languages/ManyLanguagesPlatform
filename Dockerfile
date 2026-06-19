@@ -13,6 +13,8 @@ COPY db ./db
 # Install dependencies
 # Use --legacy-peer-deps to handle React 19 vs React 18 peer dependency conflicts
 RUN npm ci --legacy-peer-deps
+# Rebuild sodium-native from source for Alpine/musl (pre-built binaries target glibc)
+RUN npm rebuild sodium-native --build-from-source
 
 # Copy source code
 COPY . .

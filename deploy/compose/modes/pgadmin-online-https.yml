@@ -1,0 +1,14 @@
+# deploy/compose/modes/pgadmin-online-https.yml
+#
+# Let's Encrypt overlay for the optional pgAdmin service.
+# Combine with --pgadmin --letsencrypt (prod-up.sh).
+# Requires pgadmin-https.yml (or prod's automatic websecure/tls) to already
+# be applied — this only adds the ACME certresolver.
+#
+# Only ever loaded together with deploy/compose/services/pgadmin.yml.
+
+services:
+  pgadmin:
+    labels:
+      - "traefik.http.routers.pgadmin.tls.certresolver=letsencrypt"
+      - "traefik.docker.network=mlp-network"

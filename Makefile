@@ -64,6 +64,9 @@ help:
 	@echo "    MAIL=1 make dev-fullstack        include Mailhog"
 	@echo "    CRON=1 make dev-fullstack        include study-status cron"
 	@echo "    MAIL=1 CRON=1 make dev-fullstack both"
+	@echo "    PGADMIN=1 make dev-host-app      include pgAdmin4 (at /pgadmin4)"
+	@echo "    PGADMIN=1 make dev-fullstack     include pgAdmin4 (at /pgadmin4)"
+	@echo "    PGADMIN=1 make prod-up           include pgAdmin4 (at /pgadmin4, HTTPS)"
 	@echo ""
 	@echo "  Full docs: deploy/README.md"
 	@echo ""
@@ -78,6 +81,9 @@ SCRIPT_FLAGS += --mail
 endif
 ifdef CRON
 SCRIPT_FLAGS += --cron
+endif
+ifdef PGADMIN
+SCRIPT_FLAGS += --pgadmin
 endif
 
 # ---------------------------------------------------------------------------
@@ -131,12 +137,12 @@ dev-fullstack-https: certs jatos-conf-dev-fullstack
 	@$(SCRIPTS)/dev-fullstack.sh --https $(SCRIPT_FLAGS)
 
 prod-up: jatos-conf-prod
-	@echo "prod-up" > $(MODE_FILE)
-	@$(SCRIPTS)/prod-up.sh
+	@echo "prod-up $(SCRIPT_FLAGS)" > $(MODE_FILE)
+	@$(SCRIPTS)/prod-up.sh $(SCRIPT_FLAGS)
 
 prod-up-letsencrypt: jatos-conf-prod
-	@echo "prod-up --letsencrypt" > $(MODE_FILE)
-	@$(SCRIPTS)/prod-up.sh --letsencrypt
+	@echo "prod-up --letsencrypt $(SCRIPT_FLAGS)" > $(MODE_FILE)
+	@$(SCRIPTS)/prod-up.sh --letsencrypt $(SCRIPT_FLAGS)
 
 # ---------------------------------------------------------------------------
 # Operations (resolve active mode from MODE_FILE)

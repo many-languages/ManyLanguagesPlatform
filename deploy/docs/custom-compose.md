@@ -17,11 +17,15 @@ For **environment variables** (Compose vs root `.env`), see
 1. **`deploy/compose/base.yml`** — Shared network (`mlp-network`). Include this first.
 2. **Service files** — One or more of:
    `postgres.yml`, `jatos-db.yml`, `jatos.yml`, `traefik.yml`, `app.yml`,
-   `mailhog.yml`, `cron-study-status.yml`.
+   `mailhog.yml`, `cron-study-status.yml`, `pgadmin.yml`.
 3. **Mode overlay** — Adjusts labels, ports, or which services are implied:
    `dev-jatos-only.yml`, `dev-host-app.yml`, `dev-fullstack.yml`, `prod.yml`, etc.
 4. **Optional TLS** — `dev-local-https.yml` (mkcert); for fullstack HTTPS also
    `dev-fullstack-https.yml`. Production Let’s Encrypt: `prod-online-https.yml`.
+   pgAdmin has its own matching TLS overlays: `pgadmin-https.yml` (dev, or
+   automatic in prod) and `pgadmin-online-https.yml` (prod Let's Encrypt) —
+   only load these together with `pgadmin.yml`, since they reference the
+   `pgadmin` service.
 
 **Source of truth:** the exact `-f` chains live in `deploy/scripts/*.sh`. When in
 doubt, open the script for the mode closest to what you want and copy or extend
@@ -33,12 +37,12 @@ its `COMPOSE_FILES` array.
 
 Run all commands from the **repository root**.
 
-| Script              | Compose files (conceptually)                                                                                                                                          |
-| ------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `dev-jatos-only.sh` | `base` → `jatos-db` → `jatos` → `traefik` → `dev-jatos-only` → optional `mailhog`, optional `dev-local-https`                                                         |
-| `dev-host-app.sh`   | `base` → `postgres` → `jatos-db` → `jatos` → `traefik` → `dev-host-app` → optional `mailhog`, optional `dev-local-https`                                              |
-| `dev-fullstack.sh`  | `base` → `postgres` → `jatos-db` → `jatos` → `traefik` → `app` → `dev-fullstack` → optional `mailhog`, `cron-study-status`, `dev-local-https` + `dev-fullstack-https` |
-| `prod-up.sh`        | `base` → `postgres` → `jatos-db` → `jatos` → `traefik` → `app` → `cron-study-status` → `prod` → optional `prod-online-https`                                          |
+| Script              | Compose files (conceptually)                                                                                                                                                                         |
+| ------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `dev-jatos-only.sh` | `base` → `jatos-db` → `jatos` → `traefik` → `dev-jatos-only` → optional `mailhog`, optional `dev-local-https`                                                                                        |
+| `dev-host-app.sh`   | `base` → `postgres` → `jatos-db` → `jatos` → `traefik` → `dev-host-app` → optional `mailhog`, `pgadmin` (+ `pgadmin-https`), optional `dev-local-https`                                              |
+| `dev-fullstack.sh`  | `base` → `postgres` → `jatos-db` → `jatos` → `traefik` → `app` → `dev-fullstack` → optional `mailhog`, `cron-study-status`, `pgadmin` (+ `pgadmin-https`), `dev-local-https` + `dev-fullstack-https` |
+| `prod-up.sh`        | `base` → `postgres` → `jatos-db` → `jatos` → `traefik` → `app` → `cron-study-status` → `prod` → optional `prod-online-https`, optional `pgadmin` + `pgadmin-https` (+ `pgadmin-online-https`)        |
 
 ---
 

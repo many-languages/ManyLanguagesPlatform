@@ -13,6 +13,7 @@ All deployment artifacts for the ManyLanguages Platform live under `deploy/`.
 | **traefik** | `traefik:v2.11` | Reverse proxy / TLS termination |
 | **mailhog** | `mailhog/mailhog:v1.0.1` | Dev email catcher (optional) |
 | **cron-study-status** | `alpine/curl` | Scheduled study open/close (optional) |
+| **pgadmin** | `dpage/pgadmin4:9.16` | Postgres web UI at `/pgadmin4` (optional) |
 
 Each service is defined **once** in `deploy/compose/services/*.yml`.
 Deployment **modes** select which services to run and apply environment-specific overrides.
@@ -26,12 +27,14 @@ If everything for a mode runs in Docker, you usually only need **`deploy/env/`**
 
 ```text
 Browser ──▸ Traefik :80/:443
-              ├── jatos.localhost ──▸ jatos:9000
-              └── app.localhost   ──▸ app:3000
+              ├── jatos.localhost              ──▸ jatos:9000
+              ├── jatos.localhost/pgadmin4      ──▸ pgadmin:80 (optional)
+              └── app.localhost                ──▸ app:3000
 
 app ──▸ postgres:5432      (app DB)
 app ──▸ jatos:9000         (JATOS API, internal)
 jatos ──▸ jatos-db:3306    (JATOS DB)
+pgadmin ──▸ postgres:5432  (direct DB access, optional)
 ```
 
 ## Modes
@@ -44,6 +47,11 @@ jatos ──▸ jatos-db:3306    (JATOS DB)
 | **prod** | Docker | Docker | Docker | Deployed environment |
 
 **dev-local-https** is a TLS overlay applied on top of any dev mode.
+
+**pgAdmin4** (direct Postgres access at `/pgadmin4`) is an optional add-on for
+**dev-host-app**, **dev-fullstack**, and **prod** — pass `--pgadmin` (or
+`PGADMIN=1` with `make`). Not available for **dev-jatos-only**, since Postgres
+isn't containerized in that mode.
 
 > **Warning:** Never run two modes simultaneously that both publish ports 80/443.
 > Stop one before starting another.
@@ -69,7 +77,8 @@ deploy/
 │   │   ├── jatos-db.yml
 │   │   ├── traefik.yml
 │   │   ├── mailhog.yml
-│   │   └── cron-study-status.yml
+│   │   ├── cron-study-status.yml
+│   │   └── pgadmin.yml
 │   └── modes/                   # thin overlays (labels, TLS, entrypoints)
 │       ├── dev-jatos-only.yml
 │       ├── dev-host-app.yml
@@ -77,7 +86,9 @@ deploy/
 │       ├── dev-fullstack-https.yml
 │       ├── dev-local-https.yml
 │       ├── prod.yml
-│       └── prod-online-https.yml
+│       ├── prod-online-https.yml
+│       ├── pgadmin-https.yml
+│       └── pgadmin-online-https.yml
 ├── env/                         # .env.example templates per mode
 ├── traefik/                     # Traefik certs, dynamic config, ACME state
 ├── jatos/                       # jatos.conf, API reference (see jatos/README.md)
@@ -119,4 +130,7 @@ make clean                      # stop + remove volumes (data loss!)
 make certs                      # generate mkcert certs
 make validate-token             # check JATOS token
 make prune                      # clean unused Docker resources
+
+# Optional add-ons (any dev-host-app / dev-fullstack / prod-up target)
+PGADMIN=1 make dev-fullstack    # + pgAdmin4 at /pgadmin4
 ```

@@ -44,6 +44,11 @@ Or use the script directly:
    update `prod.env`, and restart.
 7. **Keep Docker images updated** — `make prod-up-letsencrypt` rebuilds the app;
    pull fresh base images with `./deploy/scripts/prod-up.sh pull`.
+8. **If using pgAdmin4 (`PGADMIN=1` / `--pgadmin`)** — set strong, unique
+   `PGADMIN_DEFAULT_EMAIL` / `PGADMIN_DEFAULT_PASSWORD` values in `prod.env`
+   before starting. It's a direct database UI at `/pgadmin4`; only enable it
+   when you actually need it, and disable it (drop `--pgadmin` and
+   `make restart`) when you don't.
 
 ---
 

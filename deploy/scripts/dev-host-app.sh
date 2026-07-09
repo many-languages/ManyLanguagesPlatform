@@ -8,8 +8,9 @@ set -e
 #   ./deploy/scripts/dev-host-app.sh              # up -d
 #   ./deploy/scripts/dev-host-app.sh down          # stop
 #   ./deploy/scripts/dev-host-app.sh logs -f       # tail logs
-#   ./deploy/scripts/dev-host-app.sh --https up -d # with local HTTPS
-#   ./deploy/scripts/dev-host-app.sh --mail up -d  # with Mailhog
+#   ./deploy/scripts/dev-host-app.sh --https up -d   # with local HTTPS
+#   ./deploy/scripts/dev-host-app.sh --mail up -d    # with Mailhog
+#   ./deploy/scripts/dev-host-app.sh --pgadmin up -d # with pgAdmin4 (at /pgadmin4)
 #
 # Passes all arguments (after flags) to docker compose.
 
@@ -18,11 +19,13 @@ cd "$REPO_ROOT"
 
 HTTPS=false
 MAIL=false
+PGADMIN=false
 ARGS=()
 for arg in "$@"; do
   case "$arg" in
-    --https) HTTPS=true ;;
-    --mail)  MAIL=true ;;
+    --https)   HTTPS=true ;;
+    --mail)    MAIL=true ;;
+    --pgadmin) PGADMIN=true ;;
     *) ARGS+=("$arg") ;;
   esac
 done
@@ -47,8 +50,15 @@ if [ "$MAIL" = true ]; then
   COMPOSE_FILES+=(-f deploy/compose/services/mailhog.yml)
 fi
 
+if [ "$PGADMIN" = true ]; then
+  COMPOSE_FILES+=(-f deploy/compose/services/pgadmin.yml)
+fi
+
 if [ "$HTTPS" = true ]; then
   COMPOSE_FILES+=(-f deploy/compose/modes/dev-local-https.yml)
+  if [ "$PGADMIN" = true ]; then
+    COMPOSE_FILES+=(-f deploy/compose/modes/pgadmin-https.yml)
+  fi
 fi
 
 if [ ${#ARGS[@]} -eq 0 ]; then

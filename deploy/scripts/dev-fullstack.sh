@@ -11,6 +11,7 @@ set -e
 #   ./deploy/scripts/dev-fullstack.sh --https up -d     # with local HTTPS
 #   ./deploy/scripts/dev-fullstack.sh --mail up -d      # with Mailhog
 #   ./deploy/scripts/dev-fullstack.sh --cron up -d      # with study-status cron
+#   ./deploy/scripts/dev-fullstack.sh --pgadmin up -d   # with pgAdmin4 (at /pgadmin4)
 #   ./deploy/scripts/dev-fullstack.sh --mail --cron     # combine flags
 #
 # Passes all arguments (after flags) to docker compose.
@@ -21,12 +22,14 @@ cd "$REPO_ROOT"
 HTTPS=false
 MAIL=false
 CRON=false
+PGADMIN=false
 ARGS=()
 for arg in "$@"; do
   case "$arg" in
-    --https) HTTPS=true ;;
-    --mail)  MAIL=true ;;
-    --cron)  CRON=true ;;
+    --https)   HTTPS=true ;;
+    --mail)    MAIL=true ;;
+    --cron)    CRON=true ;;
+    --pgadmin) PGADMIN=true ;;
     *) ARGS+=("$arg") ;;
   esac
 done
@@ -56,9 +59,16 @@ if [ "$CRON" = true ]; then
   COMPOSE_FILES+=(-f deploy/compose/services/cron-study-status.yml)
 fi
 
+if [ "$PGADMIN" = true ]; then
+  COMPOSE_FILES+=(-f deploy/compose/services/pgadmin.yml)
+fi
+
 if [ "$HTTPS" = true ]; then
   COMPOSE_FILES+=(-f deploy/compose/modes/dev-local-https.yml)
   COMPOSE_FILES+=(-f deploy/compose/modes/dev-fullstack-https.yml)
+  if [ "$PGADMIN" = true ]; then
+    COMPOSE_FILES+=(-f deploy/compose/modes/pgadmin-https.yml)
+  fi
 fi
 
 if [ ${#ARGS[@]} -eq 0 ]; then

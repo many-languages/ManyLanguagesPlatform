@@ -1,0 +1,14 @@
+# deploy/compose/modes/pgadmin-https.yml
+#
+# TLS overlay for the optional pgAdmin service.
+# Dev: combine with --pgadmin --https (dev-host-app / dev-fullstack).
+# Prod: included automatically whenever --pgadmin is used (prod always
+# terminates pgAdmin over HTTPS, matching jatos/app).
+#
+# Only ever loaded together with deploy/compose/services/pgadmin.yml.
+
+services:
+  pgadmin:
+    labels:
+      - "traefik.http.routers.pgadmin.entrypoints=websecure"
+      - "traefik.http.routers.pgadmin.tls=true"

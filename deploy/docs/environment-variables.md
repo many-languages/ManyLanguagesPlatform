@@ -81,6 +81,24 @@ Used by the `postgres` service. Not needed for `dev-jatos-only`.
 
 ---
 
+## pgAdmin4 (optional)
+
+Used by the `pgadmin` service. Only relevant when the `--pgadmin` flag /
+`PGADMIN=1` is used with **dev-host-app**, **dev-fullstack**, or **prod**
+(requires Postgres in Compose — not available for `dev-jatos-only`).
+
+| Variable                   | Default             | Required | Description                            |
+| -------------------------- | ------------------- | -------- | -------------------------------------- |
+| `PGADMIN_DEFAULT_EMAIL`    | `admin@example.com` | prod     | Login email for the pgAdmin4 web UI    |
+| `PGADMIN_DEFAULT_PASSWORD` | `devpass`           | prod     | Login password for the pgAdmin4 web UI |
+
+Served at `/pgadmin4` on the JATOS domain (e.g. `http://jatos.localhost/pgadmin4`
+or `https://jatos.your-domain.com/pgadmin4`). Once logged in, add a server
+connecting to host `postgres`, port `5432`, using the `POSTGRES_*` credentials
+above.
+
+---
+
 ## App (Next.js / Blitz)
 
 Used by the **`app` Docker service** in **dev-fullstack** and **prod** — set
@@ -155,6 +173,7 @@ constructed in Compose from `POSTGRES_*` or defaults in `app.yml`.
 | `JATOS_TOKEN`            |       —        | host `.env`  |      yes      |      yes      |
 | `JATOS_DOMAIN`           |      yes       |     yes      |      yes      |      yes      |
 | `POSTGRES_*`             |       —        |     yes      |      yes      |      yes      |
+| `PGADMIN_*`              |       —        |   optional   |   optional    |   optional    |
 | `DATABASE_URL`           |       —        | host `.env`  |     auto      |     auto      |
 | `JATOS_BASE`             |       —        | host `.env`  |     auto      |     auto      |
 | `NEXT_PUBLIC_JATOS_BASE` |       —        | host `.env`  |      yes      |      yes      |

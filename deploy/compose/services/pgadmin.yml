@@ -1,0 +1,36 @@
+# deploy/compose/services/pgadmin.yml
+#
+# Optional pgAdmin4 web UI for direct access to the app PostgreSQL database.
+# Only include in modes where Postgres runs in Docker (dev-host-app,
+# dev-fullstack, prod) — not dev-jatos-only, where the app DB runs on the host.
+#
+# Served through Traefik at /pgadmin4 on the JATOS domain (always present),
+# e.g. http://jatos.localhost/pgadmin4 or https://jatos.your-domain.com/pgadmin4.
+# For HTTPS, add deploy/compose/modes/pgadmin-https.yml (dev) or it is included
+# automatically in prod; for Let's Encrypt, also add pgadmin-online-https.yml.
+
+services:
+  pgadmin:
+    image: dpage/pgadmin4:9.16
+    restart: unless-stopped
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL:-admin@example.com}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD:-devpass}
+      PGADMIN_CONFIG_SERVER_MODE: "True"
+    volumes:
+      - pgadmin-data:/var/lib/pgadmin
+    depends_on:
+      postgres:
+        condition: service_healthy
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.pgadmin.rule=Host(`${JATOS_DOMAIN:-jatos.localhost}`) && PathPrefix(`/pgadmin4`)"
+      - "traefik.http.routers.pgadmin.entrypoints=web"
+      - "traefik.http.routers.pgadmin.priority=100"
+      - "traefik.http.services.pgadmin.loadbalancer.server.port=80"
+      - "traefik.http.middlewares.pgadmin-stripprefix.stripprefix.prefixes=/pgadmin4"
+      - "traefik.http.middlewares.pgadmin-headers.headers.customrequestheaders.X-Script-Name=/pgadmin4"
+      - "traefik.http.routers.pgadmin.middlewares=pgadmin-stripprefix,pgadmin-headers"
+
+volumes:
+  pgadmin-data:

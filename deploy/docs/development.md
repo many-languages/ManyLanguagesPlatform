@@ -97,6 +97,8 @@ App runs on the host with hot reload; Postgres + JATOS + Traefik in Docker.
 
    Add Mailhog for email testing: `MAIL=1 make dev-host-app`
 
+   Add pgAdmin4 for direct database access: `PGADMIN=1 make dev-host-app`
+
 3. Start the app on the host:
 
    ```bash
@@ -139,7 +141,8 @@ Everything in Docker. Good for onboarding or reproducing the deployed stack.
    ```bash
    MAIL=1 make dev-fullstack              # with Mailhog
    CRON=1 make dev-fullstack              # with study-status cron
-   MAIL=1 CRON=1 make dev-fullstack       # both
+   PGADMIN=1 make dev-fullstack           # with pgAdmin4 (direct DB access)
+   MAIL=1 CRON=1 make dev-fullstack       # combine any of the above
    ```
 
 3. Create a [JATOS API token](#jatos-api-token) and add it to
@@ -290,6 +293,37 @@ Then keep `SMTP_HOST=localhost` and `SMTP_PORT=1025` in your root `.env`.
 
 ---
 
+## Direct database access (pgAdmin4)
+
+Add pgAdmin4 to any mode that runs Postgres in Docker (**dev-host-app**,
+**dev-fullstack**, **prod** — not **dev-jatos-only**):
+
+```bash
+PGADMIN=1 make dev-host-app
+PGADMIN=1 make dev-fullstack
+PGADMIN=1 make prod-up          # always served over HTTPS in prod
+# or
+./deploy/scripts/dev-fullstack.sh --pgadmin up -d
+```
+
+Open `http://jatos.localhost/pgadmin4` (or `https://` in prod / `--https`
+dev modes) and log in with `PGADMIN_DEFAULT_EMAIL` / `PGADMIN_DEFAULT_PASSWORD`
+(defaults: `admin@example.com` / `devpass`; see
+[Environment variables — pgAdmin4](environment-variables.md#pgadmin4-optional)).
+
+Add a new server connection in the UI pointing at:
+
+- **Host:** `postgres`
+- **Port:** `5432`
+- **Username / Password / Database:** your `POSTGRES_*` values (defaults:
+  `blitz` / `devpass` / `manylanguagesplatform`)
+
+pgAdmin is served at `/pgadmin4` on the JATOS domain (it does not need its own
+domain). In production, change the default credentials in `deploy/env/prod.env`
+before exposing it.
+
+---
+
 ## Makefile targets
 
 Run `make help` for the full listing.
@@ -320,8 +354,8 @@ For CI or when you need to pass extra `docker compose` arguments:
 | `./deploy/scripts/dev-host-app.sh`   | dev-host-app   |
 | `./deploy/scripts/dev-fullstack.sh`  | dev-fullstack  |
 
-Scripts accept flags (`--https`, `--mail`, `--cron`) and pass remaining
-arguments to `docker compose`:
+Scripts accept flags (`--https`, `--mail`, `--cron`, `--pgadmin`) and pass
+remaining arguments to `docker compose`:
 
 ```bash
 ./deploy/scripts/dev-fullstack.sh --https --mail logs -f
@@ -332,10 +366,11 @@ arguments to `docker compose`:
 
 ## Service URLs (defaults)
 
-| Service       | URL                       |
-| ------------- | ------------------------- |
-| App           | `http://localhost:3000`   |
-| JATOS         | `http://jatos.localhost`  |
-| JATOS (HTTPS) | `https://jatos.localhost` |
-| PostgreSQL    | `localhost:5433`          |
-| Mailhog UI    | `http://localhost:8025`   |
+| Service       | URL                                                  |
+| ------------- | ---------------------------------------------------- |
+| App           | `http://localhost:3000`                              |
+| JATOS         | `http://jatos.localhost`                             |
+| JATOS (HTTPS) | `https://jatos.localhost`                            |
+| PostgreSQL    | `localhost:5433`                                     |
+| Mailhog UI    | `http://localhost:8025`                              |
+| pgAdmin4      | `http://jatos.localhost/pgadmin4` (with `--pgadmin`) |

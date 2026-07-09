@@ -7,6 +7,7 @@ set -e
 # Usage:
 #   ./deploy/scripts/prod-up.sh                   # up -d (TLS externally or none)
 #   ./deploy/scripts/prod-up.sh --letsencrypt      # with automatic Let's Encrypt TLS
+#   ./deploy/scripts/prod-up.sh --pgadmin          # with pgAdmin4 (at /pgadmin4, HTTPS)
 #   ./deploy/scripts/prod-up.sh down               # stop
 #   ./deploy/scripts/prod-up.sh logs -f            # tail logs
 #
@@ -16,10 +17,12 @@ REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 cd "$REPO_ROOT"
 
 LETSENCRYPT=false
+PGADMIN=false
 ARGS=()
 for arg in "$@"; do
   case "$arg" in
     --letsencrypt) LETSENCRYPT=true ;;
+    --pgadmin)     PGADMIN=true ;;
     *) ARGS+=("$arg") ;;
   esac
 done
@@ -46,6 +49,14 @@ COMPOSE_FILES=(
 if [ "$LETSENCRYPT" = true ]; then
   COMPOSE_FILES+=(-f deploy/compose/modes/prod-online-https.yml)
   mkdir -p deploy/traefik/acme
+fi
+
+if [ "$PGADMIN" = true ]; then
+  COMPOSE_FILES+=(-f deploy/compose/services/pgadmin.yml)
+  COMPOSE_FILES+=(-f deploy/compose/modes/pgadmin-https.yml)
+  if [ "$LETSENCRYPT" = true ]; then
+    COMPOSE_FILES+=(-f deploy/compose/modes/pgadmin-online-https.yml)
+  fi
 fi
 
 if [ ${#ARGS[@]} -eq 0 ]; then

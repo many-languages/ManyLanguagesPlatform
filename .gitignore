@@ -68,3 +68,6 @@ deploy/traefik/acme/
 docs/refactor/*.md
 .cursor/
 .codex
+
+# Sample JATOS study exports used for local testing
+*.jzip

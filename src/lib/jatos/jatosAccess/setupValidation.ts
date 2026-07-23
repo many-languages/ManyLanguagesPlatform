@@ -21,7 +21,12 @@ export async function checkJatosStudyUuidForSetup({
   userId: number
   jatosStudyUuid: string
   mode: "create" | "update"
-}): Promise<{ success: boolean; error?: string; existsOnJatos?: boolean }> {
+}): Promise<{
+  success: boolean
+  error?: string
+  existsOnJatos?: boolean
+  needsNewUuid?: boolean
+}> {
   const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
 
   await assertResearcherCanAccessStudy({ studyId, userId })
@@ -36,14 +41,15 @@ export async function checkJatosStudyUuidForSetup({
       jatosStudyUUID: trimmed,
       id: { not: studyId },
     },
-    select: { id: true, title: true },
+    select: { id: true },
   })
 
   if (existingStudy) {
-    return {
-      success: false,
-      error: "This JATOS study UUID is already linked to another study.",
-    }
+    // UUID collides with a different app study (e.g. a shared example
+    // template) — not a real conflict. Skip the existsOnJatos/mode checks
+    // below since they'd apply to the UUID we're about to discard; the
+    // caller mints a fresh one and uploads with that instead.
+    return { success: true, needsNewUuid: true }
   }
 
   let existsOnJatos = false

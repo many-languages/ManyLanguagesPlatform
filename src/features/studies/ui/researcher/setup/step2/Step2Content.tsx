@@ -15,6 +15,7 @@ import {
   uploadStudyFile,
 } from "@/src/lib/jatos/browser/uploadStudyFile"
 import { extractJatosStudyUuidFromJzip } from "@/src/lib/jatos/parsers/extractJatosStudyUuid"
+import { rewriteJatosStudyUuidInJzip } from "@/src/lib/jatos/parsers/rewriteJatosStudyUuid"
 import { Alert } from "@/src/components/ui/Alert"
 import { FORM_ERROR } from "@/src/components/ui/Form"
 
@@ -75,13 +76,34 @@ export default function Step2Content({ study }: Step2ContentProps) {
         studyId: study.id,
         jatosStudyUUID: updateAlert.uuid,
         mode: "update",
-      })) as { success: boolean; error?: string }
+      })) as { success: boolean; error?: string; needsNewUuid?: boolean }
       if (!preflight.success) {
         toast.error(preflight.error || "Unable to verify JATOS study")
         setLoading(false)
         return
       }
       const uploadResult = await uploadStudyFile(updateAlert.file, {
+        studyId: study.id,
+        jatosWorkerType: updateAlert.jatosWorkerType,
+      })
+      const success = await completeImport(uploadResult)
+      if (success) {
+        setUpdateAlert(null)
+      }
+    } catch (err: unknown) {
+      toast.error(messageForJatosImportFailure(err))
+      setLoading(false)
+    }
+  }
+
+  async function handleCreateNewConfirm() {
+    if (!updateAlert) return
+
+    try {
+      setLoading(true)
+      const newUuid = crypto.randomUUID()
+      const rewrittenFile = await rewriteJatosStudyUuidInJzip(updateAlert.file, newUuid)
+      const uploadResult = await uploadStudyFile(rewrittenFile, {
         studyId: study.id,
         jatosWorkerType: updateAlert.jatosWorkerType,
       })
@@ -110,15 +132,19 @@ export default function Step2Content({ study }: Step2ContentProps) {
           <div className="flex justify-between items-center w-full">
             <div>
               <span className="font-semibold">
-                This will update the existing JATOS study <code>{updateAlert.uuid}</code>.
+                This JATOS study <code>{updateAlert.uuid}</code> already exists.
               </span>
               <p className="text-sm opacity-80">
-                You will need to re-run any existing pilot runs after updating.
+                Update it in place, or create a brand-new study instead. Updating requires
+                re-running any existing pilot runs afterward.
               </p>
             </div>
             <div className="flex gap-2">
               <button className="btn btn-warning btn-sm" onClick={handleUpdateConfirm}>
                 Update study
+              </button>
+              <button className="btn btn-outline btn-sm" onClick={handleCreateNewConfirm}>
+                Create new instead
               </button>
               <button className="btn btn-ghost btn-sm" onClick={() => setUpdateAlert(null)}>
                 Cancel
@@ -195,11 +221,25 @@ export default function Step2Content({ study }: Step2ContentProps) {
               studyId: study.id,
               jatosStudyUUID: extractedUuid,
               mode: study.jatosStudyUUID ? "update" : "create",
-            })) as { success: boolean; error?: string }
+            })) as { success: boolean; error?: string; needsNewUuid?: boolean }
 
             if (!preflight.success) {
               setLoading(false)
               return { [FORM_ERROR]: preflight.error || "Unable to verify JATOS study" }
+            }
+
+            if (preflight.needsNewUuid) {
+              // This UUID belongs to a different app study (e.g. a shared
+              // example template) — mint a fresh one and upload as new,
+              // no user confirmation needed.
+              const newUuid = crypto.randomUUID()
+              const rewrittenFile = await rewriteJatosStudyUuidInJzip(file, newUuid)
+              const uploadResult = await uploadStudyFile(rewrittenFile, {
+                studyId: study.id,
+                jatosWorkerType: values.jatosWorkerType,
+              })
+              await completeImport(uploadResult)
+              return
             }
 
             if (study.jatosStudyUUID && study.jatosStudyUUID === extractedUuid) {

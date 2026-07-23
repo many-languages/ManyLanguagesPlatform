@@ -155,6 +155,37 @@ make prune-all
 
 ---
 
+## Deploy "crashes" or the server seems unresponsive during `--build`
+
+Before assuming a real server crash, check whether the deploy command was run
+directly over SSH (in the foreground). The app image build can take several
+minutes, with individual steps sometimes stalling much longer under disk I/O
+contention. A dropped SSH connection during that window (network hiccup,
+laptop sleep, keepalive timeout) kills the build mid-way and leaves the
+compose stack half-up — which looks identical to a server crash but isn't
+one.
+
+Fix: run the deploy detached from the SSH session so it survives a dropped
+connection:
+
+```bash
+nohup make prod-up-letsencrypt > ~/deploy.log 2>&1 &
+disown
+tail -f ~/deploy.log
+```
+
+If it still seems to hang, check load/memory live in a second SSH session
+before ruling out real resource exhaustion (see below):
+
+```bash
+nohup bash -c 'while true; do date; uptime; free -h; echo ---; sleep 2; done' \
+  > ~/crash-monitor.log 2>&1 &
+disown
+tail -f ~/crash-monitor.log
+```
+
+---
+
 ## Low memory / app crashes
 
 Symptoms: app crashes during file uploads, hangs during password hashing,

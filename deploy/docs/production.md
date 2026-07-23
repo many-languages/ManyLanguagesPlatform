@@ -30,6 +30,22 @@ Or use the script directly:
 ./deploy/scripts/prod-up.sh                   # without
 ```
 
+**Run it detached from your SSH session.** The app image build (`npm run
+build`) can take several minutes, and individual steps can stall much longer
+under disk I/O contention — long enough that a dropped SSH connection
+(network hiccup, laptop sleep, keepalive timeout) kills the build mid-way and
+leaves the stack half-up. That looks like a server crash but usually isn't
+one. Prefer:
+
+```bash
+nohup make prod-up-letsencrypt > ~/deploy.log 2>&1 &
+disown
+tail -f ~/deploy.log
+```
+
+If the SSH session drops, the build keeps running server-side — just
+reconnect and `tail -f ~/deploy.log` again.
+
 ---
 
 ## Security checklist

@@ -3,6 +3,9 @@ const { withBlitz } = require("@blitzjs/next")
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   typedRoutes: true,
+  images: {
+    remotePatterns: [{ protocol: "https", hostname: "www.gravatar.com", pathname: "/avatar/**" }],
+  },
   serverExternalPackages: [
     "secure-password",
     "sodium-native",

@@ -1,11 +1,9 @@
 "use client"
 
 import { useMutation } from "@blitzjs/rpc"
-import { useRouter } from "next/navigation"
 import logout from "../../mutations/logout"
 
 export function LogoutButton() {
-  const router = useRouter()
   const [logoutMutation] = useMutation(logout)
 
   return (
@@ -13,7 +11,8 @@ export function LogoutButton() {
       className="btn btn-primary"
       onClick={async () => {
         await logoutMutation()
-        router.push("/login")
+        // Hard navigation drops the Next.js router cache and client state.
+        window.location.assign("/login")
       }}
     >
       Logout

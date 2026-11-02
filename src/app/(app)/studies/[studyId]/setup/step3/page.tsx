@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation"
+import { fallbackOrLoginRedirect } from "@/src/lib/auth/redirectOnAuthenticationError"
 import { Step3Content, SetupStepHeader, parseStudyIdParam } from "@/src/features/studies"
 import { getResearcherStudyRsc } from "@/src/features/studies/server/getStudy"
 import { getResearcherRunUrlRsc } from "@/src/features/studies/server/getResearcherRunUrl"
@@ -17,7 +18,7 @@ export default async function Step3Page({ params }: { params: Promise<{ studyId:
   try {
     ;[study, runUrlData] = await Promise.all([
       getResearcherStudyRsc(studyId),
-      getResearcherRunUrlRsc(studyId).catch(() => null),
+      getResearcherRunUrlRsc(studyId).catch(fallbackOrLoginRedirect(null)),
     ])
   } catch (error: unknown) {
     if (error instanceof Error && error.name === "NotFoundError") {

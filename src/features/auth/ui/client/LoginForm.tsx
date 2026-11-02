@@ -40,11 +40,12 @@ export const LoginForm = () => {
               return { [FORM_ERROR]: "Login succeeded but user data was missing." }
             }
 
+            // replace keeps /login out of history so Back cannot show the form to a logged-in user
             startNavigation(() => {
               if (next) {
-                router.push(next as Route)
+                router.replace(next as Route)
               } else {
-                router.push(getDefaultAuthenticatedPath(result.user.role) as Route)
+                router.replace(getDefaultAuthenticatedPath(result.user.role) as Route)
               }
             })
           } catch (error: unknown) {

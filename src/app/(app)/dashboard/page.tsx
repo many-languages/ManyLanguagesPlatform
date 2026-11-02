@@ -1,3 +1,6 @@
+import { fallbackOrLoginRedirect } from "@/src/lib/auth/redirectOnAuthenticationError"
+import { getSessionContext } from "@/src/lib/auth/session"
+import { redirect } from "next/navigation"
 import { getCurrentUserRsc } from "@/src/features/auth/server/getCurrentUser"
 import {
   PortalDashboard,
@@ -24,24 +27,29 @@ const emptyParticipantStudies: ParticipantIncompleteStudies = {
 }
 
 export default async function DashboardPage() {
-  const currentUser = await getCurrentUserRsc().catch(() => null)
+  const session = await getSessionContext()
+  if (!session.userId) {
+    redirect("/login")
+  }
+
+  const currentUser = await getCurrentUserRsc().catch(fallbackOrLoginRedirect(null))
 
   const [researcherCounts, activeStudiesWithResponses, upcomingDeadlines] =
     currentUser?.role === "RESEARCHER"
       ? await Promise.all([
-          getResearcherStudyCounts().catch(() => null),
-          getActiveStudiesWithResponseCounts().catch(() => []),
-          getUpcomingDeadlines().catch(() => emptyDeadlines),
+          getResearcherStudyCounts().catch(fallbackOrLoginRedirect(null)),
+          getActiveStudiesWithResponseCounts().catch(fallbackOrLoginRedirect([])),
+          getUpcomingDeadlines().catch(fallbackOrLoginRedirect(emptyDeadlines)),
         ])
       : [null, [], emptyDeadlines]
 
   const [participantIncompleteStudies, participantCounts, participantCompletedNotPaid] =
     currentUser?.role === "PARTICIPANT"
       ? await Promise.all([
-          getParticipantIncompleteStudies().catch(() => emptyParticipantStudies),
-          getParticipantStudyCounts().catch(() => null),
+          getParticipantIncompleteStudies().catch(fallbackOrLoginRedirect(emptyParticipantStudies)),
+          getParticipantStudyCounts().catch(fallbackOrLoginRedirect(null)),
           getParticipantCompletedNotPaidStudies().catch(
-            () => [] as ParticipantCompletedNotPaidStudy[]
+            fallbackOrLoginRedirect([] as ParticipantCompletedNotPaidStudy[])
           ),
         ])
       : [emptyParticipantStudies, null, []]

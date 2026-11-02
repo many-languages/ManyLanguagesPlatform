@@ -5,7 +5,6 @@ import Image from "next/image"
 import Link from "next/link"
 import type { Route } from "next"
 import { useMutation } from "@blitzjs/rpc"
-import { useRouter } from "next/navigation"
 import md5 from "md5"
 
 import logout from "@/src/features/auth/mutations/logout"
@@ -24,7 +23,6 @@ interface AvatarDropdownProps {
 
 export function AvatarDropdown({ currentUser, variant }: AvatarDropdownProps) {
   const [logoutMutation] = useMutation(logout)
-  const router = useRouter()
 
   const gravatarUrl = useMemo(() => {
     const email =
@@ -69,8 +67,9 @@ export function AvatarDropdown({ currentUser, variant }: AvatarDropdownProps) {
           <button
             onClick={async () => {
               await logoutMutation()
-              await router.push("/")
-              closeActiveDropdown()
+              // Hard navigation drops the Next.js router cache and client state so the back
+              // button cannot show authenticated pages after logout.
+              window.location.assign("/login")
             }}
           >
             Logout

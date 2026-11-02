@@ -1,7 +1,8 @@
 "use client"
 
 import Link from "next/link"
-import { NotificationItem, useNotificationMenuContext } from "@/src/features/notifications"
+import NotificationItem from "@/src/features/notifications/ui/NotificationItem"
+import { useNotificationMenuContext } from "@/src/features/notifications/context/NotificationMenuContext"
 import Card from "@/src/components/ui/Card"
 
 type NotificationsCardVariant = "portal" | "admin"

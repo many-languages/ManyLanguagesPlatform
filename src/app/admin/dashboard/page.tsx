@@ -1,3 +1,5 @@
+import { fallbackOrLoginRedirect } from "@/src/lib/auth/redirectOnAuthenticationError"
+import { redirect } from "next/navigation"
 import type { UserRole } from "@/db"
 import { getBlitzContext } from "@/src/app/blitz-server"
 import {
@@ -15,13 +17,18 @@ export const metadata = {
 
 export default async function AdminHomePage() {
   const { session } = await getBlitzContext()
+  if (!session.userId) {
+    redirect("/login")
+  }
   const role = session.role as UserRole
 
   const [studyCounts, staleAdminInvites, pendingAdminApprovalStudies] = await Promise.all([
     getAdminStudyCounts(),
-    role === "SUPERADMIN" ? getStalePendingAdminInvitesRsc().catch(() => []) : Promise.resolve([]),
+    role === "SUPERADMIN"
+      ? getStalePendingAdminInvitesRsc().catch(fallbackOrLoginRedirect([]))
+      : Promise.resolve([]),
     isStaffAdmin(role)
-      ? getPendingAdminApprovalStudiesForDashboardRsc().catch(() => [])
+      ? getPendingAdminApprovalStudiesForDashboardRsc().catch(fallbackOrLoginRedirect([]))
       : Promise.resolve([]),
   ])
 

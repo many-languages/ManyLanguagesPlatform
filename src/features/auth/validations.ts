@@ -6,10 +6,14 @@ export const email = z
   .email()
   .transform((str) => str.toLowerCase().trim())
 
+export const PASSWORD_MIN_LENGTH = 10
+export const PASSWORD_MAX_LENGTH = 100
+export const PASSWORD_REQUIREMENTS_HINT = `Your password must be ${PASSWORD_MIN_LENGTH}-${PASSWORD_MAX_LENGTH} characters long. Spaces at the start and end are ignored.`
+
 export const password = z
   .string()
-  .min(10)
-  .max(100)
+  .min(PASSWORD_MIN_LENGTH)
+  .max(PASSWORD_MAX_LENGTH)
   .transform((str) => str.trim())
 
 export const role = z.enum(SIGNUP_USER_ROLES)

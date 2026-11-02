@@ -8,7 +8,7 @@ import toast from "react-hot-toast"
 import { TextField, FormSubmitButton, FormErrorDisplay } from "@/src/components/ui/fields"
 import { Form, FORM_ERROR } from "@/src/components/ui/Form"
 import resetPassword from "../../mutations/resetPassword"
-import { ResetPassword } from "../../validations"
+import { ResetPassword, PASSWORD_REQUIREMENTS_HINT } from "../../validations"
 
 export function ResetPasswordForm() {
   const searchParams = useSearchParams()
@@ -62,7 +62,13 @@ export function ResetPasswordForm() {
           className="space-y-4"
         >
           <div className="fieldset bg-base-200 border-base-300 rounded-box w-md border p-4">
-            <TextField name="password" label="New Password" type="password" className="w-full" />
+            <TextField
+              name="password"
+              label="New Password"
+              labelHint={PASSWORD_REQUIREMENTS_HINT}
+              type="password"
+              className="w-full"
+            />
             <TextField
               name="passwordConfirmation"
               label="Confirm New Password"

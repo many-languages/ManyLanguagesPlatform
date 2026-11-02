@@ -99,6 +99,7 @@ describe("JATOS outage user-facing boundaries", () => {
     const response = await importJatosStudyRoute(
       new Request("http://app.test/api/jatos/import", {
         method: "POST",
+        headers: { origin: "http://app.test", host: "app.test" },
         body: form,
       })
     )

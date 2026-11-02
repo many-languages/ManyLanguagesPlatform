@@ -17,7 +17,7 @@ import { Form, FORM_ERROR } from "@/src/components/ui/Form"
 import validateAdminInviteToken from "@/src/features/admin-invitations/queries/validateAdminInviteToken"
 import { getDefaultAuthenticatedPath } from "@/src/lib/auth/routing"
 import signup from "../../mutations/signup"
-import { Signup } from "../../validations"
+import { Signup, PASSWORD_REQUIREMENTS_HINT } from "../../validations"
 import {
   ADMIN_SIGNUP_ROLE_OPTIONS,
   SIGNUP_ROLE_OPTIONS,
@@ -71,6 +71,7 @@ function SignupFormFields({
       <TextField
         name="password"
         label="Password"
+        labelHint={PASSWORD_REQUIREMENTS_HINT}
         placeholder="Password"
         type="password"
         className="w-full"

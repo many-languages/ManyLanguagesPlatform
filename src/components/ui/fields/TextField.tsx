@@ -3,7 +3,7 @@
 import { EyeIcon, EyeSlashIcon } from "@heroicons/react/24/outline"
 import { useState } from "react"
 import { useFormContext } from "react-hook-form"
-import { FieldLabel, fieldAriaDescribedBy } from "./FieldLabel"
+import { TextInput } from "./TextInput"
 
 interface TextFieldProps extends React.InputHTMLAttributes<HTMLInputElement> {
   name: string
@@ -32,25 +32,18 @@ export const TextField = ({
   const inputType = isPasswordField && isPasswordVisible ? "text" : type
 
   return (
-    <fieldset className="fieldset">
-      <FieldLabel htmlFor={name} label={label} hint={labelHint} />
-      <div className="relative">
-        <input
-          id={name}
-          {...register(name)}
-          {...props}
-          type={inputType}
-          disabled={isSubmitting || props.disabled}
-          className={`input input-bordered ${fieldError ? "input-error" : ""} ${
-            isPasswordField ? "pr-12" : ""
-          } ${className || ""}`}
-          aria-invalid={fieldError ? true : false}
-          aria-describedby={fieldAriaDescribedBy(name, {
-            hint: Boolean(labelHint),
-            error: Boolean(fieldError),
-          })}
-        />
-        {isPasswordField ? (
+    <TextInput
+      id={name}
+      label={label}
+      labelHint={labelHint}
+      error={fieldError}
+      {...register(name)}
+      {...props}
+      type={inputType}
+      disabled={isSubmitting || props.disabled}
+      className={className}
+      endAdornment={
+        isPasswordField ? (
           <button
             type="button"
             onClick={() => setIsPasswordVisible((visible) => !visible)}
@@ -65,14 +58,9 @@ export const TextField = ({
               <EyeIcon className="h-5 w-5" aria-hidden />
             )}
           </button>
-        ) : null}
-      </div>
-      {fieldError && (
-        <span id={`${name}-error`} className="text-error text-sm" role="alert">
-          {fieldError}
-        </span>
-      )}
-    </fieldset>
+        ) : null
+      }
+    />
   )
 }
 

@@ -1,14 +1,15 @@
 "use client"
 
-import { useMemo, useState, useEffect, type Dispatch, type SetStateAction } from "react"
+import { useMemo, useState, useEffect, useRef, type Dispatch, type SetStateAction } from "react"
 import Link from "next/link"
 import type { Route } from "next"
 import { useMutation, useQuery } from "@blitzjs/rpc"
-import { useRouter, useSearchParams } from "next/navigation"
+import { useRouter } from "next/navigation"
 import type { UseFormReturn } from "react-hook-form"
 import { z } from "zod"
 import {
   TextField,
+  TextInput,
   SelectField,
   FormSubmitButton,
   FormErrorDisplay,
@@ -17,12 +18,23 @@ import { Form, FORM_ERROR } from "@/src/components/ui/Form"
 import validateAdminInviteToken from "@/src/features/admin-invitations/queries/validateAdminInviteToken"
 import { getDefaultAuthenticatedPath } from "@/src/lib/auth/routing"
 import signup from "../../mutations/signup"
-import { Signup, PASSWORD_REQUIREMENTS_HINT } from "../../validations"
-import {
-  ADMIN_SIGNUP_ROLE_OPTIONS,
-  SIGNUP_ROLE_OPTIONS,
-  SIGNUP_USER_ROLE,
-} from "../../domain/userRoles"
+import { Signup, email as emailSchema, PASSWORD_REQUIREMENTS_HINT } from "../../validations"
+import { SIGNUP_ROLE_OPTIONS_WITH_ADMIN, SIGNUP_USER_ROLE } from "../../domain/userRoles"
+
+/**
+ * Client-side form schema. For the Administrator role the email comes from the invite, so it is
+ * left to the token checks in onSubmit (and to the server) instead of failing on an empty field.
+ */
+const SignupFormSchema = Signup.extend({ email: z.string() }).superRefine((data, ctx) => {
+  if (data.role === SIGNUP_USER_ROLE.ADMIN) return
+
+  const result = emailSchema.safeParse(data.email)
+  if (!result.success) {
+    for (const issue of result.error.issues) {
+      ctx.addIssue({ ...issue, path: ["email"] })
+    }
+  }
+})
 
 interface AdminInviteValidation {
   valid: boolean
@@ -32,41 +44,84 @@ interface AdminInviteValidation {
 
 interface SignupFormFieldsProps {
   adminInviteToken: string
-  form: UseFormReturn<z.infer<typeof Signup>>
-  isAdminInvite: boolean
+  form: UseFormReturn<z.infer<typeof SignupFormSchema>>
   setAdminInviteToken: Dispatch<SetStateAction<string>>
-  setShowTokenField: Dispatch<SetStateAction<boolean>>
-  showTokenField: boolean
   tokenValidation: AdminInviteValidation | null
 }
 
 function SignupFormFields({
   adminInviteToken,
   form,
-  isAdminInvite,
   setAdminInviteToken,
-  setShowTokenField,
-  showTokenField,
   tokenValidation,
 }: SignupFormFieldsProps) {
+  const isAdminRole = form.watch("role") === SIGNUP_USER_ROLE.ADMIN
+  const isAdminInvite = isAdminRole && tokenValidation?.valid === true
+  const tokenInputRef = useRef<HTMLInputElement>(null)
+  const wasAdminRoleRef = useRef(isAdminRole)
+  const stashedEmailRef = useRef("")
+
+  // The invite decides the email: fill it in once the token is valid
   useEffect(() => {
-    if (tokenValidation?.valid && tokenValidation.inviteEmail) {
+    if (adminInviteToken && tokenValidation?.valid && tokenValidation.inviteEmail) {
       form.setValue("email", tokenValidation.inviteEmail)
       form.setValue("role", SIGNUP_USER_ROLE.ADMIN)
-    } else if (!adminInviteToken) {
-      form.setValue("role", SIGNUP_USER_ROLE.PARTICIPANT)
     }
   }, [adminInviteToken, form, tokenValidation])
 
+  useEffect(() => {
+    if (isAdminRole && !wasAdminRoleRef.current) {
+      // The invite decides the email: set aside what was typed and restore it on switching back
+      stashedEmailRef.current = form.getValues("email")
+      form.setValue("email", "")
+      tokenInputRef.current?.focus()
+    }
+    if (!isAdminRole && wasAdminRoleRef.current) {
+      setAdminInviteToken("")
+      form.setValue("email", stashedEmailRef.current)
+      stashedEmailRef.current = ""
+    }
+    wasAdminRoleRef.current = isAdminRole
+  }, [isAdminRole, form, setAdminInviteToken])
+
   return (
     <div className="fieldset bg-base-200 border-base-300 rounded-box w-md border p-4">
+      {isAdminInvite && (
+        <div className="alert alert-info mb-4">
+          <div>
+            <p className="font-medium">Admin Invitation Detected</p>
+            <p className="text-sm">
+              You are signing up as an administrator. Please complete the form below.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {isAdminRole && (
+        <TextInput
+          id="adminInviteToken"
+          ref={tokenInputRef}
+          type="text"
+          label="Admin Invite Token"
+          placeholder="Paste your admin invite token here"
+          className="w-full font-mono"
+          value={adminInviteToken}
+          onChange={(event) => setAdminInviteToken(event.target.value)}
+          error={
+            adminInviteToken && tokenValidation && !tokenValidation.valid
+              ? tokenValidation.error || "Invalid token"
+              : undefined
+          }
+        />
+      )}
+
       <TextField
         name="email"
         label="Email"
-        placeholder="Email"
+        placeholder={isAdminRole ? "Filled in from your invite once the token is valid" : "Email"}
         type="email"
         className="w-full"
-        disabled={isAdminInvite}
+        disabled={isAdminRole}
       />
       <TextField
         name="password"
@@ -77,68 +132,13 @@ function SignupFormFields({
         className="w-full"
       />
 
-      {!isAdminInvite && (
-        <SelectField
-          name="role"
-          label="Role"
-          options={SIGNUP_ROLE_OPTIONS}
-          placeholder="Select your role"
-          className="w-full"
-        />
-      )}
-
-      {isAdminInvite && (
-        <SelectField
-          name="role"
-          label="Role"
-          options={ADMIN_SIGNUP_ROLE_OPTIONS}
-          placeholder="Administrator"
-          className="w-full"
-          disabled
-        />
-      )}
-
-      {!isAdminInvite && !showTokenField && (
-        <button
-          type="button"
-          onClick={() => setShowTokenField(true)}
-          className="mt-2 mb-6 block cursor-pointer text-left"
-        >
-          Have an admin invite token?
-        </button>
-      )}
-
-      {!isAdminInvite && showTokenField && (
-        <div className="mt-2 mb-6 space-y-2">
-          <label className="label">
-            <span className="label-text font-medium">Admin Invite Token (optional)</span>
-          </label>
-          <input
-            type="text"
-            placeholder="Paste your admin invite token here"
-            className="input input-bordered w-full font-mono"
-            value={adminInviteToken}
-            onChange={(event) => setAdminInviteToken(event.target.value)}
-          />
-          {adminInviteToken && tokenValidation && !tokenValidation.valid && (
-            <div className="alert alert-error">
-              <div>
-                <p className="text-sm">{tokenValidation.error || "Invalid token"}</p>
-              </div>
-            </div>
-          )}
-          <button
-            type="button"
-            onClick={() => {
-              setShowTokenField(false)
-              setAdminInviteToken("")
-            }}
-            className="text-sm text-base-content/60 underline hover:text-base-content"
-          >
-            Hide
-          </button>
-        </div>
-      )}
+      <SelectField
+        name="role"
+        label="Role"
+        options={SIGNUP_ROLE_OPTIONS_WITH_ADMIN}
+        placeholder="Select your role"
+        className="w-full"
+      />
 
       <FormSubmitButton
         submitText="Create Account"
@@ -151,23 +151,24 @@ function SignupFormFields({
   )
 }
 
-export const SignupForm = () => {
+interface SignupFormProps {
+  /** Token from the `?adminInvite=` link, validated on the server for the first render. */
+  initialInviteToken?: string
+  initialInviteValidation?: AdminInviteValidation | null
+}
+
+export const SignupForm = ({
+  initialInviteToken = "",
+  initialInviteValidation = null,
+}: SignupFormProps) => {
   const [signupMutation] = useMutation(signup)
   const router = useRouter()
-  const searchParams = useSearchParams()
-  const [adminInviteToken, setAdminInviteToken] = useState<string>("")
-  const [showTokenField, setShowTokenField] = useState(false)
-  const [tokenValidation, setTokenValidation] = useState<AdminInviteValidation | null>(null)
+  const [adminInviteToken, setAdminInviteToken] = useState<string>(initialInviteToken)
+  const [tokenValidation, setTokenValidation] = useState<AdminInviteValidation | null>(
+    initialInviteValidation
+  )
 
-  useEffect(() => {
-    const tokenFromUrl = searchParams.get("adminInvite")
-    if (tokenFromUrl) {
-      setAdminInviteToken(tokenFromUrl)
-      setShowTokenField(true)
-    }
-  }, [searchParams])
-
-  const [debouncedToken, setDebouncedToken] = useState<string>("")
+  const [debouncedToken, setDebouncedToken] = useState<string>(initialInviteToken)
   useEffect(() => {
     const timeoutId = setTimeout(() => {
       setDebouncedToken(adminInviteToken)
@@ -191,34 +192,37 @@ export const SignupForm = () => {
 
   const defaultValues = useMemo(
     () => ({
-      email: "",
+      email: initialInviteValidation?.valid ? initialInviteValidation.inviteEmail ?? "" : "",
       password: "",
-      role: SIGNUP_USER_ROLE.PARTICIPANT,
+      role: initialInviteToken ? SIGNUP_USER_ROLE.ADMIN : SIGNUP_USER_ROLE.PARTICIPANT,
     }),
-    []
+    [initialInviteToken, initialInviteValidation]
   )
-
-  const isAdminInvite = tokenValidation?.valid === true
 
   return (
     <div className="space-y-4">
       <h1 className="font-black text-3xl">Create an Account</h1>
 
-      {isAdminInvite && (
-        <div className="alert alert-info">
-          <div>
-            <p className="font-medium">Admin Invitation Detected</p>
-            <p className="text-sm">
-              You are signing up as an administrator. Please complete the form below.
-            </p>
-          </div>
-        </div>
-      )}
-
       <Form
-        schema={Signup}
+        schema={SignupFormSchema}
         defaultValues={defaultValues}
         onSubmit={async (values) => {
+          if (values.role === SIGNUP_USER_ROLE.ADMIN) {
+            if (!adminInviteToken.trim()) {
+              return {
+                [FORM_ERROR]: "Enter your admin invite token to sign up as an administrator.",
+              }
+            }
+
+            if (!tokenValidation?.valid || !values.email) {
+              return {
+                [FORM_ERROR]:
+                  tokenValidation?.error ??
+                  "Your admin invite token has not been verified yet. Please wait a moment and try again.",
+              }
+            }
+          }
+
           try {
             const result = await signupMutation({
               ...values,
@@ -248,10 +252,7 @@ export const SignupForm = () => {
           <SignupFormFields
             adminInviteToken={adminInviteToken}
             form={form}
-            isAdminInvite={isAdminInvite}
             setAdminInviteToken={setAdminInviteToken}
-            setShowTokenField={setShowTokenField}
-            showTokenField={showTokenField}
             tokenValidation={tokenValidation}
           />
         )}

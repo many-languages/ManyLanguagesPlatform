@@ -1,6 +1,8 @@
 export { FieldLabel, fieldAriaDescribedBy, fieldHintId, fieldErrorId } from "./FieldLabel"
 export type { FieldLabelProps } from "./FieldLabel"
 export { default as TextField } from "./TextField"
+export { TextInput } from "./TextInput"
+export type { TextInputProps } from "./TextInput"
 export { default as Textarea } from "./Textarea"
 export { default as FormTextAreaField } from "./FormTextAreaField"
 export { default as SelectField } from "./SelectField"

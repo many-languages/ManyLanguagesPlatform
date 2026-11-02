@@ -13,6 +13,8 @@ export const SIGNUP_ROLE_OPTIONS = [
   { value: SIGNUP_USER_ROLE.PARTICIPANT, label: "Participant" },
 ] satisfies Array<{ value: SignupUserRole; label: string }>
 
-export const ADMIN_SIGNUP_ROLE_OPTIONS = [
-  { value: SIGNUP_USER_ROLE.ADMIN, label: "Administrator" },
+/** Role choices on the signup form; picking Administrator reveals the invite token field. */
+export const SIGNUP_ROLE_OPTIONS_WITH_ADMIN = [
+  ...SIGNUP_ROLE_OPTIONS,
+  { value: SIGNUP_USER_ROLE.ADMIN, label: "Administrator (invite required)" },
 ] satisfies Array<{ value: SignupUserRole; label: string }>

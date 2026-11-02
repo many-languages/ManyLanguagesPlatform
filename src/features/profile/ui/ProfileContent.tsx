@@ -11,11 +11,12 @@ interface ProfileContentProps {
 }
 
 export default function ProfileContent({ currentUser, profilePaths }: ProfileContentProps) {
-  // Construct name
+  // Construct name from whichever parts are provided
   const fullname =
-    currentUser.firstname && currentUser.lastname
-      ? `${currentUser.firstname} ${currentUser.lastname}`
-      : null
+    [currentUser.firstname, currentUser.lastname]
+      .map((part) => part?.trim())
+      .filter(Boolean)
+      .join(" ") || null
 
   return (
     <>

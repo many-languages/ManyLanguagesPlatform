@@ -6,16 +6,18 @@ import {
   StudiesViewTabs,
   ParticipantStudiesViewTabs,
   CreateStudyButton,
-  getParticipantStudiesWithStatus,
-  getResearcherStudiesPageSlice,
   parseParticipantStudyViewQueryParam,
   parseStudyViewQueryParam,
-  STUDIES_LIST_PAGE_SIZE,
   StudyListSkeleton,
   PaginationControlsSkeleton,
   type ParticipantStudyView,
   type StudyView,
 } from "@/src/features/studies"
+import {
+  getParticipantStudiesWithStatus,
+  getResearcherStudiesPageSlice,
+  STUDIES_LIST_PAGE_SIZE,
+} from "@/src/features/studies/index.server"
 import { getBlitzContext } from "@/src/app/blitz-server"
 import { parsePageQueryParam } from "@/src/lib/searchParams/parsePageQueryParam"
 

@@ -15,7 +15,7 @@ vi.mock("@/src/app/blitz-server", () => ({
   getBlitzContext: mocks.getBlitzContext,
 }))
 
-vi.mock("@/src/features/notifications", () => ({
+vi.mock("@/src/features/notifications/index.server", () => ({
   sendNotification: mocks.sendNotification,
 }))
 

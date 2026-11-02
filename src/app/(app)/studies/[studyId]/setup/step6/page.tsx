@@ -4,10 +4,10 @@ import {
   Step6Content,
   SetupStepHeader,
   SetupContentSkeleton,
-  loadStudySetupPage,
   type StudyWithRelations,
 } from "@/src/features/studies"
-import { getFeedbackStep6DataRsc } from "@/src/features/feedback"
+import { loadStudySetupPage } from "@/src/features/studies/index.server"
+import { getFeedbackStep6DataRsc } from "@/src/features/feedback/index.server"
 
 async function Step6ContentWrapper({
   studyId,

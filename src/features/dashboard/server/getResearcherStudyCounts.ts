@@ -1,6 +1,6 @@
 import { cache } from "react"
 import { Prisma } from "db"
-import { getStudySummaryCounts } from "@/src/features/studies"
+import { getStudySummaryCounts } from "@/src/features/studies/index.server"
 import type { ResearcherStudyCounts } from "../types"
 import { requireDashboardUser } from "./auth"
 

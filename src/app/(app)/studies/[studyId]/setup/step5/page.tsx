@@ -3,10 +3,10 @@ import {
   Step5Content,
   SetupStepHeader,
   SetupContentSkeleton,
-  loadStudySetupPage,
   type StudyWithRelations,
 } from "@/src/features/studies"
-import { getCodebookDataRsc } from "@/src/features/codebook"
+import { loadStudySetupPage } from "@/src/features/studies/index.server"
+import { getCodebookDataRsc } from "@/src/features/codebook/index.server"
 
 async function Step5ContentWrapper({ study }: { study: StudyWithRelations }) {
   const studyId = study.id

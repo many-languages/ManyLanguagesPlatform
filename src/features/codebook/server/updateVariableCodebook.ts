@@ -5,7 +5,7 @@ import {
   variableHasDescriptionCoverage,
 } from "../domain/codebookGroups"
 import { computeCodebookValidation } from "./computeCodebookValidation"
-import { getPersonalDataViolationsForPersistedTemplate } from "@/src/features/feedback"
+import { getPersonalDataViolationsForPersistedTemplate } from "@/src/features/feedback/index.server"
 
 export type UpdateVariableCodebookInput = {
   studyId: number

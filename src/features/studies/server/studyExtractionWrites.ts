@@ -15,8 +15,8 @@ import {
   serializeExtractionBundle,
   type SerializedExtractionBundle,
 } from "../domain/setup/serializeExtractionBundle"
-import { computeFeedbackTemplateValidation } from "@/src/features/feedback"
-import { computeCodebookValidation } from "@/src/features/codebook"
+import { computeFeedbackTemplateValidation } from "@/src/features/feedback/index.server"
+import { computeCodebookValidation } from "@/src/features/codebook/index.server"
 
 function buildExtractionOutputHash(
   bundle: ReturnType<typeof extractVariableBundleFromResults>

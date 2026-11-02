@@ -1,6 +1,7 @@
 /**
  * Public barrel for `@/src/features/studies` — see `docs/refactor/studies-feature-migration.md` §6.7.
  * Server actions / RPC resolvers are not re-exported here (ADR-003).
+ * Client-safe surface only: server-side exports live in `./index.server.ts`.
  */
 
 export type {
@@ -18,14 +19,6 @@ export type {
   StudyWithMinimalRelations,
   StudyWithRelations,
 } from "./types"
-export { getStudySummaryCounts } from "./server/studySummaryCounts"
-export {
-  studyHasParticipantResponses,
-  studyHasParticipantResponsesSafe,
-  assertStudyArchiveAllowed,
-  assertStudyDeleteAllowedByResponses,
-  assertStudyNotArchived,
-} from "./server"
 export {
   ARCHIVED_STUDY_CANNOT_EDIT_MESSAGE,
   canEditStudySetup,
@@ -52,7 +45,6 @@ export {
   createExtractionIndexStore,
 } from "./domain/variables/utils/extractionIndexStore"
 export { observationsToLongCsv } from "./domain/variables/utils/observationsLongCsv"
-export { getStudyVariablesRsc } from "./server/getStudyVariables"
 
 /** Setup wizard — pure domain + in-memory caches (Phase 4). */
 export {
@@ -85,16 +77,6 @@ export {
   buildCacheKey,
 } from "./domain/setup/extractionCache"
 
-/** Cross-feature services */
-export {
-  withStudyAccess,
-  withStudyWriteAccess,
-  verifyResearcherStudyAccess,
-  getAllPilotResultsRsc,
-  getSetupCompletionRsc,
-} from "./services"
-export type { PilotResultsContext } from "./services"
-
 /** Study views — parsers + enums (minimal relations come from `./types`). */
 export { STUDY_VIEWS, studyViewQuerySchema, parseStudyViewQueryParam } from "./domain/studyView"
 export type { StudyViewQueryParseResult } from "./domain/studyView"
@@ -106,31 +88,10 @@ export {
 export type { ParticipantStudyViewQueryParseResult } from "./domain/participantStudyView"
 export { parseStudyIdParam } from "./domain/parseStudyIdParam"
 
-/** RSC helpers for routes & cross-feature callers */
-export {
-  getParticipantStudyOverviewRsc,
-  getStudyPageRsc,
-  getStudyRsc,
-  getStudyViewerRsc,
-} from "./server/getStudy"
-export { getStudies } from "./server/getStudies"
-export {
-  getParticipantJoinedByStudyIdRsc,
-  isParticipantInStudyRsc,
-} from "./server/isParticipantInStudy"
-export { getParticipantStudiesWithStatus } from "./server/getParticipantStudiesWithStatus"
-export {
-  getResearcherStudiesPageSlice,
-  STUDIES_LIST_PAGE_SIZE,
-  RESEARCHER_STUDIES_MAX_SETUP_FILTER,
-} from "./server/getResearcherStudiesPageSlice"
-export { loadStudySetupPage } from "./server/loadStudySetupPage"
+/** Server loaders, services and server components live in `./index.server.ts`; only erased types here. */
+export type { PilotResultsContext } from "./services"
 export type { StudySetupPageContext } from "./server/loadStudySetupPage"
-export { getValidationDataRsc } from "./server/getValidationData"
 export type { ValidationData } from "./server/getValidationData"
-export { getStudiesRsc } from "./server/getAdminStudies"
-export { getAdminStudyCounts } from "./server/getAdminStudyCounts"
-export { getPendingAdminApprovalStudiesForDashboardRsc } from "./server/getPendingAdminApprovalStudies"
 
 /** Shared UI */
 export { default as StudyHeader } from "./ui/shared/StudyHeader"
@@ -148,7 +109,6 @@ export {
 export type { StudySummaryLinks } from "./ui/shared/StudySummaryCard"
 
 /** UI — researcher */
-export { default as ResearcherData } from "./ui/researcher/ResearcherData"
 export { default as StudyInformationCard } from "./ui/shared/StudyInformationCard"
 export { default as StudyStatusControl } from "./ui/researcher/StudyStatusControl"
 export { default as StudySummary } from "./ui/researcher/StudySummary"
@@ -171,7 +131,6 @@ export { default as Step6Content } from "./ui/researcher/setup/step6/Step6Conten
 export { default as DebugContent } from "./ui/researcher/inspector/DebugContent"
 
 /** UI — participant */
-export { default as ParticipantData } from "./ui/participant/ParticipantData"
 export { default as JoinStudyButton } from "./ui/participant/JoinStudyButton"
 
 /** UI — admin */

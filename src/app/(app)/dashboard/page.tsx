@@ -4,16 +4,18 @@ import { redirect } from "next/navigation"
 import { getCurrentUserRsc } from "@/src/features/auth/server/getCurrentUser"
 import {
   PortalDashboard,
+  type ParticipantCompletedNotPaidStudy,
+  type ParticipantIncompleteStudies,
+  type UpcomingDeadlines,
+} from "@/src/features/dashboard"
+import {
   getActiveStudiesWithResponseCounts,
   getParticipantCompletedNotPaidStudies,
   getParticipantIncompleteStudies,
   getParticipantStudyCounts,
   getResearcherStudyCounts,
   getUpcomingDeadlines,
-  type ParticipantCompletedNotPaidStudy,
-  type ParticipantIncompleteStudies,
-  type UpcomingDeadlines,
-} from "@/src/features/dashboard"
+} from "@/src/features/dashboard/index.server"
 
 const emptyDeadlines: UpcomingDeadlines = {
   endingSoon: [],

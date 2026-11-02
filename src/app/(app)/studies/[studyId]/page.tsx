@@ -2,11 +2,8 @@ import { Suspense } from "react"
 import { notFound, redirect } from "next/navigation"
 import { getBlitzContext } from "@/src/app/blitz-server"
 import {
-  getStudyPageRsc,
   canEditStudySetup,
-  ResearcherData,
   ResearcherDataSkeleton,
-  ParticipantData,
   ParticipantDataSkeleton,
   SetupProgressCard,
   StudyHeader,
@@ -14,6 +11,11 @@ import {
   StudyInformationCard,
   parseStudyIdParam,
 } from "@/src/features/studies"
+import {
+  getStudyPageRsc,
+  ResearcherData,
+  ParticipantData,
+} from "@/src/features/studies/index.server"
 
 export default async function StudyPage({ params }: { params: Promise<{ studyId: string }> }) {
   const { studyId: studyIdRaw } = await params

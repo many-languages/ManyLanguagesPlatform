@@ -12,7 +12,8 @@ import { uploadStudy } from "../client/uploadStudy"
 import { addStudyMember } from "../client/addStudyMember"
 import { ensureResearcherJatosMember } from "./ensureResearcherJatosMember"
 import { getServiceAccountJatosUserId } from "../serviceAccount"
-import { deriveStep1Completed, verifyResearcherStudyAccess } from "@/src/features/studies"
+import { deriveStep1Completed } from "@/src/features/studies"
+import { verifyResearcherStudyAccess } from "@/src/features/studies/index.server"
 
 export interface ImportJatosStudyResult {
   jatosStudyId: number

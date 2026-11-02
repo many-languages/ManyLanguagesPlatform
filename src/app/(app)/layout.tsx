@@ -1,10 +1,8 @@
 import { redirect } from "next/navigation"
 import { Toaster } from "react-hot-toast"
 import { getBlitzContext, useAuthenticatedBlitzContext } from "../blitz-server"
-import {
-  getNotificationMenuDataForUser,
-  NotificationMenuRootProvider,
-} from "@/src/features/notifications"
+import { NotificationMenuRootProvider } from "@/src/features/notifications"
+import { getNotificationMenuDataForUser } from "@/src/features/notifications/index.server"
 import { AppNavbar } from "@/src/features/shell"
 import { isStaffAdmin } from "@/src/lib/auth/roles"
 import { DEFAULT_ADMIN_PATH } from "@/src/lib/auth/routing"

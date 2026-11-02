@@ -8,12 +8,7 @@ export type {
   CodebookGroupEntry,
 } from "./types"
 
-export {
-  getCodebookDataRsc,
-  fetchCodebookMergedVariablesForStudy,
-  type CodebookMergedVariablesPayload,
-} from "./server/getCodebookData"
-
-export { computeCodebookValidation } from "./server/computeCodebookValidation"
+// Server loaders live in `./index.server.ts`; only erased types are re-exported here.
+export type { CodebookMergedVariablesPayload } from "./server/getCodebookData"
 
 // Blitz RPC modules (default exports) are imported from file paths for useMutation / RPC.

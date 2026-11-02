@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest"
 import { importJatosStudyForResearcher } from "./importJatosStudy"
 import JSZip from "jszip"
-import { verifyResearcherStudyAccess } from "@/src/features/studies"
+import { verifyResearcherStudyAccess } from "@/src/features/studies/index.server"
 
 const mockUploadStudy = vi.fn()
 const mockEnsureResearcherJatosMember = vi.fn()
@@ -26,6 +26,8 @@ vi.mock("../getAdminToken", () => ({
 vi.mock("@/src/features/studies", () => ({
   deriveStep1Completed: (study: { title?: string; description?: string }) =>
     Boolean(study?.title && study?.description),
+}))
+vi.mock("@/src/features/studies/index.server", () => ({
   verifyResearcherStudyAccess: vi.fn(),
 }))
 

@@ -1,7 +1,10 @@
 import { Alert } from "@/src/components/ui/Alert"
 import { isSetupComplete } from "../../domain/setup/setupStatus"
 import type { ParticipantStudyOverview } from "../../types"
-import { ParticipantFeedbackData, checkParticipantCompletionAction } from "@/src/features/feedback"
+import {
+  ParticipantFeedbackData,
+  checkParticipantCompletionAction,
+} from "@/src/features/feedback/index.server"
 import { CheckCircleIcon } from "@heroicons/react/24/solid"
 import StudyInformationCard from "../shared/StudyInformationCard"
 import RunStudyButton from "../shared/RunStudyButton"

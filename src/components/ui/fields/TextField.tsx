@@ -54,7 +54,7 @@ export const TextField = ({
           <button
             type="button"
             onClick={() => setIsPasswordVisible((visible) => !visible)}
-            className="absolute inset-y-0 right-0 flex items-center px-3 text-base-content/60 hover:text-base-content focus:outline-none"
+            className="absolute inset-y-0 right-0 z-10 flex items-center px-3 text-base-content/60 hover:text-base-content focus:outline-none"
             aria-label={isPasswordVisible ? "Hide password" : "Show password"}
             aria-pressed={isPasswordVisible}
             disabled={isSubmitting || props.disabled}

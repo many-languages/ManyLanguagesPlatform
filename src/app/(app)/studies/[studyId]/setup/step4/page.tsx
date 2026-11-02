@@ -4,10 +4,9 @@ import {
   Step4Content,
   SetupStepHeader,
   SetupContentSkeleton,
-  getValidationDataRsc,
-  loadStudySetupPage,
   type StudyWithRelations,
 } from "@/src/features/studies"
+import { getValidationDataRsc, loadStudySetupPage } from "@/src/features/studies/index.server"
 
 async function Step4ContentWrapper({
   studyId,

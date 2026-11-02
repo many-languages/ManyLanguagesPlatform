@@ -2,13 +2,11 @@ import { fallbackOrLoginRedirect } from "@/src/lib/auth/redirectOnAuthentication
 import { redirect } from "next/navigation"
 import type { UserRole } from "@/db"
 import { getBlitzContext } from "@/src/app/blitz-server"
-import {
-  AdminDashboard,
-  getPendingAdminApprovalStudiesForDashboardRsc,
-} from "@/src/features/dashboard"
-import { getStalePendingAdminInvitesRsc } from "@/src/features/admin-invitations"
+import { AdminDashboard } from "@/src/features/dashboard"
+import { getPendingAdminApprovalStudiesForDashboardRsc } from "@/src/features/dashboard/index.server"
+import { getStalePendingAdminInvitesRsc } from "@/src/features/admin-invitations/index.server"
 import { isStaffAdmin } from "@/src/lib/auth/roles"
-import { getAdminStudyCounts } from "@/src/features/studies"
+import { getAdminStudyCounts } from "@/src/features/studies/index.server"
 
 export const metadata = {
   title: "Admin Console",

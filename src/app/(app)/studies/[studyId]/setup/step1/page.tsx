@@ -1,4 +1,5 @@
-import { Step1Content, SetupStepHeader, loadStudySetupPage } from "@/src/features/studies"
+import { Step1Content, SetupStepHeader } from "@/src/features/studies"
+import { loadStudySetupPage } from "@/src/features/studies/index.server"
 import { parseReturnToQueryParam } from "@/src/features/studies/domain/setup/parseReturnToQueryParam"
 
 export default async function Step1Page({

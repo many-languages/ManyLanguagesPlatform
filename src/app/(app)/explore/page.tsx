@@ -1,4 +1,5 @@
-import { StudyList, getParticipantJoinedByStudyIdRsc, getStudies } from "@/src/features/studies"
+import { StudyList } from "@/src/features/studies"
+import { getParticipantJoinedByStudyIdRsc, getStudies } from "@/src/features/studies/index.server"
 import PaginationControls from "@/src/components/ui/PaginationControls"
 import { parsePageQueryParam } from "@/src/lib/searchParams/parsePageQueryParam"
 import { getBlitzContext } from "../../blitz-server"

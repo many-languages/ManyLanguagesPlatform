@@ -2,10 +2,10 @@ import { notFound, redirect } from "next/navigation"
 import {
   StepIndicator,
   canEditStudySetup,
-  loadStudySetupPage,
   studyPath,
   getCompletedSteps,
 } from "@/src/features/studies"
+import { loadStudySetupPage } from "@/src/features/studies/index.server"
 
 export default async function StudySetupLayout({
   children,

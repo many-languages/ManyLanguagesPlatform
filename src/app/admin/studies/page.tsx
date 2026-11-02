@@ -1,4 +1,5 @@
-import { AdminStudyManagementCard, getStudiesRsc } from "@/src/features/studies"
+import { AdminStudyManagementCard } from "@/src/features/studies"
+import { getStudiesRsc } from "@/src/features/studies/index.server"
 import { getBlitzContext } from "@/src/app/blitz-server"
 import type { UserRole } from "@/db"
 

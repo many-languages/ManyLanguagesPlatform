@@ -7,6 +7,7 @@ import { FORM_ERROR } from "@/src/components/ui/Form"
 import toast from "react-hot-toast"
 
 import updateStudy from "@/src/features/studies/mutations/updateStudy"
+import { DEFAULT_STUDY_TITLE } from "@/src/features/studies/validations"
 import StudyInformationForm from "./StudyInformationForm"
 import { parseReturnToQueryParam } from "../../../../domain/setup/parseReturnToQueryParam"
 import { getPostStepNavigationUrl } from "../../../../domain/setup/setupStatus"
@@ -47,7 +48,8 @@ export default function Step1Content({
     <StudyInformationForm
       submitText={isEditMode ? "Update Study" : "Save and continue"}
       defaultValues={{
-        title: study.title || "",
+        // Show the placeholder instead of making the researcher delete the draft title
+        title: study.title === DEFAULT_STUDY_TITLE ? "" : study.title || "",
         description: study.description || "",
         startDate: study.startDate?.toISOString().split("T")[0] ?? "",
         endDate: study.endDate?.toISOString().split("T")[0] ?? "",

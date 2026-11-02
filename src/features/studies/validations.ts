@@ -9,6 +9,9 @@ import { z } from "zod"
 export { JATOS_IMPORT_MAX_FILE_SIZE }
 
 export const Id = z.number().int().positive()
+
+/** Title given to a study draft when it is created, before the researcher names it in step 1. */
+export const DEFAULT_STUDY_TITLE = "Untitled study"
 export type IdInput = z.infer<typeof Id>
 
 export const GetStudy = z.object({
@@ -109,7 +112,7 @@ export const StudyInformationFormSchema =
 
 export const CreateStudy = z.object({
   // Bare minimum for creating a new study draft record
-  title: z.string().default("Untitled study"),
+  title: z.string().default(DEFAULT_STUDY_TITLE),
   description: z.string().default(""),
   startDate: z.date().default(() => new Date()),
   endDate: z.date().default(() => new Date()),

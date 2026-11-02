@@ -6,6 +6,7 @@ import type { Route } from "next"
 import toast from "react-hot-toast"
 import createStudy from "@/src/features/studies/mutations/createStudy"
 import { AsyncButton } from "@/src/components/ui/AsyncButton"
+import { DEFAULT_STUDY_TITLE } from "@/src/features/studies/validations"
 import { studySetupStepPath } from "../../domain/setup/setupRoutes"
 
 const DEFAULT_CREATE_ERROR_FALLBACK = "Could not create the study. Please try again."
@@ -38,7 +39,7 @@ export default function CreateStudyButton({ className }: { className?: string })
     let studyId: number
     try {
       const study = await createStudyMutation({
-        title: "Untitled study",
+        title: DEFAULT_STUDY_TITLE,
         description: "",
         startDate: new Date(),
         endDate: new Date(),

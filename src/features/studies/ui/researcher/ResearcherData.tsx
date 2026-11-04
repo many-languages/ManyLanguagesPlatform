@@ -10,13 +10,50 @@ import StudyInformationCard from "../shared/StudyInformationCard"
 import { NavigationButton } from "@/src/components/ui/NavigationButton"
 import StudyLifecycleActions from "../shared/StudyLifecycleActions"
 import { ARCHIVED_STUDY_CANNOT_EDIT_MESSAGE } from "../../domain/studyEditability"
+import { isStudyPi } from "../../domain/studyPermissions"
 import { loadResearcherStudyData } from "../../server/loadResearcherStudyData"
+import { studyHasParticipantResponsesSafe } from "../../server/participantResponses"
+import { getBlitzContext } from "@/src/app/blitz-server"
 
 interface ResearcherDataProps {
   studyId: number
   study: StudyWithRelations
   /** When false, "Edit" (setup) is disabled — e.g. archived study. */
   canEditStudySetup?: boolean
+}
+
+/**
+ * Delete/archive controls for studies whose setup is not finished, where the full results view
+ * below does not render. Without a JATOS upload there cannot be any responses.
+ */
+async function UnfinishedStudyLifecycleActions({
+  studyId,
+  study,
+  hasJatosUpload,
+}: {
+  studyId: number
+  study: StudyWithRelations
+  hasJatosUpload: boolean
+}) {
+  const { session } = await getBlitzContext()
+  if (!isStudyPi(study, session.userId)) {
+    return null
+  }
+
+  const hasParticipantResponses = hasJatosUpload
+    ? await studyHasParticipantResponsesSafe(studyId)
+    : false
+
+  return (
+    <div className="mt-4 flex justify-end">
+      <StudyLifecycleActions
+        studyId={studyId}
+        isArchived={study.archived}
+        hasParticipantResponses={hasParticipantResponses}
+        showLifecycleActions
+      />
+    </div>
+  )
 }
 
 export default async function ResearcherData({
@@ -31,15 +68,22 @@ export default async function ResearcherData({
   // If JATOS study not imported, show setup alert
   if (!jatosStudyId || !study.jatosStudyUUID) {
     return (
-      <Alert variant="info" className="mt-4">
-        <p>Complete Step 2 of setup to import your JATOS study.</p>
-      </Alert>
+      <>
+        <Alert variant="info" className="mt-4">
+          <p>Complete Step 2 of setup to import your JATOS study.</p>
+        </Alert>
+        <UnfinishedStudyLifecycleActions
+          studyId={studyId}
+          study={study}
+          hasJatosUpload={jatosStudyId !== null}
+        />
+      </>
     )
   }
 
   // If setup not complete, don't show JATOS data
   if (!setupComplete) {
-    return null
+    return <UnfinishedStudyLifecycleActions studyId={studyId} study={study} hasJatosUpload />
   }
 
   const loaded = await loadResearcherStudyData({ studyId, study, jatosStudyId })

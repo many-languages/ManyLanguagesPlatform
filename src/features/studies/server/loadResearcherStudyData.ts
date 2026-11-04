@@ -20,6 +20,7 @@ import type {
   ResearcherRawResultInspectorPayload,
   StudyWithRelations,
 } from "../types"
+import { isStudyPi } from "../domain/studyPermissions"
 import { getStudyParticipantsRsc } from "./getStudyParticipants"
 
 export type ResearcherStudyDataLoad =
@@ -172,9 +173,7 @@ export async function loadResearcherStudyData(input: {
 
   return {
     kind: "loaded",
-    isPi: study.researchers.some(
-      (researcher) => researcher.userId === userId && researcher.role === "PI"
-    ),
+    isPi: isStudyPi(study, userId),
     participantRows: toParticipantStatusRows(participants, studyResults),
     summary,
     resultComponents: toResultComponentOptions(properties),

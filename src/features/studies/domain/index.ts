@@ -10,3 +10,4 @@ export {
   canEditStudySetup,
   studyArchivedBlocksSetupWrite,
 } from "./studyEditability"
+export { isStudyPi } from "./studyPermissions"

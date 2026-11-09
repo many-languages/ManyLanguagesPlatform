@@ -12,6 +12,7 @@ import toast from "react-hot-toast"
 import { useMutation } from "@blitzjs/rpc"
 import toggleParticipantActive from "@/src/features/studies/mutations/toggleParticipantActive"
 import toggleParticipantPayed from "@/src/features/studies/mutations/toggleParticipantPayed"
+import allowParticipantRetry from "@/src/features/studies/mutations/allowParticipantRetry"
 import type { ParticipantManagementCardProps, ResearcherParticipantStatusRow } from "../../types"
 import { ARCHIVED_STUDY_CANNOT_EDIT_MESSAGE } from "../../domain/studyEditability"
 
@@ -30,7 +31,7 @@ function ActionButton({
   canEditStudySetup,
   onRowsUpdate,
 }: {
-  action: "TOGGLE_ACTIVE" | "TOGGLE_PAYED"
+  action: "TOGGLE_ACTIVE" | "TOGGLE_PAYED" | "ALLOW_RETRY"
   label: string
   className: string
   participantRows: ResearcherParticipantStatusRow[]
@@ -43,6 +44,7 @@ function ActionButton({
   const [, startTransition] = useTransition()
   const [toggleActiveMutation] = useMutation(toggleParticipantActive)
   const [togglePayedMutation] = useMutation(toggleParticipantPayed)
+  const [allowRetryMutation] = useMutation(allowParticipantRetry)
 
   const handleClick = async () => {
     if (!canEditStudySetup) return
@@ -56,7 +58,29 @@ function ActionButton({
 
     setIsSubmitting(true)
     try {
-      if (action === "TOGGLE_ACTIVE") {
+      if (action === "ALLOW_RETRY") {
+        const selectedRows = participantRows.filter((p) => selectedIds.includes(p.id))
+        if (!selectedRows.every((p) => p.retryable)) {
+          toast.error(
+            "Retry is only possible for participants who started the study but did not finish it."
+          )
+          return
+        }
+
+        const confirmed = window.confirm(
+          `Give ${selectedRows.length} participant(s) a new link? They will be able to run the study again. Their unfinished run stays in JATOS but is left out of exports and statistics.`
+        )
+        if (!confirmed) return
+
+        await allowRetryMutation({ participantIds: selectedIds })
+
+        toast.success("Retry allowed")
+        onRowsUpdate(
+          participantRows.map((r) =>
+            selectedIds.includes(r.id) ? { ...r, started: false, retryable: false } : r
+          )
+        )
+      } else if (action === "TOGGLE_ACTIVE") {
         const areAllActive = participantRows
           .filter((p) => selectedIds.includes(p.id))
           .every((p) => p.active)
@@ -224,6 +248,16 @@ export default function ParticipantManagementCardClient({
               canEditStudySetup={canEditStudySetup}
               onRowsUpdate={setLocalRows}
             />
+            {localRows.some((r) => r.retryable) && (
+              <ActionButton
+                action="ALLOW_RETRY"
+                label="Allow Retry"
+                className="btn btn-warning"
+                participantRows={localRows}
+                canEditStudySetup={canEditStudySetup}
+                onRowsUpdate={setLocalRows}
+              />
+            )}
             <ActionButton
               action="TOGGLE_PAYED"
               label="Toggle Payed"

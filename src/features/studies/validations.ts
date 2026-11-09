@@ -183,6 +183,10 @@ export const ToggleParticipantActive = z.object({
   makeActive: z.boolean(),
 })
 
+export const AllowParticipantRetry = z.object({
+  participantIds: z.array(Id).min(1, "Please select at least one participant"),
+})
+
 export const ToggleParticipantPayed = z.object({
   participantIds: z.array(Id),
   makePayed: z.boolean(),

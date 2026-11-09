@@ -60,7 +60,9 @@ export async function saveParticipantRunUrl(input: {
   })
 }
 
-async function resolveSingleStudyIdForParticipants(participantIds: number[]): Promise<number> {
+export async function resolveSingleStudyIdForParticipants(
+  participantIds: number[]
+): Promise<number> {
   if (participantIds.length === 0) {
     throw new Error("No participants selected.")
   }

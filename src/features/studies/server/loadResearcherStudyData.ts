@@ -5,6 +5,7 @@ import {
   getStartedRunCodesForResearcher,
   getStudyPropertiesForResearcher,
 } from "@/src/lib/jatos/jatosAccessService"
+import { isParticipantRetryable, pickParticipantStudyResult } from "../domain/participantRetry"
 import { hasStartedRun } from "@/src/lib/jatos/utils/studyRunStarts"
 import { hasParticipantResponses as hasParticipantResponsesInResults } from "@/src/lib/jatos/utils/studyHasParticipantResponses"
 import type {
@@ -53,13 +54,16 @@ function getStudyResultsForStudy(metadata: JatosMetadata | null, studyUuid?: str
 function toParticipantStatusRows(
   participants: ParticipantWithEmail[],
   studyResults: JatosStudyResult[],
-  startedCodes: ReadonlySet<string>
+  startedCodes: ReadonlySet<string>,
+  workerType: string | null | undefined
 ): ResearcherParticipantStatusRow[] {
   return participants.map((participant) => {
-    const jatosResult = studyResults.find(
-      (result) =>
-        result.comment === participant.pseudonym || result.comment === participant.user.email
-    )
+    const jatosResult = pickParticipantStudyResult(studyResults, {
+      pseudonym: participant.pseudonym,
+      email: participant.user.email,
+    })
+    const finished = jatosResult?.studyState === "FINISHED"
+    const started = hasStartedRun(participant.jatosRunUrl, startedCodes)
 
     const componentResults = jatosResult?.componentResults ?? []
     const finishedComponents = componentResults.filter(
@@ -71,9 +75,10 @@ function toParticipantStatusRows(
     return {
       id: participant.id,
       label: participant.user.email,
-      finished: jatosResult?.studyState === "FINISHED",
+      finished,
       // Runs that failed before any component result are only visible in the study log
-      started: hasStartedRun(participant.jatosRunUrl, startedCodes),
+      started,
+      retryable: isParticipantRetryable({ workerType, started, finished }),
       lastSeen: jatosResult?.lastSeenDate
         ? new Date(jatosResult.lastSeenDate).toLocaleString()
         : "-",
@@ -195,7 +200,12 @@ export async function loadResearcherStudyData(input: {
   return {
     kind: "loaded",
     isPi: isStudyPi(study, userId),
-    participantRows: toParticipantStatusRows(participants, studyResults, startedCodes ?? new Set()),
+    participantRows: toParticipantStatusRows(
+      participants,
+      studyResults,
+      startedCodes ?? new Set(),
+      study.latestJatosStudyUpload?.jatosWorkerType
+    ),
     summary,
     resultComponents: toResultComponentOptions(properties),
     rawResultInspectorPayload: { enrichedResults },

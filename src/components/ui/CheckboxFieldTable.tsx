@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useCallback, useMemo, useRef, useEffect } from "react"
-import { useFormContext } from "react-hook-form"
+import { useFormContext, useWatch } from "react-hook-form"
 import { ColumnDef } from "@tanstack/react-table"
 import Table from "./Table"
 
@@ -27,7 +27,9 @@ const CheckboxFieldTable = <T,>({
     formState: { isSubmitting, errors },
   } = useFormContext()
 
-  const selectedIds = useMemo(() => watch(name) || [], [watch, name])
+  // useWatch subscribes to the field. Memoizing watch(name) on the stable `watch` function would
+  // freeze the selection at its initial value, so checkboxes never showed as checked.
+  const selectedIds: number[] = useWatch<Record<string, number[] | undefined>>({ name }) ?? []
   const error = errors[name]
 
   const toggleSelection = useCallback(

@@ -44,6 +44,8 @@ export interface ResearcherParticipantStatusRow {
   finished: boolean
   /** The participant's personal link was started (per the JATOS study log), finished or not. */
   started: boolean
+  /** The researcher may hand this participant a fresh single-run link (see participantRetry). */
+  retryable: boolean
   lastSeen: string
   active: boolean
   progress: number

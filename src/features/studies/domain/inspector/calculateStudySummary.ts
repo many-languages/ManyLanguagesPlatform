@@ -45,7 +45,7 @@ export function calculateStudySummary(metadata: JatosMetadata): StudySummaryResu
 
     // 3️⃣ Average duration (in seconds) - filter invalid values
     const durations = allComponents
-      .map((c) => parseDuration(c.duration))
+      .map((c) => parseDuration(c.duration ?? ""))
       .filter((n) => !isNaN(n) && isFinite(n) && n >= 0)
 
     const avgDurationSec =

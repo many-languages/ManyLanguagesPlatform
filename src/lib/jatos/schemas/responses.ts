@@ -31,8 +31,9 @@ export const JatosComponentResultSchema = z
     componentId: z.number(),
     componentUuid: z.string(),
     startDate: z.number(),
-    endDate: z.number(),
-    duration: z.string(),
+    // null while the component is still running or was abandoned
+    endDate: z.number().nullable(),
+    duration: z.string().nullable(),
     componentState: z.string(),
     path: z.string(),
     data: JatosDataInfoSchema,
@@ -47,8 +48,9 @@ export const JatosStudyResultSchema = z
     studyCode: z.string(),
     comment: z.string().optional(),
     startDate: z.number(),
-    endDate: z.number(),
-    duration: z.string(),
+    // null while the study run is unfinished (started, data retrieved, abandoned, failed)
+    endDate: z.number().nullable(),
+    duration: z.string().nullable(),
     lastSeenDate: z.number(),
     studyState: z.string(),
     message: z.string().optional(),
@@ -236,3 +238,23 @@ export type JatosComponent = z.infer<typeof JatosComponentSchema>
 export type JatosMember = z.infer<typeof JatosMemberSchema>
 export type JatosStudyProperties = z.infer<typeof JatosStudyPropertiesSchema>
 export type JatosStudyPropertiesEnvelope = z.infer<typeof JatosStudyPropertiesEnvelopeSchema>
+
+/**
+ * One study-log entry from `GET /studies/{id}/log?download=false`.
+ * Entries are free-form per event type, so only `msg` is required; known fields are optional.
+ */
+export const JatosStudyLogEntrySchema = z
+  .object({
+    msg: z.string(),
+    timestamp: z.number().optional(),
+    studyCode: z.string().optional(),
+    workerId: z.number().optional(),
+    batchId: z.number().optional(),
+  })
+  .passthrough()
+
+/**
+ * JATOS sends the log as a JSON array (despite the `application/x-ndjson` content type).
+ * When `entryLimit` cuts the log it appends a plain string marker, so elements are objects or strings.
+ */
+export const JatosStudyLogSchema = z.array(z.union([JatosStudyLogEntrySchema, z.string()]))

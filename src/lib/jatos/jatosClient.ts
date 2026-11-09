@@ -13,6 +13,12 @@ export { getResultsMetadata } from "./client/getResultsMetadata"
 export { getResultsData } from "./client/getResultsData"
 export { getStudyProperties } from "./client/getStudyProperties"
 export { fetchStudyCodes } from "./client/fetchStudyCodes"
+export {
+  getStudyLog,
+  type GetStudyLogParams,
+  type GetStudyLogResult,
+  type JatosStudyLogEntry,
+} from "./client/getStudyLog"
 export { deleteJatosStudy } from "./client/deleteStudy"
 export {
   createJatosUser,

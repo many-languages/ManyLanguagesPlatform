@@ -144,6 +144,13 @@ export default function ParticipantManagementCardClient({
         cell: ({ row }: any) =>
           row.original.finished ? (
             <span className="badge badge-success">Yes</span>
+          ) : row.original.started ? (
+            <span
+              className="badge badge-warning tooltip"
+              data-tip="A run was started for this participant but has not finished."
+            >
+              Started, not finished
+            </span>
           ) : (
             <span className="badge badge-ghost">No</span>
           ),

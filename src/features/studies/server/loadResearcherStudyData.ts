@@ -2,8 +2,10 @@ import { getBlitzContext } from "@/src/app/blitz-server"
 import {
   getEnrichedResultsForResearcher,
   getResultsMetadataForResearcher,
+  getStartedRunCodesForResearcher,
   getStudyPropertiesForResearcher,
 } from "@/src/lib/jatos/jatosAccessService"
+import { hasStartedRun } from "@/src/lib/jatos/utils/studyRunStarts"
 import { hasParticipantResponses as hasParticipantResponsesInResults } from "@/src/lib/jatos/utils/studyHasParticipantResponses"
 import type {
   EnrichedJatosStudyResult,
@@ -50,7 +52,8 @@ function getStudyResultsForStudy(metadata: JatosMetadata | null, studyUuid?: str
 
 function toParticipantStatusRows(
   participants: ParticipantWithEmail[],
-  studyResults: JatosStudyResult[]
+  studyResults: JatosStudyResult[],
+  startedCodes: ReadonlySet<string>
 ): ResearcherParticipantStatusRow[] {
   return participants.map((participant) => {
     const jatosResult = studyResults.find(
@@ -69,6 +72,8 @@ function toParticipantStatusRows(
       id: participant.id,
       label: participant.user.email,
       finished: jatosResult?.studyState === "FINISHED",
+      // Runs that failed before any component result are only visible in the study log
+      started: hasStartedRun(participant.jatosRunUrl, startedCodes),
       lastSeen: jatosResult?.lastSeenDate
         ? new Date(jatosResult.lastSeenDate).toLocaleString()
         : "-",
@@ -108,29 +113,42 @@ export async function loadResearcherStudyData(input: {
   let metadata: JatosMetadata | null = null
   let properties: JatosStudyProperties | null = null
   let enrichedResults: EnrichedJatosStudyResult[] = []
+  let startedCodes: Set<string> | null = null
 
   try {
-    const [participantsResult, metadataResult, propertiesResult, enrichedResultsResult] =
-      await Promise.allSettled([
-        getStudyParticipantsRsc(studyId),
-        getResultsMetadataForResearcher({
-          studyId,
-          userId,
-          studyIds: [jatosStudyId],
-        }),
-        getStudyPropertiesForResearcher({
-          studyId,
-          userId,
-          jatosStudyUUID: study.jatosStudyUUID ?? undefined,
-        }),
-        getEnrichedResultsForResearcher({ studyId, userId, jatosStudyId }),
-      ])
+    const [
+      participantsResult,
+      metadataResult,
+      propertiesResult,
+      enrichedResultsResult,
+      startedCodesResult,
+    ] = await Promise.allSettled([
+      getStudyParticipantsRsc(studyId),
+      getResultsMetadataForResearcher({
+        studyId,
+        userId,
+        studyIds: [jatosStudyId],
+      }),
+      getStudyPropertiesForResearcher({
+        studyId,
+        userId,
+        jatosStudyUUID: study.jatosStudyUUID ?? undefined,
+      }),
+      getEnrichedResultsForResearcher({ studyId, userId, jatosStudyId }),
+      getStartedRunCodesForResearcher({ studyId, userId, jatosStudyId }),
+    ])
 
     participants = participantsResult.status === "fulfilled" ? participantsResult.value : []
     metadata = metadataResult.status === "fulfilled" ? metadataResult.value : null
     properties = propertiesResult.status === "fulfilled" ? propertiesResult.value : null
     enrichedResults =
       enrichedResultsResult.status === "fulfilled" ? enrichedResultsResult.value : []
+
+    startedCodes = startedCodesResult.status === "fulfilled" ? startedCodesResult.value : null
+
+    if (startedCodesResult.status === "rejected") {
+      console.error("Failed to fetch study run starts", startedCodesResult.reason)
+    }
 
     if (participantsResult.status === "rejected") {
       console.error("Failed to fetch study participants", participantsResult.reason)
@@ -157,9 +175,12 @@ export async function loadResearcherStudyData(input: {
   }
 
   const studyResults = getStudyResultsForStudy(metadata, study.jatosStudyUUID)
+  // Fail closed (null hides archive/delete) unless both metadata and the study log were readable
   let lifecycleHasResponses: boolean | null = null
-  if (metadata) {
-    lifecycleHasResponses = hasParticipantResponsesInResults(studyResults)
+  if (metadata && startedCodes) {
+    lifecycleHasResponses =
+      hasParticipantResponsesInResults(studyResults) ||
+      participants.some((participant) => hasStartedRun(participant.jatosRunUrl, startedCodes!))
   }
 
   let summary: StudySummaryResult | null = null
@@ -174,7 +195,7 @@ export async function loadResearcherStudyData(input: {
   return {
     kind: "loaded",
     isPi: isStudyPi(study, userId),
-    participantRows: toParticipantStatusRows(participants, studyResults),
+    participantRows: toParticipantStatusRows(participants, studyResults, startedCodes ?? new Set()),
     summary,
     resultComponents: toResultComponentOptions(properties),
     rawResultInspectorPayload: { enrichedResults },

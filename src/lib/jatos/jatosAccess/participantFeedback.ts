@@ -147,7 +147,7 @@ export async function checkParticipantCompletionForParticipant({
       { studyId, pseudonym, userId, jatosStudyId },
       async ({ jatosStudyId, pseudonym, token }) => {
         const metadata = await getResultsMetadata({ studyIds: [jatosStudyId] }, { token })
-        const resultId = findStudyResultIdByComment(metadata, pseudonym)
+        const resultId = findStudyResultIdByComment(metadata, pseudonym, { finishedOnly: true })
         return { success: true, completed: resultId !== null }
       }
     )

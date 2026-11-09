@@ -57,11 +57,13 @@ export default function ComponentResultExplorer({ enrichedResult }: ComponentRes
                   </div>
                   <div>
                     <span className="font-medium">End Date:</span>
-                    <div className="text-xs">{new Date(component.endDate).toLocaleString()}</div>
+                    <div className="text-xs">
+                      {component.endDate ? new Date(component.endDate).toLocaleString() : "—"}
+                    </div>
                   </div>
                   <div>
                     <span className="font-medium">Duration:</span>
-                    <div className="text-xs">{component.duration}</div>
+                    <div className="text-xs">{component.duration ?? "—"}</div>
                   </div>
                 </div>
 

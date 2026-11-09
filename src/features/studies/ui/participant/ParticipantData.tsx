@@ -5,10 +5,12 @@ import {
   ParticipantFeedbackData,
   checkParticipantCompletionAction,
 } from "@/src/features/feedback/index.server"
-import { CheckCircleIcon } from "@heroicons/react/24/solid"
 import StudyInformationCard from "../shared/StudyInformationCard"
 import RunStudyButton from "../shared/RunStudyButton"
+import ParticipantRunAutoRefresh from "./ParticipantRunAutoRefresh"
+import ParticipantRunStatusCard from "./ParticipantRunStatusCard"
 import { getStudyParticipantRsc } from "../../server/getStudyParticipant"
+import { getParticipantRunStarted } from "../../server/getParticipantRunStarted"
 
 interface ParticipantDataProps {
   studyId: number
@@ -58,8 +60,19 @@ export default async function ParticipantData({ studyId, study }: ParticipantDat
     const isCompleted = completionCheck.success && completionCheck.completed
     const isSingleRunStudy = jatosWorkerType === "SINGLE"
 
-    // Hide button if study is completed and it's a SINGLE run study
-    const shouldShowButton = !(isCompleted && isSingleRunStudy)
+    // A single-run link is used up once started. If it was started but never finished (for example
+    // the run failed on the JATOS side), running it again would only show "can be run only once".
+    const isRunInterrupted =
+      isSingleRunStudy &&
+      !isCompleted &&
+      (await getParticipantRunStarted({
+        studyId,
+        pseudonym: participant.pseudonym,
+        jatosStudyId,
+      }))
+
+    // Hide button if study is completed (or interrupted) and it's a SINGLE run study
+    const shouldShowButton = !(isCompleted && isSingleRunStudy) && !isRunInterrupted
 
     // Disable run button when study is paused (participants who haven't run yet cannot start)
     const canRunStudy = participant.active && study.status === "OPEN"
@@ -73,6 +86,9 @@ export default async function ParticipantData({ studyId, study }: ParticipantDat
 
     return (
       <>
+        {/* Pick up what happened in the JATOS window when the participant comes back */}
+        <ParticipantRunAutoRefresh enabled={!isCompleted && !isRunInterrupted} />
+
         {/* Study information */}
         <StudyInformationCard
           study={study}
@@ -81,23 +97,32 @@ export default async function ParticipantData({ studyId, study }: ParticipantDat
           actions={participantActions}
         />
 
+        {isRunInterrupted && (
+          <ParticipantRunStatusCard
+            tone="warning"
+            title="Study Not Completed"
+            message="Your session for this study was started but not completed, and this study can only be run once. Please contact the researcher."
+          />
+        )}
+
         {/* Completion message once at least one run exists (copy differs for reusable personal links) */}
         {isCompleted && (isSingleRunStudy || jatosWorkerType === "MULTIPLE") && (
-          <div className="flex flex-col items-center justify-center mt-4 p-6 rounded-lg bg-success/10 border border-success/20">
-            <CheckCircleIcon className="h-12 w-12 text-success mb-3" />
-            <h3 className="text-lg font-semibold text-success mb-1">Study Completed</h3>
-            <p className="text-sm text-base-content/70 text-center max-w-md">
-              {jatosWorkerType === "MULTIPLE"
+          <ParticipantRunStatusCard
+            tone="success"
+            title="Study Completed"
+            message={
+              jatosWorkerType === "MULTIPLE"
                 ? "You can complete this study again; your latest run is recorded."
-                : "Thank you for your participation!"}
-            </p>
-          </div>
+                : "Thank you for your participation!"
+            }
+          />
         )}
 
         <ParticipantFeedbackData
           studyId={studyId}
           pseudonym={participant.pseudonym}
           jatosStudyId={jatosStudyId}
+          sessionInterrupted={isRunInterrupted}
         />
       </>
     )

@@ -42,6 +42,8 @@ export interface ResearcherParticipantStatusRow {
   id: number
   label: string
   finished: boolean
+  /** The participant's personal link was started (per the JATOS study log), finished or not. */
+  started: boolean
   lastSeen: string
   active: boolean
   progress: number

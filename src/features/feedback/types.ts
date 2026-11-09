@@ -84,6 +84,8 @@ export interface FeedbackCardProps {
   className?: string
   /** Participant: false until the study run exists in JATOS. */
   participantCompleted?: boolean
+  /** Participant: the run started in JATOS but did not finish, so feedback will not become available. */
+  participantSessionInterrupted?: boolean
   /** Researcher preview: false when no pilot results exist. */
   researcherHasPilotData?: boolean
   onRefresh?: () => Promise<void> | void

@@ -16,11 +16,15 @@ import {
   createPersonalStudyCodeForResearcher,
   getEnrichedResultsForResearcher,
   downloadAllResultsForResearcher,
+  getStartedRunCodesForResearcher,
+  checkParticipantRunStartedForParticipant,
+  checkStudyParticipantResponsePresence,
 } from "./jatosAccessService"
 import * as tokenBrokerModule from "./tokenBroker"
 import * as getResultsMetadataModule from "./client/getResultsMetadata"
 import * as getResultsDataModule from "./client/getResultsData"
 import * as fetchStudyCodesModule from "./client/fetchStudyCodes"
+import * as getStudyLogModule from "./client/getStudyLog"
 import * as parseJatosZipModule from "./parsers/parseJatosZip"
 import * as matchJatosDataToMetadataModule from "./utils/matchJatosDataToMetadata"
 import * as generateJatosRunUrlModule from "./utils/generateJatosRunUrl"
@@ -78,6 +82,7 @@ const SAMPLE_METADATA = {
         {
           id: 101,
           comment: "participant-1",
+          studyState: "FINISHED",
           componentResults: [{ path: "/foo", data: { size: 0 } }],
         },
       ],
@@ -167,6 +172,39 @@ describe("jatosAccessService", () => {
       expect(getTokenSpy).toHaveBeenCalledWith(1)
       expect(getMetadataSpy).toHaveBeenCalledWith({ studyIds: [1] }, { token: "service-token-abc" })
       expect(result).toEqual({ success: true, completed: true })
+    })
+  })
+
+  describe("2b. participant completion ignores unfinished runs", () => {
+    it("reports not completed when the only result is unfinished", async () => {
+      vi.spyOn(tokenBrokerModule, "getTokenForStudyService").mockResolvedValue("service-token")
+      vi.spyOn(getResultsMetadataModule, "getResultsMetadata").mockResolvedValue({
+        data: [
+          {
+            studyId: 1,
+            studyUuid: "uuid-1",
+            studyTitle: "Test Study",
+            studyResults: [
+              {
+                id: 102,
+                comment: "participant-1",
+                studyState: "DATA_RETRIEVED",
+                endDate: null,
+                componentResults: [],
+              },
+            ],
+          },
+        ],
+      } as never)
+
+      const result = await checkParticipantCompletionForParticipant({
+        studyId: 10,
+        pseudonym: "participant-1",
+        jatosStudyId: 1,
+        userId: 100,
+      })
+
+      expect(result).toEqual({ success: true, completed: false })
     })
   })
 
@@ -642,6 +680,213 @@ describe("jatosAccessService", () => {
       await expect(downloadAllResultsForResearcher({ studyId: 10, userId: 42 })).rejects.toThrow(
         "Failed to fetch results from JATOS"
       )
+    })
+  })
+
+  describe("study run starts (study log)", () => {
+    const START_LOG = {
+      entries: [
+        { msg: "Started study run with Personal Single worker", studyCode: "started-code" },
+        { msg: "Exported results (files and/or data)" },
+      ],
+      truncated: false,
+    }
+
+    it("researcher: checks access, uses the researcher token and returns started codes", async () => {
+      const getTokenSpy = vi
+        .spyOn(tokenBrokerModule, "getTokenForResearcher")
+        .mockResolvedValue("researcher-token")
+      const logSpy = vi.spyOn(getStudyLogModule, "getStudyLog").mockResolvedValue(START_LOG)
+
+      const codes = await getStartedRunCodesForResearcher({
+        studyId: 10,
+        userId: 42,
+        jatosStudyId: 1,
+      })
+
+      expect(mockStudyResearcherFindFirst).toHaveBeenCalled()
+      expect(getTokenSpy).toHaveBeenCalledWith(42)
+      expect(logSpy).toHaveBeenCalledWith({ studyId: 1 }, { token: "researcher-token" })
+      expect([...codes]).toEqual(["started-code"])
+    })
+
+    it("researcher: rejects before any JATOS call when not authorized", async () => {
+      mockStudyResearcherFindFirst.mockResolvedValueOnce(null)
+      const logSpy = vi.spyOn(getStudyLogModule, "getStudyLog")
+
+      await expect(
+        getStartedRunCodesForResearcher({ studyId: 10, userId: 999, jatosStudyId: 1 })
+      ).rejects.toThrow("You are not authorized to access this study.")
+      expect(logSpy).not.toHaveBeenCalled()
+    })
+
+    it("participant: started when the stored link's code is in the log", async () => {
+      mockParticipantStudyFindUnique.mockResolvedValue({
+        id: 55,
+        pseudonym: "participant-1",
+        jatosRunUrl: "https://jatos.test/publix/started-code",
+      })
+      const getTokenSpy = vi
+        .spyOn(tokenBrokerModule, "getTokenForStudyService")
+        .mockResolvedValue("service-token")
+      const logSpy = vi.spyOn(getStudyLogModule, "getStudyLog").mockResolvedValue(START_LOG)
+
+      const result = await checkParticipantRunStartedForParticipant({
+        studyId: 10,
+        pseudonym: "participant-1",
+        jatosStudyId: 1,
+        userId: 100,
+      })
+
+      expect(getTokenSpy).toHaveBeenCalledWith(1)
+      expect(logSpy).toHaveBeenCalledWith({ studyId: 1 }, { token: "service-token" })
+      expect(result).toEqual({ success: true, started: true })
+    })
+
+    it("participant: not started when the stored link's code is not in the log", async () => {
+      mockParticipantStudyFindUnique.mockResolvedValue({
+        id: 55,
+        pseudonym: "participant-1",
+        jatosRunUrl: "https://jatos.test/publix/other-code",
+      })
+      vi.spyOn(tokenBrokerModule, "getTokenForStudyService").mockResolvedValue("service-token")
+      vi.spyOn(getStudyLogModule, "getStudyLog").mockResolvedValue(START_LOG)
+
+      const result = await checkParticipantRunStartedForParticipant({
+        studyId: 10,
+        pseudonym: "participant-1",
+        jatosStudyId: 1,
+        userId: 100,
+      })
+
+      expect(result).toEqual({ success: true, started: false })
+    })
+
+    it("participant: skips the log when no run link is stored", async () => {
+      mockParticipantStudyFindUnique.mockResolvedValue({
+        id: 55,
+        pseudonym: "participant-1",
+        jatosRunUrl: null,
+      })
+      vi.spyOn(tokenBrokerModule, "getTokenForStudyService").mockResolvedValue("service-token")
+      const logSpy = vi.spyOn(getStudyLogModule, "getStudyLog")
+
+      const result = await checkParticipantRunStartedForParticipant({
+        studyId: 10,
+        pseudonym: "participant-1",
+        jatosStudyId: 1,
+        userId: 100,
+      })
+
+      expect(result).toEqual({ success: true, started: false })
+      expect(logSpy).not.toHaveBeenCalled()
+    })
+
+    it("participant: returns an error without touching JATOS when access is denied", async () => {
+      mockParticipantStudyFindUnique.mockResolvedValueOnce(null)
+      const logSpy = vi.spyOn(getStudyLogModule, "getStudyLog")
+
+      const result = await checkParticipantRunStartedForParticipant({
+        studyId: 10,
+        pseudonym: "participant-1",
+        jatosStudyId: 1,
+        userId: 100,
+      })
+
+      expect(result.success).toBe(false)
+      expect(result.started).toBe(false)
+      expect(logSpy).not.toHaveBeenCalled()
+    })
+
+    it("participant: reports failure (not 'not started') when the log cannot be read", async () => {
+      mockParticipantStudyFindUnique.mockResolvedValue({
+        id: 55,
+        pseudonym: "participant-1",
+        jatosRunUrl: "https://jatos.test/publix/started-code",
+      })
+      vi.spyOn(tokenBrokerModule, "getTokenForStudyService").mockResolvedValue("service-token")
+      vi.spyOn(getStudyLogModule, "getStudyLog").mockRejectedValue(new Error("JATOS down"))
+      vi.spyOn(console, "error").mockImplementation(() => {})
+
+      const result = await checkParticipantRunStartedForParticipant({
+        studyId: 10,
+        pseudonym: "participant-1",
+        jatosStudyId: 1,
+        userId: 100,
+      })
+
+      expect(result.success).toBe(false)
+      expect(result.started).toBe(false)
+      expect(result.error).toBeDefined()
+    })
+
+    describe("checkStudyParticipantResponsePresence", () => {
+      const EMPTY_METADATA = {
+        data: [{ studyId: 1, studyUuid: "uuid-1", studyTitle: "Test", studyResults: [] }],
+      }
+
+      beforeEach(() => {
+        vi.spyOn(tokenBrokerModule, "getTokenForStudyService").mockResolvedValue("service-token")
+      })
+
+      it("is true without reading the log when metadata already has a participant response", async () => {
+        vi.spyOn(getResultsMetadataModule, "getResultsMetadata").mockResolvedValue(
+          SAMPLE_METADATA as never
+        )
+        const logSpy = vi.spyOn(getStudyLogModule, "getStudyLog")
+
+        await expect(checkStudyParticipantResponsePresence({ studyId: 10 })).resolves.toBe(true)
+        expect(logSpy).not.toHaveBeenCalled()
+      })
+
+      it("is true when a participant started their link but metadata lists no result", async () => {
+        vi.spyOn(getResultsMetadataModule, "getResultsMetadata").mockResolvedValue(
+          EMPTY_METADATA as never
+        )
+        mockParticipantStudyFindMany.mockResolvedValue([
+          { jatosRunUrl: "https://jatos.test/publix/started-code" },
+        ])
+        vi.spyOn(getStudyLogModule, "getStudyLog").mockResolvedValue(START_LOG)
+
+        await expect(checkStudyParticipantResponsePresence({ studyId: 10 })).resolves.toBe(true)
+      })
+
+      it("is false and skips the log when no participant has a link", async () => {
+        vi.spyOn(getResultsMetadataModule, "getResultsMetadata").mockResolvedValue(
+          EMPTY_METADATA as never
+        )
+        mockParticipantStudyFindMany.mockResolvedValue([])
+        const logSpy = vi.spyOn(getStudyLogModule, "getStudyLog")
+
+        await expect(checkStudyParticipantResponsePresence({ studyId: 10 })).resolves.toBe(false)
+        expect(logSpy).not.toHaveBeenCalled()
+      })
+
+      it("is false when no participant link appears in the log", async () => {
+        vi.spyOn(getResultsMetadataModule, "getResultsMetadata").mockResolvedValue(
+          EMPTY_METADATA as never
+        )
+        mockParticipantStudyFindMany.mockResolvedValue([
+          { jatosRunUrl: "https://jatos.test/publix/not-started" },
+        ])
+        vi.spyOn(getStudyLogModule, "getStudyLog").mockResolvedValue(START_LOG)
+
+        await expect(checkStudyParticipantResponsePresence({ studyId: 10 })).resolves.toBe(false)
+      })
+
+      it("fails closed when the log cannot be read", async () => {
+        vi.spyOn(getResultsMetadataModule, "getResultsMetadata").mockResolvedValue(
+          EMPTY_METADATA as never
+        )
+        mockParticipantStudyFindMany.mockResolvedValue([
+          { jatosRunUrl: "https://jatos.test/publix/started-code" },
+        ])
+        vi.spyOn(getStudyLogModule, "getStudyLog").mockRejectedValue(new Error("JATOS down"))
+
+        await expect(checkStudyParticipantResponsePresence({ studyId: 10 })).rejects.toThrow(
+          "Could not verify participant responses"
+        )
+      })
     })
   })
 })

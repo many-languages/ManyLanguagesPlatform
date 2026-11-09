@@ -11,12 +11,15 @@ interface ParticipantFeedbackDataProps {
   studyId: number
   pseudonym: string
   jatosStudyId: number
+  /** The participant's run started in JATOS but did not finish. */
+  sessionInterrupted?: boolean
 }
 
 export default async function ParticipantFeedbackData({
   studyId,
   pseudonym,
   jatosStudyId,
+  sessionInterrupted = false,
 }: ParticipantFeedbackDataProps) {
   const step = await loadParticipantFeedbackViewModel(studyId, pseudonym, jatosStudyId)
 
@@ -72,6 +75,7 @@ export default async function ParticipantFeedbackData({
       initialMatchingResponseCount={initialMatchingResponseCount}
       initialSelectedResponseEndDate={initialSelectedResponseEndDate}
       initialFeedbackMaintained={initialFeedbackMaintained}
+      sessionInterrupted={sessionInterrupted}
     />
   )
 }

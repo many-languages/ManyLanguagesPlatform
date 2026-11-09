@@ -26,7 +26,7 @@ export default function SelectedResultView({ selectedResult }: SelectedResultVie
             <span className="font-medium">Worker Type:</span> {selectedResult.workerType}
           </div>
           <div>
-            <span className="font-medium">Duration:</span> {selectedResult.duration}
+            <span className="font-medium">Duration:</span> {selectedResult.duration ?? "—"}
           </div>
           <div>
             <span className="font-medium">Components:</span>{" "}

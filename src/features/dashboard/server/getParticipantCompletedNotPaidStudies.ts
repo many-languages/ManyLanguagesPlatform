@@ -63,7 +63,9 @@ async function findParticipantCompletedNotPaidStudies(
       latestUpload.jatosStudyId,
       participation.pseudonym
     )
-    const completedAt = result ? new Date(result.endDate) : new Date(participation.study.endDate)
+    const completedAt = result?.endDate
+      ? new Date(result.endDate)
+      : new Date(participation.study.endDate)
 
     results.push({
       id: participation.study.id,

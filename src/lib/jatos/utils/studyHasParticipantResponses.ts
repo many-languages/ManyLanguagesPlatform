@@ -20,8 +20,11 @@ export function countNonPilotResponses(studyResults: JatosStudyResult[]): number
 }
 
 /**
- * Returns true if the study has any participant responses (non-pilot, FINISHED).
+ * Returns true if the study has any participant response: a non-pilot result in any state
+ * (finished, aborted, failed, still running). Unfinished sessions may already hold participant
+ * data, so they count for lifecycle rules (archive vs delete) and the overwrite guard.
+ * Use {@link countNonPilotResponses} when only completed responses should be counted.
  */
 export function hasParticipantResponses(studyResults: JatosStudyResult[]): boolean {
-  return countNonPilotResponses(studyResults) > 0
+  return studyResults.some(isNonPilotResponse)
 }

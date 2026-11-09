@@ -241,6 +241,8 @@ export async function downloadResultsAction(studyId: number) {
 | `getResultsMetadataForResearcherDashboard`  | Fetch researcher-dashboard response metadata                                           |
 | `checkStudyParticipantResponsePresence`     | Check participant response presence for platform lifecycle/admin decisions             |
 | `checkParticipantCompletionForParticipant`  | Check participant completion from metadata                                             |
+| `checkParticipantRunStartedForParticipant`  | Whether the participant's personal link was started, from the study log (viewer token) |
+| `getStartedRunCodesForResearcher`           | Study codes with a recorded run start, from the study log (researcher token)           |
 | `getStudyPropertiesForResearcher`           | Fetch study properties                                                                 |
 | `getBatchIdForResearcher`                   | Get first batch ID from properties                                                     |
 | `checkJatosStudyUuidForSetup`               | Validate a setup-time JATOS study UUID                                                 |
@@ -256,6 +258,18 @@ export async function downloadResultsAction(studyId: number) {
 | `getAllPilotResultsForResearcher`           | All pilot results                                                                      |
 | `getPilotResultByIdForResearcher`           | Single pilot result by ID                                                              |
 | `checkPilotStatusForResearcher`             | Pilot completion status                                                                |
+
+### Study run starts (study log)
+
+`results/metadata` only lists study results that have at least one component result. A run that fails before any component starts (for example a missing HTML file in the study assets) is therefore invisible there, yet it uses up a `PersonalSingle` link. The study log (`GET /jatos/api/v1/studies/{id}/log?download=false`, client `getStudyLog`) records `Started study run with … worker` with the `studyCode` for every run start. We match those codes against the study code in each participant's stored `jatosRunUrl` (`utils/studyRunStarts.ts`).
+
+Notes:
+
+- The response is declared `application/x-ndjson` but is one JSON array, newest entry first. With `entryLimit` JATOS appends a plain string marker (`--- Log is cut here ---`); `getStudyLog` drops it and returns `truncated: true`.
+- We read the full log (no `entryLimit`). Results exports add entries too, so the log grows with page views; add a limit and handle `truncated` if this becomes slow.
+- The match relies on the message prefix `Started study run`. The JATOS image is pinned (see `deploy/compose/services/jatos.yml`); re-check the message after upgrades.
+- Unfinished runs that did reach a component do appear in `results/metadata`, with `endDate` and `duration` set to `null` on the study result and its component results (the schemas allow this). Participant-facing completion therefore means `studyState === "FINISHED"`; pilot lookups still match any state.
+- Lifecycle rules (archive vs delete) treat a started participant link as a response: `checkStudyParticipantResponsePresence` reads the log only when metadata shows no response and a participant link exists, and fails closed if the log cannot be read.
 
 ---
 

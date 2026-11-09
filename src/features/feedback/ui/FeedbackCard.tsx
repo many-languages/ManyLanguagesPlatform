@@ -34,6 +34,7 @@ export default function FeedbackCard({
   title = "Feedback",
   className,
   participantCompleted = true,
+  participantSessionInterrupted = false,
   researcherHasPilotData = true,
   onRefresh,
   showEditButton = false,
@@ -78,6 +79,13 @@ export default function FeedbackCard({
       <div className="text-sm text-base-content/90 leading-relaxed">
         {typeof feedbackMessage === "string" ? <p>{feedbackMessage}</p> : feedbackMessage}
       </div>
+    )
+  } else if (participantCompleted === false && participantSessionInterrupted) {
+    body = (
+      <EmptyState
+        message="Feedback is not available because your session did not finish."
+        title="No Feedback"
+      />
     )
   } else if (participantCompleted === false) {
     body = (

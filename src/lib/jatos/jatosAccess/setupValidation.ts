@@ -4,6 +4,7 @@ import { ensureResearcherJatosMember } from "../provisioning/ensureResearcherJat
 import { getResultsMetadata } from "../client/getResultsMetadata"
 import { hasParticipantResponses } from "../utils/studyHasParticipantResponses"
 import { getTokenForResearcher, getTokenForStudyService } from "../tokenBroker"
+import { anyParticipantRunStarted } from "./studyRuns"
 import {
   assertResearcherCanAccessStudy,
   getLatestStudyJatosInfo,
@@ -125,7 +126,12 @@ export async function checkStudyParticipantResponsePresence({
       metadata.data?.find((data) => data.studyUuid === info.jatosStudyUUID) ??
       metadata.data?.[0] ??
       null
-    return hasParticipantResponses(entry?.studyResults ?? [])
+    if (hasParticipantResponses(entry?.studyResults ?? [])) {
+      return true
+    }
+
+    // Runs that failed before any component result are missing from the metadata but are in the log
+    return await anyParticipantRunStarted({ studyId, jatosStudyId: info.jatosStudyId, token })
   } catch (error) {
     const detail = getJatosResponseCheckErrorDetail(error)
     throw new Error(`Could not verify participant responses. JATOS may be unavailable: ${detail}`)

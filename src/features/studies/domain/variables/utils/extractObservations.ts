@@ -1,4 +1,5 @@
 import { EnrichedJatosStudyResult } from "@/src/types/jatos"
+import { isFinishedResult } from "@/src/lib/jatos/utils/findStudyResultIdByComment"
 import {
   DEFAULT_EXTRACTION_CONFIG,
   ExtractionConfig,
@@ -88,10 +89,14 @@ function prepareDataForWalking(
  * Returns observations, diagnostics, and stats
  */
 export function extractObservations(
-  enrichedResults: EnrichedJatosStudyResult[],
+  allEnrichedResults: EnrichedJatosStudyResult[],
   config: ExtractionConfig = DEFAULT_EXTRACTION_CONFIG,
   options?: { diagnostics?: boolean; allowVariableKeys?: Set<string> }
 ): NewExtractionResult {
+  // Single choke point for run eligibility: every consumer of the pipeline goes through here
+  const enrichedResults = config.includeUnfinishedRuns
+    ? allEnrichedResults
+    : allEnrichedResults.filter(isFinishedResult)
   const diagnosticsEnabled = options?.diagnostics ?? true
   const allObservations: NewExtractionResult["observations"] = []
 

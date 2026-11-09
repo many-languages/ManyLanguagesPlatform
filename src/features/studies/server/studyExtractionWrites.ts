@@ -4,6 +4,7 @@ import { withStudyAccess } from "./withStudyAccess"
 import { withStudyWriteAccess } from "./withStudyWriteAccess"
 import { extractVariableBundleFromResults } from "../domain/variables/utils/extractVariable"
 import { DEFAULT_EXTRACTION_CONFIG } from "../domain/variables/types"
+import { isFinishedResult } from "@/src/lib/jatos/utils/findStudyResultIdByComment"
 import { extractionBundleCache } from "../domain/setup/extractionBundleCache"
 import {
   EXTRACTOR_VERSION,
@@ -143,12 +144,18 @@ export async function approveExtraction(input: {
 
     const extractionConfigHash = hashJson(DEFAULT_EXTRACTION_CONFIG)
     const outputHash = buildExtractionOutputHash(bundle)
+    // Summary describes the runs the extraction actually used, so it follows the same filter.
+    // The pilot dataset snapshot above keeps every run id: a run finishing later must still
+    // read as a change to the pilot data.
+    const extractedRuns = DEFAULT_EXTRACTION_CONFIG.includeUnfinishedRuns
+      ? pilotResults
+      : pilotResults.filter(isFinishedResult)
     const structureSummary = {
-      componentCount: pilotResults.reduce(
+      componentCount: extractedRuns.reduce(
         (count, result) => count + result.componentResults.length,
         0
       ),
-      runCount: runIds.length,
+      runCount: extractedRuns.length,
     }
     const aggregates = {
       variableCount: bundle.variables.length,

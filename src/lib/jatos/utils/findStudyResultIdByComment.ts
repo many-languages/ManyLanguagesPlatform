@@ -1,7 +1,7 @@
 import type { JatosMetadata, JatosStudyResult } from "@/src/types/jatos"
 
 /** A participant run only counts as completed when JATOS marked the study run FINISHED. */
-function isFinishedResult(result: JatosStudyResult): boolean {
+export function isFinishedResult(result: JatosStudyResult): boolean {
   return result.studyState === "FINISHED"
 }
 

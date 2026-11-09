@@ -19,7 +19,12 @@ export default function VariableExtractionPreview({
   enrichedResult,
 }: VariableExtractionPreviewProps) {
   const extractionBundle = useMemo(
-    () => extractVariableBundle(enrichedResult, DEFAULT_EXTRACTION_CONFIG),
+    // Inspector is for diagnosing individual runs, so show failed/aborted runs too
+    () =>
+      extractVariableBundle(enrichedResult, {
+        ...DEFAULT_EXTRACTION_CONFIG,
+        includeUnfinishedRuns: true,
+      }),
     [enrichedResult]
   )
 

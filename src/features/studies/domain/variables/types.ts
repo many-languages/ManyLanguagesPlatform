@@ -250,6 +250,11 @@ export type VariableHeuristicThresholds = {
  * Single source of truth for all configurable values in the pipeline.
  */
 export interface ExtractionConfig {
+  /**
+   * Whether runs that JATOS did not mark FINISHED (aborted, failed, still running) take part
+   * in extraction. Off by default: partial data would otherwise end up in exports and statistics.
+   */
+  includeUnfinishedRuns: boolean
   // Walker limits (guardrails for traversal)
   walker: {
     maxDepth: number
@@ -275,6 +280,7 @@ export interface ExtractionConfig {
  * All components should use this unless overridden.
  */
 export const DEFAULT_EXTRACTION_CONFIG: ExtractionConfig = {
+  includeUnfinishedRuns: false,
   walker: {
     maxDepth: 10,
     maxNodes: 10000,

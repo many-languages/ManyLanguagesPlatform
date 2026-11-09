@@ -150,12 +150,14 @@ describe("participant feedback privacy regression", () => {
             {
               id: 101,
               comment: "participant-a-pseudonym",
+              studyState: "FINISHED",
               endDate: 1767225600000,
               componentResults: [{ path: "/component-a", data: { size: 0 } }],
             },
             {
               id: 202,
               comment: "participant-b-pseudonym",
+              studyState: "FINISHED",
               endDate: 1767312000000,
               componentResults: [{ path: "/component-b", data: { size: 0 } }],
             },

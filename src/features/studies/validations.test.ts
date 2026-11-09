@@ -74,6 +74,7 @@ describe("StudyInformationFormSchema date range", () => {
     sampleSize: 10,
     payment: "10 EUR",
     length: "30 min",
+    contactEmail: "researcher@example.com",
   }
 
   it("accepts end date on start date", () => {

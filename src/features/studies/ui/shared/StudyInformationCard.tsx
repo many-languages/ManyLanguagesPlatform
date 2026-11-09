@@ -6,6 +6,7 @@ import {
   CircleStackIcon,
   ClockIcon,
   CurrencyDollarIcon,
+  EnvelopeIcon,
   UsersIcon,
 } from "@heroicons/react/24/outline"
 import { CheckCircleIcon } from "@heroicons/react/24/solid"
@@ -27,6 +28,8 @@ interface StudyInformationCardProps {
   study: StudyInformation
   userRole: "RESEARCHER" | "PARTICIPANT"
   isPayed?: boolean
+  /** Shown to participants so they can reach the researcher */
+  contactEmail?: string | null
   actions?: ReactNode
 }
 
@@ -34,6 +37,7 @@ export default function StudyInformationCard({
   study,
   userRole,
   isPayed,
+  contactEmail,
   actions,
 }: StudyInformationCardProps) {
   const latestUpload = study.latestJatosStudyUpload
@@ -133,6 +137,23 @@ export default function StudyInformationCard({
               </div>
             </div>
           </div>
+
+          {userRole === "PARTICIPANT" && contactEmail && (
+            <div className="flex items-start gap-3 rounded-lg bg-base-200/60 p-4">
+              <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary">
+                <EnvelopeIcon className="h-5 w-5" aria-hidden="true" />
+              </span>
+              <div className="min-w-0">
+                <div className="text-sm font-medium text-base-content/70">Contact</div>
+                <a
+                  href={`mailto:${contactEmail}`}
+                  className="link link-hover block break-all text-base font-semibold leading-tight"
+                >
+                  {contactEmail}
+                </a>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </Card>

@@ -57,6 +57,9 @@ export default async function ParticipantData({ studyId, study }: ParticipantDat
       jatosStudyId
     )
 
+    // Legacy studies have no contact email yet, so fall back to the PI's account email
+    const contactEmail = study.contactEmail ?? study.researchers[0]?.user.email ?? null
+
     const isCompleted = completionCheck.success && completionCheck.completed
     const isSingleRunStudy = jatosWorkerType === "SINGLE"
 
@@ -80,7 +83,12 @@ export default async function ParticipantData({ studyId, study }: ParticipantDat
     // Build actions for participant
     const participantActions = shouldShowButton ? (
       <div className="flex justify-center">
-        <RunStudyButton runUrl={participant.jatosRunUrl} isActive={canRunStudy} label="Run study" />
+        <RunStudyButton
+          runUrl={participant.jatosRunUrl}
+          isActive={canRunStudy}
+          label="Run study"
+          contactEmail={contactEmail}
+        />
       </div>
     ) : undefined
 
@@ -94,6 +102,7 @@ export default async function ParticipantData({ studyId, study }: ParticipantDat
           study={study}
           userRole="PARTICIPANT"
           isPayed={participant.payed}
+          contactEmail={contactEmail}
           actions={participantActions}
         />
 
@@ -101,7 +110,9 @@ export default async function ParticipantData({ studyId, study }: ParticipantDat
           <ParticipantRunStatusCard
             tone="warning"
             title="Study Not Completed"
-            message="Your session for this study was started but not completed, and this study can only be run once. Please contact the researcher."
+            message={`Your session for this study was started but not completed, and this study can only be run once. Please contact the researcher${
+              contactEmail ? ` at ${contactEmail}` : ""
+            }.`}
           />
         )}
 

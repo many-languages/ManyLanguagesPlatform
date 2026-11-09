@@ -1,5 +1,6 @@
 import { Step1Content, SetupStepHeader } from "@/src/features/studies"
 import { loadStudySetupPage } from "@/src/features/studies/index.server"
+import { getCurrentUserRsc } from "@/src/features/auth/server/getCurrentUser"
 import { parseReturnToQueryParam } from "@/src/features/studies/domain/setup/parseReturnToQueryParam"
 
 export default async function Step1Page({
@@ -13,6 +14,7 @@ export default async function Step1Page({
   const searchParamsValue = await searchParams
   const isEditMode = searchParamsValue.edit === "true"
   const returnTo = parseReturnToQueryParam(searchParamsValue.returnTo)
+  const currentUser = await getCurrentUserRsc()
 
   return (
     <>
@@ -21,7 +23,13 @@ export default async function Step1Page({
         title="Step 1 – General information"
         showBackToStudy={false}
       />
-      <Step1Content study={study} studyId={studyId} isEditMode={isEditMode} returnTo={returnTo} />
+      <Step1Content
+        study={study}
+        studyId={studyId}
+        isEditMode={isEditMode}
+        returnTo={returnTo}
+        defaultContactEmail={currentUser?.email ?? ""}
+      />
     </>
   )
 }

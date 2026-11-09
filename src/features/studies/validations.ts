@@ -105,6 +105,11 @@ const StudyInformationFormFields = z.object({
   sampleSize: z.coerce.number().int().positive("Must be a positive number"),
   payment: z.string().min(1, "Payment description is required").trim(),
   length: z.string().min(1, "Study length is required").trim(),
+  contactEmail: z
+    .string()
+    .trim()
+    .min(1, "Contact email is required")
+    .email("Enter a valid email address"),
 })
 
 export const StudyInformationFormSchema =
@@ -119,6 +124,7 @@ export const CreateStudy = z.object({
   sampleSize: z.number().default(0),
   payment: z.string().default(""),
   length: z.string().default(""),
+  contactEmail: z.string().nullable().default(null),
 })
 
 export type CreateStudyInput = z.infer<typeof CreateStudy>

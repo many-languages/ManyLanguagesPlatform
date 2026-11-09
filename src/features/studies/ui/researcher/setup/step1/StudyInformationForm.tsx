@@ -68,6 +68,13 @@ export default function StudyInformationForm({
           placeholder="30 minutes"
           className="w-full"
         />
+        <TextField
+          name="contactEmail"
+          label="Contact Email"
+          type="email"
+          placeholder="researcher@university.edu"
+          className="w-full"
+        />
         {/* Global Form Error */}
         <FormErrorDisplay />
       </div>

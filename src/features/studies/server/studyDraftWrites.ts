@@ -68,6 +68,7 @@ export async function updateStudy(input: { studyId: number; data: Omit<UpdateStu
       sampleSize: input.data.sampleSize,
       payment: input.data.payment,
       length: input.data.length,
+      contactEmail: input.data.contactEmail,
       status: input.data.status,
     },
   })

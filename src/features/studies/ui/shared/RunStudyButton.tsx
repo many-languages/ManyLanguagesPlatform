@@ -6,12 +6,14 @@ interface RunStudyButtonProps {
   runUrl: string | null
   isActive?: boolean
   label?: string
+  contactEmail?: string | null
 }
 
 export default function RunStudyButton({
   runUrl,
   isActive = true,
   label = "Run Pilot",
+  contactEmail,
 }: RunStudyButtonProps) {
   const handleRunStudy = () => {
     if (!runUrl || !isActive) return
@@ -28,7 +30,9 @@ export default function RunStudyButton({
   }
 
   const tooltipText = !isActive
-    ? "You cannot currently participate. Please contact the researcher if this is a mistake or you have any questions."
+    ? `You cannot currently participate. Please contact the researcher${
+        contactEmail ? ` at ${contactEmail}` : ""
+      } if this is a mistake or you have any questions.`
     : undefined
 
   return (

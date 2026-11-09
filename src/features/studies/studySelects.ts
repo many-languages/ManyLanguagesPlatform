@@ -11,6 +11,7 @@ export const studyScalarSelect = Prisma.validator<Prisma.StudySelect>()({
   sampleSize: true,
   payment: true,
   length: true,
+  contactEmail: true,
   jatosStudyUUID: true,
   adminApproved: true,
   adminReviewedAt: true,
@@ -87,6 +88,12 @@ export const participantStudyOverviewArgs = Prisma.validator<Prisma.StudyDefault
     sampleSize: true,
     payment: true,
     length: true,
+    contactEmail: true,
+    researchers: {
+      where: { role: "PI" },
+      take: 1,
+      select: { user: { select: { email: true } } },
+    },
     archived: true,
     jatosStudyUploads: {
       orderBy: { createdAt: "desc" },

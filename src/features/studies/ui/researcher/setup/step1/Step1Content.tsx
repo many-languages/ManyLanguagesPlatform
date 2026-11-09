@@ -20,6 +20,8 @@ interface Step1ContentProps {
   studyId: number
   isEditMode?: boolean
   returnTo?: string
+  /** Account email, used to prefill the contact email until the researcher sets one */
+  defaultContactEmail?: string
 }
 
 export default function Step1Content({
@@ -27,6 +29,7 @@ export default function Step1Content({
   studyId,
   isEditMode = false,
   returnTo = "step2",
+  defaultContactEmail = "",
 }: Step1ContentProps) {
   const router = useRouter()
   // const { study, studyId } = useStudySetup() // Removed context usage
@@ -56,6 +59,7 @@ export default function Step1Content({
         sampleSize: study.sampleSize,
         payment: study.payment ?? "",
         length: study.length ?? "",
+        contactEmail: study.contactEmail ?? defaultContactEmail,
       }}
       onCancel={
         isEditMode

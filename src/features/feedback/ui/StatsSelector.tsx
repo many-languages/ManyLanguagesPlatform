@@ -73,6 +73,7 @@ export default function StatsSelector({ variables, onInsert, markdown }: StatsSe
   const handleInsert = () => {
     if (selectedVariable && selectedMetric) {
       onInsert(generateSyntax)
+      ;(document.activeElement as HTMLElement | null)?.blur()
       // Clear selections after insert for next use
       setSelectedVariable("")
       setSelectedMetric("avg")
@@ -87,7 +88,7 @@ export default function StatsSelector({ variables, onInsert, markdown }: StatsSe
   }
 
   return (
-    <div className="dropdown dropdown-hover">
+    <div className="dropdown">
       <label tabIndex={0} className="btn btn-sm btn-outline m-1">
         Insert Stat ⌄
       </label>

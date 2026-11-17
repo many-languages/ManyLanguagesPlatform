@@ -52,6 +52,7 @@ export default function VariableSelector({ variables, onInsert, markdown }: Vari
   const handleInsert = () => {
     if (!selectedVariable) return
     onInsert(generateSyntax)
+    ;(document.activeElement as HTMLElement | null)?.blur()
     // Clear selections after insert for next use
     setSelectedVariable("")
     setSelectedModifier("all")
@@ -64,7 +65,7 @@ export default function VariableSelector({ variables, onInsert, markdown }: Vari
   }
 
   return (
-    <div className="dropdown dropdown-hover">
+    <div className="dropdown">
       <label tabIndex={0} className="btn btn-sm btn-outline m-1">
         Insert Variable ⌄
       </label>

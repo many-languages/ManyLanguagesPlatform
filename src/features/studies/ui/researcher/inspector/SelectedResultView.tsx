@@ -5,6 +5,18 @@ import Card from "@/src/components/ui/Card"
 import ComponentResultExplorer from "./componentView/ComponentResultExplorer"
 import VariableExtractionPreview from "./variableExtraction/VariableExtractionPreview"
 
+/** JATOS worker types are internal; show researchers the data collection method instead. */
+function formatDataCollectionMethod(workerType: string): string {
+  switch (workerType) {
+    case "PersonalSingle":
+      return "Single run"
+    case "PersonalMultiple":
+      return "Multiple run"
+    default:
+      return workerType
+  }
+}
+
 interface SelectedResultViewProps {
   selectedResult: EnrichedJatosStudyResult
 }
@@ -23,7 +35,8 @@ export default function SelectedResultView({ selectedResult }: SelectedResultVie
             <span className="badge badge-sm">{selectedResult.studyState}</span>
           </div>
           <div>
-            <span className="font-medium">Worker Type:</span> {selectedResult.workerType}
+            <span className="font-medium">Data collection method:</span>{" "}
+            {formatDataCollectionMethod(selectedResult.workerType)}
           </div>
           <div>
             <span className="font-medium">Duration:</span> {selectedResult.duration ?? "—"}

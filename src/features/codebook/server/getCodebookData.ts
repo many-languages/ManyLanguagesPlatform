@@ -36,7 +36,8 @@ export const fetchCodebookMergedVariablesForStudy = cache(async (studyId: number
           type: true,
           examples: true,
         },
-        orderBy: { variableName: "asc" },
+        // Presentation order (explicit position); alphabetical sorting is applied client-side.
+        orderBy: [{ position: "asc" }, { id: "asc" }],
       })
     : []
 

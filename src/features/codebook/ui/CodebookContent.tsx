@@ -93,6 +93,8 @@ const CodebookContent = forwardRef<CodebookContentRef, CodebookContentProps>(
           showExpandCollapse={editor.groups.length > 0 || editor.ungroupedVariables.length > 0}
           allCardsExpanded={editor.allCardsExpanded}
           onToggleAllCardsOpen={editor.toggleAllCardsOpen}
+          sortOrder={editor.sortOrder}
+          onSortOrderChange={editor.setSortOrder}
         />
 
         <CodebookValidationAlerts alerts={editor.validationAlerts} />
@@ -105,7 +107,7 @@ const CodebookContent = forwardRef<CodebookContentRef, CodebookContentProps>(
         )}
 
         <div className="mb-6 space-y-4">
-          {editor.groups.map((group) => (
+          {editor.sortedGroups.map((group) => (
             <CodebookGroupCard
               key={group.groupKey}
               group={group}
@@ -117,7 +119,7 @@ const CodebookContent = forwardRef<CodebookContentRef, CodebookContentProps>(
             />
           ))}
 
-          {editor.ungroupedVariables.map((variable) => (
+          {editor.sortedUngroupedVariables.map((variable) => (
             <CodebookVariableCard
               key={variable.id}
               variable={variable}

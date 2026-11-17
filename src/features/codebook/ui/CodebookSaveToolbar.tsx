@@ -1,5 +1,6 @@
 import { ChevronDownIcon, ChevronUpIcon } from "@heroicons/react/24/outline"
 
+import type { CodebookSortOrder } from "../domain/codebookSort"
 import { AsyncButton } from "@/src/components/ui/AsyncButton"
 
 interface CodebookSaveToolbarProps {
@@ -9,6 +10,8 @@ interface CodebookSaveToolbarProps {
   showExpandCollapse?: boolean
   allCardsExpanded?: boolean
   onToggleAllCardsOpen?: () => void
+  sortOrder?: CodebookSortOrder
+  onSortOrderChange?: (order: CodebookSortOrder) => void
 }
 
 export default function CodebookSaveToolbar({
@@ -18,6 +21,8 @@ export default function CodebookSaveToolbar({
   showExpandCollapse = false,
   allCardsExpanded = false,
   onToggleAllCardsOpen,
+  sortOrder = "presentation",
+  onSortOrderChange,
 }: CodebookSaveToolbarProps) {
   return (
     <div className="flex items-center justify-between mb-4">
@@ -27,6 +32,25 @@ export default function CodebookSaveToolbar({
         <span className="badge badge-warning">⚠ Codebook not saved</span>
       )}
       <div className="flex items-center gap-2">
+        {onSortOrderChange ? (
+          <label className="flex items-center gap-2 text-sm cursor-pointer">
+            <span className={sortOrder === "presentation" ? "font-semibold" : "opacity-60"}>
+              Presentation order
+            </span>
+            <input
+              type="checkbox"
+              className="toggle toggle-sm toggle-primary"
+              aria-label="Sort variables alphabetically"
+              checked={sortOrder === "alphabetical"}
+              onChange={(e) =>
+                onSortOrderChange(e.target.checked ? "alphabetical" : "presentation")
+              }
+            />
+            <span className={sortOrder === "alphabetical" ? "font-semibold" : "opacity-60"}>
+              Alphabetical
+            </span>
+          </label>
+        ) : null}
         <AsyncButton
           onClick={async () => {
             await onSave()

@@ -11,6 +11,7 @@ import {
   variableHasDescriptionCoverage,
   wouldOverlapExistingGroupKeys,
 } from "../domain/codebookGroups"
+import { sortCodebookItems, type CodebookSortOrder } from "../domain/codebookSort"
 import { getCodebookValidationAlerts } from "../domain/codebookValidation"
 import type {
   CodebookContentSnapshot,
@@ -91,6 +92,7 @@ export function useCodebookEditor({
   })
   const [codebookSaved, setCodebookSaved] = useState(true)
   const [showGroupModal, setShowGroupModal] = useState(false)
+  const [sortOrder, setSortOrder] = useState<CodebookSortOrder>("alphabetical")
 
   const markDirty = useCallback(() => setCodebookSaved(false), [])
 
@@ -130,10 +132,31 @@ export function useCodebookEditor({
 
   const showSavedBadge = codebookSaved && hasAnyDescription
 
+  const sortedGroups = useMemo(() => {
+    if (sortOrder === "alphabetical") {
+      return sortCodebookItems(groups, sortOrder, (g) => g.groupKey)
+    }
+    // Presentation order: a group appears where its first variable appears.
+    const firstIndex = (groupKey: string) => {
+      const i = variables.findIndex((v) => findWinningGroupKey(v.dslKey, groupKeys) === groupKey)
+      return i === -1 ? Number.MAX_SAFE_INTEGER : i
+    }
+    return [...groups].sort((a, b) => firstIndex(a.groupKey) - firstIndex(b.groupKey))
+  }, [groups, sortOrder, variables, groupKeys])
+
+  const sortedUngroupedVariables = useMemo(
+    () => sortCodebookItems(ungroupedVariables, sortOrder, (v) => v.variableName),
+    [ungroupedVariables, sortOrder]
+  )
+
   const getChildVariablesForGroup = useCallback(
     (groupKey: string) =>
-      variables.filter((v) => findWinningGroupKey(v.dslKey, groupKeys) === groupKey),
-    [variables, groupKeys]
+      sortCodebookItems(
+        variables.filter((v) => findWinningGroupKey(v.dslKey, groupKeys) === groupKey),
+        sortOrder,
+        (v) => v.variableName
+      ),
+    [variables, groupKeys, sortOrder]
   )
 
   const updateVariable = useCallback(
@@ -262,6 +285,10 @@ export function useCodebookEditor({
     validationAlerts,
     groupKeys,
     ungroupedVariables,
+    sortedGroups,
+    sortedUngroupedVariables,
+    sortOrder,
+    setSortOrder,
     candidateGroups,
     hasMissingDescriptions,
     showSavedBadge,

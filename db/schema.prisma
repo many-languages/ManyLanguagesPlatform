@@ -223,6 +223,8 @@ model StudyVariable {
   dslKey       String
   type         String
   examples     Json?
+  // 0-based order of first appearance in the extraction; used for "presentation order" in the codebook
+  position     Int    @default(0)
 
   extractionSnapshot ExtractionSnapshot @relation(fields: [extractionSnapshotId], references: [id], onDelete: Cascade)
 

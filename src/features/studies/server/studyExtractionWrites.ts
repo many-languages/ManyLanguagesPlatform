@@ -215,8 +215,9 @@ export async function approveExtraction(input: {
 
       if (!existingSnapshot && bundle.variables.length > 0) {
         await tx.studyVariable.createMany({
-          data: bundle.variables.map((variable) => ({
+          data: bundle.variables.map((variable, index) => ({
             extractionSnapshotId: extractionSnapshot.id,
+            position: index,
             variableKey: variable.variableKey,
             variableName: variable.variableName,
             dslKey: variable.dslKey,

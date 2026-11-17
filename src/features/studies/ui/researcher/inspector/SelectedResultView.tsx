@@ -19,9 +19,13 @@ function formatDataCollectionMethod(workerType: string): string {
 
 interface SelectedResultViewProps {
   selectedResult: EnrichedJatosStudyResult
+  pilotLinkLabel?: string | null
 }
 
-export default function SelectedResultView({ selectedResult }: SelectedResultViewProps) {
+export default function SelectedResultView({
+  selectedResult,
+  pilotLinkLabel,
+}: SelectedResultViewProps) {
   return (
     <div className="space-y-6">
       {/* Result Header */}
@@ -38,6 +42,11 @@ export default function SelectedResultView({ selectedResult }: SelectedResultVie
             <span className="font-medium">Data collection method:</span>{" "}
             {formatDataCollectionMethod(selectedResult.workerType)}
           </div>
+          {pilotLinkLabel ? (
+            <div>
+              <span className="font-medium">Pilot link:</span> {pilotLinkLabel}
+            </div>
+          ) : null}
           <div>
             <span className="font-medium">Duration:</span> {selectedResult.duration ?? "—"}
           </div>

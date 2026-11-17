@@ -15,6 +15,8 @@ import db from "db"
 export interface ValidationData {
   metadata: JatosMetadata
   pilotResults: EnrichedJatosStudyResult[]
+  /** Researcher-provided pilot link labels, keyed by marker token. */
+  pilotLinkLabels?: Record<string, string>
   properties: JatosStudyProperties
   study: {
     id: number
@@ -50,6 +52,10 @@ export const getValidationDataRsc = cache(async (studyId: number): Promise<Valid
         take: 1,
         select: {
           jatosStudyId: true,
+          pilotLinks: {
+            where: { label: { not: null } },
+            select: { markerToken: true, label: true },
+          },
           approvedExtraction: {
             select: {
               id: true,
@@ -87,9 +93,15 @@ export const getValidationDataRsc = cache(async (studyId: number): Promise<Valid
     getStudyPropertiesForResearcher({ studyId, userId, jatosStudyUUID: study.jatosStudyUUID }),
   ])
 
+  const pilotLinkLabels: Record<string, string> = {}
+  for (const link of latestUpload?.pilotLinks ?? []) {
+    if (link.label) pilotLinkLabels[link.markerToken] = link.label
+  }
+
   return {
     metadata,
     pilotResults,
+    pilotLinkLabels,
     properties,
     study: {
       id: study.id,

@@ -360,7 +360,9 @@ model PilotLink {
   jatosStudyUploadId Int
 
   jatosRunUrl String
-  markerToken String @unique
+  markerToken String  @unique
+  // Optional researcher-provided name, shown next to pilot results in the Inspector
+  label       String?
 
   researcher       StudyResearcher  @relation(fields: [studyResearcherId], references: [id], onDelete: Cascade)
   jatosStudyUpload JatosStudyUpload @relation(fields: [jatosStudyUploadId], references: [id], onDelete: Cascade)

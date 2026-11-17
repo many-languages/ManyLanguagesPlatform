@@ -6,6 +6,7 @@ import StudyPropertiesViewer from "./StudyPropertiesViewer"
 import SelectedResultView from "./SelectedResultView"
 import Card from "@/src/components/ui/Card"
 import { useState } from "react"
+import { getPilotLinkLabel } from "@/src/features/studies/domain/pilotLinkLabel"
 import StudyHeader from "./InspectorStudyHeader"
 
 interface DebugContentProps {
@@ -45,12 +46,16 @@ export default function DebugContent({ validationData }: DebugContentProps) {
             onChange={(e) => setSelectedResultId(Number(e.target.value) || null)}
           >
             <option value="">Select a pilot result...</option>
-            {validationData.pilotResults.map((result) => (
-              <option key={result.id} value={result.id}>
-                Result #{result.id} - {result.studyCode} (Started:{" "}
-                {new Date(result.startDate).toLocaleString()})
-              </option>
-            ))}
+            {validationData.pilotResults.map((result) => {
+              const linkLabel = getPilotLinkLabel(result.comment, validationData.pilotLinkLabels)
+              return (
+                <option key={result.id} value={result.id}>
+                  Result #{result.id} - {result.studyCode}
+                  {linkLabel ? ` [${linkLabel}]` : ""} (Started:{" "}
+                  {new Date(result.startDate).toLocaleString()})
+                </option>
+              )
+            })}
           </select>
           <p className="text-sm text-muted-content mt-2">
             {validationData.pilotResults.length} pilot result
@@ -72,7 +77,12 @@ export default function DebugContent({ validationData }: DebugContentProps) {
       )}
 
       {/* Selected Test Result Information Section */}
-      {selectedResult && <SelectedResultView selectedResult={selectedResult} />}
+      {selectedResult && (
+        <SelectedResultView
+          selectedResult={selectedResult}
+          pilotLinkLabel={getPilotLinkLabel(selectedResult.comment, validationData.pilotLinkLabels)}
+        />
+      )}
     </div>
   )
 }

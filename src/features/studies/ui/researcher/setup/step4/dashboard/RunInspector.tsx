@@ -1,5 +1,6 @@
 import { useState, useMemo } from "react"
 import { EnrichedJatosStudyResult } from "@/src/types/jatos"
+import { getPilotLinkLabel } from "@/src/features/studies/domain/pilotLinkLabel"
 import StructureAnalysisCard from "../../../inspector/structureAnalysis/StructureAnalysisCard"
 import { ExclamationCircleIcon } from "@heroicons/react/24/outline"
 import { createExtractionIndexStore } from "../../../../../domain/variables/utils/extractionIndexStore"
@@ -8,6 +9,8 @@ import type { ExtractionObservation } from "../../../../../domain/variables/type
 
 interface RunInspectorProps {
   runs: EnrichedJatosStudyResult[]
+  /** Researcher-provided pilot link labels, keyed by marker token. */
+  pilotLinkLabels?: Record<string, string>
   // In a real implementation we would fetch the bundle for the specific run dynamically,
   // but for now we assume the "main" bundle aggregates everything.
   // Wait, the main bundle is aggregating EVERYTHING.
@@ -25,7 +28,7 @@ interface RunInspectorProps {
   activeBundle: SerializedExtractionBundle
 }
 
-export default function RunInspector({ runs, activeBundle }: RunInspectorProps) {
+export default function RunInspector({ runs, activeBundle, pilotLinkLabels }: RunInspectorProps) {
   const [selectedRunId, setSelectedRunId] = useState<number>(runs[0]?.id ?? 0)
 
   const selectedRun = runs.find((r) => r.id === selectedRunId)
@@ -75,11 +78,15 @@ export default function RunInspector({ runs, activeBundle }: RunInspectorProps) 
             value={selectedRunId}
             onChange={(e) => setSelectedRunId(Number(e.target.value))}
           >
-            {runs.map((run) => (
-              <option key={run.id} value={run.id}>
-                Run #{run.id} ({new Date(run.startDate).toLocaleString()})
-              </option>
-            ))}
+            {runs.map((run) => {
+              const linkLabel = getPilotLinkLabel(run.comment, pilotLinkLabels)
+              return (
+                <option key={run.id} value={run.id}>
+                  Run #{run.id}
+                  {linkLabel ? ` [${linkLabel}]` : ""} ({new Date(run.startDate).toLocaleString()})
+                </option>
+              )
+            })}
           </select>
         </div>
       </div>

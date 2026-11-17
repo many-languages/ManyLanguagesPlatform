@@ -1,3 +1,4 @@
+import { normalizePilotLinkLabel } from "../domain/pilotLinkLabel"
 import { AuthenticationError } from "blitz"
 import db from "db"
 import type { JatosWorkerType } from "@/db"
@@ -144,7 +145,9 @@ export async function createResearcherPilotLink(input: {
   jatosStudyUploadId: number
   jatosRunUrl: string
   markerToken: string
+  label?: string | null
 }) {
+  const label = normalizePilotLinkLabel(input.label)
   return withStudyWriteAccess(input.studyId, async (studyId, userId) => {
     const researcher = await db.studyResearcher.findUnique({
       where: { id: input.studyResearcherId },
@@ -174,6 +177,7 @@ export async function createResearcherPilotLink(input: {
         jatosStudyUploadId: upload.id,
         jatosRunUrl: input.jatosRunUrl,
         markerToken: input.markerToken,
+        label,
       },
     })
   })

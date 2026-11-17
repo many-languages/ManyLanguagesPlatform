@@ -23,7 +23,7 @@ export default function Step3Instructions({
       {pilotCompleted === true ? (
         <ol className="list-decimal list-inside space-y-2 text-sm">
           <li>
-            Run a study multiple times by using the button below or this link:{" "}
+            Run the pilot again by using the button below or this link:{" "}
             <a
               href={jatosRunUrl || ""}
               target="_blank"
@@ -33,9 +33,16 @@ export default function Step3Instructions({
               {jatosRunUrl}
             </a>
           </li>
+          <li>
+            The pilot link can be used as many times as you like, even if your study allows only a
+            single run per participant. Every completed pilot run is included when variables are
+            extracted in the next step.
+          </li>
           {hasJatosSetup && (
             <li>
-              Generate a new pilot link using the &quot;Generate Pilot Link&quot; button below
+              You do not need a new link to run more pilots. Use &quot;Generate Pilot Link&quot; and
+              give the link a name if you want to tell groups of pilot runs apart in the Inspector,
+              for example when you try different response behaviors.
             </li>
           )}
         </ol>

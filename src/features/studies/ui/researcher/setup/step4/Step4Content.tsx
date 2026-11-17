@@ -193,7 +193,11 @@ export default function Step4Content({ validationData, study }: Step4ContentProp
               </div>
             )}
             {activeTab === "inspector" && (
-              <RunInspector runs={validationData.pilotResults} activeBundle={activeBundle} />
+              <RunInspector
+                runs={validationData.pilotResults}
+                pilotLinkLabels={validationData.pilotLinkLabels}
+                activeBundle={activeBundle}
+              />
             )}
           </div>
         </>

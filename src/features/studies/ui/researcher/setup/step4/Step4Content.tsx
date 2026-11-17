@@ -9,9 +9,7 @@ import { toast } from "react-hot-toast"
 import approveExtraction from "@/src/features/studies/mutations/approveExtraction"
 import StepNavigation from "../StepNavigation"
 import type { ValidationData } from "@/src/features/studies/server/getValidationData"
-import { Alert } from "@/src/components/ui/Alert"
 import { AsyncButton } from "@/src/components/ui/AsyncButton"
-import Card from "@/src/components/ui/Card"
 import { studySetupStepPath } from "../../../../domain/setup/setupRoutes"
 import Step4Instructions from "./Step4Instructions"
 import { useExtractionBundle } from "./useExtractionBundle"
@@ -63,24 +61,19 @@ export default function Step4Content({ validationData, study }: Step4ContentProp
   if (!hasPilotResults) {
     return (
       <div className="space-y-4">
-        <Alert variant="info">
-          Extraction is based on all pilot results for the latest study upload.
-        </Alert>
-        <Card title="Pilot Data Required" bgColor="bg-base-200">
-          <div className="alert alert-warning">
-            <span>
-              No pilot results found for this study version. Please collect pilot responses first.
-            </span>
-          </div>
-          <div className="mt-4 flex justify-end">
-            <AsyncButton
-              onClick={() => router.push(studySetupStepPath(studyId, 3) as Route)}
-              className="btn btn-primary"
-            >
-              Go to Step 3
-            </AsyncButton>
-          </div>
-        </Card>
+        <div className="alert alert-warning">
+          <span>
+            No pilot results found for this study version. Please collect pilot responses first.
+          </span>
+        </div>
+        <div className="flex justify-end">
+          <AsyncButton
+            onClick={() => router.push(studySetupStepPath(studyId, 3) as Route)}
+            className="btn btn-primary"
+          >
+            Go to Step 3
+          </AsyncButton>
+        </div>
       </div>
     )
   }

@@ -21,7 +21,6 @@ export const UpdateVariableCodebookSchema = z.object({
     z.object({
       groupKey: z.string(),
       description: z.string().nullable(),
-      personalData: z.boolean(),
     })
   ),
 })

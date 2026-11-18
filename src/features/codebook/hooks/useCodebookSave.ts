@@ -58,7 +58,6 @@ export function useCodebookSave({
         groups: groups.map((g) => ({
           groupKey: g.groupKey,
           description: g.description,
-          personalData: g.personalData,
         })),
       })) as UpdateVariableCodebookResult
 

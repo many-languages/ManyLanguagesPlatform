@@ -1,3 +1,4 @@
+import { ShieldExclamationIcon } from "@heroicons/react/24/solid"
 import Card from "@/src/components/ui/Card"
 import { Textarea } from "@/src/components/ui/fields"
 import CodebookEntryStatus from "./CodebookEntryStatus"
@@ -5,14 +6,11 @@ import CodebookPersonalDataField from "./CodebookPersonalDataField"
 import CodebookVariableChip from "./CodebookVariableChip"
 import type { CodebookGroupEntry, VariableCodebookEntry } from "../types"
 
-export type CodebookGroupCardGroup = Pick<
-  CodebookGroupEntry,
-  "groupKey" | "description" | "personalData"
->
+export type CodebookGroupCardGroup = Pick<CodebookGroupEntry, "groupKey" | "description">
 
 export type CodebookGroupCardChildVariable = Pick<
   VariableCodebookEntry,
-  "id" | "variableName" | "type"
+  "id" | "variableName" | "type" | "personalData"
 >
 
 interface CodebookGroupCardProps {
@@ -20,10 +18,8 @@ interface CodebookGroupCardProps {
   childVariables: CodebookGroupCardChildVariable[]
   open: boolean
   onOpenChange: (open: boolean) => void
-  onUpdateGroup: (
-    field: keyof Omit<CodebookGroupCardGroup, "groupKey">,
-    value: string | boolean
-  ) => void
+  onUpdateGroup: (field: keyof Omit<CodebookGroupCardGroup, "groupKey">, value: string) => void
+  onSetPersonalData: (checked: boolean) => void
   onRemoveGroup: () => void
 }
 
@@ -33,9 +29,13 @@ export default function CodebookGroupCard({
   open,
   onOpenChange,
   onUpdateGroup,
+  onSetPersonalData,
   onRemoveGroup,
 }: CodebookGroupCardProps) {
   const childCount = childVariables.length
+  const personalCount = childVariables.filter((v) => v.personalData).length
+  const allPersonal = childCount > 0 && personalCount === childCount
+  const mixed = personalCount > 0 && !allPersonal
 
   return (
     <Card
@@ -51,12 +51,21 @@ export default function CodebookGroupCard({
               {childCount} variable{childCount !== 1 ? "s" : ""}
             </span>
           )}
+          {personalCount > 0 && (
+            <span className="badge badge-outline badge-sm gap-1 font-normal">
+              <ShieldExclamationIcon className="h-3 w-3" aria-hidden="true" />
+              {personalCount} of {childCount} personal
+            </span>
+          )}
         </span>
       }
       actions={
         <CodebookPersonalDataField
-          checked={group.personalData}
-          onChange={(checked) => onUpdateGroup("personalData", checked)}
+          checked={allPersonal}
+          indeterminate={mixed}
+          // From the mixed state, a click flags every variable (the safer direction).
+          onChange={(checked) => onSetPersonalData(checked)}
+          disabled={childCount === 0}
         />
       }
       actionsPlacement="header"
@@ -79,7 +88,12 @@ export default function CodebookGroupCard({
           <p className="text-xs text-base-content/50 mb-1">Variables in this group</p>
           <div className="flex flex-wrap gap-1">
             {childVariables.map((v) => (
-              <CodebookVariableChip key={v.id} variableName={v.variableName} type={v.type} />
+              <CodebookVariableChip
+                key={v.id}
+                variableName={v.variableName}
+                type={v.type}
+                personalData={v.personalData}
+              />
             ))}
           </div>
         </div>

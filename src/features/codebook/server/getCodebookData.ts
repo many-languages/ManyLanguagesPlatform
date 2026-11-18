@@ -57,7 +57,7 @@ export const fetchCodebookMergedVariablesForStudy = cache(async (studyId: number
         }),
         db.codebookGroup.findMany({
           where: { codebookId: codebook.id },
-          select: { groupKey: true, description: true, personalData: true },
+          select: { groupKey: true, description: true },
         }),
       ])
     : [[], []]
@@ -78,7 +78,8 @@ export const fetchCodebookMergedVariablesForStudy = cache(async (studyId: number
         type: v.type,
         examples: v.examples,
         description: entry?.description ?? group?.description ?? null,
-        personalData: entry?.personalData ?? group?.personalData ?? false,
+        // Variable-level flag is the single source of truth; group checkboxes are a derived view.
+        personalData: entry?.personalData ?? false,
       }
     }),
     groups,

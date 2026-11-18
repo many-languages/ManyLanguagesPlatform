@@ -19,7 +19,6 @@ export type UpdateVariableCodebookInput = {
   groups: Array<{
     groupKey: string
     description: string | null
-    personalData: boolean
   }>
 }
 
@@ -127,13 +126,11 @@ export async function updateVariableCodebookRsc(
             },
             update: {
               description: g.description,
-              personalData: g.personalData,
             },
             create: {
               codebookId: codebook.id,
               groupKey: g.groupKey,
               description: g.description,
-              personalData: g.personalData,
             },
           })
         ),

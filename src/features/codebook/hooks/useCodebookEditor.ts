@@ -39,7 +39,6 @@ function mapInitialGroups(initialGroups: CodebookInitialGroup[]): CodebookGroupE
     initialGroups.map((g) => ({
       groupKey: g.groupKey,
       description: g.description ?? "",
-      personalData: g.personalData,
     }))
   )
 }
@@ -168,15 +167,26 @@ export function useCodebookEditor({
   )
 
   const updateGroup = useCallback(
-    (
-      groupKey: string,
-      field: keyof Omit<CodebookGroupEntry, "groupKey">,
-      value: string | boolean
-    ) => {
+    (groupKey: string, field: keyof Omit<CodebookGroupEntry, "groupKey">, value: string) => {
       setGroups((prev) => prev.map((g) => (g.groupKey === groupKey ? { ...g, [field]: value } : g)))
       markDirty()
     },
     [markDirty]
+  )
+
+  /** Group checkbox is a bulk shortcut: it sets the flag on every variable the group covers. */
+  const setGroupPersonalData = useCallback(
+    (groupKey: string, checked: boolean) => {
+      setVariables((prev) =>
+        prev.map((v) =>
+          findWinningGroupKey(v.dslKey, groupKeys) === groupKey
+            ? { ...v, personalData: checked }
+            : v
+        )
+      )
+      markDirty()
+    },
+    [groupKeys, markDirty]
   )
 
   const removeGroup = useCallback(
@@ -262,7 +272,6 @@ export function useCodebookEditor({
         {
           groupKey: prefix,
           description: "",
-          personalData: false,
         },
       ])
       setCardOpen((prev) => ({
@@ -295,6 +304,7 @@ export function useCodebookEditor({
     getChildVariablesForGroup,
     updateVariable,
     updateGroup,
+    setGroupPersonalData,
     removeGroup,
     handleCreateGroup,
     isGroupCardOpen,

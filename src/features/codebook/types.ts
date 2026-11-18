@@ -18,7 +18,6 @@ export type CodebookVariableExample = { value: string; sourcePath: string }
 export interface CodebookGroupEntry {
   groupKey: string
   description: string
-  personalData: boolean
 }
 
 export interface CodebookInitialVariable {
@@ -35,7 +34,6 @@ export interface CodebookInitialVariable {
 export interface CodebookInitialGroup {
   groupKey: string
   description: string | null
-  personalData: boolean
 }
 
 export interface CodebookContentSnapshot {

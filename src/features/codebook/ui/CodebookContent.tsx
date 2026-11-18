@@ -115,6 +115,7 @@ const CodebookContent = forwardRef<CodebookContentRef, CodebookContentProps>(
               onOpenChange={(open) => editor.setGroupCardOpen(group.groupKey, open)}
               childVariables={editor.getChildVariablesForGroup(group.groupKey)}
               onUpdateGroup={(field, value) => editor.updateGroup(group.groupKey, field, value)}
+              onSetPersonalData={(checked) => editor.setGroupPersonalData(group.groupKey, checked)}
               onRemoveGroup={() => editor.removeGroup(group.groupKey)}
             />
           ))}

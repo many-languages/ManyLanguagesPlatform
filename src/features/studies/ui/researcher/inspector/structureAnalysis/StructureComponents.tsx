@@ -30,9 +30,7 @@ export default function StructureComponents({
     [componentExplorer, selectedComponentId]
   )
 
-  const canCopy =
-    componentExplorer.items.length > 0 &&
-    (selectedComponentId === "all" || selectedComponentId !== null)
+  const canCopy = itemsToRender.some((item) => item.component.dataContent)
 
   const getTextToCopy = useCallback(() => {
     return componentExplorer.getCopyText(selectedComponentId)
@@ -46,6 +44,7 @@ export default function StructureComponents({
           components={componentExplorer.items.map((it) => ({
             id: it.component.id,
             componentId: it.component.componentId,
+            note: it.statusNote,
           }))}
           selectedComponentId={selectedComponentId}
           onSelect={onSelectComponent}

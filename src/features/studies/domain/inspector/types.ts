@@ -23,10 +23,12 @@ export type ComponentExplorerItem = {
   component: EnrichedJatosStudyResult["componentResults"][number]
   stats: ComponentStats
   badges: ComponentBadge[]
+  /** Why no variables were extracted from this component (e.g. "no data"); null when some were. */
+  statusNote: string | null
 }
 
 export type ComponentExplorerModel = {
-  // base list (already filtered to dataContent)
+  // every component of the run, ordered: extracted first, then with data but no variables, then empty
   items: ComponentExplorerItem[]
   itemById: Map<ComponentId, ComponentExplorerItem>
   firstComponentId: ComponentId | null

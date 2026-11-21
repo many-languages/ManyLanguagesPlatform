@@ -20,6 +20,10 @@ export default function ComponentDataViewer({
   const format = component.detectedFormat?.format
   const parsedData = component.parsedData
 
+  if (!component.dataContent) {
+    return <Alert variant="info">This component returned no data.</Alert>
+  }
+
   // JSON: Pretty-print with syntax highlighting
   if (format === "json" && parsedData) {
     return (

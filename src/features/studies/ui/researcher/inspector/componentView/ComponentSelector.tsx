@@ -4,6 +4,8 @@ interface ComponentSelectorProps {
   components: Array<{
     id: number
     componentId: number
+    /** Short status shown next to the id, e.g. "no data" */
+    note?: string | null
   }>
   selectedComponentId: number | "all" | null
   onSelect: (componentId: number | "all" | null) => void
@@ -40,6 +42,7 @@ export default function ComponentSelector({
         {components.map((component) => (
           <option key={component.id} value={component.componentId}>
             Component {component.componentId}
+            {component.note ? ` – ${component.note}` : ""}
           </option>
         ))}
       </select>

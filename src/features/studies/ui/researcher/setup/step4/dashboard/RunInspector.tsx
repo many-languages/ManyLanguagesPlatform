@@ -67,6 +67,10 @@ export default function RunInspector({ runs, activeBundle, pilotLinkLabels }: Ru
 
   if (runs.length === 0) return <div>No runs available.</div>
 
+  // Raw component data stays viewable even when nothing could be extracted from it
+  const hasData = selectedRun?.componentResults.some((c) => c.dataContent) ?? false
+  const notUsedInExtraction = selectedRun ? isRunExcludedFromExtraction(selectedRun) : false
+
   return (
     <div className="flex flex-col gap-6">
       <div className="bg-base-100 p-4 rounded-lg shadow">
@@ -95,8 +99,24 @@ export default function RunInspector({ runs, activeBundle, pilotLinkLabels }: Ru
         </div>
       </div>
 
-      {selectedRun && runBundle && runBundle.observations.length > 0 && (
+      {notUsedInExtraction && (
+        <div className="alert alert-warning">
+          <ExclamationCircleIcon className="w-6 h-6" />
+          <span>This run was not finished, so it was not used in the extraction.</span>
+        </div>
+      )}
+
+      {!notUsedInExtraction && !hasData && (
+        <div className="alert alert-warning">
+          <ExclamationCircleIcon className="w-6 h-6" />
+          <span>No data found for this run. The run might be empty or failed.</span>
+        </div>
+      )}
+
+      {selectedRun && runBundle && hasData && (
         <StructureAnalysisCard
+          // Remount per run so the component selection never points at another run's components
+          key={selectedRun.id}
           // We reuse the existing card but pass filtered data
           extractedVariables={runBundle.variables}
           indexStore={runBundle.indexStore}
@@ -105,17 +125,6 @@ export default function RunInspector({ runs, activeBundle, pilotLinkLabels }: Ru
           bgColor="bg-base-100"
           title={null}
         />
-      )}
-
-      {(!selectedRun || !runBundle || runBundle.observations.length === 0) && (
-        <div className="alert alert-warning">
-          <ExclamationCircleIcon className="w-6 h-6" />
-          <span>
-            {selectedRun && isRunExcludedFromExtraction(selectedRun)
-              ? "This run was not finished, so it was not used in the extraction."
-              : "No observations found for this run. The run might be empty or failed."}
-          </span>
-        </div>
       )}
     </div>
   )

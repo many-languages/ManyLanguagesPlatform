@@ -8,6 +8,7 @@ import runExtraction from "@/src/features/studies/mutations/runExtraction"
 import getCachedExtractionBundle from "@/src/features/studies/queries/getCachedExtractionBundle"
 import type { SerializedExtractionBundle } from "../../../../domain/setup/serializeExtractionBundle"
 import { aggregateExtractionStats } from "../../../../domain/inspector/aggregateExtractionStats"
+import { isRunExcludedFromExtraction } from "../../../../domain/inspector/isRunExcludedFromExtraction"
 import type { ValidationData } from "@/src/features/studies/server/getValidationData"
 
 interface UseExtractionBundleParams {
@@ -50,10 +51,11 @@ export function useExtractionBundle({
         ? aggregateExtractionStats(
             activeBundle.diagnostics,
             activeBundle.variables.length,
-            validationData.pilotResults.length
+            validationData.pilotResults.length,
+            validationData.pilotResults.filter((run) => isRunExcludedFromExtraction(run)).length
           )
         : null,
-    [activeBundle, validationData.pilotResults.length]
+    [activeBundle, validationData.pilotResults]
   )
 
   const handleRunExtraction = async () => {

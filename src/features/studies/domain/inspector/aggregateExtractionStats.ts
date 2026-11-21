@@ -2,6 +2,8 @@ import type { SerializedDiagnostics } from "../setup/serializeExtractionBundle"
 
 export interface ExtractionDashboardStats {
   runCount: number
+  /** Pilot runs that are counted in `runCount` but skipped by the extraction (not finished). */
+  unfinishedRunCount: number
   variableCount: number
   /** Total diagnostics across variable, component, and per-run buckets. */
   variableIssueCount: number
@@ -22,7 +24,8 @@ export interface ExtractionDashboardStats {
 export function aggregateExtractionStats(
   diagnostics: SerializedDiagnostics,
   variableCount: number,
-  runCount: number
+  runCount: number,
+  unfinishedRunCount = 0
 ): ExtractionDashboardStats {
   const allVariableDiags = Array.from(diagnostics.variable ?? []).flatMap(([, v]) => v.diagnostics)
   const allComponentDiags = Array.from(diagnostics.component ?? []).flatMap(([, d]) => d)
@@ -39,6 +42,7 @@ export function aggregateExtractionStats(
 
   return {
     runCount,
+    unfinishedRunCount,
     variableCount,
     variableIssueCount: allExtractionDiags.length,
     variableErrorCount: allExtractionDiags.filter((d) => d.severity === "error").length,

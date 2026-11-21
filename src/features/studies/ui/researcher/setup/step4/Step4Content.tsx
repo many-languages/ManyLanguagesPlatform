@@ -20,6 +20,7 @@ import type { StudyWithRelations } from "../../../../types"
 import SummaryDashboard from "./dashboard/SummaryDashboard"
 import AggregatedVariableTable from "./dashboard/AggregatedVariableTable"
 import CrossRunDiagnosticsList from "./dashboard/CrossRunDiagnosticsList"
+import ExtractionDiagnosticsList from "./dashboard/ExtractionDiagnosticsList"
 import RunInspector from "./dashboard/RunInspector"
 
 interface Step4ContentProps {
@@ -43,6 +44,12 @@ export default function Step4Content({ validationData, study }: Step4ContentProp
 
   const { activeBundle, hasExtractedVariables, dashboardStats, handleRunExtraction } =
     useExtractionBundle({ studyId, validationData })
+
+  // The Diagnostics tab lists both extraction issues and cross-run issues, so the badge counts both
+  const diagnosticsErrorCount =
+    (dashboardStats?.variableErrorCount ?? 0) + (dashboardStats?.structuralErrorCount ?? 0)
+  const diagnosticsWarningCount =
+    (dashboardStats?.variableWarningCount ?? 0) + (dashboardStats?.structuralWarningCount ?? 0)
 
   const handleComplete = async () => {
     try {
@@ -136,14 +143,24 @@ export default function Step4Content({ validationData, study }: Step4ContentProp
               onClick={() => setActiveTab("diagnostics")}
             >
               Diagnostics
-              {dashboardStats.structuralErrorCount > 0 && (
+              {diagnosticsErrorCount > 0 ? (
                 <span
                   className={`ml-2 badge badge-sm ${
                     activeTab === "diagnostics" ? "badge-primary" : "badge-error"
                   }`}
                 >
-                  {dashboardStats.structuralErrorCount}
+                  {diagnosticsErrorCount}
                 </span>
+              ) : (
+                diagnosticsWarningCount > 0 && (
+                  <span
+                    className={`ml-2 badge badge-sm ${
+                      activeTab === "diagnostics" ? "badge-primary" : "badge-warning"
+                    }`}
+                  >
+                    {diagnosticsWarningCount}
+                  </span>
+                )
               )}
             </button>
             <button
@@ -163,26 +180,48 @@ export default function Step4Content({ validationData, study }: Step4ContentProp
             {activeTab === "overview" && (
               <SummaryDashboard stats={dashboardStats} onNavigate={(tab) => setActiveTab(tab)} />
             )}
-            {activeTab === "variables" && (
-              <AggregatedVariableTable
-                variables={activeBundle.variables}
-                totalRuns={validationData.pilotResults.length}
-              />
-            )}
-            {activeTab === "diagnostics" && (
-              <div className="bg-base-100 p-6 rounded-lg shadow">
-                <h2 className="text-xl font-bold mb-6">Cross-Run Diagnostics</h2>
-                <CrossRunDiagnosticsList
-                  diagnostics={
-                    activeBundle.diagnostics.crossRun
-                      ? {
-                          run: activeBundle.diagnostics.crossRun.run,
-                          component: new Map(activeBundle.diagnostics.crossRun.component),
-                          variable: new Map(activeBundle.diagnostics.crossRun.variable),
-                        }
-                      : undefined
-                  }
+            {activeTab === "variables" &&
+              (hasExtractedVariables ? (
+                <AggregatedVariableTable
+                  variables={activeBundle.variables}
+                  totalRuns={validationData.pilotResults.length}
                 />
+              ) : (
+                <div className="alert alert-warning">
+                  <span>
+                    No variables were extracted from the pilot runs.
+                    {diagnosticsErrorCount + diagnosticsWarningCount > 0
+                      ? " The Diagnostics tab lists what was found in the pilot data."
+                      : ""}
+                  </span>
+                </div>
+              ))}
+            {activeTab === "diagnostics" && (
+              <div className="bg-base-100 p-6 rounded-lg shadow space-y-10">
+                <section>
+                  <h2 className="text-xl font-bold mb-6">Extraction Diagnostics</h2>
+                  <ExtractionDiagnosticsList
+                    diagnostics={{
+                      run: activeBundle.diagnostics.run ?? [],
+                      component: new Map(activeBundle.diagnostics.component ?? []),
+                      variable: new Map(activeBundle.diagnostics.variable ?? []),
+                    }}
+                  />
+                </section>
+                <section>
+                  <h2 className="text-xl font-bold mb-6">Cross-Run Diagnostics</h2>
+                  <CrossRunDiagnosticsList
+                    diagnostics={
+                      activeBundle.diagnostics.crossRun
+                        ? {
+                            run: activeBundle.diagnostics.crossRun.run,
+                            component: new Map(activeBundle.diagnostics.crossRun.component),
+                            variable: new Map(activeBundle.diagnostics.crossRun.variable),
+                          }
+                        : undefined
+                    }
+                  />
+                </section>
               </div>
             )}
             {activeTab === "inspector" && (

@@ -9,6 +9,10 @@ interface SummaryDashboardProps {
 import Step4Instructions from "../Step4Instructions"
 
 export default function SummaryDashboard({ stats, onNavigate }: SummaryDashboardProps) {
+  // With no variables the Variables tab is empty, so send researchers to where the issues are listed
+  const showExtractionIssues =
+    stats.variableCount === 0 && stats.variableErrorCount + stats.variableWarningCount > 0
+
   return (
     <div className="flex flex-col gap-6">
       <Step4Instructions />
@@ -21,6 +25,11 @@ export default function SummaryDashboard({ stats, onNavigate }: SummaryDashboard
           <div className="card-body">
             <h2 className="card-title text-sm text-base-content/70">Total Pilot Runs</h2>
             <div className="text-4xl font-bold text-primary">{stats.runCount}</div>
+            {stats.unfinishedRunCount > 0 && (
+              <div className="text-sm text-warning font-semibold">
+                {stats.unfinishedRunCount} not finished, not used in extraction
+              </div>
+            )}
             <div className="card-actions justify-end">
               <span className="text-xs text-base-content/50">Click to inspect runs</span>
             </div>
@@ -36,7 +45,7 @@ export default function SummaryDashboard({ stats, onNavigate }: SummaryDashboard
               ? "bg-warning/10"
               : "bg-base-100"
           }`}
-          onClick={() => onNavigate("variables")}
+          onClick={() => onNavigate(showExtractionIssues ? "diagnostics" : "variables")}
         >
           <div className="card-body">
             <h2 className="card-title text-sm text-base-content/70">Extracted Variables</h2>
@@ -70,7 +79,9 @@ export default function SummaryDashboard({ stats, onNavigate }: SummaryDashboard
             </div>
             <div className="card-actions justify-end">
               <span className="text-xs text-base-content/50">
-                Click to view variables and data quality issues
+                {showExtractionIssues
+                  ? "Click to see why no variables were extracted"
+                  : "Click to view variables and data quality issues"}
               </span>
             </div>
           </div>

@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react"
 import { EnrichedJatosStudyResult } from "@/src/types/jatos"
 import { getPilotLinkLabel } from "@/src/features/studies/domain/pilotLinkLabel"
+import { isRunExcludedFromExtraction } from "@/src/features/studies/domain/inspector/isRunExcludedFromExtraction"
 import StructureAnalysisCard from "../../../inspector/structureAnalysis/StructureAnalysisCard"
 import { ExclamationCircleIcon } from "@heroicons/react/24/outline"
 import { createExtractionIndexStore } from "../../../../../domain/variables/utils/extractionIndexStore"
@@ -84,6 +85,9 @@ export default function RunInspector({ runs, activeBundle, pilotLinkLabels }: Ru
                 <option key={run.id} value={run.id}>
                   Run #{run.id}
                   {linkLabel ? ` [${linkLabel}]` : ""} ({new Date(run.startDate).toLocaleString()})
+                  {isRunExcludedFromExtraction(run)
+                    ? " – not finished, not used in extraction"
+                    : ""}
                 </option>
               )
             })}
@@ -91,7 +95,7 @@ export default function RunInspector({ runs, activeBundle, pilotLinkLabels }: Ru
         </div>
       </div>
 
-      {selectedRun && runBundle && (
+      {selectedRun && runBundle && runBundle.observations.length > 0 && (
         <StructureAnalysisCard
           // We reuse the existing card but pass filtered data
           extractedVariables={runBundle.variables}
@@ -103,10 +107,14 @@ export default function RunInspector({ runs, activeBundle, pilotLinkLabels }: Ru
         />
       )}
 
-      {(!selectedRun || runBundle?.observations.length === 0) && (
+      {(!selectedRun || !runBundle || runBundle.observations.length === 0) && (
         <div className="alert alert-warning">
           <ExclamationCircleIcon className="w-6 h-6" />
-          <span>No observations found for this run. The run might be empty or failed.</span>
+          <span>
+            {selectedRun && isRunExcludedFromExtraction(selectedRun)
+              ? "This run was not finished, so it was not used in the extraction."
+              : "No observations found for this run. The run might be empty or failed."}
+          </span>
         </div>
       )}
     </div>

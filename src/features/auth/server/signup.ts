@@ -2,6 +2,7 @@ import { createHash } from "crypto"
 import type { SessionContext } from "@blitzjs/auth"
 import { SecurePassword } from "@blitzjs/auth/secure-password"
 import db, { UserRole } from "db"
+import { ADMIN_INVITE_EXISTING_ACCOUNT_ERROR } from "@/src/features/admin-invitations/constants"
 import { validateAdminInviteToken } from "@/src/features/admin-invitations/server/validateAdminInviteToken"
 import { ensureResearcherProvisioned } from "@/src/lib/jatos/tokenBroker"
 import { createAuthenticatedSession } from "./session"
@@ -37,6 +38,12 @@ export async function signupUser(
         return { error: validation.error || "Invalid admin invite token" }
       }
 
+      if (validation.existingAccount) {
+        // A new account can't take over an email that already has one; the owner accepts the
+        // invite from their existing account instead (see acceptAdminInvite).
+        return { error: ADMIN_INVITE_EXISTING_ACCOUNT_ERROR }
+      }
+
       if (validation.inviteEmail?.toLowerCase() !== email.toLowerCase()) {
         return { error: "Email does not match the admin invite" }
       }
@@ -54,6 +61,12 @@ export async function signupUser(
     )
 
     const user = await db.$transaction(async (tx) => {
+      // Create the user first so the invite can record who redeemed it. Both writes share one
+      // transaction: a duplicate email or an invite that is no longer available rolls back both.
+      const createdUser = await tx.user.create({
+        data: { email, hashedPassword, roles: [finalRole] },
+      })
+
       if (hashedAdminInviteToken) {
         const result = await tx.adminInvite.updateMany({
           where: {
@@ -62,7 +75,7 @@ export async function signupUser(
             revokedAt: null,
             expiresAt: { gt: new Date() },
           },
-          data: { redeemedAt: new Date() },
+          data: { redeemedAt: new Date(), redeemedById: createdUser.id },
         })
 
         if (result.count !== 1) {
@@ -70,9 +83,7 @@ export async function signupUser(
         }
       }
 
-      return tx.user.create({
-        data: { email, hashedPassword, role: finalRole },
-      })
+      return createdUser
     })
 
     if (finalRole === UserRole.RESEARCHER || finalRole === UserRole.ADMIN) {
@@ -88,7 +99,7 @@ export async function signupUser(
     const { hashedPassword: userHashedPassword, ...createdUser } = user
     void userHashedPassword
 
-    return { user: createdUser }
+    return { user: createdUser, activeRole: finalRole }
   } catch (error: any) {
     if (error.code === "P2002" && error.meta?.target?.includes("email")) {
       return { error: "This email is already being used" }

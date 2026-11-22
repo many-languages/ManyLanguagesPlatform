@@ -19,7 +19,8 @@ async function findAdminStudyRows() {
 
 function toAdminStudyListItem(
   study: AdminStudyRow,
-  hasParticipantResponses: boolean | null
+  hasParticipantResponses: boolean | null,
+  viewerIsResearcher: boolean
 ): AdminStudyListItemDto {
   return {
     id: study.id,
@@ -30,6 +31,7 @@ function toAdminStudyListItem(
     jatosStudyUUID: study.jatosStudyUUID,
     adminApproved: study.adminApproved,
     archived: study.archived,
+    viewerIsResearcher,
     latestJatosStudyUpload: study.jatosStudyUploads[0] ?? null,
     hasParticipantResponses,
     feedbackTemplate: study.FeedbackTemplate,
@@ -37,11 +39,25 @@ function toAdminStudyListItem(
   }
 }
 
-async function findAdminStudies(): Promise<AdminStudyListItemDto[]> {
+async function findAdminStudies(viewerUserId: number | null): Promise<AdminStudyListItemDto[]> {
   const studies = await findAdminStudyRows()
+
+  const ownMemberships =
+    viewerUserId == null
+      ? []
+      : await db.studyResearcher.findMany({
+          where: { userId: viewerUserId, studyId: { in: studies.map((study) => study.id) } },
+          select: { studyId: true },
+        })
+  const ownStudyIds = new Set(ownMemberships.map((membership) => membership.studyId))
+
   return Promise.all(
     studies.map(async (study) =>
-      toAdminStudyListItem(study, await studyHasParticipantResponsesSafe(study.id))
+      toAdminStudyListItem(
+        study,
+        await studyHasParticipantResponsesSafe(study.id),
+        ownStudyIds.has(study.id)
+      )
     )
   )
 }
@@ -52,5 +68,5 @@ export async function getStudiesRsc() {
     throw new AuthorizationError()
   }
 
-  return findAdminStudies()
+  return findAdminStudies(session.userId)
 }

@@ -1,7 +1,7 @@
 "use client"
 
-import { useCopyToClipboard } from "./useCopyToClipboard"
 import { useCallback } from "react"
+import { useCopyToClipboard } from "@/src/lib/hooks/useCopyToClipboard"
 
 interface CopyButtonProps {
   /** Function that returns the text to copy. Called when button is clicked. */
@@ -33,7 +33,8 @@ export default function CopyButton({
   }, [getTextToCopy, copyToClipboard])
 
   return (
-    <button className={className} onClick={handleClick} disabled={disabled}>
+    // type="button": it is used inside forms too, where the default type would submit them.
+    <button type="button" className={className} onClick={handleClick} disabled={disabled}>
       {copySuccess ? successLabel : label}
     </button>
   )

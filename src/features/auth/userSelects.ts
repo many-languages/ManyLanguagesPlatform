@@ -4,7 +4,7 @@ import type { Prisma } from "db"
 export const authUserWithPasswordSelect = {
   id: true,
   email: true,
-  role: true,
+  roles: true,
   hashedPassword: true,
 } satisfies Prisma.UserSelect
 
@@ -19,5 +19,5 @@ export const userIdEmailSelect = {
 
 export const resetPasswordUserSelect = {
   id: true,
-  role: true,
+  roles: true,
 } satisfies Prisma.UserSelect

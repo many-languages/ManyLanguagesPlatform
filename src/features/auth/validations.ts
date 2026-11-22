@@ -59,3 +59,8 @@ export const ChangePassword = z.object({
   currentPassword: z.string(),
   newPassword: password,
 })
+
+/** Only researcher and admin can be held together, so those are the only roles to switch between. */
+export const SwitchActiveRole = z.object({
+  role: z.enum(["RESEARCHER", "ADMIN"]),
+})

@@ -7,6 +7,7 @@ import { deleteStudyAsAdmin } from "@/src/lib/jatos/admin/deleteStudyWorkflow"
 import { isStaffAdmin, isSuperAdmin } from "@/src/lib/auth/roles"
 import { recordAdminAuditEvent } from "@/src/lib/audit/adminAudit"
 import { isSetupComplete, toSetupStatusStudy } from "../domain/setup/setupStatus"
+import { getStudiesUnderOwnReview, selfReviewBlockedMessage } from "../domain/selfReview"
 import { studyHasParticipantResponsesSafe } from "./participantResponses"
 
 async function requireStaffAdminSession() {
@@ -82,6 +83,12 @@ export async function approveStudy(studyIds: number[]) {
     include: { researchers: { select: { userId: true } } },
   })
 
+  // Checked before any write so a blocked batch changes nothing.
+  const ownStudies = getStudiesUnderOwnReview(studies, session.userId)
+  if (ownStudies.length > 0) {
+    throw new AuthorizationError(selfReviewBlockedMessage("approve", ownStudies))
+  }
+
   const result = await db.study.updateMany({
     where: { id: { in: studyIds } },
     data: {
@@ -129,6 +136,12 @@ export async function rejectStudy(studyIds: number[]) {
     where: { id: { in: studyIds } },
     include: { researchers: { select: { userId: true } } },
   })
+
+  // Checked before any write so a blocked batch changes nothing.
+  const ownStudies = getStudiesUnderOwnReview(studies, session.userId)
+  if (ownStudies.length > 0) {
+    throw new AuthorizationError(selfReviewBlockedMessage("reject", ownStudies))
+  }
 
   const result = await db.study.updateMany({
     where: { id: { in: studyIds } },

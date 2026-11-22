@@ -1,3 +1,4 @@
+import type { NotificationAudience } from "@prisma/client"
 import { getUnreadNotificationCountForUser } from "./getUnreadNotificationCount"
 import { findLatestUnreadNotificationsForUser } from "./getLatestUnreadNotifications"
 import type { NotificationWithRecipient } from "../types"
@@ -8,11 +9,12 @@ export interface NotificationMenuData {
 }
 
 export async function getNotificationMenuDataForUser(
-  userId: number
+  userId: number,
+  audience: NotificationAudience
 ): Promise<NotificationMenuData> {
   const [unreadCount, latestUnread] = await Promise.all([
-    getUnreadNotificationCountForUser(userId),
-    findLatestUnreadNotificationsForUser(userId),
+    getUnreadNotificationCountForUser(userId, audience),
+    findLatestUnreadNotificationsForUser(userId, audience),
   ])
   return { unreadCount, latestUnread }
 }

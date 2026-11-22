@@ -1,4 +1,5 @@
 import type { SessionContext } from "@blitzjs/auth"
+import { pickInitialRole } from "@/src/lib/auth/roles"
 import { authenticateUser } from "./authenticateUser"
 import { createAuthenticatedSession } from "./session"
 import { Login } from "../validations"
@@ -18,7 +19,9 @@ export async function loginUser(
     throw new Error("Authentication failed - user not found")
   }
 
-  await createAuthenticatedSession(authResult.user.id, authResult.user.role, session)
+  // Accounts holding several roles start as the highest one and can switch from the navbar.
+  const activeRole = pickInitialRole(authResult.user.roles)
+  await createAuthenticatedSession(authResult.user.id, activeRole, session)
 
-  return { user: authResult.user }
+  return { user: authResult.user, activeRole }
 }

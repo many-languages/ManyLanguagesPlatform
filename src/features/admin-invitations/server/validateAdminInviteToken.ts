@@ -2,10 +2,24 @@
 
 import { createHash } from "crypto"
 import db from "db"
+import { describeAdminInviteIneligibility, getAdminInviteEligibility } from "@/src/lib/auth/roles"
 
 const hashToken = (token: string) => createHash("sha256").update(token).digest("hex")
 
-export async function validateAdminInviteToken(input: { token: string; email?: string }) {
+export type AdminInviteValidation =
+  | { valid: false; error: string }
+  | {
+      valid: true
+      inviteEmail: string
+      expiresAt: Date
+      /** True when the email already has a (researcher) account: log in to accept instead of signing up. */
+      existingAccount: boolean
+    }
+
+export async function validateAdminInviteToken(input: {
+  token: string
+  email?: string
+}): Promise<AdminInviteValidation> {
   const hashedToken = hashToken(input.token)
   const now = new Date()
 
@@ -40,9 +54,21 @@ export async function validateAdminInviteToken(input: { token: string; email?: s
     return { valid: false, error: "Email does not match the invite" }
   }
 
+  // User emails are stored lowercased and trimmed; invites may have been created before that.
+  const existingUser = await db.user.findUnique({
+    where: { email: invite.email.trim().toLowerCase() },
+    select: { roles: true },
+  })
+
+  const eligibility = getAdminInviteEligibility(existingUser?.roles)
+  if (!eligibility.eligible) {
+    return { valid: false, error: describeAdminInviteIneligibility(eligibility.reason) }
+  }
+
   return {
     valid: true,
     inviteEmail: invite.email,
     expiresAt: invite.expiresAt,
+    existingAccount: eligibility.kind === "existing-researcher",
   }
 }

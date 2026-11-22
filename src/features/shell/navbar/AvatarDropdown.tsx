@@ -8,6 +8,10 @@ import { useMutation } from "@blitzjs/rpc"
 import md5 from "md5"
 
 import logout from "@/src/features/auth/mutations/logout"
+import switchActiveRole from "@/src/features/auth/mutations/switchActiveRole"
+import { usePendingNavigation } from "@/src/lib/hooks/usePendingNavigation"
+import { getDefaultAuthenticatedPath } from "@/src/lib/auth/routing"
+import { getSwitchTargetRole } from "@/src/lib/auth/roles"
 import type { CurrentUser, NavbarVariant } from "./types"
 
 function getGravatarUrl(email: string, size: number = 40): string {
@@ -19,10 +23,18 @@ function getGravatarUrl(email: string, size: number = 40): string {
 interface AvatarDropdownProps {
   currentUser: CurrentUser
   variant: NavbarVariant
+  /** The role this session is acting as (from the session, not everything the account holds). */
+  activeRole: string | null
 }
 
-export function AvatarDropdown({ currentUser, variant }: AvatarDropdownProps) {
+const SWITCH_LABEL = { ADMIN: "Switch to admin", RESEARCHER: "Switch to researcher" } as const
+
+export function AvatarDropdown({ currentUser, variant, activeRole }: AvatarDropdownProps) {
   const [logoutMutation] = useMutation(logout)
+  const [switchRoleMutation, { isPending: isSwitchingRole }] = useMutation(switchActiveRole)
+  const { isPending: isNavigating, replace } = usePendingNavigation()
+  const isSwitching = isSwitchingRole || isNavigating
+  const switchTarget = getSwitchTargetRole(currentUser?.roles, activeRole)
 
   const gravatarUrl = useMemo(() => {
     const email =
@@ -63,6 +75,24 @@ export function AvatarDropdown({ currentUser, variant }: AvatarDropdownProps) {
             Profile
           </Link>
         </li>
+        {(switchTarget === "ADMIN" || switchTarget === "RESEARCHER") && (
+          <li>
+            <button
+              disabled={isSwitching}
+              aria-busy={isSwitching}
+              onClick={async () => {
+                const { activeRole: nextRole } = await switchRoleMutation({ role: switchTarget })
+                // Soft navigation: the admin and portal areas have separate layouts, so the new
+                // role's navbar and notifications render fresh, without reloading the whole app
+                // (a full reload showed a blank screen and two loading states in a row).
+                // `replace` keeps the other role's page out of the Back history.
+                replace(getDefaultAuthenticatedPath(nextRole))
+              }}
+            >
+              {isSwitching ? "Switching…" : SWITCH_LABEL[switchTarget]}
+            </button>
+          </li>
+        )}
         <li>
           <button
             onClick={async () => {

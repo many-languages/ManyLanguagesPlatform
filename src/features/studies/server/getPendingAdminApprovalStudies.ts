@@ -5,6 +5,7 @@ import db from "db"
 import { getAuthorizedSession } from "@/src/lib/auth/session"
 import { isStaffAdmin } from "@/src/lib/auth/roles"
 import { isSetupComplete, toSetupStatusStudy } from "../domain/setup/setupStatus"
+import { getStudiesUnderOwnReview } from "../domain/selfReview"
 import { pendingAdminApprovalStudySelect } from "../studySelects"
 import type { PendingAdminApprovalStudyRow } from "../types"
 
@@ -49,9 +50,9 @@ function attachLatestJatosStudyUpload(
   }
 }
 
-async function findPendingAdminApprovalStudiesForDashboard(): Promise<
-  PendingAdminApprovalStudyRow[]
-> {
+async function findPendingAdminApprovalStudiesForDashboard(
+  viewerUserId: number | null
+): Promise<PendingAdminApprovalStudyRow[]> {
   const studies = await db.study.findMany({
     where: {
       adminApproved: null,
@@ -62,7 +63,11 @@ async function findPendingAdminApprovalStudiesForDashboard(): Promise<
   })
 
   const mapped = studies.map(attachLatestJatosStudyUpload)
-  const ready = mapped.filter((study) => isSetupComplete(toSetupStatusStudy(study)))
+  // The viewer's own studies are another admin's to review, so they don't belong in this queue.
+  const ownStudyIds = new Set(getStudiesUnderOwnReview(mapped, viewerUserId).map((s) => s.id))
+  const ready = mapped.filter(
+    (study) => isSetupComplete(toSetupStatusStudy(study)) && !ownStudyIds.has(study.id)
+  )
 
   ready.sort((a, b) => {
     const ta = a.FeedbackTemplate?.createdAt.getTime() ?? 0
@@ -83,5 +88,5 @@ export async function getPendingAdminApprovalStudiesForDashboardRsc() {
     throw new AuthorizationError()
   }
 
-  return findPendingAdminApprovalStudiesForDashboard()
+  return findPendingAdminApprovalStudiesForDashboard(session.userId)
 }

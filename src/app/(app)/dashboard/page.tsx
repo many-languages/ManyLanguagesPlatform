@@ -1,7 +1,7 @@
 import { fallbackOrLoginRedirect } from "@/src/lib/auth/redirectOnAuthenticationError"
 import { getSessionContext } from "@/src/lib/auth/session"
 import { redirect } from "next/navigation"
-import { getCurrentUserRsc } from "@/src/features/auth/server/getCurrentUser"
+import { getPendingAdminInviteRsc } from "@/src/features/admin-invitations/index.server"
 import {
   PortalDashboard,
   type ParticipantCompletedNotPaidStudy,
@@ -34,10 +34,12 @@ export default async function DashboardPage() {
     redirect("/login")
   }
 
-  const currentUser = await getCurrentUserRsc().catch(fallbackOrLoginRedirect(null))
+  // The role being used right now comes from the session, not the account: a user holding
+  // several roles sees the dashboard of the one they are currently acting as.
+  const activeRole = session.role
 
   const [researcherCounts, activeStudiesWithResponses, upcomingDeadlines] =
-    currentUser?.role === "RESEARCHER"
+    activeRole === "RESEARCHER"
       ? await Promise.all([
           getResearcherStudyCounts().catch(fallbackOrLoginRedirect(null)),
           getActiveStudiesWithResponseCounts().catch(fallbackOrLoginRedirect([])),
@@ -46,7 +48,7 @@ export default async function DashboardPage() {
       : [null, [], emptyDeadlines]
 
   const [participantIncompleteStudies, participantCounts, participantCompletedNotPaid] =
-    currentUser?.role === "PARTICIPANT"
+    activeRole === "PARTICIPANT"
       ? await Promise.all([
           getParticipantIncompleteStudies().catch(fallbackOrLoginRedirect(emptyParticipantStudies)),
           getParticipantStudyCounts().catch(fallbackOrLoginRedirect(null)),
@@ -56,15 +58,19 @@ export default async function DashboardPage() {
         ])
       : [emptyParticipantStudies, null, []]
 
+  // Researchers invited to become admin see a card pointing them to the accept page.
+  const pendingAdminInvite = await getPendingAdminInviteRsc().catch(fallbackOrLoginRedirect(null))
+
   return (
     <PortalDashboard
-      currentUser={currentUser}
+      activeRole={activeRole}
       researcherCounts={researcherCounts}
       activeStudiesWithResponses={activeStudiesWithResponses}
       upcomingDeadlines={upcomingDeadlines}
       participantIncompleteStudies={participantIncompleteStudies}
       participantCounts={participantCounts}
       participantCompletedNotPaid={participantCompletedNotPaid}
+      pendingAdminInvite={pendingAdminInvite}
     />
   )
 }

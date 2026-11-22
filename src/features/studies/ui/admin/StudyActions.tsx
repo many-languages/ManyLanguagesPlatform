@@ -99,6 +99,7 @@ export default function StudyActions({
     disableTargetIds,
     approveTargetIds,
     rejectTargetIds,
+    selfReviewMessage,
     deleteTargetIds,
     archiveTargetIds,
     unarchiveTargetIds,
@@ -204,7 +205,12 @@ export default function StudyActions({
   }
 
   return (
-    <div className="flex gap-2 justify-end flex-wrap">
+    <div className="flex gap-2 justify-end flex-wrap items-center">
+      {selfReviewMessage && (
+        <p className="text-sm text-base-content/70 mr-auto" role="status">
+          {selfReviewMessage}
+        </p>
+      )}
       {showApproveButton && (
         <button
           type="button"

@@ -36,7 +36,7 @@ export const LoginForm = () => {
               return { [FORM_ERROR]: result.error }
             }
 
-            if (!result.user) {
+            if (!result.user || !result.activeRole) {
               return { [FORM_ERROR]: "Login succeeded but user data was missing." }
             }
 
@@ -45,7 +45,7 @@ export const LoginForm = () => {
               if (next) {
                 router.replace(next as Route)
               } else {
-                router.replace(getDefaultAuthenticatedPath(result.user.role) as Route)
+                router.replace(getDefaultAuthenticatedPath(result.activeRole) as Route)
               }
             })
           } catch (error: unknown) {

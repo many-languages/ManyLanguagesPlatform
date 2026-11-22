@@ -1,9 +1,10 @@
-import { Prisma } from "@prisma/client"
+import { Prisma, type NotificationAudience } from "@prisma/client"
 import { cache } from "react"
 import { getBlitzContext } from "@/src/app/blitz-server"
 import db from "db"
 import { notificationRecipientWithNotificationSelect } from "../notificationSelects"
 import type { NotificationWithRecipient } from "../types"
+import { notificationAudienceForRole } from "../utils/audience"
 
 type OrderBy =
   | Prisma.NotificationRecipientOrderByWithRelationInput
@@ -24,6 +25,7 @@ const DEFAULT_ORDER_BY: Prisma.NotificationRecipientOrderByWithRelationInput[] =
 
 export async function findNotificationsForUser(
   userId: number,
+  audience: NotificationAudience,
   input: GetNotificationsInput = {}
 ): Promise<NotificationWithRecipient[]> {
   const { includeDismissed = false, orderBy, skip, take } = input
@@ -31,6 +33,7 @@ export async function findNotificationsForUser(
   return db.notificationRecipient.findMany({
     where: {
       userId,
+      notification: { audience },
       ...(includeDismissed ? {} : { dismissedAt: null }),
     },
     select: notificationRecipientWithNotificationSelect,
@@ -45,6 +48,10 @@ export const getNotificationsRsc = cache(
     const { session } = await getBlitzContext()
     if (!session.userId) return []
 
-    return findNotificationsForUser(session.userId, input)
+    return findNotificationsForUser(
+      session.userId,
+      notificationAudienceForRole(session.role),
+      input
+    )
   }
 )

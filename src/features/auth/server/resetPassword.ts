@@ -2,6 +2,7 @@ import { hash256 } from "@blitzjs/auth"
 import type { SessionContext } from "@blitzjs/auth"
 import { SecurePassword } from "@blitzjs/auth/secure-password"
 import db from "db"
+import { pickInitialRole } from "@/src/lib/auth/roles"
 import { createAuthenticatedSession } from "./session"
 import { ResetPassword } from "../validations"
 import { resetPasswordUserSelect } from "../userSelects"
@@ -69,7 +70,7 @@ export async function resetPassword(
     return updatedUser
   })
 
-  await createAuthenticatedSession(user.id, user.role, session)
+  await createAuthenticatedSession(user.id, pickInitialRole(user.roles), session)
 
   return true
 }

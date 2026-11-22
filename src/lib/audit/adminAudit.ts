@@ -8,8 +8,10 @@ export type AdminAuditEventName =
   | "study_deletion_requested"
   | "jatos_deletion_failed"
   | "study_deleted"
+  | "admin_invite_accepted"
+  | "admin_invite_link_regenerated"
 
-export type AdminAuditEntityType = "Study"
+export type AdminAuditEntityType = "Study" | "AdminInvite"
 
 export async function recordAdminAuditEvent(input: {
   actorUserId?: number | null

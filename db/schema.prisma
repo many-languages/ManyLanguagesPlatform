@@ -25,15 +25,18 @@ enum UserRole {
 }
 
 model User {
-  id             Int      @id @default(autoincrement())
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  id             Int        @id @default(autoincrement())
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
   firstname      String?
   lastname       String?
   username       String?
-  email          String   @unique
+  email          String     @unique
   hashedPassword String?
-  role           UserRole
+  // Everything this account may act as. The role currently in use lives only in the session
+  // (`session.role`); a user holding several roles switches between them via switchActiveRole.
+  // Allowed combinations are enforced in application code (see src/lib/auth/roles.ts).
+  roles          UserRole[]
 
   language String @default("en-US")
 
@@ -48,7 +51,8 @@ model User {
   Study                  Study[]
   adminReviewedStudies   Study[]                 @relation("StudyAdminReviewer")
   notificationRecipients NotificationRecipient[]
-  AdminInvite            AdminInvite[]
+  AdminInvite            AdminInvite[]           @relation("AdminInviteCreatedBy")
+  redeemedAdminInvites   AdminInvite[]           @relation("AdminInviteRedeemedBy")
   ResearcherJatos        ResearcherJatos?
   adminAuditEvents       AdminAuditEvent[]       @relation("AdminAuditActor")
 }
@@ -166,11 +170,20 @@ enum ResearcherRole {
   VIEWER
 }
 
+// Which area of the app a notification belongs to. A user holding both the researcher and admin
+// roles has one inbox per area, so a notification only shows up (and counts as unread) where its
+// link actually works.
+enum NotificationAudience {
+  PORTAL
+  ADMIN
+}
+
 model Notification {
-  id           Int      @id @default(autoincrement())
-  createdAt    DateTime @default(now())
+  id           Int                  @id @default(autoincrement())
+  createdAt    DateTime             @default(now())
   message      String
-  announcement Boolean  @default(false)
+  announcement Boolean              @default(false)
+  audience     NotificationAudience @default(PORTAL)
   routeData    Json? // Flexible JSON field to store dynamic routing data
 
   studyId Int?
@@ -325,7 +338,9 @@ model AdminInvite {
   reminderSentAt DateTime? // Track when reminder email was last sent
   createdAt      DateTime  @default(now())
   createdById    Int?
-  createdBy      User?     @relation(fields: [createdById], references: [id], onDelete: SetNull)
+  createdBy      User?     @relation("AdminInviteCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  redeemedById   Int? // set when the invite is accepted (new signup or an existing researcher account)
+  redeemedBy     User?     @relation("AdminInviteRedeemedBy", fields: [redeemedById], references: [id], onDelete: SetNull)
 
   @@index([email])
   @@index([expiresAt])

@@ -33,7 +33,7 @@ describe("forgotPassword mutation", () => {
     const user = await db.user.create({
       data: {
         email: "user@example.com",
-        role: UserRole.PARTICIPANT,
+        roles: [UserRole.PARTICIPANT],
         tokens: {
           create: {
             type: "RESET_PASSWORD",
@@ -67,7 +67,7 @@ describe("forgotPassword mutation", () => {
     const user = await db.user.create({
       data: {
         email: "mail-fail@example.com",
-        role: UserRole.PARTICIPANT,
+        roles: [UserRole.PARTICIPANT],
       },
     })
 

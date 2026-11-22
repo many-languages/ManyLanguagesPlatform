@@ -110,6 +110,8 @@ export interface AdminStudyListItemDto {
   jatosStudyUUID: string | null
   adminApproved: boolean | null
   archived: boolean
+  /** The viewing admin is a researcher on this study, so another admin has to approve/reject it. */
+  viewerIsResearcher: boolean
   hasParticipantResponses: boolean | null
   latestJatosStudyUpload: AdminStudyLatestUploadDto | null
   feedbackTemplate: {

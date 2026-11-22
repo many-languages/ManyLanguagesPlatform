@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
-import db, { type Study, type User } from "db"
+import db, { type Study, type User, type UserRole } from "db"
 
 const mocks = vi.hoisted(() => ({
   getBlitzContext: vi.fn(),
@@ -27,17 +27,17 @@ function setSession(user: User) {
   mocks.getBlitzContext.mockResolvedValue({
     session: {
       userId: user.id,
-      role: user.role,
+      role: user.roles[0],
       $authorize: vi.fn(),
     },
   })
 }
 
-async function createUser(name: string, role: User["role"]) {
+async function createUser(name: string, role: UserRole) {
   return db.user.create({
     data: {
       email: testEmail(`${name}-${Date.now()}-${Math.random().toString(36).slice(2)}`),
-      role,
+      roles: [role],
     },
   })
 }

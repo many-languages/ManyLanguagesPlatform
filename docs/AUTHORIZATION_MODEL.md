@@ -18,6 +18,23 @@ Application roles are defined by `UserRole` in `db/schema.prisma`:
 
 Staff admin checks should use `src/lib/auth/roles.ts` helpers where possible.
 
+### Accounts can hold more than one role
+
+`User.roles` lists everything an account may act as. The role it is acting as _right now_ lives
+only in the session (`session.role`), and every authorization guard (`resolver.authorize`,
+`session.role` checks, layouts) reads that. Account roles in the database are only used to decide
+what the session may switch to and who counts as an admin when sending to or listing users.
+
+- The only supported combination is `RESEARCHER` + `ADMIN`. A researcher gains `ADMIN` by
+  accepting an admin invitation; participants and existing admins are never eligible
+  (`getAdminInviteEligibility` in `src/lib/auth/roles.ts`, enforced on the server when the invite
+  is created, validated, accepted and reminded — not only in the UI).
+- A fresh login, signup or password reset starts as the highest role held (`pickInitialRole`).
+- `switchActiveRole` re-reads `User.roles` from the database and updates only the current session.
+- Never filter users with a bare `role`; use `staffAdminUsersWhere()` / `userHasAnyRoleWhere()` so
+  accounts holding a role alongside another are not missed.
+- UI that depends on the role (dashboards, navbar) uses the session role, not `currentUser.roles`.
+
 ## Server Entry Points
 
 Every server entry point needs explicit server-side authorization:
@@ -79,10 +96,31 @@ Rules:
 
 - `ADMIN` and `SUPERADMIN` are staff admins.
 - `SUPERADMIN` is required for admin invitation management.
+- An admin may not approve or reject a study they are a researcher on, even when one account holds
+  both roles. `approveStudy`/`rejectStudy` reject the whole batch before writing
+  (`src/features/studies/domain/selfReview.ts`); the admin UI hides those actions and the study is
+  left out of the pending-review queue and review notifications. Another admin has to review it.
+- Admin invitation tokens are stored only as a hash and are shown once, when created. They are not
+  stored readably, so an existing invite's token can never be displayed again. A superadmin who
+  needs a link again uses "New link" (`regenerateAdminInviteLink`), which issues a fresh token,
+  invalidates the one that was emailed, and is recorded in the admin audit log. Never add a
+  readable copy of a token to the database, a list query or the audit log.
+- Accepting an admin invitation from an existing account (`acceptAdminInvite`) requires the
+  emailed token, not just a matching email: signup does not verify email ownership, so an account
+  email alone proves nothing. Acceptance is recorded in `AdminInvite.redeemedById` and the admin
+  audit log.
 - Admin study approval/rejection and admin study deletion are privileged
   operations.
 - Admin deletion may touch both the app database and JATOS; see
   `docs/JATOS_API_USAGE.md` for the JATOS-specific workflow.
+
+## Notifications
+
+Each notification has an `audience` (`PORTAL` or `ADMIN`). A user sees only the inbox that matches
+the role they are acting as (`notificationAudienceForRole`), so an account holding both roles has
+a separate feed and unread badge in each area and never gets a link into an area its current role
+cannot open. Notifications to admins (e.g. a study awaiting review) must be sent with
+`audience: "ADMIN"`.
 
 ## JATOS Authorization
 

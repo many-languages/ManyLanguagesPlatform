@@ -6,7 +6,6 @@ export { default as DashboardSkeleton } from "./ui/DashboardSkeleton"
 // Shared types
 export type {
   ActiveStudyWithResponseCount,
-  DashboardCurrentUser,
   DeadlineStudy,
   ParticipantCompletedNotPaidStudy,
   ParticipantIncompleteStudies,

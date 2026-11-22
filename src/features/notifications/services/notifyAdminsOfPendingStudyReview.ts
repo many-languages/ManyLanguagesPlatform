@@ -2,6 +2,7 @@
 
 import db from "db"
 
+import { staffAdminUsersWhere } from "@/src/lib/auth/roles"
 import { sendNotification } from "./sendNotification"
 
 type NotifyAdminsOfPendingStudyReviewInput = {
@@ -14,18 +15,26 @@ type NotifyAdminsOfPendingStudyReviewInput = {
  * review queue (i.e. setup just became complete, a FeedbackTemplate exists, and the study has
  * not been admin-approved yet).
  *
- * Recipients: every user with role ADMIN or SUPERADMIN. We notify the submitter? Admins who
- * are also researchers on the study still receive it — cross-role researcher/admin accounts are
- * unusual and admins can delete noise from their own feed.
+ * Recipients: every user holding the ADMIN or SUPERADMIN role (even while they are currently
+ * acting as a researcher), except researchers on the study itself — they cannot review their own
+ * study, so the notification would only be noise for them.
  *
- * No-op when there are no admin users.
+ * No-op when there is no admin who could review the study.
  */
 export const notifyAdminsOfPendingStudyReview = async ({
   studyId,
   studyTitle,
 }: NotifyAdminsOfPendingStudyReviewInput) => {
+  const studyResearchers = await db.studyResearcher.findMany({
+    where: { studyId },
+    select: { userId: true },
+  })
+
   const admins = await db.user.findMany({
-    where: { role: { in: ["ADMIN", "SUPERADMIN"] } },
+    where: {
+      ...staffAdminUsersWhere(),
+      id: { notIn: studyResearchers.map((researcher) => researcher.userId) },
+    },
     select: { id: true },
   })
 
@@ -47,5 +56,6 @@ export const notifyAdminsOfPendingStudyReview = async ({
       path: "/admin/studies",
     },
     studyId,
+    audience: "ADMIN",
   })
 }

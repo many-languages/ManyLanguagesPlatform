@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { AuthorizationError } from "blitz"
-import db, { type User, type Study } from "db"
+import db, { type User, type Study, type UserRole } from "db"
 import {
   assertParticipantCanAccessStudy,
   assertResearcherCanAccessStudy,
@@ -31,17 +31,17 @@ function setSession(user: User) {
   mocks.getBlitzContext.mockResolvedValue({
     session: {
       userId: user.id,
-      role: user.role,
+      role: user.roles[0],
       $authorize: vi.fn(),
     },
   })
 }
 
-async function createUser(name: string, role: User["role"]) {
+async function createUser(name: string, role: UserRole) {
   return db.user.create({
     data: {
       email: testEmail(`${name}-${Date.now()}-${Math.random().toString(36).slice(2)}`),
-      role,
+      roles: [role],
     },
   })
 }
@@ -118,6 +118,11 @@ describe("DB-backed authorization boundaries", () => {
   afterEach(async () => {
     await db.study.deleteMany({
       where: { title: { startsWith: TEST_PREFIX } },
+    })
+    // approveStudy records an audit event for the acting admin; deleting the user first would
+    // orphan it (actor set to null) and leave it behind in the shared test database.
+    await db.adminAuditEvent.deleteMany({
+      where: { actor: { email: { startsWith: TEST_PREFIX } } },
     })
     await db.user.deleteMany({
       where: { email: { startsWith: TEST_PREFIX } },

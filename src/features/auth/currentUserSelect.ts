@@ -6,7 +6,7 @@ export const currentUserSelect = {
   lastname: true,
   username: true,
   email: true,
-  role: true,
+  roles: true,
   gravatar: true,
   createdAt: true,
   language: true,

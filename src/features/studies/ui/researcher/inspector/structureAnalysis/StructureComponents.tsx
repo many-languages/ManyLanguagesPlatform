@@ -8,7 +8,7 @@ import { Alert } from "@/src/components/ui/Alert"
 import { useCallback, useMemo } from "react"
 import ComponentView from "../componentView/ComponentView"
 import ComponentSelector from "../componentView/ComponentSelector"
-import CopyButton from "../CopyButton"
+import CopyButton from "@/src/components/ui/CopyButton"
 
 interface StructureComponentsProps {
   componentExplorer: ComponentExplorerModel

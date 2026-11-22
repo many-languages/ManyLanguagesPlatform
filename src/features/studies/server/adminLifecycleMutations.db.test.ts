@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { AuthorizationError } from "blitz"
-import db, { type Study, type User } from "db"
+import db, { type Study, type User, type UserRole } from "db"
 
 const mocks = vi.hoisted(() => ({
   getBlitzContext: vi.fn(),
@@ -47,21 +47,22 @@ function testEmail(name: string) {
   return `${TEST_PREFIX}-${name}@example.com`
 }
 
-function setSession(user: User) {
+/** `role` is the role the session acts as; for accounts holding several it must be chosen. */
+function setSession(user: User, role: UserRole = user.roles[0]) {
   mocks.getBlitzContext.mockResolvedValue({
     session: {
       userId: user.id,
-      role: user.role,
+      role,
       $authorize: vi.fn(),
     },
   })
 }
 
-async function createUser(name: string, role: User["role"]) {
+async function createUser(name: string, ...roles: UserRole[]) {
   return db.user.create({
     data: {
       email: testEmail(`${name}-${Date.now()}-${Math.random().toString(36).slice(2)}`),
-      role,
+      roles,
     },
   })
 }
@@ -194,6 +195,83 @@ describe("admin lifecycle mutation boundaries", () => {
     })
     await db.user.deleteMany({
       where: { email: { startsWith: TEST_PREFIX } },
+    })
+  })
+
+  describe("self-review guard for accounts that are both researcher and admin", () => {
+    let dualRoleUser: User
+
+    beforeEach(async () => {
+      dualRoleUser = await createUser("dual-role", "RESEARCHER", "ADMIN")
+    })
+
+    afterEach(async () => {
+      await db.adminAuditEvent.deleteMany({ where: { actorUserId: dualRoleUser.id } })
+    })
+
+    it("blocks approving or rejecting a study the admin is a researcher on", async () => {
+      const own = await createStudy("own-study", dualRoleUser, {
+        adminApproved: null,
+        completeSetup: true,
+      })
+      setSession(dualRoleUser, "ADMIN")
+
+      await expect(approveStudy([own.id])).rejects.toThrow(
+        /cannot approve studies you are a researcher on/
+      )
+      await expect(rejectStudy([own.id])).rejects.toThrow(
+        /cannot reject studies you are a researcher on/
+      )
+
+      const unchanged = await db.study.findUniqueOrThrow({ where: { id: own.id } })
+      expect(unchanged.adminApproved).toBeNull()
+      expect(unchanged.adminReviewedById).toBeNull()
+      expect(mocks.sendNotification).not.toHaveBeenCalled()
+    })
+
+    it("rejects the whole batch when it contains an own study, leaving the others untouched", async () => {
+      const own = await createStudy("own-in-batch", dualRoleUser, {
+        adminApproved: null,
+        completeSetup: true,
+      })
+      const foreign = await createStudy("foreign-in-batch", researcher, {
+        adminApproved: null,
+        completeSetup: true,
+      })
+      setSession(dualRoleUser, "ADMIN")
+
+      await expect(approveStudy([foreign.id, own.id])).rejects.toThrow(
+        /Another admin has to review/
+      )
+
+      const rows = await db.study.findMany({ where: { id: { in: [own.id, foreign.id] } } })
+      expect(rows.every((row) => row.adminApproved === null)).toBe(true)
+    })
+
+    it("lets the same account review studies it is not a researcher on", async () => {
+      const foreign = await createStudy("foreign-study", researcher, {
+        adminApproved: null,
+        completeSetup: true,
+      })
+      setSession(dualRoleUser, "ADMIN")
+
+      await expect(approveStudy([foreign.id])).resolves.toEqual({ updated: 1 })
+      const approved = await db.study.findUniqueOrThrow({ where: { id: foreign.id } })
+      expect(approved.adminApproved).toBe(true)
+      expect(approved.adminReviewedById).toBe(dualRoleUser.id)
+    })
+
+    it("lets a different admin review the dual-role account's study", async () => {
+      const own = await createStudy("reviewed-by-other", dualRoleUser, {
+        adminApproved: null,
+        completeSetup: true,
+      })
+      setSession(admin)
+
+      await expect(approveStudy([own.id])).resolves.toEqual({ updated: 1 })
+      const approved = await db.study.findUniqueOrThrow({ where: { id: own.id } })
+      expect(approved.adminApproved).toBe(true)
+      expect(approved.adminReviewedById).toBe(admin.id)
     })
   })
 

@@ -2,6 +2,7 @@ import { isSuperAdmin } from "@/src/lib/auth/roles"
 import { isSetupComplete, toSetupStatusStudy } from "./setup/setupStatus"
 import type { AdminStudyListItemDto } from "../types"
 import type { UserRole } from "@/db"
+import { formatStudyLabels } from "./selfReview"
 
 export interface AdminStudyBulkActionsResult {
   showApproveButton: boolean
@@ -19,6 +20,8 @@ export interface AdminStudyBulkActionsResult {
   disableTargetIds: number[]
   approveTargetIds: number[]
   rejectTargetIds: number[]
+  /** Set when selected studies are the viewer's own: they can't review those themselves. */
+  selfReviewMessage: string | null
   deleteTargetIds: number[]
   archiveTargetIds: number[]
   unarchiveTargetIds: number[]
@@ -45,14 +48,27 @@ export function getAdminStudyBulkActions(
       disableTargetIds: [],
       approveTargetIds: [],
       rejectTargetIds: [],
+      selfReviewMessage: null,
       deleteTargetIds: [],
       archiveTargetIds: [],
       unarchiveTargetIds: [],
     }
   }
 
-  const hasPending = selectedStudies.some((s) => s.adminApproved === null)
-  const pendingWithSetupComplete = selectedStudies.filter(
+  // An admin never reviews a study they are a researcher on (see domain/selfReview.ts).
+  const reviewable = selectedStudies.filter((s) => !s.viewerIsResearcher)
+  const ownPendingStudies = selectedStudies.filter(
+    (s) => s.viewerIsResearcher && s.adminApproved === null
+  )
+  const selfReviewMessage =
+    ownPendingStudies.length > 0
+      ? `You are a researcher on ${formatStudyLabels(
+          ownPendingStudies
+        )}, so another admin has to approve or reject it.`
+      : null
+
+  const hasPending = reviewable.some((s) => s.adminApproved === null)
+  const pendingWithSetupComplete = reviewable.filter(
     (s) => s.adminApproved === null && isSetupComplete(toSetupStatusStudy(s))
   )
   const hasPendingWithSetupComplete = pendingWithSetupComplete.length > 0
@@ -105,7 +121,7 @@ export function getAdminStudyBulkActions(
       : null
   const enableTargetIds = enableBlockedMessage ? [] : selectedStudyIds
   const approveTargetIds = pendingWithSetupComplete.map((s) => s.id)
-  const rejectTargetIds = selectedStudies.filter((s) => s.adminApproved === null).map((s) => s.id)
+  const rejectTargetIds = reviewable.filter((s) => s.adminApproved === null).map((s) => s.id)
   const disableTargetIds = showDisableButton ? selectedStudyIds : []
   const deleteTargetIds = deleteEnabled ? selectedStudyIds : []
   const archiveTargetIds = showArchiveButton ? selectedStudyIds : []
@@ -127,6 +143,7 @@ export function getAdminStudyBulkActions(
     disableTargetIds,
     approveTargetIds,
     rejectTargetIds,
+    selfReviewMessage,
     deleteTargetIds,
     archiveTargetIds,
     unarchiveTargetIds,

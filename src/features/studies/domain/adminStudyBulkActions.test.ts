@@ -16,6 +16,7 @@ function study(overrides: Partial<AdminStudyListItemDto> = {}): AdminStudyListIt
     jatosStudyUUID: "study-uuid",
     adminApproved: true,
     archived: false,
+    viewerIsResearcher: false,
     hasParticipantResponses: false,
     latestJatosStudyUpload: {
       id: 1,
@@ -44,6 +45,25 @@ describe("getAdminStudyBulkActions", () => {
     expect(result.deleteEnabled).toBe(false)
     expect(result.approveTargetIds).toEqual([])
     expect(result.enableTargetIds).toEqual([])
+    expect(result.selfReviewMessage).toBeNull()
+  })
+
+  it("never targets studies the viewer is a researcher on for approval or rejection", () => {
+    const own = study({ id: 1, title: "My study", adminApproved: null, viewerIsResearcher: true })
+    const others = study({ id: 2, title: "Someone else's", adminApproved: null })
+
+    const mixed = getAdminStudyBulkActions([own, others], adminRole)
+    expect(mixed.approveTargetIds).toEqual([2])
+    expect(mixed.rejectTargetIds).toEqual([2])
+    expect(mixed.selfReviewMessage).toContain("My study")
+    expect(mixed.selfReviewMessage).not.toContain("Someone else's")
+
+    const onlyOwn = getAdminStudyBulkActions([own], adminRole)
+    expect(onlyOwn.showApproveButton).toBe(false)
+    expect(onlyOwn.showRejectButton).toBe(false)
+    expect(onlyOwn.approveTargetIds).toEqual([])
+    expect(onlyOwn.rejectTargetIds).toEqual([])
+    expect(onlyOwn.selfReviewMessage).toContain("another admin")
   })
 
   it("targets only pending studies with complete setup for approval", () => {

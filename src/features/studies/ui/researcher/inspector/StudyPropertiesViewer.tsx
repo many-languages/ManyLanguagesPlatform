@@ -3,7 +3,7 @@
 import type { JatosStudyProperties } from "@/src/types/jatos"
 import Card from "@/src/components/ui/Card"
 import JsonView from "@/src/components/ui/JsonView"
-import CopyButton from "./CopyButton"
+import CopyButton from "@/src/components/ui/CopyButton"
 
 interface StudyPropertiesViewerProps {
   properties: JatosStudyProperties

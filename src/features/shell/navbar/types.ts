@@ -6,7 +6,7 @@ export type CurrentUser = {
   lastname: string | null
   username: string | null
   email: string
-  role: string
+  roles: string[]
   gravatar: string | null
   createdAt: Date
 } | null

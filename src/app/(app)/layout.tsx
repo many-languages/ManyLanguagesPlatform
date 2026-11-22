@@ -2,7 +2,10 @@ import { redirect } from "next/navigation"
 import { Toaster } from "react-hot-toast"
 import { getBlitzContext, useAuthenticatedBlitzContext } from "../blitz-server"
 import { NotificationMenuRootProvider } from "@/src/features/notifications"
-import { getNotificationMenuDataForUser } from "@/src/features/notifications/index.server"
+import {
+  getNotificationMenuDataForUser,
+  notificationAudienceForRole,
+} from "@/src/features/notifications/index.server"
 import { AppNavbar } from "@/src/features/shell"
 import { isStaffAdmin } from "@/src/lib/auth/roles"
 import { DEFAULT_ADMIN_PATH } from "@/src/lib/auth/routing"
@@ -16,7 +19,10 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     redirect(DEFAULT_ADMIN_PATH)
   }
 
-  const initialMenuData = await getNotificationMenuDataForUser(session.userId!)
+  const initialMenuData = await getNotificationMenuDataForUser(
+    session.userId!,
+    notificationAudienceForRole(session.role)
+  )
 
   return (
     <NotificationMenuRootProvider initialData={initialMenuData}>

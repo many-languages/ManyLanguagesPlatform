@@ -27,3 +27,13 @@ export const RevokeAdminInvitesSchema = z.object({
 
 export type SendAdminInviteRemindersInput = z.infer<typeof SendAdminInviteRemindersSchema>
 export type RevokeAdminInvitesInput = z.infer<typeof RevokeAdminInvitesSchema>
+
+export const AcceptAdminInviteSchema = z.object({
+  token: z.string().min(1, "Invite token is required"),
+})
+
+export type AcceptAdminInviteInput = z.infer<typeof AcceptAdminInviteSchema>
+
+export const RegenerateAdminInviteLinkSchema = z.object({
+  inviteId: z.number().int().positive(),
+})

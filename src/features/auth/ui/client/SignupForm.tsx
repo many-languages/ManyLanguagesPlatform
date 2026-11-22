@@ -15,6 +15,7 @@ import {
   FormErrorDisplay,
 } from "@/src/components/ui/fields"
 import { Form, FORM_ERROR } from "@/src/components/ui/Form"
+import { ADMIN_INVITE_ACCEPT_PATH } from "@/src/features/admin-invitations/constants"
 import validateAdminInviteToken from "@/src/features/admin-invitations/queries/validateAdminInviteToken"
 import { getDefaultAuthenticatedPath } from "@/src/lib/auth/routing"
 import signup from "../../mutations/signup"
@@ -40,6 +41,8 @@ interface AdminInviteValidation {
   valid: boolean
   error?: string
   inviteEmail?: string
+  /** The invited email already has an account: log in to accept instead of signing up. */
+  existingAccount?: boolean
 }
 
 interface SignupFormFieldsProps {
@@ -83,6 +86,31 @@ function SignupFormFields({
     }
     wasAdminRoleRef.current = isAdminRole
   }, [isAdminRole, form, setAdminInviteToken])
+
+  if (isAdminInvite && tokenValidation?.existingAccount) {
+    const acceptPath = `${ADMIN_INVITE_ACCEPT_PATH}?token=${encodeURIComponent(adminInviteToken)}`
+
+    return (
+      <div className="fieldset bg-base-200 border-base-300 rounded-box w-md border p-4 space-y-3">
+        <div className="alert alert-info">
+          <div>
+            <p className="font-medium">You already have an account</p>
+            <p className="text-sm">
+              {tokenValidation.inviteEmail} is already registered, so this invitation is accepted
+              from your existing account. Log in to add the admin role to it. Your researcher
+              account and studies stay as they are.
+            </p>
+          </div>
+        </div>
+        <Link
+          className="btn btn-primary w-full"
+          href={`/login?next=${encodeURIComponent(acceptPath)}` as Route}
+        >
+          Log in to accept the invitation
+        </Link>
+      </div>
+    )
+  }
 
   return (
     <div className="fieldset bg-base-200 border-base-300 rounded-box w-md border p-4">
@@ -233,11 +261,11 @@ export const SignupForm = ({
               return { [FORM_ERROR]: result.error }
             }
 
-            if (!result.user) {
+            if (!result.user || !result.activeRole) {
               return { [FORM_ERROR]: "Signup succeeded but user data was missing." }
             }
 
-            router.push(getDefaultAuthenticatedPath(result.user.role) as Route)
+            router.push(getDefaultAuthenticatedPath(result.activeRole) as Route)
           } catch (error: unknown) {
             const errorMessage =
               error instanceof Error

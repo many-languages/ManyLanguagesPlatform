@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
-import db, { type Study, type User } from "db"
+import db, { type Study, type User, type UserRole } from "db"
 
 const mocks = vi.hoisted(() => ({
   getBlitzContext: vi.fn(),
@@ -32,9 +32,9 @@ function uniqueSuffix() {
   return `${Date.now()}-${Math.random().toString(36).slice(2)}`
 }
 
-async function createUser(name: string, role: User["role"]) {
+async function createUser(name: string, role: UserRole) {
   return db.user.create({
-    data: { email: `${TEST_PREFIX}-${name}-${uniqueSuffix()}@example.com`, role },
+    data: { email: `${TEST_PREFIX}-${name}-${uniqueSuffix()}@example.com`, roles: [role] },
   })
 }
 
@@ -95,7 +95,7 @@ describe("pilot link labels", () => {
     jatosStudyUploadId = upload.id
 
     mocks.getBlitzContext.mockResolvedValue({
-      session: { userId: researcher.id, role: researcher.role, $authorize: vi.fn() },
+      session: { userId: researcher.id, role: researcher.roles[0], $authorize: vi.fn() },
     })
     mocks.createPersonalStudyCodeForResearcher.mockImplementation(
       async ({ onSave }: { onSave: (url: string) => Promise<void> }) => {

@@ -1,7 +1,7 @@
 "use server"
 
 import { revalidateTag } from "next/cache"
-import db from "db"
+import db, { type NotificationAudience } from "db"
 
 import { getAuthorizedSession } from "@/src/lib/auth/session"
 import { NOTIFICATIONS_MENU_TAG, NOTIFICATIONS_TABLE_TAG } from "../constants"
@@ -19,6 +19,8 @@ type SendNotificationInput<TData extends Record<string, any>> = {
   studyId?: number
   announcement?: boolean
   pinForRecipients?: boolean
+  /** Inbox the notification appears in. Defaults to the portal (researchers and participants). */
+  audience?: NotificationAudience
 }
 
 export const sendNotification = async <TData extends Record<string, any>>({
@@ -29,6 +31,7 @@ export const sendNotification = async <TData extends Record<string, any>>({
   studyId,
   announcement = false,
   pinForRecipients = false,
+  audience = "PORTAL",
 }: SendNotificationInput<TData>) => {
   if (!Array.isArray(recipients) || recipients.length === 0) {
     throw new Error("Cannot send notification without recipients")
@@ -51,6 +54,7 @@ export const sendNotification = async <TData extends Record<string, any>>({
       data: {
         message: compiledMessage,
         announcement,
+        audience,
         routeData: routeData ?? undefined,
         studyId: studyId ?? undefined,
       },

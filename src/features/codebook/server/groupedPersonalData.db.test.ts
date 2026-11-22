@@ -127,10 +127,10 @@ describe("personal data flags on grouped variables", () => {
   beforeEach(async () => {
     vi.spyOn(console, "error").mockImplementation(() => {})
     researcher = await db.user.create({
-      data: { email: `${TEST_PREFIX}-${uniqueSuffix()}@example.com`, role: "RESEARCHER" },
+      data: { email: `${TEST_PREFIX}-${uniqueSuffix()}@example.com`, roles: ["RESEARCHER"] },
     })
     mocks.getBlitzContext.mockResolvedValue({
-      session: { userId: researcher.id, role: researcher.role, $authorize: vi.fn() },
+      session: { userId: researcher.id, role: researcher.roles[0], $authorize: vi.fn() },
     })
     study = await createStudyWithExtraction(researcher)
     await db.feedbackTemplate.create({ data: { studyId: study.id, ...TEMPLATE } })

@@ -7,11 +7,17 @@ import Card from "@/src/components/ui/Card"
 import { AdminInviteForm, AdminInviteManagementCard } from "@/src/features/admin-invitations"
 import { getAdminInvitesRsc } from "@/src/features/admin-invitations/index.server"
 import { getBlitzContext } from "@/src/app/blitz-server"
+import { getLoginUrl } from "@/src/lib/auth/getLoginUrl"
 import { isSuperAdmin } from "@/src/lib/auth/roles"
 import { DEFAULT_ADMIN_PATH } from "@/src/lib/auth/routing"
 
 export default async function AdminInvitesPage() {
   const { session } = await getBlitzContext()
+  // The layout guards a full page load, but not client-side navigation after the session expired;
+  // without this check a signed-out visitor would be bounced to the dashboard instead of login.
+  if (!session.userId) {
+    redirect(await getLoginUrl())
+  }
   if (!isSuperAdmin(session.role)) {
     redirect(DEFAULT_ADMIN_PATH)
   }

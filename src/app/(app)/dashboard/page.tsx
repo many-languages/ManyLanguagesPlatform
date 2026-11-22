@@ -1,6 +1,7 @@
 import { fallbackOrLoginRedirect } from "@/src/lib/auth/redirectOnAuthenticationError"
 import { getSessionContext } from "@/src/lib/auth/session"
 import { redirect } from "next/navigation"
+import { getLoginUrl } from "@/src/lib/auth/getLoginUrl"
 import { getPendingAdminInviteRsc } from "@/src/features/admin-invitations/index.server"
 import {
   PortalDashboard,
@@ -31,7 +32,7 @@ const emptyParticipantStudies: ParticipantIncompleteStudies = {
 export default async function DashboardPage() {
   const session = await getSessionContext()
   if (!session.userId) {
-    redirect("/login")
+    redirect(await getLoginUrl())
   }
 
   // The role being used right now comes from the session, not the account: a user holding

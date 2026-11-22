@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
+import { CURRENT_PATH_HEADER } from "@/src/lib/auth/loginUrl"
 
 // Simple in-memory rate limiter for MVP mitigation.
 // Note: In a multi-node or serverless deployment, use Redis (e.g. @upstash/ratelimit).
@@ -29,6 +30,13 @@ function cleanupMap() {
     }
     lastCleanup = now
   }
+}
+
+/** Path + query the browser asked for, minus Next's internal `_rsc` cache-busting param. */
+function requestedPath(request: NextRequest): string {
+  const url = request.nextUrl.clone()
+  url.searchParams.delete("_rsc")
+  return `${url.pathname}${url.search}`
 }
 
 export function middleware(request: NextRequest) {
@@ -72,9 +80,19 @@ export function middleware(request: NextRequest) {
     }
   }
 
-  return NextResponse.next()
+  // Tell server components which URL was requested so a signed-out visitor can be sent to
+  // `/login?next=<that URL>` (see `getLoginUrl`). Always overwritten, never trusted from the client.
+  const requestHeaders = new Headers(request.headers)
+  requestHeaders.set(CURRENT_PATH_HEADER, requestedPath(request))
+  return NextResponse.next({ request: { headers: requestHeaders } })
 }
 
 export const config = {
-  matcher: ["/api/rpc/:path*", "/api/jatos/import", "/api/cron/study-status"],
+  matcher: [
+    "/api/rpc/:path*",
+    "/api/jatos/import",
+    "/api/cron/study-status",
+    // Every page route (not other API routes, Next internals, or files with an extension).
+    "/((?!api/|_next/|.*\\..*).*)",
+  ],
 }

@@ -1,6 +1,8 @@
+import { redirect } from "next/navigation"
 import { AdminStudyManagementCard } from "@/src/features/studies"
 import { getStudiesRsc } from "@/src/features/studies/index.server"
 import { getBlitzContext } from "@/src/app/blitz-server"
+import { getLoginUrl } from "@/src/lib/auth/getLoginUrl"
 import type { UserRole } from "@/db"
 
 export const metadata = {
@@ -8,7 +10,13 @@ export const metadata = {
 }
 
 export default async function AdminStudiesPage() {
-  const [studies, { session }] = await Promise.all([getStudiesRsc(), getBlitzContext()])
+  const { session } = await getBlitzContext()
+  // The layout guards a full page load, but not client-side navigation after the session expired.
+  if (!session.userId) {
+    redirect(await getLoginUrl())
+  }
+
+  const studies = await getStudiesRsc()
   const viewerRole = session.role as UserRole
 
   return (

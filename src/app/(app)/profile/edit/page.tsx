@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation"
+import { getLoginUrl } from "@/src/lib/auth/getLoginUrl"
 import Card from "@/src/components/ui/Card"
 import { EditProfileForm, type ProfilePaths } from "@/src/features/profile"
 import { getBlitzContext } from "@/src/app/blitz-server"
@@ -12,12 +13,12 @@ const portalProfilePaths: ProfilePaths = {
 export default async function EditProfilePage() {
   const { session } = await getBlitzContext()
   if (!session.userId) {
-    redirect("/login")
+    redirect(await getLoginUrl())
   }
 
   const currentUser = await getCurrentUserRsc()
   if (!currentUser) {
-    redirect("/login")
+    redirect(await getLoginUrl())
   }
 
   const initialValues = {

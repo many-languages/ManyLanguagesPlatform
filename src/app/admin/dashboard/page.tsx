@@ -1,5 +1,6 @@
 import { fallbackOrLoginRedirect } from "@/src/lib/auth/redirectOnAuthenticationError"
 import { redirect } from "next/navigation"
+import { getLoginUrl } from "@/src/lib/auth/getLoginUrl"
 import type { UserRole } from "@/db"
 import { getBlitzContext } from "@/src/app/blitz-server"
 import { AdminDashboard } from "@/src/features/dashboard"
@@ -16,7 +17,7 @@ export const metadata = {
 export default async function AdminHomePage() {
   const { session } = await getBlitzContext()
   if (!session.userId) {
-    redirect("/login")
+    redirect(await getLoginUrl())
   }
   const role = session.role as UserRole
 

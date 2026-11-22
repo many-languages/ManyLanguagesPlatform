@@ -1,6 +1,7 @@
 import { Suspense } from "react"
 import PaginationControls from "@/src/components/ui/PaginationControls"
 import { redirect } from "next/navigation"
+import { getLoginUrl } from "@/src/lib/auth/getLoginUrl"
 import {
   StudyList,
   StudiesViewTabs,
@@ -103,7 +104,7 @@ export default async function StudiesPage({
   const page = parsePageQueryParam(params.page)
 
   const { session } = await getBlitzContext()
-  if (!session.userId) redirect("/login")
+  if (!session.userId) redirect(await getLoginUrl())
 
   const role = (session.role ?? "PARTICIPANT") as SessionRole
   const canManageStudies = role !== "PARTICIPANT"

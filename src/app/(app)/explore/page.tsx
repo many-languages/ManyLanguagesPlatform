@@ -4,6 +4,7 @@ import PaginationControls from "@/src/components/ui/PaginationControls"
 import { parsePageQueryParam } from "@/src/lib/searchParams/parsePageQueryParam"
 import { getBlitzContext } from "../../blitz-server"
 import { redirect } from "next/navigation"
+import { getLoginUrl } from "@/src/lib/auth/getLoginUrl"
 import { UserRole } from "@/db"
 
 const ITEMS_PER_PAGE = 10
@@ -63,7 +64,7 @@ export default async function ExplorePage({
   const page = parsePageQueryParam(params.page)
 
   const { session } = await getBlitzContext()
-  if (!session.userId) redirect("/login")
+  if (!session.userId) redirect(await getLoginUrl())
 
   const isParticipant = session.role === UserRole.PARTICIPANT
 

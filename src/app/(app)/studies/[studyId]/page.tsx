@@ -1,5 +1,6 @@
 import { Suspense } from "react"
 import { notFound, redirect } from "next/navigation"
+import { getLoginUrl } from "@/src/lib/auth/getLoginUrl"
 import { getBlitzContext } from "@/src/app/blitz-server"
 import {
   canEditStudySetup,
@@ -74,7 +75,7 @@ export default async function StudyPage({ params }: { params: Promise<{ studyId:
     if (error instanceof Error && error.name === "AuthorizationError") {
       const { session } = await getBlitzContext()
       if (!session.userId) {
-        redirect("/login")
+        redirect(await getLoginUrl())
       }
       notFound()
     }

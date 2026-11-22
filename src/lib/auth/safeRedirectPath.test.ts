@@ -15,4 +15,15 @@ describe("safeRedirectPath", () => {
     expect(safeRedirectPath("https://evil.com")).toBeNull()
     expect(safeRedirectPath("javascript:alert(1)")).toBeNull()
   })
+
+  it("rejects backslash and control-character tricks that browsers read as `//`", () => {
+    expect(safeRedirectPath("/\\evil.com")).toBeNull()
+    expect(safeRedirectPath("/\\/evil.com")).toBeNull()
+    expect(safeRedirectPath("/\t/evil.com")).toBeNull()
+    expect(safeRedirectPath("/\n/evil.com")).toBeNull()
+  })
+
+  it("keeps query strings on internal paths", () => {
+    expect(safeRedirectPath("/studies?page=2&view=mine")).toBe("/studies?page=2&view=mine")
+  })
 })

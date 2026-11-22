@@ -1,20 +1,24 @@
 import { redirect } from "next/navigation"
 import { Toaster } from "react-hot-toast"
-import { getBlitzContext, useAuthenticatedBlitzContext } from "../blitz-server"
+import { getBlitzContext } from "../blitz-server"
 import { NotificationMenuRootProvider } from "@/src/features/notifications"
 import {
   getNotificationMenuDataForUser,
   notificationAudienceForRole,
 } from "@/src/features/notifications/index.server"
 import { AppNavbar } from "@/src/features/shell"
+import { getLoginUrl } from "@/src/lib/auth/getLoginUrl"
 import { isStaffAdmin } from "@/src/lib/auth/roles"
 import { DEFAULT_ADMIN_PATH } from "@/src/lib/auth/routing"
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
-  // eslint-disable-next-line react-hooks/rules-of-hooks
-  await useAuthenticatedBlitzContext({ redirectTo: "/login" })
-
   const { session } = await getBlitzContext()
+
+  // Signed out: go to login, remembering the requested URL so login can return there.
+  if (!session.userId) {
+    redirect(await getLoginUrl())
+  }
+
   if (isStaffAdmin(session.role)) {
     redirect(DEFAULT_ADMIN_PATH)
   }

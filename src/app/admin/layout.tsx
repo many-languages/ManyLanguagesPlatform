@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation"
 import { Toaster } from "react-hot-toast"
+import { getLoginUrl } from "@/src/lib/auth/getLoginUrl"
 import { isStaffAdmin } from "@/src/lib/auth/roles"
 import { NotificationMenuRootProvider } from "@/src/features/notifications"
 import {
@@ -13,7 +14,7 @@ export default async function AdminAppLayout({ children }: { children: React.Rea
   const { session } = await getBlitzContext()
 
   if (!session.userId) {
-    redirect("/login")
+    redirect(await getLoginUrl())
   }
 
   if (!isStaffAdmin(session.role)) {
